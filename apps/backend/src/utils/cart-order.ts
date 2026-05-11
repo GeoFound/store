@@ -5,6 +5,7 @@ type GenericRecord = Record<string, any>
 
 export const CART_ORDER_QUERY_FIELDS = [
   "id",
+  "completed_at",
   "region_id",
   "sales_channel_id",
   "email",

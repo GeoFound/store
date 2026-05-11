@@ -19,7 +19,8 @@ import type {
   OrderLookupResult,
 } from "@/lib/types"
 
-const ORDER_ACCESS_TOKEN_KEY = "store_last_order_access_token"
+const ORDER_ACCESS_TOKEN_SESSION_KEY = "store_session_order_access_token"
+const LEGACY_ORDER_ACCESS_TOKEN_KEY = "store_last_order_access_token"
 
 type LookupState =
   | {
@@ -39,11 +40,22 @@ export function OrderLookupView() {
     }
 
     const params = new URLSearchParams(window.location.search)
-    return (
-      params.get("access_token") ||
-      window.localStorage.getItem(ORDER_ACCESS_TOKEN_KEY) ||
-      ""
-    )
+    const queryToken = params.get("access_token") || ""
+    const sessionToken =
+      window.sessionStorage.getItem(ORDER_ACCESS_TOKEN_SESSION_KEY) || ""
+    const legacyToken =
+      window.localStorage.getItem(LEGACY_ORDER_ACCESS_TOKEN_KEY) || ""
+    const resolvedToken = queryToken || sessionToken || legacyToken
+
+    if (resolvedToken) {
+      window.sessionStorage.setItem(
+        ORDER_ACCESS_TOKEN_SESSION_KEY,
+        resolvedToken
+      )
+      window.localStorage.removeItem(LEGACY_ORDER_ACCESS_TOKEN_KEY)
+    }
+
+    return resolvedToken
   })
   const [lookup, setLookup] = useState<LookupState | null>(null)
   const [loading, setLoading] = useState(false)
@@ -72,6 +84,30 @@ export function OrderLookupView() {
   }, [lookup])
   const effectiveAfterSaleDeliveryId =
     afterSaleDeliveryId || orderDeliveries[0]?.delivery.id || ""
+
+  useEffect(() => {
+    const url = new URL(window.location.href)
+    const tokenInQuery = url.searchParams.get("access_token")
+
+    if (!tokenInQuery) {
+      return
+    }
+
+    const normalizedToken = tokenInQuery.trim()
+
+    if (normalizedToken) {
+      window.sessionStorage.setItem(
+        ORDER_ACCESS_TOKEN_SESSION_KEY,
+        normalizedToken
+      )
+      window.localStorage.removeItem(LEGACY_ORDER_ACCESS_TOKEN_KEY)
+    }
+
+    url.searchParams.delete("access_token")
+    const nextQuery = url.searchParams.toString()
+    const nextUrl = `${url.pathname}${nextQuery ? `?${nextQuery}` : ""}${url.hash}`
+    window.history.replaceState({}, "", nextUrl)
+  }, [searchParams])
 
   useEffect(() => {
     if (!accessToken || lookup) {
@@ -122,7 +158,11 @@ export function OrderLookupView() {
         orderId: recoveryOrderId.trim(),
         code: recoveryCode.trim(),
       })
-      window.localStorage.setItem(ORDER_ACCESS_TOKEN_KEY, verified.access_token)
+      window.sessionStorage.setItem(
+        ORDER_ACCESS_TOKEN_SESSION_KEY,
+        verified.access_token
+      )
+      window.localStorage.removeItem(LEGACY_ORDER_ACCESS_TOKEN_KEY)
       setAccessToken(verified.access_token)
       await loadLookup(verified.access_token)
       setMessage("Order access restored.")
@@ -488,7 +528,8 @@ export function OrderLookupView() {
           kind: "order",
           data: result,
         })
-        window.localStorage.setItem(ORDER_ACCESS_TOKEN_KEY, token)
+        window.sessionStorage.setItem(ORDER_ACCESS_TOKEN_SESSION_KEY, token)
+        window.localStorage.removeItem(LEGACY_ORDER_ACCESS_TOKEN_KEY)
       }
       setAfterSale(null)
     } catch (err) {

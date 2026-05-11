@@ -127,7 +127,7 @@ export function resolveProductTemplate(input?: {
     toOptionalString(metadata.productTemplate)
 
   if (explicitCode) {
-    return getProductTemplate(explicitCode) || getProductTemplate("credential")
+    return getProductTemplate(explicitCode)
   }
 
   const productType =

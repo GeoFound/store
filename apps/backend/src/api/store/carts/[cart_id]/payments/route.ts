@@ -1,6 +1,8 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
 import type { PaymentMethodCode } from "../../../../../modules/payment-router/types"
+import type PaymentRouterModuleService from "../../../../../modules/payment-router/service"
+import { PAYMENT_ROUTER_MODULE } from "../../../../../modules/payment-router"
 import type { FulfillmentCartItem } from "../../../../../platform/inventory"
 import type { MarketingCheckoutContextInput } from "../../../../../platform/marketing"
 import { CART_ORDER_QUERY_FIELDS } from "../../../../../utils/cart-order"
@@ -40,6 +42,35 @@ export const POST = async (
 
   if (!cart) {
     throw new MedusaError(MedusaError.Types.NOT_FOUND, "Cart was not found")
+  }
+
+  if (isCartCompleted(cart.completed_at)) {
+    throw new MedusaError(
+      MedusaError.Types.NOT_ALLOWED,
+      "Cart is already completed and cannot accept a new payment attempt"
+    )
+  }
+
+  const paymentRouter: PaymentRouterModuleService =
+    req.scope.resolve(PAYMENT_ROUTER_MODULE)
+  const paidAttempts = await paymentRouter.listPaymentAttempts(
+    {
+      cart_id: cartId,
+      status: "paid",
+    },
+    {
+      take: 1,
+      order: {
+        created_at: "DESC",
+      },
+    }
+  )
+
+  if (paidAttempts.length) {
+    throw new MedusaError(
+      MedusaError.Types.NOT_ALLOWED,
+      "Payment is already confirmed for this cart"
+    )
   }
 
   const cartItems = (cart.items || []).filter(
@@ -229,4 +260,16 @@ function normalizeAnalyticsText(value: unknown, max: number) {
   const trimmed = value.trim()
 
   return trimmed ? trimmed.slice(0, max) : undefined
+}
+
+function isCartCompleted(value: unknown) {
+  if (value instanceof Date) {
+    return Number.isFinite(value.getTime())
+  }
+
+  if (typeof value === "string") {
+    return Boolean(value.trim())
+  }
+
+  return Boolean(value)
 }

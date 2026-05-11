@@ -108,10 +108,7 @@ export function resolveProductTemplate(
     toOptionalString(metadata.productTemplate)
 
   if (explicitCode) {
-    return (
-      availableTemplates.find((template) => template.code === explicitCode) ||
-      toProductTemplate(credentialTemplate)
-    )
+    return availableTemplates.find((template) => template.code === explicitCode)
   }
 
   const productType =

@@ -1,5 +1,6 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { createStep, StepResponse } from "@medusajs/framework/workflows-sdk"
+import { MedusaError } from "@medusajs/framework/utils"
 import DigitalDeliveryModuleService from "../../../modules/digital-delivery/service"
 import { DIGITAL_DELIVERY_MODULE } from "../../../modules/digital-delivery"
 import PaymentRouterModuleService from "../../../modules/payment-router/service"
@@ -42,20 +43,28 @@ export const createDeliveryStep = createStep(
     const deliveryMetadata = {
       ...(input.metadata || {}),
     }
+    const explicitTemplateCode =
+      toOptionalString(
+        deliveryMetadata.template_code ||
+          deliveryMetadata.templateCode ||
+          deliveryMetadata.product_template ||
+          deliveryMetadata.productTemplate
+      ) || undefined
     const productTemplate = resolveProductTemplate({
-      code:
-        toOptionalString(
-          deliveryMetadata.template_code ||
-            deliveryMetadata.templateCode ||
-            deliveryMetadata.product_template ||
-            deliveryMetadata.productTemplate
-        ) || undefined,
+      code: explicitTemplateCode,
       productType:
         toOptionalString(
           deliveryMetadata.product_type || deliveryMetadata.productType
         ) || null,
       metadata: deliveryMetadata,
     })
+
+    if (explicitTemplateCode && !productTemplate) {
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        `Unknown product template code "${explicitTemplateCode}"`
+      )
+    }
 
     const paymentAttempt = input.paymentAttemptId
       ? await paymentRouter.retrievePaymentAttempt(input.paymentAttemptId)

@@ -54,16 +54,23 @@ describe("product templates", () => {
     })
   })
 
-  it("falls back to default credential template when no match exists", () => {
+  it("does not silently coerce unknown explicit template codes", () => {
     expect(
       resolveProductTemplate({
         code: "missing-template",
       })
-    ).toMatchObject({
-      code: "credential",
-      productType: "credential",
-    })
+    ).toBeUndefined()
 
+    expect(
+      resolveProductTemplate({
+        metadata: {
+          template_code: "missing-template",
+        },
+      })
+    ).toBeUndefined()
+  })
+
+  it("falls back to default credential template when product type has no mapping", () => {
     expect(
       resolveProductTemplate({
         productType: "missing_type",

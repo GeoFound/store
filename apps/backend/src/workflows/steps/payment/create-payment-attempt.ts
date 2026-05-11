@@ -1,6 +1,10 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import type { ILockingModule } from "@medusajs/framework/types"
-import { Modules } from "@medusajs/framework/utils"
+import {
+  ContainerRegistrationKeys,
+  MedusaError,
+  Modules,
+} from "@medusajs/framework/utils"
 import {
   createStep,
   StepResponse,
@@ -23,6 +27,54 @@ export const createPaymentAttemptStep = createStep(
     const result = await locking.execute(
       `cart:${input.cartId}`,
       async () => {
+        const query = container.resolve(ContainerRegistrationKeys.QUERY) as {
+          graph: (input: {
+            entity: string
+            fields: string[]
+            filters: Record<string, unknown>
+          }) => Promise<{ data?: Array<Record<string, unknown>> }>
+        }
+
+        const cartResult = await query.graph({
+          entity: "cart",
+          fields: ["id", "completed_at"],
+          filters: {
+            id: input.cartId,
+          },
+        })
+        const cart = cartResult.data?.[0]
+
+        if (!cart) {
+          throw new MedusaError(MedusaError.Types.NOT_FOUND, "Cart was not found")
+        }
+
+        if (isCartCompleted(cart.completed_at)) {
+          throw new MedusaError(
+            MedusaError.Types.NOT_ALLOWED,
+            "Cart is already completed and cannot accept a new payment attempt"
+          )
+        }
+
+        const paidAttempts = await paymentRouter.listPaymentAttempts(
+          {
+            cart_id: input.cartId,
+            status: "paid",
+          },
+          {
+            take: 1,
+            order: {
+              created_at: "DESC",
+            },
+          }
+        )
+
+        if (paidAttempts.length) {
+          throw new MedusaError(
+            MedusaError.Types.NOT_ALLOWED,
+            "Payment is already confirmed for this cart"
+          )
+        }
+
         const pendingAttempts = await paymentRouter.listPaymentAttempts(
           {
             cart_id: input.cartId,
@@ -89,3 +141,15 @@ export const createPaymentAttemptStep = createStep(
     return new StepResponse(result)
   }
 )
+
+function isCartCompleted(value: unknown) {
+  if (value instanceof Date) {
+    return Number.isFinite(value.getTime())
+  }
+
+  if (typeof value === "string") {
+    return Boolean(value.trim())
+  }
+
+  return Boolean(value)
+}

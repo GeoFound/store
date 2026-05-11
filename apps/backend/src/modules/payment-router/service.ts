@@ -23,20 +23,28 @@ class PaymentRouterModuleService extends MedusaService({
       return
     }
 
-    await this.createPaymentChannels({
-      code: "manual",
-      name: "Manual Payment",
-      display_name: "Manual payment",
-      type: "manual",
-      enabled: true,
-      priority: 100,
-      provider_code: "manual",
-      health_status: "healthy",
-      config_json: {
-        instructions:
-          "Submit the order, then contact support with the payment reference.",
-      },
-    })
+    try {
+      await this.createPaymentChannels({
+        code: "manual",
+        name: "Manual Payment",
+        display_name: "Manual payment",
+        type: "manual",
+        enabled: true,
+        priority: 100,
+        provider_code: "manual",
+        health_status: "healthy",
+        config_json: {
+          instructions:
+            "Submit the order, then contact support with the payment reference.",
+        },
+      })
+    } catch (error) {
+      if (isUniqueConstraintViolation(error)) {
+        return
+      }
+
+      throw error
+    }
   }
 
   async listAvailablePaymentChannels(input?: {
@@ -309,4 +317,41 @@ function normalizeCurrencyCode(value: unknown) {
   const normalized = value.trim().toLowerCase()
 
   return /^[a-z]{3}$/.test(normalized) ? normalized : ""
+}
+
+function isUniqueConstraintViolation(error: unknown): boolean {
+  const queue: unknown[] = [error]
+
+  while (queue.length) {
+    const current = queue.shift()
+
+    if (!current || typeof current !== "object") {
+      continue
+    }
+
+    const record = current as Record<string, unknown>
+    const code = typeof record.code === "string" ? record.code : ""
+    const message = typeof record.message === "string" ? record.message : ""
+
+    if (code === "23505") {
+      return true
+    }
+
+    if (
+      /unique/i.test(message) &&
+      /payment_channel|IDX_payment_channel_code_unique/i.test(message)
+    ) {
+      return true
+    }
+
+    if (record.cause) {
+      queue.push(record.cause)
+    }
+
+    if (record.originalError) {
+      queue.push(record.originalError)
+    }
+  }
+
+  return false
 }

@@ -80,6 +80,13 @@ export const POST = async (
     metadata: req.body.metadata || null,
   })
 
+  if (req.body.template_code && !productTemplate) {
+    res.status(400).json({
+      message: `Unknown template_code: ${req.body.template_code}`,
+    })
+    return
+  }
+
   const input: CreateCredentialBatchInput = {
     name: req.body.name,
     productVariantId: req.body.product_variant_id,

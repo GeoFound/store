@@ -3,6 +3,7 @@ import {
   StepResponse,
 } from "@medusajs/framework/workflows-sdk"
 import type { MedusaContainer } from "@medusajs/framework/types"
+import { MedusaError } from "@medusajs/framework/utils"
 import PaymentRouterModuleService from "../../../modules/payment-router/service"
 import { PAYMENT_ROUTER_MODULE } from "../../../modules/payment-router"
 import { resolveProductFulfillmentPolicy } from "../../../platform/delivery"
@@ -55,6 +56,19 @@ export const reserveCartInventoryStep = createStep(
           productType,
           metadata,
         })
+        const explicitTemplateCode =
+          toOptionalString(metadata.template_code) ||
+          toOptionalString(metadata.templateCode) ||
+          toOptionalString(metadata.product_template) ||
+          toOptionalString(metadata.productTemplate)
+
+        if (explicitTemplateCode && !template) {
+          throw new MedusaError(
+            MedusaError.Types.INVALID_DATA,
+            `Unknown product template code "${explicitTemplateCode}" for variant ${variantId}`
+          )
+        }
+
         const plan = await resolveProductFulfillmentPolicy({
           code:
             toOptionalString(metadata.fulfillment_policy_code) ||

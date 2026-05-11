@@ -25,7 +25,8 @@ import type {
 } from "@/lib/types"
 
 const CART_ID_KEY = "store_cart_id"
-const ORDER_ACCESS_TOKEN_KEY = "store_last_order_access_token"
+const ORDER_ACCESS_TOKEN_SESSION_KEY = "store_session_order_access_token"
+const LEGACY_ORDER_ACCESS_TOKEN_KEY = "store_last_order_access_token"
 const PENDING_PAYMENT_ATTEMPT_ID_KEY = "store_pending_payment_attempt_id"
 const PENDING_PAYMENT_CLAIM_TOKEN_KEY = "store_pending_payment_claim_token"
 const PENDING_PAYMENT_INSTRUCTIONS_KEY = "store_pending_payment_instructions"
@@ -63,9 +64,9 @@ export function CheckoutView() {
   useEffect(() => {
     async function loadCheckoutState() {
       const cartId = window.localStorage.getItem(CART_ID_KEY)
-      const lastOrderAccessToken = window.localStorage.getItem(
-        ORDER_ACCESS_TOKEN_KEY
-      )
+      const lastOrderAccessToken =
+        window.sessionStorage.getItem(ORDER_ACCESS_TOKEN_SESSION_KEY) ||
+        window.localStorage.getItem(LEGACY_ORDER_ACCESS_TOKEN_KEY)
       const pendingAttemptId = window.localStorage.getItem(
         PENDING_PAYMENT_ATTEMPT_ID_KEY
       )
@@ -78,6 +79,11 @@ export function CheckoutView() {
 
       if (lastOrderAccessToken) {
         setOrderAccessToken(lastOrderAccessToken)
+        window.sessionStorage.setItem(
+          ORDER_ACCESS_TOKEN_SESSION_KEY,
+          lastOrderAccessToken
+        )
+        window.localStorage.removeItem(LEGACY_ORDER_ACCESS_TOKEN_KEY)
       }
 
       try {
@@ -191,10 +197,11 @@ export function CheckoutView() {
           }
 
           setOrderAccessToken(claimed.access_token)
-          window.localStorage.setItem(
-            ORDER_ACCESS_TOKEN_KEY,
+          window.sessionStorage.setItem(
+            ORDER_ACCESS_TOKEN_SESSION_KEY,
             claimed.access_token
           )
+          window.localStorage.removeItem(LEGACY_ORDER_ACCESS_TOKEN_KEY)
           emitStoreAnalyticsEvent(
             "purchase",
             {
@@ -497,7 +504,7 @@ export function CheckoutView() {
               token.
             </p>
             <Link
-              href={`/orders?access_token=${encodeURIComponent(orderAccessToken)}`}
+              href="/orders"
               className="mt-4 inline-flex bg-white px-4 py-3 text-sm font-semibold text-stone-950"
             >
               View order
