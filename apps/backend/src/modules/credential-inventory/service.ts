@@ -302,19 +302,50 @@ class CredentialInventoryModuleService extends MedusaService({
   }
 
   async listExpiredReservationKeys(now = new Date()) {
-    const reserved = await this.listAccountItems({
-      status: "reserved",
-    })
+    const pageSize = 500
     const keys = new Set<string>()
+    let skip = 0
+    const cutoff = now.getTime()
 
-    for (const item of reserved) {
-      if (!item.reservation_key || !item.reserved_until) {
-        continue
+    while (true) {
+      const reserved = await this.listAccountItems(
+        {
+          status: "reserved",
+        },
+        {
+          take: pageSize,
+          skip,
+          order: {
+            reserved_until: "ASC",
+            created_at: "ASC",
+          },
+        }
+      )
+
+      if (!reserved.length) {
+        break
       }
 
-      if (new Date(item.reserved_until).getTime() <= now.getTime()) {
+      let reachedFutureReservation = false
+
+      for (const item of reserved) {
+        if (!item.reservation_key || !item.reserved_until) {
+          continue
+        }
+
+        if (new Date(item.reserved_until).getTime() > cutoff) {
+          reachedFutureReservation = true
+          break
+        }
+
         keys.add(String(item.reservation_key))
       }
+
+      if (reachedFutureReservation || reserved.length < pageSize) {
+        break
+      }
+
+      skip += reserved.length
     }
 
     return Array.from(keys)

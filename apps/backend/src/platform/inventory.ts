@@ -117,24 +117,32 @@ export function getInventoryHandler(
 }
 
 export function listInventoryHandlers(context?: PlatformResolutionContext) {
-  return getPlatformRuntime()
+  const runtime = getPlatformRuntime()
+  const sortedNames = runtime
     .listContracts("inventory-handler")
-    .filter((contract) => {
-      if (contract.enabled === false) {
-        return false
-      }
+    .sort((left, right) => (right.priority ?? 0) - (left.priority ?? 0))
+    .map((contract) => contract.name)
+  const seen = new Set<string>()
+  const handlers: InventoryHandler[] = []
 
-      return context
-        ? Boolean(
-            getPlatformRuntime().resolveContract<InventoryHandler>(
-              "inventory-handler",
-              contract.name,
-              context
-            )
-          )
-        : true
-    })
-    .map((contract) => contract.implementation as InventoryHandler)
+  for (const name of sortedNames) {
+    if (seen.has(name)) {
+      continue
+    }
+
+    seen.add(name)
+    const handler = runtime.resolveContract<InventoryHandler>(
+      "inventory-handler",
+      name,
+      context
+    )
+
+    if (handler) {
+      handlers.push(handler)
+    }
+  }
+
+  return handlers
 }
 
 export function getCartItemVariantId(item: FulfillmentCartItem) {

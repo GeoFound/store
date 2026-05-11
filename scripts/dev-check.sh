@@ -110,6 +110,34 @@ assert_backend_secret() {
   fi
 }
 
+assert_encryption_key() {
+  local name="$1"
+  local value="${!name:-}"
+
+  if [[ -z "$value" ]]; then
+    echo "Missing required backend encryption key in $BACKEND_ENV_FILE: $name" >&2
+    exit 2
+  fi
+
+  if [[ "$value" == "replace-with-"* ]]; then
+    echo "Unsafe backend encryption key value for $name in $BACKEND_ENV_FILE" >&2
+    exit 2
+  fi
+
+  if KEY_VALUE="$value" node -e '
+const raw = process.env.KEY_VALUE || "";
+const key = /^[0-9a-f]{64}$/i.test(raw) ? Buffer.from(raw, "hex") : Buffer.from(raw, "base64");
+if (key.length !== 32) {
+  process.exit(1);
+}
+' >/dev/null 2>&1; then
+    return 0
+  fi
+
+  echo "$name must decode to 32 bytes (base64 or 64-char hex)" >&2
+  exit 2
+}
+
 check_services_running() {
   local output
   output="$(docker compose ps --status running postgres redis)"
@@ -138,6 +166,8 @@ load_backend_env
 assert_backend_secret JWT_SECRET
 assert_backend_secret COOKIE_SECRET
 assert_backend_secret MANUAL_WEBHOOK_SECRET
+assert_encryption_key CREDENTIAL_ENCRYPTION_KEY
+assert_encryption_key DELIVERY_ENCRYPTION_KEY
 
 section "Infrastructure"
 cd "$ROOT_DIR"

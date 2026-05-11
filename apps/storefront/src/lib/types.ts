@@ -100,6 +100,50 @@ export type PaymentAttempt = {
   paid_at?: string | null
   order_access_claimed_at?: string | null
   order_access_claim_token_hint?: string | null
+  marketing_context?: Record<string, unknown> | null
+}
+
+export type MarketingCheckoutInput = {
+  coupon_code?: string
+  referral_code?: string
+  utm_source?: string
+  utm_medium?: string
+  utm_campaign?: string
+  utm_content?: string
+  utm_term?: string
+}
+
+export type AnalyticsCheckoutContext = {
+  ga_client_id?: string
+  ga_session_id?: string
+  page_location?: string
+  page_path?: string
+  referrer?: string
+}
+
+export type MarketingResolvedContext = {
+  coupon?: {
+    code: string
+    coupon_id?: string
+    campaign_code?: string | null
+    offer_code?: string | null
+    reservation_id?: string
+  }
+  referral?: {
+    code: string
+    referral_link_id?: string
+    campaign_code?: string | null
+  }
+  attribution?: {
+    source?: string
+    medium?: string
+    campaign?: string
+    content?: string
+    term?: string
+  }
+  tags?: string[]
+  warnings?: string[]
+  metadata?: Record<string, unknown>
 }
 
 export type ManualPaymentInstructions = {

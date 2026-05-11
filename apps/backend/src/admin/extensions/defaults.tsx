@@ -40,6 +40,19 @@ export function ensureAdminExtensionsRegistered() {
     ),
   })
 
+  registerSlot("payments.after", {
+    name: "marketing-engine.checkout-context-note",
+    pluginId: "marketing-engine",
+    order: 20,
+    component: () => (
+      <ExtensionPanel
+        eyebrow="marketing-engine"
+        title="Coupon / referral / attribution are attached at payment-attempt creation"
+        body="Checkout now resolves coupon and referral strategies before inventory reservation, records touchpoints, and finalizes rewards through strategy callbacks."
+      />
+    ),
+  })
+
   registerSlot("deliveries.after", {
     name: "digital-delivery.delivery-policy-note",
     pluginId: "digital-delivery",

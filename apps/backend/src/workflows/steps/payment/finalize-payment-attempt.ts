@@ -17,6 +17,8 @@ import { getDeliveryHandler } from "../../../platform/delivery"
 import { getInventoryHandler } from "../../../platform/inventory"
 import { ensurePlatformObservabilityHooksRegistered } from "../../../platform/observability"
 import { getOrderAccessProviderOrFallback } from "../../../platform/order-access"
+import { ensureMarketingHooksRegistered } from "../../../modules/marketing-engine/hooks"
+import { ensureAnalyticsGa4HooksRegistered } from "../../../modules/analytics-ga4/hooks"
 
 export type FinalizePaymentAttemptStepInput =
   | {
@@ -36,6 +38,8 @@ export const finalizePaymentAttemptStep = createStep(
     { container }: { container: MedusaContainer }
   ) => {
     ensurePlatformObservabilityHooksRegistered()
+    ensureMarketingHooksRegistered()
+    ensureAnalyticsGa4HooksRegistered()
 
     const paymentRouter: PaymentRouterModuleService = container.resolve(
       PAYMENT_ROUTER_MODULE

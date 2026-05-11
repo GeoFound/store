@@ -25,6 +25,19 @@ Required:
 | `AUTH_CORS` | Allowed auth origins | Include Admin and storefront origins. |
 | `PORT` | Backend port | Local default is `9002`. |
 
+Optional analytics and observability:
+
+| Name | Purpose | Production note |
+| --- | --- | --- |
+| `ANALYTICS_ENABLED` | Master switch for analytics event capture and dispatch queue | Default `true`. Set `false` to fully pause analytics pipeline. |
+| `ANALYTICS_DISPATCH_BATCH_SIZE` | Max dispatch records processed per destination per cron run | Default `100`. Increase gradually after monitoring DB and outbound latency. |
+| `ANALYTICS_MAX_RETRY_ATTEMPTS` | Max delivery retries before dead-letter status | Default `12`. |
+| `ANALYTICS_RETRY_BASE_SECONDS` | Base backoff seconds for retry schedule | Default `30`. |
+| `ANALYTICS_RETRY_MAX_SECONDS` | Max backoff seconds for retry schedule | Default `3600`. |
+| `GA4_ENABLED` | Enable GA4 backend dispatch destination | Requires both `GA4_MEASUREMENT_ID` and `GA4_API_SECRET`. |
+| `GA4_MEASUREMENT_ID` | GA4 Measurement ID (`G-XXXX`) for Measurement Protocol | Treat as environment config, not client secret. |
+| `GA4_API_SECRET` | GA4 Measurement Protocol API secret | Keep private in backend env only. |
+
 Generate a 32-byte base64 key:
 
 ```bash
@@ -42,6 +55,15 @@ Required:
 | `NEXT_PUBLIC_MEDUSA_BACKEND_URL` | Public URL of the backend Store API. |
 | `NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY` | Medusa publishable API key. |
 | `NEXT_PUBLIC_MEDUSA_REGION_ID` | Optional fixed region id. |
+
+Optional analytics and plugin runtime:
+
+| Name | Purpose |
+| --- | --- |
+| `NEXT_PUBLIC_GA4_MEASUREMENT_ID` | Enables GA4 storefront script injection when non-empty. |
+| `NEXT_PUBLIC_HOTJAR_SITE_ID` | Enables Hotjar storefront script injection when non-empty. |
+| `NEXT_PUBLIC_HOTJAR_SNIPPET_VERSION` | Hotjar snippet version, default `6`. |
+| `NEXT_PUBLIC_PLATFORM_DISABLED_PLUGINS` | Comma-separated plugin IDs to disable on storefront (for example `analytics-hotjar,analytics-ga4`). |
 
 Do not place payment provider secrets or encryption keys in storefront env.
 

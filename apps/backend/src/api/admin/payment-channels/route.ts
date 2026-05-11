@@ -54,6 +54,14 @@ export const POST = async (
   paymentRouter.assertProviderRegistered(
     req.body.provider_code || req.body.code
   )
+  const currency = normalizeCurrencyCode(req.body.currency)
+
+  if (typeof req.body.currency !== "undefined" && req.body.currency !== null && !currency) {
+    res.status(400).json({
+      message: "currency must be a valid 3-letter code",
+    })
+    return
+  }
 
   const channel = await paymentRouter.createPaymentChannels({
     code: req.body.code,
@@ -64,7 +72,7 @@ export const POST = async (
     priority: req.body.priority ?? 100,
     min_amount: req.body.min_amount ?? null,
     max_amount: req.body.max_amount ?? null,
-    currency: req.body.currency || null,
+    currency: currency || null,
     provider_code: req.body.provider_code || req.body.code,
     config_json: req.body.config_json || null,
     health_status: req.body.health_status || "healthy",
@@ -73,4 +81,14 @@ export const POST = async (
   res.status(201).json({
     channel,
   })
+}
+
+function normalizeCurrencyCode(value: unknown) {
+  if (typeof value !== "string") {
+    return ""
+  }
+
+  const normalized = value.trim().toLowerCase()
+
+  return /^[a-z]{3}$/.test(normalized) ? normalized : ""
 }

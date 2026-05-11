@@ -8,6 +8,7 @@ import {
   updateLineItem,
 } from "@/lib/medusa"
 import { formatMoney } from "@/lib/format"
+import { emitStoreAnalyticsEvent, minorToDecimal } from "@/lib/analytics"
 import type { Cart } from "@/lib/types"
 
 const CART_ID_KEY = "store_cart_id"
@@ -38,6 +39,28 @@ export function CartView() {
 
     loadCart()
   }, [])
+
+  useEffect(() => {
+    if (!cart?.id || !cart.items?.length) {
+      return
+    }
+
+    emitStoreAnalyticsEvent(
+      "view_cart",
+      {
+        currency: cart.currency_code || "USD",
+        value: minorToDecimal(cart.total || 0, cart.currency_code || "USD"),
+        items: cart.items.map((item) => ({
+          item_id: item.variant_id || item.id,
+          item_name: item.title || "Digital product",
+          quantity: item.quantity || 1,
+        })),
+      },
+      {
+        dedupeKey: `view_cart:${cart.id}:${cart.total || 0}`,
+      }
+    )
+  }, [cart?.currency_code, cart?.id, cart?.items, cart?.total])
 
   async function changeQuantity(lineItemId: string, quantity: number) {
     if (!cart) {

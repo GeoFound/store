@@ -66,6 +66,9 @@ This creates a cart, reserves inventory, confirms manual payment through the web
 10. Submit an after-sales request.
 11. Process after-sales request through Admin after-sales page or Admin API.
 12. Check Admin audit logs page contains sensitive operations.
+13. If analytics is enabled, check Admin analytics page (`/app/analytics`) shows:
+    - `begin_checkout`/`purchase` related events
+    - destination dispatch rows with expected status transitions (`pending` -> `delivered` or retry states)
 
 ## Local URLs
 

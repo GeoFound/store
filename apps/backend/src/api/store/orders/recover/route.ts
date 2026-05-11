@@ -1,7 +1,10 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+import type { ILockingModule } from "@medusajs/framework/types"
+import { MedusaError, Modules } from "@medusajs/framework/utils"
 import GuestOrderAccessModuleService from "../../../../modules/guest-order-access/service"
 import { GUEST_ORDER_ACCESS_MODULE } from "../../../../modules/guest-order-access"
 import { ensureGuestOrderAccessHooksRegistered } from "../../../../modules/guest-order-access/hooks"
+import { ensureAnalyticsGa4HooksRegistered } from "../../../../modules/analytics-ga4/hooks"
 import { emitOrderAccessRecoveryCodeCreatedEvent } from "../../../../platform/events"
 import { emitAuditLog } from "../../../../utils/audit-log"
 import { getRequestAuditContext } from "../../../../utils/request-audit"
@@ -21,6 +24,7 @@ export const POST = async (
   const guestOrderAccess: GuestOrderAccessModuleService = req.scope.resolve(
     GUEST_ORDER_ACCESS_MODULE
   )
+  const locking: ILockingModule = req.scope.resolve(Modules.LOCKING)
   const { ipAddress, userAgent } = getRequestAuditContext(req)
   const order = await retrieveStoreOrderDetail(req.scope, body.order_id || "", [
     "id",
@@ -34,15 +38,40 @@ export const POST = async (
     return
   }
 
-  const recovery = await guestOrderAccess.createRecoveryCode({
-    orderId: String(order.id),
-    customerEmail: String(order.email),
-    metadata: {
-      source: "store_order_recovery",
-    },
-  })
+  const lockKey = `order-recovery-request:${String(order.id)}:${normalizeEmail(order.email)}`
+  let recovery
+
+  try {
+    recovery = await locking.execute(
+      lockKey,
+      async () =>
+        guestOrderAccess.createRecoveryCode({
+          orderId: String(order.id),
+          customerEmail: String(order.email),
+          metadata: {
+            source: "store_order_recovery",
+          },
+        }),
+      {
+        timeout: 30,
+      }
+    )
+  } catch (error) {
+    if (
+      error instanceof MedusaError &&
+      error.type === MedusaError.Types.NOT_ALLOWED
+    ) {
+      res.status(429).json({
+        message: error.message,
+      })
+      return
+    }
+
+    throw error
+  }
 
   ensureGuestOrderAccessHooksRegistered()
+  ensureAnalyticsGa4HooksRegistered()
   await emitOrderAccessRecoveryCodeCreatedEvent(req.scope, {
     orderId: String(order.id),
     customerEmail: String(order.email),

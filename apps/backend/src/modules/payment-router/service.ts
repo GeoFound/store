@@ -44,6 +44,7 @@ class PaymentRouterModuleService extends MedusaService({
     currency?: string
   }) {
     await this.ensureDefaultChannels()
+    const currency = normalizeCurrencyCode(input?.currency)
 
     const channels = await this.listPaymentChannels(
       {
@@ -65,7 +66,9 @@ class PaymentRouterModuleService extends MedusaService({
         return false
       }
 
-      if (input?.currency && channel.currency && channel.currency !== input.currency) {
+      const channelCurrency = normalizeCurrencyCode(channel.currency)
+
+      if (currency && channelCurrency && channelCurrency !== currency) {
         return false
       }
 
@@ -90,9 +93,18 @@ class PaymentRouterModuleService extends MedusaService({
   }
 
   async createPaymentAttemptForCart(input: CreatePaymentAttemptInput) {
+    const currency = normalizeCurrencyCode(input.currency)
+
+    if (!currency) {
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        "Payment currency must be a valid 3-letter code"
+      )
+    }
+
     const channels = await this.listAvailablePaymentChannels({
       amount: input.amount,
-      currency: input.currency,
+      currency,
     })
 
     const channel = channels.find((item) => item.code === input.paymentMethod)
@@ -116,7 +128,7 @@ class PaymentRouterModuleService extends MedusaService({
     const providerResult = await provider.createPayment({
       cartId: input.cartId,
       amount: input.amount,
-      currency: input.currency,
+      currency,
       paymentMethod: input.paymentMethod,
       customerEmail: input.customerEmail,
       metadata: input.metadata,
@@ -130,7 +142,7 @@ class PaymentRouterModuleService extends MedusaService({
       provider_code: channel.provider_code,
       provider_order_id: providerResult.providerOrderId,
       amount: input.amount,
-      currency: input.currency,
+      currency,
       status: "pending",
       payment_url: providerResult.paymentUrl || null,
       qr_code_url: providerResult.qrCodeUrl || null,
@@ -288,3 +300,13 @@ class PaymentRouterModuleService extends MedusaService({
 }
 
 export default PaymentRouterModuleService
+
+function normalizeCurrencyCode(value: unknown) {
+  if (typeof value !== "string") {
+    return ""
+  }
+
+  const normalized = value.trim().toLowerCase()
+
+  return /^[a-z]{3}$/.test(normalized) ? normalized : ""
+}

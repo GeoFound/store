@@ -15,7 +15,9 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       ? query.amount
       : undefined
   const currency =
-    typeof query.currency === "string" ? query.currency.trim() : undefined
+    typeof query.currency === "string"
+      ? query.currency.trim().toLowerCase()
+      : undefined
 
   const channels = await paymentRouter.listAvailablePaymentChannels({
     amount,

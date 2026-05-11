@@ -30,6 +30,11 @@ sudo APP_ROOT=/opt/store APP_USER=store bash scripts/deploy/bootstrap-vps.sh
 - `/opt/store/shared/backend.env`
 - `/opt/store/shared/storefront.env`
 
+If analytics plugins are enabled in production, also fill:
+
+- backend: `ANALYTICS_*`, `GA4_ENABLED`, `GA4_MEASUREMENT_ID`, `GA4_API_SECRET`
+- storefront: `NEXT_PUBLIC_GA4_MEASUREMENT_ID`, `NEXT_PUBLIC_HOTJAR_SITE_ID`, `NEXT_PUBLIC_HOTJAR_SNIPPET_VERSION`
+
 3. Install systemd units (run as root on server):
 
 ```bash

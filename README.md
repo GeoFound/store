@@ -16,6 +16,8 @@
 - [Environment variables](docs/ops/environment.md)
 - [Deployment guide](docs/ops/deployment.md)
 - [Production runbook](docs/ops/production-runbook.md)
+- [Marketing engine](docs/marketing-engine.md)
+- [Analytics module](docs/analytics.md)
 - [Backup and restore](docs/ops/backup-restore.md)
 - [Local acceptance](docs/ops/local-acceptance.md)
 - [Plugin platform task](docs/roadmap/plugin-platform.md)
