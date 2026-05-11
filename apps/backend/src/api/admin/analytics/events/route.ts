@@ -3,8 +3,16 @@ import {
   ANALYTICS_CORE_MODULE,
 } from "../../../../modules/analytics-core"
 import type AnalyticsCoreModuleService from "../../../../modules/analytics-core/service"
+import { isPlatformPluginEnabled } from "../../../../platform/runtime"
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
+  if (!isPlatformPluginEnabled("analytics-core")) {
+    res.status(503).json({
+      message: "Analytics core plugin is disabled",
+    })
+    return
+  }
+
   const analytics: AnalyticsCoreModuleService = req.scope.resolve(
     ANALYTICS_CORE_MODULE
   )

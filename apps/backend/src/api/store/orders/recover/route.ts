@@ -3,9 +3,8 @@ import type { ILockingModule } from "@medusajs/framework/types"
 import { MedusaError, Modules } from "@medusajs/framework/utils"
 import GuestOrderAccessModuleService from "../../../../modules/guest-order-access/service"
 import { GUEST_ORDER_ACCESS_MODULE } from "../../../../modules/guest-order-access"
-import { ensureGuestOrderAccessHooksRegistered } from "../../../../modules/guest-order-access/hooks"
-import { ensureAnalyticsGa4HooksRegistered } from "../../../../modules/analytics-ga4/hooks"
 import { emitOrderAccessRecoveryCodeCreatedEvent } from "../../../../platform/events"
+import { isPlatformPluginEnabled } from "../../../../platform/runtime"
 import { emitAuditLog } from "../../../../utils/audit-log"
 import { getRequestAuditContext } from "../../../../utils/request-audit"
 import { normalizeEmail, retrieveStoreOrderDetail } from "../../../../utils/store-order"
@@ -20,6 +19,13 @@ export const POST = async (
   res: MedusaResponse
 ) => {
   const body = (req.validatedBody || req.body) as RecoverOrderBody
+
+  if (!isPlatformPluginEnabled("guest-order-access")) {
+    res.status(503).json({
+      message: "Guest order access is unavailable",
+    })
+    return
+  }
 
   const guestOrderAccess: GuestOrderAccessModuleService = req.scope.resolve(
     GUEST_ORDER_ACCESS_MODULE
@@ -70,8 +76,6 @@ export const POST = async (
     throw error
   }
 
-  ensureGuestOrderAccessHooksRegistered()
-  ensureAnalyticsGa4HooksRegistered()
   await emitOrderAccessRecoveryCodeCreatedEvent(req.scope, {
     orderId: String(order.id),
     customerEmail: String(order.email),

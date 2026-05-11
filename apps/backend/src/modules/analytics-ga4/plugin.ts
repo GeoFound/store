@@ -3,7 +3,13 @@ import type { PluginManifest } from "../../platform/contracts"
 export const ANALYTICS_GA4_PLUGIN_MANIFEST: PluginManifest = {
   id: "analytics-ga4",
   version: "1.0.0",
-  capabilities: ["hook-subscriber", "background-job", "storefront-slot"],
+  capabilities: ["hook-subscriber", "analytics-destination"],
+  dependencies: [
+    {
+      id: "analytics-core",
+      version: "1.x",
+    },
+  ],
   enabledByDefault: true,
   migrationsOwner: "analytics-core",
   title: "GA4 Analytics",

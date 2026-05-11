@@ -3,10 +3,7 @@ import type { ILockingModule } from "@medusajs/framework/types"
 import { Modules } from "@medusajs/framework/utils"
 import GuestOrderAccessModuleService from "../../../../../modules/guest-order-access/service"
 import { GUEST_ORDER_ACCESS_MODULE } from "../../../../../modules/guest-order-access"
-import { ensureSupportAuditHooksRegistered } from "../../../../../modules/support-audit/hooks"
-import { ensureAnalyticsGa4HooksRegistered } from "../../../../../modules/analytics-ga4/hooks"
 import { emitOrderAccessTokenIssuedEvent } from "../../../../../platform/events"
-import { ensurePlatformObservabilityHooksRegistered } from "../../../../../platform/observability"
 import { getOrderAccessProvider } from "../../../../../platform/order-access"
 import { getRequestAuditContext } from "../../../../../utils/request-audit"
 import { retrieveStoreOrderDetail } from "../../../../../utils/store-order"
@@ -22,10 +19,6 @@ export const POST = async (
 ) => {
   const body = (req.validatedBody || req.body) as VerifyRecoveryBody
 
-  const guestOrderAccess: GuestOrderAccessModuleService = req.scope.resolve(
-    GUEST_ORDER_ACCESS_MODULE
-  )
-  const locking: ILockingModule = req.scope.resolve(Modules.LOCKING)
   const orderAccess = getOrderAccessProvider("guest-order-access")
 
   if (!orderAccess) {
@@ -35,6 +28,10 @@ export const POST = async (
     return
   }
 
+  const guestOrderAccess: GuestOrderAccessModuleService = req.scope.resolve(
+    GUEST_ORDER_ACCESS_MODULE
+  )
+  const locking: ILockingModule = req.scope.resolve(Modules.LOCKING)
   const { ipAddress, userAgent } = getRequestAuditContext(req)
   const order = await retrieveStoreOrderDetail(req.scope, body.order_id || "", [
     "id",
@@ -68,9 +65,6 @@ export const POST = async (
     }
   )
 
-  ensureSupportAuditHooksRegistered()
-  ensurePlatformObservabilityHooksRegistered()
-  ensureAnalyticsGa4HooksRegistered()
   await emitOrderAccessTokenIssuedEvent(req.scope, {
     orderId: String(order.id),
     customerEmail: String(order.email),

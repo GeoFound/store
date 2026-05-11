@@ -3,10 +3,7 @@ import type { ILockingModule } from "@medusajs/framework/types"
 import { MedusaError, Modules } from "@medusajs/framework/utils"
 import PaymentRouterModuleService from "../../../../../modules/payment-router/service"
 import { PAYMENT_ROUTER_MODULE } from "../../../../../modules/payment-router"
-import { ensureSupportAuditHooksRegistered } from "../../../../../modules/support-audit/hooks"
-import { ensureAnalyticsGa4HooksRegistered } from "../../../../../modules/analytics-ga4/hooks"
 import { emitOrderAccessTokenIssuedEvent } from "../../../../../platform/events"
-import { ensurePlatformObservabilityHooksRegistered } from "../../../../../platform/observability"
 import { getOrderAccessProvider } from "../../../../../platform/order-access"
 import {
   isClaimTemporarilyBlocked,
@@ -27,9 +24,6 @@ export const POST = async (
 ) => {
   const body = (req.validatedBody || req.body) as ClaimOrderAccessBody
 
-  const paymentRouter: PaymentRouterModuleService =
-    req.scope.resolve(PAYMENT_ROUTER_MODULE)
-  const locking: ILockingModule = req.scope.resolve(Modules.LOCKING)
   const orderAccess = getOrderAccessProvider("guest-order-access")
 
   if (!orderAccess) {
@@ -38,6 +32,10 @@ export const POST = async (
       "Order access provider is not available"
     )
   }
+
+  const paymentRouter: PaymentRouterModuleService =
+    req.scope.resolve(PAYMENT_ROUTER_MODULE)
+  const locking: ILockingModule = req.scope.resolve(Modules.LOCKING)
 
   const { ipAddress, userAgent } = getRequestAuditContext(req)
   const lockKey = `payment-attempt-claim:${req.params.id}`
@@ -122,9 +120,6 @@ export const POST = async (
     }
   )
 
-  ensureSupportAuditHooksRegistered()
-  ensurePlatformObservabilityHooksRegistered()
-  ensureAnalyticsGa4HooksRegistered()
   await emitOrderAccessTokenIssuedEvent(req.scope, {
     orderId: claimResult.orderId,
     customerEmail: claimResult.customerEmail,

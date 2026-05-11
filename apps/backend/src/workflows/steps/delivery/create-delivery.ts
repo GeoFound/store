@@ -5,7 +5,7 @@ import { DIGITAL_DELIVERY_MODULE } from "../../../modules/digital-delivery"
 import PaymentRouterModuleService from "../../../modules/payment-router/service"
 import { PAYMENT_ROUTER_MODULE } from "../../../modules/payment-router"
 import { emitDeliveryCreatedEvent } from "../../../platform/events"
-import { ensurePlatformObservabilityHooksRegistered } from "../../../platform/observability"
+import { ensurePlatformIntegrationsRegistered } from "../../../platform/integrations"
 import { resolveProductTemplate } from "../../../platform/product-templates"
 
 export type CreateDeliveryStepInput = {
@@ -30,7 +30,7 @@ export const createDeliveryStep = createStep(
     input: CreateDeliveryStepInput,
     { container }: { container: MedusaContainer }
   ) => {
-    ensurePlatformObservabilityHooksRegistered()
+    ensurePlatformIntegrationsRegistered()
 
     const deliveryService: DigitalDeliveryModuleService = container.resolve(
       DIGITAL_DELIVERY_MODULE

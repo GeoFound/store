@@ -15,6 +15,10 @@ import {
   type PlatformRegistry,
 } from "./registry"
 import { registerDefaultPlatformCapabilities } from "./defaults"
+import {
+  ensurePlatformIntegrationsRegistered,
+  resetPlatformIntegrationsForTests,
+} from "./integrations"
 
 export type PlatformRuntimeOptions = {
   includeDefaults?: boolean
@@ -28,6 +32,7 @@ export type PlatformRuntimeOptions = {
 
 let runtimeRegistry: PlatformRegistry | null = null
 let runtimeHooks: PlatformHookRegistry | null = null
+let runtimeShouldRegisterDefaultIntegrations = true
 
 export function createPlatformRuntime(options?: PlatformRuntimeOptions) {
   const registry =
@@ -68,7 +73,13 @@ export function createPlatformRuntime(options?: PlatformRuntimeOptions) {
 
 export function getPlatformRuntime() {
   if (!runtimeRegistry) {
-    runtimeRegistry = createPlatformRuntime(parsePlatformRuntimeOptionsFromEnv())
+    const options = parsePlatformRuntimeOptionsFromEnv()
+    runtimeRegistry = createPlatformRuntime(options)
+    runtimeShouldRegisterDefaultIntegrations = options.includeDefaults !== false
+  }
+
+  if (runtimeShouldRegisterDefaultIntegrations) {
+    ensurePlatformIntegrationsRegistered()
   }
 
   return runtimeRegistry
@@ -76,6 +87,12 @@ export function getPlatformRuntime() {
 
 export function configurePlatformRuntime(options?: PlatformRuntimeOptions) {
   runtimeRegistry = createPlatformRuntime(options)
+  runtimeShouldRegisterDefaultIntegrations = options?.includeDefaults !== false
+
+  if (runtimeShouldRegisterDefaultIntegrations) {
+    ensurePlatformIntegrationsRegistered()
+  }
+
   return runtimeRegistry
 }
 
@@ -117,7 +134,12 @@ export async function emitPlatformHook<T>(
   hook: PlatformHookName,
   input: T
 ) {
+  ensurePlatformIntegrationsRegistered()
   await getPlatformHookRuntime().emitHook(hook, input)
+}
+
+export function isPlatformPluginEnabled(pluginId: string) {
+  return getPlatformRuntime().isPluginEnabled(pluginId)
 }
 
 export function installPlatformPlugin<T>(registration: PluginRegistration<T>) {
@@ -146,8 +168,14 @@ export function parsePlatformRuntimeOptionsFromEnv(
   env: Record<string, string | undefined> = process.env
 ): PlatformRuntimeOptions {
   return {
-    enabledPlugins: splitCommaList(env.PLATFORM_ENABLED_PLUGINS),
-    disabledPlugins: splitCommaList(env.PLATFORM_DISABLED_PLUGINS),
+    enabledPlugins: mergeStringLists(
+      splitCommaList(env.PLATFORM_ENABLED_PLUGINS),
+      splitCommaList(env.NEXT_PUBLIC_PLATFORM_ENABLED_PLUGINS)
+    ),
+    disabledPlugins: mergeStringLists(
+      splitCommaList(env.PLATFORM_DISABLED_PLUGINS),
+      splitCommaList(env.NEXT_PUBLIC_PLATFORM_DISABLED_PLUGINS)
+    ),
     enabledContracts: parseCapabilityContractMap(
       env.PLATFORM_ENABLED_CONTRACTS
     ),
@@ -160,6 +188,8 @@ export function parsePlatformRuntimeOptionsFromEnv(
 export function resetPlatformRuntimeForTests() {
   runtimeRegistry = null
   runtimeHooks = null
+  runtimeShouldRegisterDefaultIntegrations = true
+  resetPlatformIntegrationsForTests()
 }
 
 function splitCommaList(value?: string) {
@@ -167,6 +197,11 @@ function splitCommaList(value?: string) {
     .split(",")
     .map((entry) => entry.trim())
     .filter(Boolean)
+}
+
+function mergeStringLists(...values: string[][]) {
+  const merged = values.flat().filter(Boolean)
+  return merged.length ? Array.from(new Set(merged)) : undefined
 }
 
 function parseCapabilityContractMap(value?: string) {

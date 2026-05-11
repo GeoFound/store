@@ -165,6 +165,60 @@ describe("platform registry", () => {
     expect(registry.isPluginEnabled("plugin.unknown")).toBe(true)
   })
 
+  it("disables dependent plugin contracts when a required dependency is disabled", () => {
+    const registry = createPlatformRegistry()
+
+    registry.registerPlugin({
+      manifest: {
+        id: "plugin.core",
+        version: "1.0.0",
+        capabilities: [],
+        enabledByDefault: true,
+      },
+    })
+
+    registry.registerPlugin({
+      manifest: {
+        id: "plugin.dependent",
+        version: "1.0.0",
+        capabilities: ["payment-provider"],
+        enabledByDefault: true,
+        dependencies: [
+          {
+            id: "plugin.core",
+          },
+        ],
+      },
+      contracts: [
+        {
+          capability: "payment-provider",
+          name: "dependent-provider",
+          pluginId: "plugin.dependent",
+          version: "v1",
+          implementation: { code: "dependent-provider" },
+        },
+      ],
+    })
+
+    expect(registry.isPluginEnabled("plugin.dependent")).toBe(true)
+    expect(
+      registry.resolveContract<{ code: string }>(
+        "payment-provider",
+        "dependent-provider"
+      )?.code
+    ).toBe("dependent-provider")
+
+    registry.setPluginEnabled("plugin.core", false)
+
+    expect(registry.isPluginEnabled("plugin.dependent")).toBe(false)
+    expect(
+      registry.resolveContract<{ code: string }>(
+        "payment-provider",
+        "dependent-provider"
+      )
+    ).toBeUndefined()
+  })
+
   it("registers built-ins and falls back to noop when requested", () => {
     getPlatformRuntime()
 
@@ -256,6 +310,7 @@ describe("platform registry", () => {
 
   it("skips hook subscribers when disabled by hook-subscriber contract", async () => {
     configurePlatformRuntime({
+      disabledPlugins: ["support-audit"],
       disabledContracts: {
         "hook-subscriber": ["test.audit.hook"],
       },

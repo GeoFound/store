@@ -5,13 +5,24 @@ import {
   ensureSupportAuditHooksRegistered,
   resetSupportAuditHooksForTests,
 } from "../hooks"
-import { resetPlatformRuntimeForTests } from "../../../platform/runtime"
+import {
+  configurePlatformRuntime,
+  resetPlatformRuntimeForTests,
+} from "../../../platform/runtime"
 import { emitAuditLog } from "../../../utils/audit-log"
 
 describe("support audit hook subscriber", () => {
   beforeEach(() => {
     resetPlatformRuntimeForTests()
     resetSupportAuditHooksForTests()
+    configurePlatformRuntime({
+      disabledPlugins: [
+        "platform.observability",
+        "guest-order-access",
+        "marketing-engine",
+        "analytics-ga4",
+      ],
+    })
   })
 
   it("routes audit log emission through the support-audit hook subscriber", async () => {

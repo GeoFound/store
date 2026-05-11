@@ -28,6 +28,13 @@ Global plugin toggle:
 PLATFORM_DISABLED_PLUGINS=marketing-engine
 ```
 
+Backend runtime merges both:
+
+- `PLATFORM_ENABLED_PLUGINS` + `NEXT_PUBLIC_PLATFORM_ENABLED_PLUGINS`
+- `PLATFORM_DISABLED_PLUGINS` + `NEXT_PUBLIC_PLATFORM_DISABLED_PLUGINS`
+
+Duplicate IDs are deduplicated.
+
 Disable specific strategies:
 
 ```env
@@ -75,9 +82,13 @@ Behavior:
 - `GET/POST /admin/marketing/referral-links`
 - `GET /admin/marketing/touchpoints`
 
+When `marketing-engine` is disabled, these APIs return `503`.
+
 ## Store APIs
 
 - `GET /store/marketing/campaigns`
+
+When `marketing-engine` is disabled, this API also returns `503`.
 
 ## Admin UI
 

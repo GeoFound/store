@@ -1,5 +1,6 @@
 export const PLATFORM_CAPABILITIES = [
   "payment-provider",
+  "analytics-destination",
   "inventory-handler",
   "delivery-handler",
   "order-access-provider",
@@ -21,6 +22,7 @@ export const PLATFORM_CAPABILITY_VERSIONS: Record<
   PlatformContractVersion[]
 > = {
   "payment-provider": ["v1"],
+  "analytics-destination": ["v1"],
   "inventory-handler": ["v1"],
   "delivery-handler": ["v1"],
   "order-access-provider": ["v1"],

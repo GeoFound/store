@@ -149,6 +149,22 @@ describe("platform lifecycle", () => {
     })
   })
 
+  it("merges backend and public plugin env lists without duplicates", () => {
+    expect(
+      parsePlatformRuntimeOptionsFromEnv({
+        PLATFORM_ENABLED_PLUGINS: "plugin.a,plugin.b",
+        NEXT_PUBLIC_PLATFORM_ENABLED_PLUGINS: "plugin.b,plugin.c",
+        PLATFORM_DISABLED_PLUGINS: "plugin.x",
+        NEXT_PUBLIC_PLATFORM_DISABLED_PLUGINS: "plugin.x,plugin.y",
+      })
+    ).toEqual({
+      enabledPlugins: ["plugin.a", "plugin.b", "plugin.c"],
+      disabledPlugins: ["plugin.x", "plugin.y"],
+      enabledContracts: undefined,
+      disabledContracts: undefined,
+    })
+  })
+
   it("captures and restores full runtime snapshots", () => {
     const runtime = configurePlatformRuntime()
 

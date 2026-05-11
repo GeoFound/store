@@ -7,6 +7,7 @@ import {
 } from "@medusajs/framework/http"
 import { MedusaError } from "@medusajs/framework/utils"
 import { z, ZodError, type ZodTypeAny } from "zod"
+import { ensurePlatformIntegrationsRegistered } from "../platform/integrations"
 
 const limitSchema = z.coerce.number().int().min(1).max(200).optional()
 
@@ -177,6 +178,19 @@ function validateAndTransformSimpleQuery(schema: ZodTypeAny) {
 
 export default defineMiddlewares({
   routes: [
+    {
+      matcher: /.*/,
+      middlewares: [
+        (
+          _req: MedusaRequest,
+          _res: MedusaResponse,
+          next: MedusaNextFunction
+        ) => {
+          ensurePlatformIntegrationsRegistered()
+          next()
+        },
+      ],
+    },
     {
       matcher: "/hooks/payment/:provider_code",
       methods: ["POST"],

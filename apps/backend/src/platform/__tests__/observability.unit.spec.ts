@@ -5,12 +5,23 @@ import {
   ensurePlatformObservabilityHooksRegistered,
   resetPlatformObservabilityForTests,
 } from "../observability"
-import { resetPlatformRuntimeForTests } from "../runtime"
+import {
+  configurePlatformRuntime,
+  resetPlatformRuntimeForTests,
+} from "../runtime"
 
 describe("platform observability hooks", () => {
   beforeEach(() => {
     resetPlatformRuntimeForTests()
     resetPlatformObservabilityForTests()
+    configurePlatformRuntime({
+      disabledPlugins: [
+        "support-audit",
+        "guest-order-access",
+        "marketing-engine",
+        "analytics-ga4",
+      ],
+    })
   })
 
   it("logs finalized payment events through the observability subscriber", async () => {

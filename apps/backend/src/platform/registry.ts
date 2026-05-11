@@ -95,11 +95,7 @@ export class PlatformRegistry {
   }
 
   isPluginEnabled(pluginId: string) {
-    if (this.pluginOverrides.has(pluginId)) {
-      return Boolean(this.pluginOverrides.get(pluginId))
-    }
-
-    return Boolean(this.plugins.get(pluginId)?.enabled)
+    return this.isPluginEnabledInternal(pluginId, new Set())
   }
 
   listContracts(capability: PlatformCapabilityName) {
@@ -246,8 +242,7 @@ export class PlatformRegistry {
         return false
       }
 
-      const plugin = this.plugins.get(contract.pluginId)
-      if (plugin && !plugin.enabled) {
+      if (!this.isPluginEnabled(contract.pluginId)) {
         return false
       }
 
@@ -330,6 +325,69 @@ export class PlatformRegistry {
     name: string
   ) {
     return this.contractOverrides.get(capability)?.get(name)
+  }
+
+  private isPluginEnabledInternal(pluginId: string, visiting: Set<string>) {
+    if (this.pluginOverrides.has(pluginId)) {
+      const override = Boolean(this.pluginOverrides.get(pluginId))
+
+      if (!override) {
+        return false
+      }
+    }
+
+    const plugin = this.plugins.get(pluginId)
+
+    if (!plugin) {
+      return Boolean(this.pluginOverrides.get(pluginId))
+    }
+
+    const explicitlyEnabled = this.pluginOverrides.has(pluginId)
+      ? Boolean(this.pluginOverrides.get(pluginId))
+      : Boolean(plugin.enabled)
+
+    if (!explicitlyEnabled) {
+      return false
+    }
+
+    if (visiting.has(pluginId)) {
+      return false
+    }
+
+    visiting.add(pluginId)
+
+    for (const dependency of plugin.manifest.dependencies || []) {
+      const installed = this.plugins.get(dependency.id)
+
+      if (!installed) {
+        if (dependency.optional) {
+          continue
+        }
+
+        visiting.delete(pluginId)
+        return false
+      }
+
+      if (
+        dependency.version &&
+        !matchesDependencyVersion(installed.manifest.version, dependency.version)
+      ) {
+        visiting.delete(pluginId)
+        return false
+      }
+
+      if (dependency.optional) {
+        continue
+      }
+
+      if (!this.isPluginEnabledInternal(dependency.id, visiting)) {
+        visiting.delete(pluginId)
+        return false
+      }
+    }
+
+    visiting.delete(pluginId)
+    return true
   }
 
   private validatePluginRegistration<T>(registration: PluginRegistration<T>) {

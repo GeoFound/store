@@ -37,6 +37,12 @@ Optional analytics and observability:
 | `GA4_ENABLED` | Enable GA4 backend dispatch destination | Requires both `GA4_MEASUREMENT_ID` and `GA4_API_SECRET`. |
 | `GA4_MEASUREMENT_ID` | GA4 Measurement ID (`G-XXXX`) for Measurement Protocol | Treat as environment config, not client secret. |
 | `GA4_API_SECRET` | GA4 Measurement Protocol API secret | Keep private in backend env only. |
+| `PLATFORM_ENABLED_PLUGINS` | Backend plugin allow-list (comma-separated IDs). | Merged with `NEXT_PUBLIC_PLATFORM_ENABLED_PLUGINS`; duplicates removed. |
+| `PLATFORM_DISABLED_PLUGINS` | Backend plugin deny-list (comma-separated IDs). | Merged with `NEXT_PUBLIC_PLATFORM_DISABLED_PLUGINS`; duplicates removed. |
+| `PLATFORM_ENABLED_CONTRACTS` | Capability contract allow-list (`capability:name1,name2;...`). | Applied before plugin registration for deterministic startup behavior. |
+| `PLATFORM_DISABLED_CONTRACTS` | Capability contract deny-list (`capability:name1,name2;...`). | Useful for fine-grained strategy/hook shutdown without disabling whole plugin. |
+
+Plugin dependency enablement is evaluated at runtime: if a plugin's required dependency is disabled, the dependent plugin is treated as disabled automatically.
 
 Generate a 32-byte base64 key:
 
@@ -63,6 +69,7 @@ Optional analytics and plugin runtime:
 | `NEXT_PUBLIC_GA4_MEASUREMENT_ID` | Enables GA4 storefront script injection when non-empty. |
 | `NEXT_PUBLIC_HOTJAR_SITE_ID` | Enables Hotjar storefront script injection when non-empty. |
 | `NEXT_PUBLIC_HOTJAR_SNIPPET_VERSION` | Hotjar snippet version, default `6`. |
+| `NEXT_PUBLIC_PLATFORM_ENABLED_PLUGINS` | Storefront plugin allow-list (comma-separated IDs). |
 | `NEXT_PUBLIC_PLATFORM_DISABLED_PLUGINS` | Comma-separated plugin IDs to disable on storefront (for example `analytics-hotjar,analytics-ga4`). |
 
 Do not place payment provider secrets or encryption keys in storefront env.

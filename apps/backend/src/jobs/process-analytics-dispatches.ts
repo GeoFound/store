@@ -9,14 +9,21 @@ import {
   getAnalyticsDestination,
   listAnalyticsDestinations,
 } from "../modules/analytics-core/destinations/registry"
-import { ensureAnalyticsGa4DestinationRegistered } from "../modules/analytics-ga4/destination"
+import {
+  isPlatformPluginEnabled,
+} from "../platform/runtime"
+import { ensurePlatformIntegrationsRegistered } from "../platform/integrations"
 
 export default async function processAnalyticsDispatches(container: MedusaContainer) {
-  ensureAnalyticsGa4DestinationRegistered()
+  ensurePlatformIntegrationsRegistered()
 
   const config = getAnalyticsDispatchConfig()
 
   if (!config.enabled) {
+    return
+  }
+
+  if (!isPlatformPluginEnabled("analytics-core")) {
     return
   }
 

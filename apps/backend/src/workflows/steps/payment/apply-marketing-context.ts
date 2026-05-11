@@ -5,13 +5,15 @@ import type {
   MarketingResolvedContext,
 } from "../../../platform/marketing"
 import { resolveMarketingContext } from "../../../platform/marketing"
-import { getPlatformRuntime } from "../../../platform/runtime"
+import {
+  ensurePlatformIntegrationsRegistered,
+} from "../../../platform/integrations"
+import { isPlatformPluginEnabled } from "../../../platform/runtime"
 import PaymentRouterModuleService from "../../../modules/payment-router/service"
 import { PAYMENT_ROUTER_MODULE } from "../../../modules/payment-router"
 import { MARKETING_ENGINE_MODULE } from "../../../modules/marketing-engine"
 import type MarketingEngineModuleService from "../../../modules/marketing-engine/service"
 import { handleMarketingAttemptClosed } from "../../../modules/marketing-engine/hooks"
-import { ensureMarketingStrategiesRegistered } from "../../../modules/marketing-engine/strategies/default"
 
 export type ApplyMarketingContextStepInput = {
   attemptId: string
@@ -30,16 +32,13 @@ export const applyMarketingContextStep = createStep(
     input: ApplyMarketingContextStepInput,
     { container }: { container: MedusaContainer }
   ) => {
-    ensureMarketingStrategiesRegistered()
+    ensurePlatformIntegrationsRegistered()
 
     const paymentRouter: PaymentRouterModuleService = container.resolve(
       PAYMENT_ROUTER_MODULE
     )
-    const marketing: MarketingEngineModuleService = container.resolve(
-      MARKETING_ENGINE_MODULE
-    )
 
-    if (!getPlatformRuntime().isPluginEnabled("marketing-engine")) {
+    if (!isPlatformPluginEnabled("marketing-engine")) {
       const attempt = await paymentRouter.retrievePaymentAttempt(input.attemptId)
 
       return new StepResponse({
@@ -47,6 +46,10 @@ export const applyMarketingContextStep = createStep(
         marketingContext: createEmptyMarketingContext(),
       })
     }
+
+    const marketing: MarketingEngineModuleService = container.resolve(
+      MARKETING_ENGINE_MODULE
+    )
 
     try {
       const normalizedContext = normalizeCheckoutContext(input.context)

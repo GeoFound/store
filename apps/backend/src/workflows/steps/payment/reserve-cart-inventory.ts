@@ -7,7 +7,7 @@ import PaymentRouterModuleService from "../../../modules/payment-router/service"
 import { PAYMENT_ROUTER_MODULE } from "../../../modules/payment-router"
 import { resolveProductFulfillmentPolicy } from "../../../platform/delivery"
 import { emitPaymentAttemptReservedEvent } from "../../../platform/events"
-import { ensurePlatformObservabilityHooksRegistered } from "../../../platform/observability"
+import { ensurePlatformIntegrationsRegistered } from "../../../platform/integrations"
 import {
   getCartItemMetadata,
   getCartItemProductType,
@@ -36,7 +36,7 @@ export const reserveCartInventoryStep = createStep(
     input: ReserveCartInventoryStepInput,
     { container }: { container: MedusaContainer }
   ) => {
-    ensurePlatformObservabilityHooksRegistered()
+    ensurePlatformIntegrationsRegistered()
 
     const paymentRouter: PaymentRouterModuleService = container.resolve(
       PAYMENT_ROUTER_MODULE

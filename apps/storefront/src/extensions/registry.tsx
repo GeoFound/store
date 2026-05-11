@@ -35,10 +35,14 @@ export function registerStorefrontExtension<TProps = Record<string, never>>(
 }
 
 export function listStorefrontExtensions(slot: StorefrontExtensionSlot) {
+  const enabledPlugins = getEnabledPluginIds()
   const disabledPlugins = getDisabledPluginIds()
 
   return (extensions.get(slot) || [])
     .filter((entry) => entry.enabled !== false)
+    .filter((entry) =>
+      enabledPlugins.size ? enabledPlugins.has(entry.pluginId) : true
+    )
     .filter((entry) => !disabledPlugins.has(entry.pluginId))
     .sort((a, b) => (a.order || 0) - (b.order || 0))
 }
@@ -58,17 +62,35 @@ export function resetStorefrontExtensionsForTests() {
 }
 
 function getDisabledPluginIds() {
-  const value =
-    typeof process !== "undefined"
-      ? process.env.NEXT_PUBLIC_PLATFORM_DISABLED_PLUGINS ||
-        process.env.PLATFORM_DISABLED_PLUGINS ||
-        ""
-      : ""
-
   return new Set(
-    value
-      .split(",")
-      .map((entry) => entry.trim())
-      .filter(Boolean)
+    typeof process !== "undefined"
+      ? mergePluginEnvLists(
+          process.env.PLATFORM_DISABLED_PLUGINS,
+          process.env.NEXT_PUBLIC_PLATFORM_DISABLED_PLUGINS
+        )
+      : []
   )
+}
+
+function getEnabledPluginIds() {
+  return new Set(
+    typeof process !== "undefined"
+      ? mergePluginEnvLists(
+          process.env.PLATFORM_ENABLED_PLUGINS,
+          process.env.NEXT_PUBLIC_PLATFORM_ENABLED_PLUGINS
+        )
+      : []
+  )
+}
+
+function mergePluginEnvLists(...values: Array<string | undefined>) {
+  const merged = values.flatMap(splitCommaList)
+  return Array.from(new Set(merged))
+}
+
+function splitCommaList(value?: string) {
+  return (value || "")
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean)
 }

@@ -8,7 +8,9 @@ This repository includes a decoupled analytics pipeline with plugin-style destin
   - Canonical event table: `analytics_event`
   - Per-destination dispatch table: `analytics_dispatch`
   - Idempotent event capture + retry/backoff delivery queue
+  - Plugin runtime owner for analytics APIs and dispatch job
 - `analytics-ga4` (backend + storefront plugin)
+  - Platform capability: `analytics-destination`
   - Backend dispatch destination to GA4 Measurement Protocol
   - Storefront GA4 script injection (`layout.body.end` slot)
 - `analytics-hotjar` (storefront plugin)
@@ -23,11 +25,23 @@ Disable plugins globally (backend plugin runtime):
 PLATFORM_DISABLED_PLUGINS=analytics-ga4,analytics-hotjar
 ```
 
+Backend runtime merges both:
+
+- `PLATFORM_ENABLED_PLUGINS` + `NEXT_PUBLIC_PLATFORM_ENABLED_PLUGINS`
+- `PLATFORM_DISABLED_PLUGINS` + `NEXT_PUBLIC_PLATFORM_DISABLED_PLUGINS`
+
+Duplicate IDs are deduplicated.
+
 Disable storefront plugin slots:
 
 ```env
 NEXT_PUBLIC_PLATFORM_DISABLED_PLUGINS=analytics-hotjar
 ```
+
+Dependency behavior:
+
+- `analytics-ga4` depends on `analytics-core`.
+- If `analytics-core` is disabled, `analytics-ga4` is treated as disabled automatically (hooks and destinations stop resolving).
 
 Analytics pipeline master switch:
 
@@ -62,6 +76,8 @@ Current instrumentation includes:
 - `GET /admin/analytics/dispatches`
 - `POST /admin/analytics/dispatches` (`dispatch_id`) for replay
 - Admin page: `/app/analytics`
+
+When `analytics-core` is disabled, these APIs return `503` instead of partially executing.
 
 ## GA4 Configuration
 

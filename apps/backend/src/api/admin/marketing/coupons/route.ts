@@ -1,6 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { MARKETING_ENGINE_MODULE } from "../../../../modules/marketing-engine"
 import type MarketingEngineModuleService from "../../../../modules/marketing-engine/service"
+import { isPlatformPluginEnabled } from "../../../../platform/runtime"
 
 type CreateCouponBody = {
   campaign_id?: string | null
@@ -15,6 +16,13 @@ type CreateCouponBody = {
 }
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
+  if (!isPlatformPluginEnabled("marketing-engine")) {
+    res.status(503).json({
+      message: "Marketing engine plugin is disabled",
+    })
+    return
+  }
+
   const marketing: MarketingEngineModuleService = req.scope.resolve(
     MARKETING_ENGINE_MODULE
   )
@@ -41,6 +49,13 @@ export const POST = async (
   req: MedusaRequest<CreateCouponBody>,
   res: MedusaResponse
 ) => {
+  if (!isPlatformPluginEnabled("marketing-engine")) {
+    res.status(503).json({
+      message: "Marketing engine plugin is disabled",
+    })
+    return
+  }
+
   const body = (req.validatedBody || req.body) as CreateCouponBody
 
   if (!body.code) {
