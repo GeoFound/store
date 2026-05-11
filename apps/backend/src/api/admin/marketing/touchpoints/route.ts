@@ -1,7 +1,6 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { MARKETING_ENGINE_MODULE } from "../../../../modules/marketing-engine"
-import type MarketingEngineModuleService from "../../../../modules/marketing-engine/service"
 import { isPlatformPluginEnabled } from "../../../../platform/runtime"
+import { resolveMarketingEngineService } from "../../../../platform/services"
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   if (!isPlatformPluginEnabled("marketing-engine")) {
@@ -11,9 +10,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     return
   }
 
-  const marketing: MarketingEngineModuleService = req.scope.resolve(
-    MARKETING_ENGINE_MODULE
-  )
+  const marketing = resolveMarketingEngineService(req.scope)
   const query = (req.validatedQuery || req.query) as {
     event_name?: string
     payment_attempt_id?: string

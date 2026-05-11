@@ -1,8 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import CredentialInventoryModuleService from "../../../../modules/credential-inventory/service"
-import { CREDENTIAL_INVENTORY_MODULE } from "../../../../modules/credential-inventory"
 import type { CreateCredentialBatchInput } from "../../../../modules/credential-inventory/types"
 import { resolveProductTemplate } from "../../../../platform/product-templates"
+import { resolveCredentialInventoryService } from "../../../../platform/services"
 
 type CreateBatchBody = {
   name?: string
@@ -24,9 +23,7 @@ type CreateBatchBody = {
 }
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
-  const inventory: CredentialInventoryModuleService = req.scope.resolve(
-    CREDENTIAL_INVENTORY_MODULE
-  )
+  const inventory = resolveCredentialInventoryService(req.scope)
 
   const batches = await inventory.listAccountBatches(
     {},
@@ -72,9 +69,7 @@ export const POST = async (
     return
   }
 
-  const inventory: CredentialInventoryModuleService = req.scope.resolve(
-    CREDENTIAL_INVENTORY_MODULE
-  )
+  const inventory = resolveCredentialInventoryService(req.scope)
   const productTemplate = resolveProductTemplate({
     code: req.body.template_code,
     metadata: req.body.metadata || null,

@@ -1,7 +1,25 @@
 import { MedusaError } from "@medusajs/framework/utils"
 import type { CreateOrderDTO } from "@medusajs/framework/types"
 
-type GenericRecord = Record<string, any>
+type GenericRecord = Record<string, unknown>
+
+type CartOrderSource = {
+  id?: string | null
+  region_id?: string | null
+  sales_channel_id?: string | null
+  email?: string | null
+  currency_code?: string | null
+  locale?: string | null
+  total?: number | string | null
+  metadata?: GenericRecord | null
+  customer?: {
+    id?: string | null
+  } | null
+  shipping_address?: GenericRecord | null
+  billing_address?: GenericRecord | null
+  items?: Array<GenericRecord | null | undefined>
+  [key: string]: unknown
+}
 
 export const CART_ORDER_QUERY_FIELDS = [
   "id",
@@ -49,22 +67,33 @@ export const CART_ORDER_QUERY_FIELDS = [
 ]
 
 export function buildOrderFromCart(input: {
-  cart: GenericRecord
+  cart: CartOrderSource
   customerId?: string | null
   transactionReferenceId?: string
 }) {
   const cart = input.cart
 
-  if (!cart.email) {
+  if (typeof cart.email !== "string" || !cart.email) {
     throw new MedusaError(
       MedusaError.Types.INVALID_DATA,
       "Cart email is required before order creation"
     )
   }
 
-  const items = (cart.items || []).map((item: GenericRecord) =>
-    buildOrderItem(item)
-  )
+  if (typeof cart.currency_code !== "string" || !cart.currency_code) {
+    throw new MedusaError(
+      MedusaError.Types.INVALID_DATA,
+      "Cart currency is required before order creation"
+    )
+  }
+
+  const customerId = toOptionalString(input.customerId) ||
+    toOptionalString(cart.customer?.id) ||
+    undefined
+
+  const items = (cart.items || [])
+    .filter((item): item is GenericRecord => Boolean(item))
+    .map((item) => buildOrderItem(item))
 
   if (!items.length) {
     throw new MedusaError(
@@ -74,9 +103,9 @@ export function buildOrderFromCart(input: {
   }
 
   return {
-    region_id: cart.region_id,
-    customer_id: input.customerId || cart.customer?.id || undefined,
-    sales_channel_id: cart.sales_channel_id,
+    region_id: toOptionalString(cart.region_id),
+    customer_id: customerId,
+    sales_channel_id: toOptionalString(cart.sales_channel_id),
     status: "pending",
     email: cart.email,
     currency_code: cart.currency_code,
@@ -94,7 +123,10 @@ export function buildOrderFromCart(input: {
       ? {
           transactions: [
             {
-              amount: cart.total ?? items.reduce(sumItemAmount, 0),
+              amount:
+                (typeof cart.total === "number"
+                  ? cart.total
+                  : Number(cart.total || 0)) || items.reduce(sumItemAmount, 0),
               currency_code: cart.currency_code,
               reference: "payment_attempt",
               reference_id: input.transactionReferenceId,
@@ -106,8 +138,10 @@ export function buildOrderFromCart(input: {
 }
 
 function buildOrderItem(item: GenericRecord) {
-  const variant = item.variant || {}
-  const product = variant.product || {}
+  const variant = toRecord(item.variant)
+  const product = toRecord(variant.product)
+  const productType = toRecord(product.type)
+  const productCollection = toRecord(product.collection)
 
   return {
     quantity: item.quantity,
@@ -118,16 +152,15 @@ function buildOrderItem(item: GenericRecord) {
     product_title: item.product_title || product.title,
     product_description: item.product_description || product.description,
     product_subtitle: item.product_subtitle || product.subtitle,
-    product_type: item.product_type || product.type?.value || null,
-    product_type_id: item.product_type_id || product.type?.id || null,
-    product_collection:
-      item.product_collection || product.collection?.title || null,
+    product_type: item.product_type || productType.value || null,
+    product_type_id: item.product_type_id || productType.id || null,
+    product_collection: item.product_collection || productCollection.title || null,
     product_handle: item.product_handle || product.handle,
     variant_id: item.variant_id || variant.id,
     variant_sku: item.variant_sku || variant.sku,
     variant_barcode: item.variant_barcode || variant.barcode,
     variant_title: item.variant_title || variant.title,
-    variant_option_values: item.variant_option_values || {},
+    variant_option_values: toRecord(item.variant_option_values),
     requires_shipping:
       typeof item.requires_shipping === "boolean"
         ? item.requires_shipping
@@ -141,23 +174,29 @@ function buildOrderItem(item: GenericRecord) {
     is_tax_inclusive: Boolean(item.is_tax_inclusive),
     compare_at_unit_price: item.compare_at_unit_price ?? null,
     unit_price: item.unit_price,
-    tax_lines: (item.tax_lines || []).map((taxLine: GenericRecord) => ({
-      description: taxLine.description,
-      tax_rate_id: taxLine.tax_rate_id,
-      code: taxLine.code,
-      rate: taxLine.rate,
-      provider_id: taxLine.provider_id,
-    })),
-    adjustments: (item.adjustments || []).map((adjustment: GenericRecord) => ({
-      code: adjustment.code,
-      amount: adjustment.amount,
-      description: adjustment.description,
-      promotion_id: adjustment.promotion_id,
-      provider_id: adjustment.provider_id,
-      is_tax_inclusive: adjustment.is_tax_inclusive,
-    })),
-    metadata: item.metadata || {},
-  }
+    tax_lines: toArray(item.tax_lines).map((taxLine) => {
+      const record = toRecord(taxLine)
+      return {
+        description: record.description,
+        tax_rate_id: record.tax_rate_id,
+        code: record.code,
+        rate: record.rate,
+        provider_id: record.provider_id,
+      }
+    }),
+    adjustments: toArray(item.adjustments).map((adjustment) => {
+      const record = toRecord(adjustment)
+      return {
+        code: record.code,
+        amount: record.amount,
+        description: record.description,
+        promotion_id: record.promotion_id,
+        provider_id: record.provider_id,
+        is_tax_inclusive: record.is_tax_inclusive,
+      }
+    }),
+    metadata: toRecord(item.metadata),
+  } as unknown as NonNullable<CreateOrderDTO["items"]>[number]
 }
 
 function sanitizeAddress(address: GenericRecord | null | undefined) {
@@ -174,6 +213,21 @@ function sanitizeAddress(address: GenericRecord | null | undefined) {
   return nextAddress
 }
 
-function sumItemAmount(total: number, item: GenericRecord) {
+function sumItemAmount(
+  total: number,
+  item: NonNullable<CreateOrderDTO["items"]>[number]
+) {
   return total + Number(item.unit_price || 0) * Number(item.quantity || 0)
+}
+
+function toArray(value: unknown) {
+  return Array.isArray(value) ? value : []
+}
+
+function toRecord(value: unknown): GenericRecord {
+  return value && typeof value === "object" ? (value as GenericRecord) : {}
+}
+
+function toOptionalString(value: unknown) {
+  return typeof value === "string" && value ? value : undefined
 }

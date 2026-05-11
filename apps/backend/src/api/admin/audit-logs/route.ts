@@ -1,10 +1,8 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import SupportAuditModuleService from "../../../modules/support-audit/service"
-import { SUPPORT_AUDIT_MODULE } from "../../../modules/support-audit"
+import { resolveSupportAuditService } from "../../../platform/services"
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
-  const supportAudit: SupportAuditModuleService =
-    req.scope.resolve(SUPPORT_AUDIT_MODULE)
+  const supportAudit = resolveSupportAuditService(req.scope)
   const query = (req.validatedQuery || req.query) as {
     action?: string
     entity_type?: string

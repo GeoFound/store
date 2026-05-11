@@ -1,6 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import DigitalDeliveryModuleService from "../../../../modules/digital-delivery/service"
-import { DIGITAL_DELIVERY_MODULE } from "../../../../modules/digital-delivery"
+import { resolveDigitalDeliveryService } from "../../../../platform/services"
 import { emitAuditLog } from "../../../../utils/audit-log"
 import { getRequestAuditContext } from "../../../../utils/request-audit"
 import createManualDeliveryWorkflow from "../../../../workflows/create-manual-delivery"
@@ -18,9 +17,7 @@ type CreateDeliveryBody = {
 }
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
-  const deliveryService: DigitalDeliveryModuleService = req.scope.resolve(
-    DIGITAL_DELIVERY_MODULE
-  )
+  const deliveryService = resolveDigitalDeliveryService(req.scope)
   const query = (req.validatedQuery || req.query) as {
     status?: string
     order_id?: string

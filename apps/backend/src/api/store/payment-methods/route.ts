@@ -1,10 +1,8 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import PaymentRouterModuleService from "../../../modules/payment-router/service"
-import { PAYMENT_ROUTER_MODULE } from "../../../modules/payment-router"
+import { resolvePaymentRouterService } from "../../../platform/services"
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
-  const paymentRouter: PaymentRouterModuleService =
-    req.scope.resolve(PAYMENT_ROUTER_MODULE)
+  const paymentRouter = resolvePaymentRouterService(req.scope)
   const query = (req.validatedQuery || req.query) as {
     amount?: number
     currency?: string

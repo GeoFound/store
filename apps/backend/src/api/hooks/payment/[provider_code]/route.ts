@@ -1,8 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { PAYMENT_ROUTER_MODULE } from "../../../../modules/payment-router"
-import type PaymentRouterModuleService from "../../../../modules/payment-router/service"
 import { getPaymentProvider } from "../../../../modules/payment-router/providers/registry"
 import { handleMarketingAttemptClosed } from "../../../../modules/marketing-engine/hooks"
+import { resolvePaymentRouterService } from "../../../../platform/services"
 import { emitAuditLog } from "../../../../utils/audit-log"
 import finalizeSuccessfulPaymentAttemptWorkflow from "../../../../workflows/finalize-successful-payment-attempt"
 
@@ -10,8 +9,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
   const providerCode = req.params.provider_code
   const provider = getPaymentProvider(providerCode)
   const body = (req.validatedBody || req.body) as Record<string, unknown>
-  const paymentRouter: PaymentRouterModuleService =
-    req.scope.resolve(PAYMENT_ROUTER_MODULE)
+  const paymentRouter = resolvePaymentRouterService(req.scope)
 
   if (!provider?.parseWebhook) {
     res.status(404).json({

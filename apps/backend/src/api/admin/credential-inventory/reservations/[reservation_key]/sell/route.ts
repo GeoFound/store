@@ -1,8 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import type { ILockingModule } from "@medusajs/framework/types"
 import { Modules } from "@medusajs/framework/utils"
-import CredentialInventoryModuleService from "../../../../../../modules/credential-inventory/service"
-import { CREDENTIAL_INVENTORY_MODULE } from "../../../../../../modules/credential-inventory"
+import { resolveCredentialInventoryService } from "../../../../../../platform/services"
 
 type SellBody = {
   order_id?: string
@@ -13,9 +12,7 @@ export const POST = async (
   res: MedusaResponse
 ) => {
   const locking: ILockingModule = req.scope.resolve(Modules.LOCKING)
-  const inventory: CredentialInventoryModuleService = req.scope.resolve(
-    CREDENTIAL_INVENTORY_MODULE
-  )
+  const inventory = resolveCredentialInventoryService(req.scope)
 
   const items = await locking.execute(
     `credential-reservation:${req.params.reservation_key}`,

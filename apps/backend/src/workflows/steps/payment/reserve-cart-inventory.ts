@@ -4,8 +4,6 @@ import {
 } from "@medusajs/framework/workflows-sdk"
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { MedusaError } from "@medusajs/framework/utils"
-import PaymentRouterModuleService from "../../../modules/payment-router/service"
-import { PAYMENT_ROUTER_MODULE } from "../../../modules/payment-router"
 import { resolveProductFulfillmentPolicy } from "../../../platform/delivery"
 import { emitPaymentAttemptReservedEvent } from "../../../platform/events"
 import { ensurePlatformIntegrationsRegistered } from "../../../platform/integrations"
@@ -20,6 +18,7 @@ import {
 } from "../../../platform/inventory"
 import { handleMarketingAttemptClosed } from "../../../modules/marketing-engine/hooks"
 import { resolveProductTemplate } from "../../../platform/product-templates"
+import { resolvePaymentRouterService } from "../../../platform/services"
 import { attachClaimToken } from "../../../utils/payment-attempt"
 import { createTokenWithPrefix } from "../../../utils/token"
 import { releaseInventoryReservations } from "./inventory-reservation-cleanup"
@@ -39,9 +38,7 @@ export const reserveCartInventoryStep = createStep(
   ) => {
     ensurePlatformIntegrationsRegistered()
 
-    const paymentRouter: PaymentRouterModuleService = container.resolve(
-      PAYMENT_ROUTER_MODULE
-    )
+    const paymentRouter = resolvePaymentRouterService(container)
     const reservations: InventoryReservation[] = []
 
     try {

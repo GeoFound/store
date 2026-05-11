@@ -44,6 +44,7 @@ pnpm dev:storefront
 ## Verification
 
 ```bash
+pnpm check:ci
 pnpm dev:check
 pnpm acceptance
 ```

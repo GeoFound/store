@@ -1,10 +1,9 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import type { ILockingModule } from "@medusajs/framework/types"
 import { MedusaError, Modules } from "@medusajs/framework/utils"
-import PaymentRouterModuleService from "../../../../../modules/payment-router/service"
-import { PAYMENT_ROUTER_MODULE } from "../../../../../modules/payment-router"
 import { emitOrderAccessTokenIssuedEvent } from "../../../../../platform/events"
 import { getOrderAccessProvider } from "../../../../../platform/order-access"
+import { resolvePaymentRouterService } from "../../../../../platform/services"
 import {
   isClaimTemporarilyBlocked,
   markClaimTokenConsumed,
@@ -33,8 +32,7 @@ export const POST = async (
     )
   }
 
-  const paymentRouter: PaymentRouterModuleService =
-    req.scope.resolve(PAYMENT_ROUTER_MODULE)
+  const paymentRouter = resolvePaymentRouterService(req.scope)
   const locking: ILockingModule = req.scope.resolve(Modules.LOCKING)
 
   const { ipAddress, userAgent } = getRequestAuditContext(req)

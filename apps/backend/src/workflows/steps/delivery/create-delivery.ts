@@ -1,13 +1,13 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { createStep, StepResponse } from "@medusajs/framework/workflows-sdk"
 import { MedusaError } from "@medusajs/framework/utils"
-import DigitalDeliveryModuleService from "../../../modules/digital-delivery/service"
-import { DIGITAL_DELIVERY_MODULE } from "../../../modules/digital-delivery"
-import PaymentRouterModuleService from "../../../modules/payment-router/service"
-import { PAYMENT_ROUTER_MODULE } from "../../../modules/payment-router"
 import { emitDeliveryCreatedEvent } from "../../../platform/events"
 import { ensurePlatformIntegrationsRegistered } from "../../../platform/integrations"
 import { resolveProductTemplate } from "../../../platform/product-templates"
+import {
+  resolveDigitalDeliveryService,
+  resolvePaymentRouterService,
+} from "../../../platform/services"
 
 export type CreateDeliveryStepInput = {
   orderId?: string
@@ -33,12 +33,8 @@ export const createDeliveryStep = createStep(
   ) => {
     ensurePlatformIntegrationsRegistered()
 
-    const deliveryService: DigitalDeliveryModuleService = container.resolve(
-      DIGITAL_DELIVERY_MODULE
-    )
-    const paymentRouter: PaymentRouterModuleService = container.resolve(
-      PAYMENT_ROUTER_MODULE
-    )
+    const deliveryService = resolveDigitalDeliveryService(container)
+    const paymentRouter = resolvePaymentRouterService(container)
 
     const deliveryMetadata = {
       ...(input.metadata || {}),

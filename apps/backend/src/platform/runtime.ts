@@ -228,7 +228,10 @@ function parseCapabilityContractMap(value?: string) {
       continue
     }
 
-    result[capability] = contractNames
+    result[capability] = mergeStringLists(
+      result[capability] || [],
+      contractNames
+    )
   }
 
   return Object.keys(result).length ? result : undefined

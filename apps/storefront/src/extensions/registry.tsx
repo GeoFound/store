@@ -28,9 +28,10 @@ const extensions = new Map<
 export function registerStorefrontExtension<TProps = Record<string, never>>(
   registration: StorefrontExtensionRegistration<TProps>
 ) {
+  const incoming = registration as unknown as AnyStorefrontExtensionRegistration
   const existing = extensions.get(registration.slot) || []
-  const next = existing.filter((item) => item.name !== registration.name)
-  next.push(registration as unknown as AnyStorefrontExtensionRegistration)
+  const next = existing.filter((item) => !isSameStorefrontExtension(item, incoming))
+  next.push(incoming)
   extensions.set(registration.slot, next)
 }
 
@@ -93,4 +94,11 @@ function splitCommaList(value?: string) {
     .split(",")
     .map((entry) => entry.trim())
     .filter(Boolean)
+}
+
+function isSameStorefrontExtension(
+  left: AnyStorefrontExtensionRegistration,
+  right: AnyStorefrontExtensionRegistration
+) {
+  return left.pluginId === right.pluginId && left.name === right.name
 }

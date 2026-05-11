@@ -1,9 +1,6 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import {
-  ANALYTICS_CORE_MODULE,
-} from "../../../../modules/analytics-core"
-import type AnalyticsCoreModuleService from "../../../../modules/analytics-core/service"
 import { isPlatformPluginEnabled } from "../../../../platform/runtime"
+import { resolveAnalyticsCoreService } from "../../../../platform/services"
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   if (!isPlatformPluginEnabled("analytics-core")) {
@@ -13,9 +10,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     return
   }
 
-  const analytics: AnalyticsCoreModuleService = req.scope.resolve(
-    ANALYTICS_CORE_MODULE
-  )
+  const analytics = resolveAnalyticsCoreService(req.scope)
   const query = (req.validatedQuery || req.query) as {
     destination_code?: string
     status?: "pending" | "processing" | "delivered" | "failed" | "dead"
@@ -43,9 +38,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     return
   }
 
-  const analytics: AnalyticsCoreModuleService = req.scope.resolve(
-    ANALYTICS_CORE_MODULE
-  )
+  const analytics = resolveAnalyticsCoreService(req.scope)
   const body = (req.validatedBody || req.body) as {
     dispatch_id?: string
   }

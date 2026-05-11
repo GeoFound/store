@@ -1,8 +1,8 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import DigitalDeliveryModuleService from "../../../../../modules/digital-delivery/service"
-import { DIGITAL_DELIVERY_MODULE } from "../../../../../modules/digital-delivery"
-import SupportAuditModuleService from "../../../../../modules/support-audit/service"
-import { SUPPORT_AUDIT_MODULE } from "../../../../../modules/support-audit"
+import {
+  resolveDigitalDeliveryService,
+  resolveSupportAuditService,
+} from "../../../../../platform/services"
 import { emitAuditLog } from "../../../../../utils/audit-log"
 import { getRequestAuditContext } from "../../../../../utils/request-audit"
 
@@ -23,11 +23,8 @@ export const POST = async (
     return
   }
 
-  const deliveryService: DigitalDeliveryModuleService = req.scope.resolve(
-    DIGITAL_DELIVERY_MODULE
-  )
-  const supportAudit: SupportAuditModuleService =
-    req.scope.resolve(SUPPORT_AUDIT_MODULE)
+  const deliveryService = resolveDigitalDeliveryService(req.scope)
+  const supportAudit = resolveSupportAuditService(req.scope)
   const { ipAddress, userAgent } = getRequestAuditContext(req)
   const result = await deliveryService.retrieveDeliveryByAccessToken(
     req.params.access_token

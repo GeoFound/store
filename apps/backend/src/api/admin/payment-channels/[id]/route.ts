@@ -1,6 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import PaymentRouterModuleService from "../../../../modules/payment-router/service"
-import { PAYMENT_ROUTER_MODULE } from "../../../../modules/payment-router"
+import { resolvePaymentRouterService } from "../../../../platform/services"
 
 type UpdateChannelBody = {
   display_name?: string
@@ -17,8 +16,7 @@ export const POST = async (
   req: MedusaRequest<UpdateChannelBody>,
   res: MedusaResponse
 ) => {
-  const paymentRouter: PaymentRouterModuleService =
-    req.scope.resolve(PAYMENT_ROUTER_MODULE)
+  const paymentRouter = resolvePaymentRouterService(req.scope)
   const existing = await paymentRouter.retrievePaymentChannel(req.params.id)
   paymentRouter.assertProviderRegistered(existing.provider_code)
   const currency = normalizeCurrencyCode(req.body.currency)

@@ -149,6 +149,23 @@ describe("platform lifecycle", () => {
     })
   })
 
+  it("merges duplicate capability contract entries from env", () => {
+    expect(
+      parsePlatformRuntimeOptionsFromEnv({
+        PLATFORM_ENABLED_CONTRACTS:
+          "payment-provider:manual;payment-provider:alt,manual;delivery-handler:manual",
+      })
+    ).toEqual({
+      enabledPlugins: undefined,
+      disabledPlugins: undefined,
+      enabledContracts: {
+        "payment-provider": ["manual", "alt"],
+        "delivery-handler": ["manual"],
+      },
+      disabledContracts: undefined,
+    })
+  })
+
   it("merges backend and public plugin env lists without duplicates", () => {
     expect(
       parsePlatformRuntimeOptionsFromEnv({

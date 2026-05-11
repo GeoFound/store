@@ -1,12 +1,3 @@
-import { PAYMENT_ROUTER_PLUGIN_MANIFEST } from "../modules/payment-router/plugin"
-import { DIGITAL_DELIVERY_PLUGIN_MANIFEST } from "../modules/digital-delivery/plugin"
-import { CREDENTIAL_INVENTORY_PLUGIN_MANIFEST } from "../modules/credential-inventory/plugin"
-import { GUEST_ORDER_ACCESS_PLUGIN_MANIFEST } from "../modules/guest-order-access/plugin"
-import { SUPPORT_AUDIT_PLUGIN_MANIFEST } from "../modules/support-audit/plugin"
-import { MARKETING_ENGINE_PLUGIN_MANIFEST } from "../modules/marketing-engine/plugin"
-import { ANALYTICS_CORE_PLUGIN_MANIFEST } from "../modules/analytics-core/plugin"
-import { ANALYTICS_GA4_PLUGIN_MANIFEST } from "../modules/analytics-ga4/plugin"
-import { ANALYTICS_HOTJAR_PLUGIN_MANIFEST } from "../modules/analytics-hotjar/plugin"
 import { manualPaymentProvider } from "../modules/payment-router/providers/manual"
 import { credentialInventoryHandler } from "../modules/credential-inventory/handler"
 import { credentialDeliveryHandler } from "../modules/credential-inventory/delivery-handler"
@@ -26,25 +17,37 @@ import type { InventoryHandler } from "./inventory"
 import type { MarketingStrategy } from "./marketing"
 import type { OrderAccessProvider } from "./order-access"
 import {
+  BUILTIN_NOOP_PROVIDER_PLUGIN_ID,
+  CREDENTIAL_INVENTORY_PLUGIN_MANIFEST,
+  DIGITAL_DELIVERY_PLUGIN_MANIFEST,
+  GUEST_ORDER_ACCESS_PLUGIN_MANIFEST,
+  PAYMENT_ROUTER_PLUGIN_MANIFEST,
+  PLATFORM_CORE_PLUGIN_MANIFESTS,
+  PLATFORM_DELIVERY_NOOP_PLUGIN_ID,
+  PLATFORM_DELIVERY_NOOP_PLUGIN_MANIFEST,
+  PLATFORM_INVENTORY_NOOP_PLUGIN_ID,
+  PLATFORM_INVENTORY_NOOP_PLUGIN_MANIFEST,
+  PLATFORM_MARKETING_NOOP_PLUGIN_ID,
+  PLATFORM_MARKETING_NOOP_PLUGIN_MANIFEST,
+  PLATFORM_ORDER_ACCESS_NOOP_PLUGIN_ID,
+  PLATFORM_ORDER_ACCESS_NOOP_PLUGIN_MANIFEST,
+  PLATFORM_PAYMENT_NOOP_PLUGIN_MANIFEST,
+  PLATFORM_PRODUCT_POLICY_DEFAULT_PLUGIN_ID,
+  PLATFORM_PRODUCT_POLICY_DEFAULT_PLUGIN_MANIFEST,
+} from "./builtin"
+import {
   type PlatformRegistry,
   createPlatformRegistry,
 } from "./registry"
 
-export const BUILTIN_NOOP_PROVIDER_PLUGIN_ID = "builtin.payment-provider.noop"
-
 export function registerDefaultPlatformCapabilities(
   registry: PlatformRegistry = createPlatformRegistry()
 ) {
-  for (const manifest of [
-    DIGITAL_DELIVERY_PLUGIN_MANIFEST,
-    CREDENTIAL_INVENTORY_PLUGIN_MANIFEST,
-    GUEST_ORDER_ACCESS_PLUGIN_MANIFEST,
-    SUPPORT_AUDIT_PLUGIN_MANIFEST,
-    MARKETING_ENGINE_PLUGIN_MANIFEST,
-    ANALYTICS_CORE_PLUGIN_MANIFEST,
-    ANALYTICS_GA4_PLUGIN_MANIFEST,
-    ANALYTICS_HOTJAR_PLUGIN_MANIFEST,
-  ]) {
+  for (const manifest of PLATFORM_CORE_PLUGIN_MANIFESTS) {
+    if (manifest.id === PAYMENT_ROUTER_PLUGIN_MANIFEST.id) {
+      continue
+    }
+
     registry.registerPlugin({
       manifest,
     })
@@ -89,20 +92,12 @@ export function registerDefaultPlatformCapabilities(
   })
 
   registry.registerPlugin<InventoryHandler>({
-    manifest: {
-      id: "platform.inventory.noop",
-      version: "1.0.0",
-      capabilities: ["inventory-handler"],
-      enabledByDefault: true,
-      migrationsOwner: "platform",
-      title: "No-op Inventory Handler",
-      description: "Fallback inventory capability for products without stock reservations.",
-    },
+    manifest: PLATFORM_INVENTORY_NOOP_PLUGIN_MANIFEST,
     contracts: [
       {
         capability: "inventory-handler",
         name: "noop",
-        pluginId: "platform.inventory.noop",
+        pluginId: PLATFORM_INVENTORY_NOOP_PLUGIN_ID,
         version: "v1",
         priority: 0,
         enabled: true,
@@ -150,20 +145,12 @@ export function registerDefaultPlatformCapabilities(
   })
 
   registry.registerPlugin<DeliveryHandler>({
-    manifest: {
-      id: "platform.delivery.noop",
-      version: "1.0.0",
-      capabilities: ["delivery-handler"],
-      enabledByDefault: true,
-      migrationsOwner: "platform",
-      title: "No-op Delivery Handler",
-      description: "Fallback delivery capability.",
-    },
+    manifest: PLATFORM_DELIVERY_NOOP_PLUGIN_MANIFEST,
     contracts: [
       {
         capability: "delivery-handler",
         name: "noop",
-        pluginId: "platform.delivery.noop",
+        pluginId: PLATFORM_DELIVERY_NOOP_PLUGIN_ID,
         version: "v1",
         priority: 0,
         enabled: true,
@@ -173,20 +160,12 @@ export function registerDefaultPlatformCapabilities(
   })
 
   registry.registerPlugin<ProductFulfillmentPolicy>({
-    manifest: {
-      id: "platform.product-policy.default",
-      version: "1.0.0",
-      capabilities: ["product-policy"],
-      enabledByDefault: true,
-      migrationsOwner: "platform",
-      title: "Default Fulfillment Policy",
-      description: "Fallback product fulfillment policy.",
-    },
+    manifest: PLATFORM_PRODUCT_POLICY_DEFAULT_PLUGIN_MANIFEST,
     contracts: [
       {
         capability: "product-policy",
         name: "default",
-        pluginId: "platform.product-policy.default",
+        pluginId: PLATFORM_PRODUCT_POLICY_DEFAULT_PLUGIN_ID,
         version: "v1",
         priority: 0,
         enabled: true,
@@ -196,21 +175,12 @@ export function registerDefaultPlatformCapabilities(
   })
 
   registry.registerPlugin<MarketingStrategy>({
-    manifest: {
-      id: "platform.marketing.noop",
-      version: "1.0.0",
-      capabilities: ["marketing-strategy"],
-      enabledByDefault: true,
-      migrationsOwner: "platform",
-      title: "No-op Marketing Strategy",
-      description:
-        "Fallback strategy so marketing capability can be safely disabled or replaced.",
-    },
+    manifest: PLATFORM_MARKETING_NOOP_PLUGIN_MANIFEST,
     contracts: [
       {
         capability: "marketing-strategy",
         name: "noop",
-        pluginId: "platform.marketing.noop",
+        pluginId: PLATFORM_MARKETING_NOOP_PLUGIN_ID,
         version: "v1",
         priority: -1000,
         enabled: true,
@@ -220,15 +190,7 @@ export function registerDefaultPlatformCapabilities(
   })
 
   registry.registerPlugin<PaymentProvider>({
-    manifest: {
-      id: BUILTIN_NOOP_PROVIDER_PLUGIN_ID,
-      version: "1.0.0",
-      capabilities: ["payment-provider"],
-      enabledByDefault: true,
-      migrationsOwner: "platform",
-      title: "No-op Payment Provider",
-      description: "Fallback adapter for disabled or missing payment providers.",
-    },
+    manifest: PLATFORM_PAYMENT_NOOP_PLUGIN_MANIFEST,
     contracts: [
       {
         capability: "payment-provider",
@@ -262,20 +224,12 @@ export function registerDefaultPlatformCapabilities(
   })
 
   registry.registerPlugin<OrderAccessProvider>({
-    manifest: {
-      id: "platform.order-access.noop",
-      version: "1.0.0",
-      capabilities: ["order-access-provider"],
-      enabledByDefault: true,
-      migrationsOwner: "platform",
-      title: "No-op Order Access Provider",
-      description: "Fallback adapter for optional order-access side effects.",
-    },
+    manifest: PLATFORM_ORDER_ACCESS_NOOP_PLUGIN_MANIFEST,
     contracts: [
       {
         capability: "order-access-provider",
         name: "noop",
-        pluginId: "platform.order-access.noop",
+        pluginId: PLATFORM_ORDER_ACCESS_NOOP_PLUGIN_ID,
         version: "v1",
         priority: 0,
         enabled: true,

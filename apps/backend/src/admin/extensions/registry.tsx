@@ -15,14 +15,18 @@ export type AdminExtensionRegistration<TProps = Record<string, never>> = {
   order?: number
 }
 
-const extensions = new Map<AdminExtensionSlot, AdminExtensionRegistration<any>[]>()
+type AnyAdminExtensionRegistration =
+  AdminExtensionRegistration<Record<string, unknown>>
+
+const extensions = new Map<AdminExtensionSlot, AnyAdminExtensionRegistration[]>()
 
 export function registerAdminExtension<TProps = Record<string, never>>(
   registration: AdminExtensionRegistration<TProps>
 ) {
+  const incoming = registration as unknown as AnyAdminExtensionRegistration
   const existing = extensions.get(registration.slot) || []
-  const next = existing.filter((item) => item.name !== registration.name)
-  next.push(registration)
+  const next = existing.filter((item) => !isSameAdminExtension(item, incoming))
+  next.push(incoming)
   extensions.set(registration.slot, next)
 }
 
@@ -45,7 +49,7 @@ export function renderAdminExtensions<TProps = Record<string, never>>(
 ) {
   return listAdminExtensions(slot).map((entry) => ({
     key: `${entry.pluginId}:${entry.name}`,
-    node: entry.component(props),
+    node: (entry.component as AdminExtensionComponent<TProps>)(props),
   }))
 }
 
@@ -85,4 +89,11 @@ function splitCommaList(value?: string) {
     .split(",")
     .map((entry) => entry.trim())
     .filter(Boolean)
+}
+
+function isSameAdminExtension(
+  left: AnyAdminExtensionRegistration,
+  right: AnyAdminExtensionRegistration
+) {
+  return left.pluginId === right.pluginId && left.name === right.name
 }

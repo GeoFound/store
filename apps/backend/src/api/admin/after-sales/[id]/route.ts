@@ -1,6 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import SupportAuditModuleService from "../../../../modules/support-audit/service"
-import { SUPPORT_AUDIT_MODULE } from "../../../../modules/support-audit"
+import { resolveSupportAuditService } from "../../../../platform/services"
 import { emitAuditLog } from "../../../../utils/audit-log"
 import { getRequestAuditContext } from "../../../../utils/request-audit"
 
@@ -14,8 +13,7 @@ export const POST = async (
   req: MedusaRequest<UpdateAfterSaleBody>,
   res: MedusaResponse
 ) => {
-  const supportAudit: SupportAuditModuleService =
-    req.scope.resolve(SUPPORT_AUDIT_MODULE)
+  const supportAudit = resolveSupportAuditService(req.scope)
   const { actorId, ipAddress, userAgent } = getRequestAuditContext(req)
 
   const afterSale = await supportAudit.updateAfterSale({

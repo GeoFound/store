@@ -1,18 +1,14 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import DigitalDeliveryModuleService from "../../../../../../../modules/digital-delivery/service"
-import { DIGITAL_DELIVERY_MODULE } from "../../../../../../../modules/digital-delivery"
-import GuestOrderAccessModuleService from "../../../../../../../modules/guest-order-access/service"
-import { GUEST_ORDER_ACCESS_MODULE } from "../../../../../../../modules/guest-order-access"
+import {
+  resolveDigitalDeliveryService,
+  resolveGuestOrderAccessService,
+} from "../../../../../../../platform/services"
 import { emitAuditLog } from "../../../../../../../utils/audit-log"
 import { getRequestAuditContext } from "../../../../../../../utils/request-audit"
 
 export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
-  const guestOrderAccess: GuestOrderAccessModuleService = req.scope.resolve(
-    GUEST_ORDER_ACCESS_MODULE
-  )
-  const deliveryService: DigitalDeliveryModuleService = req.scope.resolve(
-    DIGITAL_DELIVERY_MODULE
-  )
+  const guestOrderAccess = resolveGuestOrderAccessService(req.scope)
+  const deliveryService = resolveDigitalDeliveryService(req.scope)
   const { ipAddress, userAgent } = getRequestAuditContext(req)
   const token = await guestOrderAccess.resolveViewToken(req.params.access_token)
   const delivery = await deliveryService.confirmOrderDelivery({

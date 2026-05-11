@@ -1,8 +1,6 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { createStep, StepResponse } from "@medusajs/framework/workflows-sdk"
 import { Modules } from "@medusajs/framework/utils"
-import PaymentRouterModuleService from "../../../modules/payment-router/service"
-import { PAYMENT_ROUTER_MODULE } from "../../../modules/payment-router"
 import { ensureCartOrder } from "../../../utils/ensure-cart-order"
 import {
   extractInventoryReservations,
@@ -17,6 +15,7 @@ import { getDeliveryHandler } from "../../../platform/delivery"
 import { getInventoryHandler } from "../../../platform/inventory"
 import { getOrderAccessProviderOrFallback } from "../../../platform/order-access"
 import { ensurePlatformIntegrationsRegistered } from "../../../platform/integrations"
+import { resolvePaymentRouterService } from "../../../platform/services"
 
 export type FinalizePaymentAttemptStepInput =
   | {
@@ -37,9 +36,7 @@ export const finalizePaymentAttemptStep = createStep(
   ) => {
     ensurePlatformIntegrationsRegistered()
 
-    const paymentRouter: PaymentRouterModuleService = container.resolve(
-      PAYMENT_ROUTER_MODULE
-    )
+    const paymentRouter = resolvePaymentRouterService(container)
     const locking = container.resolve(Modules.LOCKING)
 
     const currentAttempt =

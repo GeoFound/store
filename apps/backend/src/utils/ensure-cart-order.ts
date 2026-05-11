@@ -6,6 +6,15 @@ import {
 } from "@medusajs/framework/utils"
 import { CART_ORDER_QUERY_FIELDS, buildOrderFromCart } from "./cart-order"
 
+type CartReference = {
+  id?: string | null
+  email?: string | null
+  customer_id?: string | null
+  customer?: {
+    id?: string | null
+  } | null
+}
+
 export async function ensureCartOrder(
   container: MedusaContainer,
   input: {
@@ -67,8 +76,15 @@ export async function ensureCartOrder(
 
 async function ensureGuestCustomerForCart(
   container: MedusaContainer,
-  cart: Record<string, any>
+  cart: CartReference
 ) {
+  if (typeof cart.id !== "string" || !cart.id) {
+    throw new MedusaError(
+      MedusaError.Types.INVALID_DATA,
+      "Cart id is required"
+    )
+  }
+
   const existingCustomerId = cart.customer?.id || cart.customer_id
   if (existingCustomerId) {
     return existingCustomerId

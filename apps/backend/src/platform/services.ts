@@ -1,0 +1,45 @@
+import type { MedusaContainer } from "@medusajs/framework/types"
+import { ANALYTICS_CORE_MODULE } from "../modules/analytics-core"
+import type AnalyticsCoreModuleService from "../modules/analytics-core/service"
+import { CREDENTIAL_INVENTORY_MODULE } from "../modules/credential-inventory"
+import type CredentialInventoryModuleService from "../modules/credential-inventory/service"
+import { DIGITAL_DELIVERY_MODULE } from "../modules/digital-delivery"
+import type DigitalDeliveryModuleService from "../modules/digital-delivery/service"
+import { GUEST_ORDER_ACCESS_MODULE } from "../modules/guest-order-access"
+import type GuestOrderAccessModuleService from "../modules/guest-order-access/service"
+import { MARKETING_ENGINE_MODULE } from "../modules/marketing-engine"
+import type MarketingEngineModuleService from "../modules/marketing-engine/service"
+import { PAYMENT_ROUTER_MODULE } from "../modules/payment-router"
+import type PaymentRouterModuleService from "../modules/payment-router/service"
+import { SUPPORT_AUDIT_MODULE } from "../modules/support-audit"
+import type SupportAuditModuleService from "../modules/support-audit/service"
+
+export function resolveAnalyticsCoreService(scope: MedusaContainer) {
+  return scope.resolve(ANALYTICS_CORE_MODULE) as AnalyticsCoreModuleService
+}
+
+export function resolveCredentialInventoryService(scope: MedusaContainer) {
+  return scope.resolve(
+    CREDENTIAL_INVENTORY_MODULE
+  ) as CredentialInventoryModuleService
+}
+
+export function resolveDigitalDeliveryService(scope: MedusaContainer) {
+  return scope.resolve(DIGITAL_DELIVERY_MODULE) as DigitalDeliveryModuleService
+}
+
+export function resolveGuestOrderAccessService(scope: MedusaContainer) {
+  return scope.resolve(GUEST_ORDER_ACCESS_MODULE) as GuestOrderAccessModuleService
+}
+
+export function resolveMarketingEngineService(scope: MedusaContainer) {
+  return scope.resolve(MARKETING_ENGINE_MODULE) as MarketingEngineModuleService
+}
+
+export function resolvePaymentRouterService(scope: MedusaContainer) {
+  return scope.resolve(PAYMENT_ROUTER_MODULE) as PaymentRouterModuleService
+}
+
+export function resolveSupportAuditService(scope: MedusaContainer) {
+  return scope.resolve(SUPPORT_AUDIT_MODULE) as SupportAuditModuleService
+}

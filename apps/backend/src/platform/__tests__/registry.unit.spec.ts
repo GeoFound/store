@@ -247,7 +247,22 @@ describe("platform registry", () => {
       "analytics-hotjar"
     )
     expect(manifests.map((manifest) => manifest.id)).toContain(
-      "platform.fallback"
+      "platform.inventory.noop"
+    )
+    expect(manifests.map((manifest) => manifest.id)).toContain(
+      "platform.delivery.noop"
+    )
+    expect(manifests.map((manifest) => manifest.id)).toContain(
+      "platform.product-policy.default"
+    )
+    expect(manifests.map((manifest) => manifest.id)).toContain(
+      "platform.marketing.noop"
+    )
+    expect(manifests.map((manifest) => manifest.id)).toContain(
+      "builtin.payment-provider.noop"
+    )
+    expect(manifests.map((manifest) => manifest.id)).toContain(
+      "platform.order-access.noop"
     )
   })
 

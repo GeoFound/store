@@ -1,7 +1,6 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { MARKETING_ENGINE_MODULE } from "../../../../modules/marketing-engine"
-import type MarketingEngineModuleService from "../../../../modules/marketing-engine/service"
 import { isPlatformPluginEnabled } from "../../../../platform/runtime"
+import { resolveMarketingEngineService } from "../../../../platform/services"
 
 type CreateOfferBody = {
   campaign_id?: string | null
@@ -25,9 +24,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     return
   }
 
-  const marketing: MarketingEngineModuleService = req.scope.resolve(
-    MARKETING_ENGINE_MODULE
-  )
+  const marketing = resolveMarketingEngineService(req.scope)
   const query = (req.validatedQuery || req.query) as {
     status?: string
     campaign_id?: string
@@ -67,9 +64,7 @@ export const POST = async (
     return
   }
 
-  const marketing: MarketingEngineModuleService = req.scope.resolve(
-    MARKETING_ENGINE_MODULE
-  )
+  const marketing = resolveMarketingEngineService(req.scope)
 
   const offer = await marketing.createOfferSafe({
     campaignId: body.campaign_id,

@@ -67,4 +67,54 @@ describe("admin extension registry", () => {
       },
     ])
   })
+
+  it("keeps same extension name when owned by different plugins", () => {
+    registerAdminExtension({
+      name: "payments.shared-name",
+      pluginId: "plugin-a",
+      slot: "payments.after",
+      component: () => "a" as ReactNode,
+    })
+    registerAdminExtension({
+      name: "payments.shared-name",
+      pluginId: "plugin-b",
+      slot: "payments.after",
+      component: () => "b" as ReactNode,
+    })
+
+    expect(renderAdminExtensions("payments.after", {})).toEqual([
+      {
+        key: "plugin-a:payments.shared-name",
+        node: "a",
+      },
+      {
+        key: "plugin-b:payments.shared-name",
+        node: "b",
+      },
+    ])
+  })
+
+  it("replaces extension registration for the same plugin and name", () => {
+    registerAdminExtension({
+      name: "payments.replaceable",
+      pluginId: "plugin-a",
+      slot: "payments.after",
+      order: 20,
+      component: () => "old" as ReactNode,
+    })
+    registerAdminExtension({
+      name: "payments.replaceable",
+      pluginId: "plugin-a",
+      slot: "payments.after",
+      order: 10,
+      component: () => "new" as ReactNode,
+    })
+
+    expect(renderAdminExtensions("payments.after", {})).toEqual([
+      {
+        key: "plugin-a:payments.replaceable",
+        node: "new",
+      },
+    ])
+  })
 })

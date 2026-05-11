@@ -1,6 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import PaymentRouterModuleService from "../../../modules/payment-router/service"
-import { PAYMENT_ROUTER_MODULE } from "../../../modules/payment-router"
+import { resolvePaymentRouterService } from "../../../platform/services"
 
 type CreateChannelBody = {
   code?: string
@@ -18,8 +17,7 @@ type CreateChannelBody = {
 }
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
-  const paymentRouter: PaymentRouterModuleService =
-    req.scope.resolve(PAYMENT_ROUTER_MODULE)
+  const paymentRouter = resolvePaymentRouterService(req.scope)
 
   await paymentRouter.ensureDefaultChannels()
 
@@ -49,8 +47,7 @@ export const POST = async (
     return
   }
 
-  const paymentRouter: PaymentRouterModuleService =
-    req.scope.resolve(PAYMENT_ROUTER_MODULE)
+  const paymentRouter = resolvePaymentRouterService(req.scope)
   paymentRouter.assertProviderRegistered(
     req.body.provider_code || req.body.code
   )

@@ -9,11 +9,11 @@ import {
   ensurePlatformIntegrationsRegistered,
 } from "../../../platform/integrations"
 import { isPlatformPluginEnabled } from "../../../platform/runtime"
-import PaymentRouterModuleService from "../../../modules/payment-router/service"
-import { PAYMENT_ROUTER_MODULE } from "../../../modules/payment-router"
-import { MARKETING_ENGINE_MODULE } from "../../../modules/marketing-engine"
-import type MarketingEngineModuleService from "../../../modules/marketing-engine/service"
 import { handleMarketingAttemptClosed } from "../../../modules/marketing-engine/hooks"
+import {
+  resolveMarketingEngineService,
+  resolvePaymentRouterService,
+} from "../../../platform/services"
 
 export type ApplyMarketingContextStepInput = {
   attemptId: string
@@ -34,9 +34,7 @@ export const applyMarketingContextStep = createStep(
   ) => {
     ensurePlatformIntegrationsRegistered()
 
-    const paymentRouter: PaymentRouterModuleService = container.resolve(
-      PAYMENT_ROUTER_MODULE
-    )
+    const paymentRouter = resolvePaymentRouterService(container)
 
     if (!isPlatformPluginEnabled("marketing-engine")) {
       const attempt = await paymentRouter.retrievePaymentAttempt(input.attemptId)
@@ -47,9 +45,7 @@ export const applyMarketingContextStep = createStep(
       })
     }
 
-    const marketing: MarketingEngineModuleService = container.resolve(
-      MARKETING_ENGINE_MODULE
-    )
+    const marketing = resolveMarketingEngineService(container)
 
     try {
       const normalizedContext = normalizeCheckoutContext(input.context)

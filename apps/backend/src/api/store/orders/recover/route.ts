@@ -1,10 +1,9 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import type { ILockingModule } from "@medusajs/framework/types"
 import { MedusaError, Modules } from "@medusajs/framework/utils"
-import GuestOrderAccessModuleService from "../../../../modules/guest-order-access/service"
-import { GUEST_ORDER_ACCESS_MODULE } from "../../../../modules/guest-order-access"
 import { emitOrderAccessRecoveryCodeCreatedEvent } from "../../../../platform/events"
 import { isPlatformPluginEnabled } from "../../../../platform/runtime"
+import { resolveGuestOrderAccessService } from "../../../../platform/services"
 import { emitAuditLog } from "../../../../utils/audit-log"
 import { getRequestAuditContext } from "../../../../utils/request-audit"
 import { normalizeEmail, retrieveStoreOrderDetail } from "../../../../utils/store-order"
@@ -27,9 +26,7 @@ export const POST = async (
     return
   }
 
-  const guestOrderAccess: GuestOrderAccessModuleService = req.scope.resolve(
-    GUEST_ORDER_ACCESS_MODULE
-  )
+  const guestOrderAccess = resolveGuestOrderAccessService(req.scope)
   const locking: ILockingModule = req.scope.resolve(Modules.LOCKING)
   const { ipAddress, userAgent } = getRequestAuditContext(req)
   const order = await retrieveStoreOrderDetail(req.scope, body.order_id || "", [

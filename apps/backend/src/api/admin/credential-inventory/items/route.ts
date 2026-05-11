@@ -1,11 +1,8 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import CredentialInventoryModuleService from "../../../../modules/credential-inventory/service"
-import { CREDENTIAL_INVENTORY_MODULE } from "../../../../modules/credential-inventory"
+import { resolveCredentialInventoryService } from "../../../../platform/services"
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
-  const inventory: CredentialInventoryModuleService = req.scope.resolve(
-    CREDENTIAL_INVENTORY_MODULE
-  )
+  const inventory = resolveCredentialInventoryService(req.scope)
   const query = (req.validatedQuery || req.query) as {
     product_variant_id?: string
     status?: string

@@ -9,19 +9,16 @@ import {
   createStep,
   StepResponse,
 } from "@medusajs/framework/workflows-sdk"
-import PaymentRouterModuleService from "../../../modules/payment-router/service"
-import { PAYMENT_ROUTER_MODULE } from "../../../modules/payment-router"
 import type { CreatePaymentAttemptInput } from "../../../modules/payment-router/types"
 import { handleMarketingAttemptClosed } from "../../../modules/marketing-engine/hooks"
+import { resolvePaymentRouterService } from "../../../platform/services"
 import { extractInventoryReservations } from "../../../utils/payment-attempt"
 import { releaseInventoryReservations } from "./inventory-reservation-cleanup"
 
 export const createPaymentAttemptStep = createStep(
   "create-payment-attempt",
   async (input: CreatePaymentAttemptInput, { container }: { container: MedusaContainer }) => {
-    const paymentRouter: PaymentRouterModuleService = container.resolve(
-      PAYMENT_ROUTER_MODULE
-    )
+    const paymentRouter = resolvePaymentRouterService(container)
     const locking: ILockingModule = container.resolve(Modules.LOCKING)
 
     const result = await locking.execute(

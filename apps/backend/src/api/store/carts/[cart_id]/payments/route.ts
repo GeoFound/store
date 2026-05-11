@@ -1,10 +1,9 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
 import type { PaymentMethodCode } from "../../../../../modules/payment-router/types"
-import type PaymentRouterModuleService from "../../../../../modules/payment-router/service"
-import { PAYMENT_ROUTER_MODULE } from "../../../../../modules/payment-router"
 import type { FulfillmentCartItem } from "../../../../../platform/inventory"
 import type { MarketingCheckoutContextInput } from "../../../../../platform/marketing"
+import { resolvePaymentRouterService } from "../../../../../platform/services"
 import { CART_ORDER_QUERY_FIELDS } from "../../../../../utils/cart-order"
 import createCartPaymentAttemptWorkflow from "../../../../../workflows/create-cart-payment-attempt"
 
@@ -51,8 +50,7 @@ export const POST = async (
     )
   }
 
-  const paymentRouter: PaymentRouterModuleService =
-    req.scope.resolve(PAYMENT_ROUTER_MODULE)
+  const paymentRouter = resolvePaymentRouterService(req.scope)
   const paidAttempts = await paymentRouter.listPaymentAttempts(
     {
       cart_id: cartId,

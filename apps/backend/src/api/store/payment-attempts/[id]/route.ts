@@ -1,11 +1,9 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import PaymentRouterModuleService from "../../../../modules/payment-router/service"
-import { PAYMENT_ROUTER_MODULE } from "../../../../modules/payment-router"
+import { resolvePaymentRouterService } from "../../../../platform/services"
 import { normalizeAttemptPayload } from "../../../../utils/payment-attempt"
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
-  const paymentRouter: PaymentRouterModuleService =
-    req.scope.resolve(PAYMENT_ROUTER_MODULE)
+  const paymentRouter = resolvePaymentRouterService(req.scope)
 
   const attemptRecord = await paymentRouter.retrievePaymentAttempt(req.params.id)
   const attempt = await paymentRouter.getPaymentAttemptStatus(req.params.id)
