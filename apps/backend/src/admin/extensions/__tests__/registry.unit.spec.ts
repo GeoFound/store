@@ -20,11 +20,15 @@ describe("admin extension registry", () => {
     ensureAdminExtensionsRegistered()
     ensureAdminExtensionsRegistered()
 
-    expect(listAdminExtensions("payments.after")).toHaveLength(1)
+    expect(listAdminExtensions("payments.after")).toHaveLength(2)
     expect(listAdminExtensions("deliveries.after")).toHaveLength(1)
     expect(listAdminExtensions("payments.after")[0]).toMatchObject({
       pluginId: "support-audit",
       name: "support-audit.payment-ops-note",
+    })
+    expect(listAdminExtensions("payments.after")[1]).toMatchObject({
+      pluginId: "marketing-engine",
+      name: "marketing-engine.checkout-context-note",
     })
   })
 

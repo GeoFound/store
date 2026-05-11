@@ -15,6 +15,7 @@ import {
 
 const DEFAULT_RECOVERY_MAX_FAILED_ATTEMPTS = 5
 const DEFAULT_RECOVERY_BLOCK_SECONDS = 10 * 60
+const DEFAULT_RECOVERY_REQUEST_COOLDOWN_SECONDS = 60
 
 class GuestOrderAccessModuleService extends MedusaService({
   OrderAccessToken,
@@ -63,6 +64,11 @@ class GuestOrderAccessModuleService extends MedusaService({
     metadata?: Record<string, unknown> | null
     ttlSeconds?: number
   }) {
+    await this.assertRecoveryCodeIssuanceAllowed({
+      orderId: input.orderId,
+      customerEmail: input.customerEmail,
+    })
+
     return this.issueOrderAccessToken({
       orderId: input.orderId,
       customerEmail: input.customerEmail,
@@ -296,6 +302,51 @@ class GuestOrderAccessModuleService extends MedusaService({
     }
 
     return DEFAULT_RECOVERY_BLOCK_SECONDS
+  }
+
+  private async assertRecoveryCodeIssuanceAllowed(input: {
+    orderId: string
+    customerEmail: string
+  }) {
+    const [latest] = await this.listOrderAccessTokens(
+      {
+        order_id: input.orderId,
+        customer_email: input.customerEmail,
+        purpose: "claim_order",
+      },
+      {
+        take: 1,
+        order: {
+          created_at: "DESC",
+        },
+      }
+    )
+
+    const latestCreatedAt = latest?.created_at
+
+    if (!latestCreatedAt) {
+      return
+    }
+
+    const cooldownSeconds = this.resolveRecoveryRequestCooldownSeconds()
+    const nextAllowedAt = new Date(String(latestCreatedAt)).getTime() + cooldownSeconds * 1000
+
+    if (nextAllowedAt > Date.now()) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        "Recovery code was recently issued. Please wait before requesting another code."
+      )
+    }
+  }
+
+  private resolveRecoveryRequestCooldownSeconds() {
+    const value = Number(process.env.ORDER_RECOVERY_REQUEST_COOLDOWN_SECONDS)
+
+    if (Number.isFinite(value) && value >= 1) {
+      return Math.floor(value)
+    }
+
+    return DEFAULT_RECOVERY_REQUEST_COOLDOWN_SECONDS
   }
 }
 

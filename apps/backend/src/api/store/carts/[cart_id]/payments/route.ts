@@ -2,11 +2,20 @@ import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
 import type { PaymentMethodCode } from "../../../../../modules/payment-router/types"
 import type { FulfillmentCartItem } from "../../../../../platform/inventory"
+import type { MarketingCheckoutContextInput } from "../../../../../platform/marketing"
 import { CART_ORDER_QUERY_FIELDS } from "../../../../../utils/cart-order"
 import createCartPaymentAttemptWorkflow from "../../../../../workflows/create-cart-payment-attempt"
 
 type CreateCartPaymentBody = {
   payment_method?: PaymentMethodCode
+  marketing?: MarketingCheckoutContextInput
+  analytics?: {
+    ga_client_id?: string
+    ga_session_id?: string
+    page_location?: string
+    page_path?: string
+    referrer?: string
+  }
 }
 
 export const POST = async (
@@ -16,6 +25,8 @@ export const POST = async (
   const body = (req.validatedBody || req.body) as CreateCartPaymentBody
   const cartId = req.params.cart_id
   const paymentMethod = body.payment_method || "manual"
+  const marketing = normalizeMarketingContext(body.marketing)
+  const analytics = normalizeAnalyticsContext(body.analytics)
 
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
   const cartResult = await query.graph({
@@ -72,12 +83,14 @@ export const POST = async (
       customerEmail: cart.email,
       metadata: {
         item_count: cartItems.length,
+        analytics_context: analytics,
       },
+      marketing,
       items: cartItems as FulfillmentCartItem[],
     },
   })
 
-  const { attempt, instructions, claimToken } = workflowResult.result
+  const { attempt, instructions, claimToken, marketingContext } = workflowResult.result
 
   res.json({
     attempt: {
@@ -91,6 +104,7 @@ export const POST = async (
     },
     instructions,
     claim_token: claimToken,
+    marketing: marketingContext,
   })
 }
 
@@ -161,4 +175,58 @@ function calculateItemsTotal(
 
     return total + unitPrice * quantity
   }, 0)
+}
+
+function normalizeMarketingContext(value: unknown): MarketingCheckoutContextInput {
+  if (!value || typeof value !== "object") {
+    return {}
+  }
+
+  const record = value as Record<string, unknown>
+
+  return {
+    coupon_code: normalizeOptionalText(record.coupon_code),
+    referral_code: normalizeOptionalText(record.referral_code),
+    utm_source: normalizeOptionalText(record.utm_source),
+    utm_medium: normalizeOptionalText(record.utm_medium),
+    utm_campaign: normalizeOptionalText(record.utm_campaign),
+    utm_content: normalizeOptionalText(record.utm_content),
+    utm_term: normalizeOptionalText(record.utm_term),
+  }
+}
+
+function normalizeOptionalText(value: unknown) {
+  if (typeof value !== "string") {
+    return undefined
+  }
+
+  const trimmed = value.trim()
+
+  return trimmed ? trimmed.slice(0, 160) : undefined
+}
+
+function normalizeAnalyticsContext(value: unknown) {
+  if (!value || typeof value !== "object") {
+    return {}
+  }
+
+  const record = value as Record<string, unknown>
+
+  return {
+    ga_client_id: normalizeAnalyticsText(record.ga_client_id, 128),
+    ga_session_id: normalizeAnalyticsText(record.ga_session_id, 128),
+    page_location: normalizeAnalyticsText(record.page_location, 2000),
+    page_path: normalizeAnalyticsText(record.page_path, 500),
+    referrer: normalizeAnalyticsText(record.referrer, 2000),
+  }
+}
+
+function normalizeAnalyticsText(value: unknown, max: number) {
+  if (typeof value !== "string") {
+    return undefined
+  }
+
+  const trimmed = value.trim()
+
+  return trimmed ? trimmed.slice(0, max) : undefined
 }

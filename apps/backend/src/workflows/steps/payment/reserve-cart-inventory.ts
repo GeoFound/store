@@ -17,9 +17,11 @@ import {
   type FulfillmentCartItem,
   type InventoryReservation,
 } from "../../../platform/inventory"
+import { handleMarketingAttemptClosed } from "../../../modules/marketing-engine/hooks"
 import { resolveProductTemplate } from "../../../platform/product-templates"
 import { attachClaimToken } from "../../../utils/payment-attempt"
 import { createTokenWithPrefix } from "../../../utils/token"
+import { releaseInventoryReservations } from "./inventory-reservation-cleanup"
 
 export type ReserveCartInventoryStepInput = {
   cartId: string
@@ -152,9 +154,9 @@ export const reserveCartInventoryStep = createStep(
         responsePayload,
       })
     } catch (err) {
-      await releaseReservedInventory(container, reservations)
+      await releaseInventoryReservations(container, reservations)
 
-      await paymentRouter.markAttemptFailed({
+      const failedAttempt = await paymentRouter.markAttemptFailed({
         id: input.attemptId,
         errorMessage:
           err instanceof Error ? err.message : "Failed to reserve inventory",
@@ -163,6 +165,28 @@ export const reserveCartInventoryStep = createStep(
         },
       })
 
+      try {
+        await handleMarketingAttemptClosed(container, {
+          attemptId: input.attemptId,
+          customerEmail:
+            typeof failedAttempt.request_payload === "object" &&
+            failedAttempt.request_payload &&
+            typeof (failedAttempt.request_payload as Record<string, unknown>)
+              .customer_email === "string"
+              ? String(
+                  (failedAttempt.request_payload as Record<string, unknown>)
+                    .customer_email
+                )
+              : null,
+          reason: "inventory_reservation_failed",
+          payload:
+            (failedAttempt.response_payload as Record<string, unknown> | null) ||
+            (input.attemptResponsePayload || null),
+        })
+      } catch {
+        // Marketing close handlers are best-effort and must not shadow the original error.
+      }
+
       throw err
     }
   }
@@ -170,36 +194,4 @@ export const reserveCartInventoryStep = createStep(
 
 function toOptionalString(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : ""
-}
-
-async function releaseReservedInventory(
-  container: MedusaContainer,
-  reservations: InventoryReservation[]
-) {
-  const handledKeys = new Set<string>()
-
-  for (const reservation of reservations) {
-    const handlerCode = reservation.handler_code || "credential-inventory"
-    const dedupeKey = `${handlerCode}:${reservation.reservation_key}`
-
-    if (handledKeys.has(dedupeKey)) {
-      continue
-    }
-
-    handledKeys.add(dedupeKey)
-    const handler = getInventoryHandler(handlerCode)
-
-    if (!handler?.releaseReservation) {
-      continue
-    }
-
-    try {
-      await handler.releaseReservation({
-        scope: container,
-        reservationKey: reservation.reservation_key,
-      })
-    } catch {
-      // Best-effort cleanup. The expiry job still acts as a final safeguard.
-    }
-  }
 }

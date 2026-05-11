@@ -1,6 +1,7 @@
 import type {
   PlatformCapabilityName,
   PlatformResolutionContext,
+  PlatformScope,
   PluginManifest,
   PluginRegistration,
   VersionedPluginContract,
@@ -63,12 +64,14 @@ export class PlatformRegistry {
     this.validateContract(contract, pluginId)
 
     const contracts = this.contracts.get(contract.capability) ?? new Map()
-    contracts.set(contract.name, {
+    const normalizedContract: VersionedPluginContract<unknown> = {
       ...contract,
+      pluginId,
       enabled: this.getContractOverride(contract.capability, contract.name) ??
         contract.enabled,
       implementation: contract.implementation,
-    })
+    }
+    contracts.set(createContractKey(normalizedContract), normalizedContract)
     this.contracts.set(contract.capability, contracts)
 
     const plugin = this.plugins.get(pluginId)
@@ -92,7 +95,11 @@ export class PlatformRegistry {
   }
 
   isPluginEnabled(pluginId: string) {
-    return this.pluginOverrides.get(pluginId) ?? this.plugins.get(pluginId)?.enabled ?? true
+    if (this.pluginOverrides.has(pluginId)) {
+      return Boolean(this.pluginOverrides.get(pluginId))
+    }
+
+    return Boolean(this.plugins.get(pluginId)?.enabled)
   }
 
   listContracts(capability: PlatformCapabilityName) {
@@ -124,26 +131,35 @@ export class PlatformRegistry {
     overrides.set(name, enabled)
     this.contractOverrides.set(capability, overrides)
 
-    const contract = this.contracts.get(capability)?.get(name)
-    if (!contract) {
+    const contracts = this.contracts.get(capability)
+    if (!contracts?.size) {
       return false
     }
 
-    this.contracts.get(capability)?.set(name, {
-      ...contract,
-      enabled,
-    })
+    let matched = false
 
-    return true
+    for (const [key, contract] of contracts.entries()) {
+      if (contract.name !== name) {
+        continue
+      }
+
+      contracts.set(key, {
+        ...contract,
+        enabled,
+      })
+      matched = true
+    }
+
+    return matched
   }
 
   removePlugin(pluginId: string) {
     const pluginExisted = this.plugins.delete(pluginId)
 
     for (const [capability, contracts] of this.contracts.entries()) {
-      for (const [name, contract] of contracts.entries()) {
+      for (const [key, contract] of contracts.entries()) {
         if (contract.pluginId === pluginId) {
-          contracts.delete(name)
+          contracts.delete(key)
         }
       }
 
@@ -243,8 +259,11 @@ export class PlatformRegistry {
     }
 
     if (name) {
-      return candidates.find((candidate) => candidate.name === name)
-        ?.implementation as T | undefined
+      return candidates
+        .filter((candidate) => candidate.name === name)
+        .sort(
+          (left, right) => (right.priority ?? 0) - (left.priority ?? 0)
+        )[0]?.implementation as T | undefined
     }
 
     return [...candidates]
@@ -413,4 +432,37 @@ function extractMajor(version: string) {
   const [major] = normalized.split(".")
 
   return major || null
+}
+
+function createContractKey(contract: VersionedPluginContract<unknown>) {
+  return [
+    contract.pluginId,
+    contract.name,
+    contract.version,
+    serializeScope(contract.scope),
+  ].join("|")
+}
+
+function serializeScope(scope?: PlatformScope) {
+  if (!scope) {
+    return "global"
+  }
+
+  return [
+    `site:${serializeScopeValues(scope.siteIds)}`,
+    `product:${serializeScopeValues(scope.productTypeCodes)}`,
+    `channel:${serializeScopeValues(scope.channelCodes)}`,
+  ].join(";")
+}
+
+function serializeScopeValues(values?: string[]) {
+  if (!values?.length) {
+    return "-"
+  }
+
+  return values
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .sort()
+    .join(",")
 }

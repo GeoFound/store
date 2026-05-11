@@ -1,17 +1,20 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { AddToCartButton } from "./add-to-cart-button"
 import { formatMoney, getVariantPrice } from "@/lib/format"
 import type { ProductTemplate, ProductVariant } from "@/lib/types"
+import { emitStoreAnalyticsEvent, minorToDecimal } from "@/lib/analytics"
 
 type ProductPurchasePanelProps = {
+  productId: string
   productTitle: string
   template?: ProductTemplate
   variants?: ProductVariant[]
 }
 
 export function ProductPurchasePanel({
+  productId,
   productTitle,
   template,
   variants = [],
@@ -31,6 +34,40 @@ export function ProductPurchasePanel({
   const isSoldOut =
     !selectedVariant ||
     (requiresInventory && isVariantOutOfStock(selectedVariant))
+
+  useEffect(() => {
+    if (!selectedVariant?.id || typeof amount !== "number") {
+      return
+    }
+
+    emitStoreAnalyticsEvent(
+      "view_item",
+      {
+        currency: currencyCode,
+        value: minorToDecimal(amount, currencyCode),
+        items: [
+          {
+            item_id: selectedVariant.id,
+            item_name: productTitle,
+            item_variant: selectedVariant.title || selectedVariant.sku || "",
+            quantity: 1,
+          },
+        ],
+      },
+      {
+        dedupeKey: `view_item:${productId}:${selectedVariant.id}`,
+      }
+    )
+
+  }, [
+    amount,
+    currencyCode,
+    productId,
+    productTitle,
+    selectedVariant?.id,
+    selectedVariant?.sku,
+    selectedVariant?.title,
+  ])
 
   return (
     <>
@@ -105,6 +142,12 @@ export function ProductPurchasePanel({
           variantId={selectedVariant?.id}
           disabled={isSoldOut}
           disabledLabel="Sold out"
+          analyticsItem={{
+            item_id: selectedVariant?.id,
+            item_name: productTitle,
+            currency: currencyCode,
+            price_minor: amount,
+          }}
         />
       </div>
     </>

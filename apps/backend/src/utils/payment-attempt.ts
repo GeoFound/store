@@ -17,6 +17,8 @@ export type PaymentAttemptResponsePayload = {
   order_access_claim_failed_attempts?: number
   order_access_claim_blocked_until?: string | null
   payment_finalized_at?: string | null
+  marketing_input?: Record<string, unknown>
+  marketing_context?: Record<string, unknown>
   [key: string]: unknown
 }
 

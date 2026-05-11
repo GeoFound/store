@@ -2,6 +2,8 @@ import {
   registerStorefrontExtension,
   type StorefrontExtensionSlot,
 } from "./registry"
+import { Ga4StorefrontScript } from "../plugins/analytics-ga4/script"
+import { HotjarStorefrontScript } from "../plugins/analytics-hotjar/script"
 
 let registered = false
 
@@ -63,6 +65,33 @@ export function ensureStorefrontExtensionsRegistered() {
         body="This catalog can stay stable while payment providers and channel policies change underneath through the platform registry."
       />
     ),
+  })
+
+  registerSlot("products.header.after", {
+    name: "marketing-engine.checkout-attribution-note",
+    pluginId: "marketing-engine",
+    order: 20,
+    component: () => (
+      <ExtensionCard
+        eyebrow="marketing-engine"
+        title="Checkout accepts coupon, referral, and attribution context"
+        body="Marketing strategies are resolved during payment attempt creation. Valid coupon/referral signals are attached to the payment record and finalized after successful payment."
+      />
+    ),
+  })
+
+  registerSlot("layout.body.end", {
+    name: "analytics-ga4.storefront-script",
+    pluginId: "analytics-ga4",
+    order: 5,
+    component: () => <Ga4StorefrontScript />,
+  })
+
+  registerSlot("layout.body.end", {
+    name: "analytics-hotjar.storefront-script",
+    pluginId: "analytics-hotjar",
+    order: 6,
+    component: () => <HotjarStorefrontScript />,
   })
 
   registered = true

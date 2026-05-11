@@ -3,6 +3,10 @@ import { DIGITAL_DELIVERY_PLUGIN_MANIFEST } from "../modules/digital-delivery/pl
 import { CREDENTIAL_INVENTORY_PLUGIN_MANIFEST } from "../modules/credential-inventory/plugin"
 import { GUEST_ORDER_ACCESS_PLUGIN_MANIFEST } from "../modules/guest-order-access/plugin"
 import { SUPPORT_AUDIT_PLUGIN_MANIFEST } from "../modules/support-audit/plugin"
+import { MARKETING_ENGINE_PLUGIN_MANIFEST } from "../modules/marketing-engine/plugin"
+import { ANALYTICS_CORE_PLUGIN_MANIFEST } from "../modules/analytics-core/plugin"
+import { ANALYTICS_GA4_PLUGIN_MANIFEST } from "../modules/analytics-ga4/plugin"
+import { ANALYTICS_HOTJAR_PLUGIN_MANIFEST } from "../modules/analytics-hotjar/plugin"
 import { manualPaymentProvider } from "../modules/payment-router/providers/manual"
 import { credentialInventoryHandler } from "../modules/credential-inventory/handler"
 import { credentialDeliveryHandler } from "../modules/credential-inventory/delivery-handler"
@@ -11,18 +15,20 @@ import { guestOrderAccessProvider } from "../modules/guest-order-access/provider
 import type { PaymentProvider } from "../modules/payment-router/providers/types"
 import {
   createDefaultFulfillmentPolicy,
+  createNoopPaymentProvider,
+  createNoopMarketingStrategy,
   createNoopDeliveryHandler,
   createNoopInventoryHandler,
   createNoopOrderAccessProvider,
 } from "./fallbacks"
 import type { DeliveryHandler, ProductFulfillmentPolicy } from "./delivery"
 import type { InventoryHandler } from "./inventory"
+import type { MarketingStrategy } from "./marketing"
 import type { OrderAccessProvider } from "./order-access"
 import {
   type PlatformRegistry,
   createPlatformRegistry,
 } from "./registry"
-import { createNoopPaymentProvider } from "./fallbacks"
 
 export const BUILTIN_NOOP_PROVIDER_PLUGIN_ID = "builtin.payment-provider.noop"
 
@@ -34,6 +40,10 @@ export function registerDefaultPlatformCapabilities(
     CREDENTIAL_INVENTORY_PLUGIN_MANIFEST,
     GUEST_ORDER_ACCESS_PLUGIN_MANIFEST,
     SUPPORT_AUDIT_PLUGIN_MANIFEST,
+    MARKETING_ENGINE_PLUGIN_MANIFEST,
+    ANALYTICS_CORE_PLUGIN_MANIFEST,
+    ANALYTICS_GA4_PLUGIN_MANIFEST,
+    ANALYTICS_HOTJAR_PLUGIN_MANIFEST,
   ]) {
     registry.registerPlugin({
       manifest,
@@ -181,6 +191,30 @@ export function registerDefaultPlatformCapabilities(
         priority: 0,
         enabled: true,
         implementation: createDefaultFulfillmentPolicy(),
+      },
+    ],
+  })
+
+  registry.registerPlugin<MarketingStrategy>({
+    manifest: {
+      id: "platform.marketing.noop",
+      version: "1.0.0",
+      capabilities: ["marketing-strategy"],
+      enabledByDefault: true,
+      migrationsOwner: "platform",
+      title: "No-op Marketing Strategy",
+      description:
+        "Fallback strategy so marketing capability can be safely disabled or replaced.",
+    },
+    contracts: [
+      {
+        capability: "marketing-strategy",
+        name: "noop",
+        pluginId: "platform.marketing.noop",
+        version: "v1",
+        priority: -1000,
+        enabled: true,
+        implementation: createNoopMarketingStrategy(),
       },
     ],
   })

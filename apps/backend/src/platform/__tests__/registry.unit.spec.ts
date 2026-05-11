@@ -108,6 +108,63 @@ describe("platform registry", () => {
     ).toBeUndefined()
   })
 
+  it("supports same contract name across scoped registrations", () => {
+    const registry = createPlatformRegistry()
+
+    registry.registerPlugin({
+      manifest: {
+        id: "plugin.multi-scope",
+        version: "1.0.0",
+        capabilities: ["payment-provider"],
+        enabledByDefault: true,
+      },
+      contracts: [
+        {
+          capability: "payment-provider",
+          name: "manual",
+          pluginId: "plugin.multi-scope",
+          version: "v1",
+          priority: 100,
+          scope: {
+            siteIds: ["site-a"],
+          },
+          implementation: { code: "manual-site-a" },
+        },
+        {
+          capability: "payment-provider",
+          name: "manual",
+          pluginId: "plugin.multi-scope",
+          version: "v1",
+          priority: 90,
+          scope: {
+            siteIds: ["site-b"],
+          },
+          implementation: { code: "manual-site-b" },
+        },
+      ],
+    })
+
+    expect(registry.listContracts("payment-provider")).toHaveLength(2)
+    expect(
+      registry.resolveContract<{ code: string }>("payment-provider", "manual", {
+        siteId: "site-a",
+      })?.code
+    ).toBe("manual-site-a")
+    expect(
+      registry.resolveContract<{ code: string }>("payment-provider", "manual", {
+        siteId: "site-b",
+      })?.code
+    ).toBe("manual-site-b")
+  })
+
+  it("treats unknown plugins as disabled unless explicitly overridden", () => {
+    const registry = createPlatformRegistry()
+
+    expect(registry.isPluginEnabled("plugin.unknown")).toBe(false)
+    expect(registry.setPluginEnabled("plugin.unknown", true)).toBe(false)
+    expect(registry.isPluginEnabled("plugin.unknown")).toBe(true)
+  })
+
   it("registers built-ins and falls back to noop when requested", () => {
     getPlatformRuntime()
 
@@ -127,6 +184,14 @@ describe("platform registry", () => {
       "guest-order-access"
     )
     expect(manifests.map((manifest) => manifest.id)).toContain("support-audit")
+    expect(manifests.map((manifest) => manifest.id)).toContain(
+      "marketing-engine"
+    )
+    expect(manifests.map((manifest) => manifest.id)).toContain("analytics-core")
+    expect(manifests.map((manifest) => manifest.id)).toContain("analytics-ga4")
+    expect(manifests.map((manifest) => manifest.id)).toContain(
+      "analytics-hotjar"
+    )
     expect(manifests.map((manifest) => manifest.id)).toContain(
       "platform.fallback"
     )

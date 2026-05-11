@@ -6,6 +6,7 @@ import type {
   ProductFulfillmentPolicy,
 } from "./delivery"
 import type { InventoryHandler } from "./inventory"
+import type { MarketingStrategy } from "./marketing"
 import type { OrderAccessProvider } from "./order-access"
 
 export function createNoopPaymentProvider(reason = "noop"): PaymentProvider {
@@ -127,6 +128,18 @@ export function createDefaultFulfillmentPolicy(): ProductFulfillmentPolicy {
         inventoryHandlerCode: "credential-inventory",
         inventoryMode: "reserve",
       }
+    },
+  }
+}
+
+export function createNoopMarketingStrategy(
+  reason = "noop"
+): MarketingStrategy {
+  return {
+    code: "noop",
+    resolve() {
+      void reason
+      return null
     },
   }
 }

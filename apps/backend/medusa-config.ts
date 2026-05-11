@@ -88,6 +88,12 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/guest-order-access",
     },
+    {
+      resolve: "./src/modules/marketing-engine",
+    },
+    {
+      resolve: "./src/modules/analytics-core",
+    },
   ],
 })
 

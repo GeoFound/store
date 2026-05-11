@@ -11,8 +11,14 @@ import {
   updateCartEmail,
 } from "@/lib/medusa"
 import { formatMoney } from "@/lib/format"
+import {
+  emitStoreAnalyticsEvent,
+  getCheckoutAnalyticsContext,
+  minorToDecimal,
+} from "@/lib/analytics"
 import type {
   Cart,
+  MarketingResolvedContext,
   ManualPaymentInstructions,
   PaymentAttempt,
   PaymentMethod,
@@ -35,7 +41,18 @@ export function CheckoutView() {
   )
   const [instructions, setInstructions] =
     useState<ManualPaymentInstructions | null>(null)
+  const [resolvedMarketing, setResolvedMarketing] =
+    useState<MarketingResolvedContext | null>(null)
   const [claimToken, setClaimToken] = useState("")
+  const [couponCode, setCouponCode] = useState("")
+  const [referralCode, setReferralCode] = useState("")
+  const [utmContext, setUtmContext] = useState({
+    utm_source: "",
+    utm_medium: "",
+    utm_campaign: "",
+    utm_content: "",
+    utm_term: "",
+  })
   const [orderAccessToken, setOrderAccessToken] = useState("")
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -64,6 +81,15 @@ export function CheckoutView() {
       }
 
       try {
+        const url = new URL(window.location.href)
+        setUtmContext({
+          utm_source: url.searchParams.get("utm_source") || "",
+          utm_medium: url.searchParams.get("utm_medium") || "",
+          utm_campaign: url.searchParams.get("utm_campaign") || "",
+          utm_content: url.searchParams.get("utm_content") || "",
+          utm_term: url.searchParams.get("utm_term") || "",
+        })
+
         if (cartId) {
           const nextCart = await retrieveCart(cartId)
           setCart(nextCart)
@@ -85,6 +111,9 @@ export function CheckoutView() {
         if (pendingAttemptId) {
           const { attempt } = await retrievePaymentAttempt(pendingAttemptId)
           setPaymentAttempt(attempt)
+          setResolvedMarketing(
+            normalizeResolvedMarketing(attempt.marketing_context)
+          )
         }
 
         if (pendingClaimToken) {
@@ -99,6 +128,29 @@ export function CheckoutView() {
 
     void loadCheckoutState()
   }, [])
+
+  useEffect(() => {
+    if (!cart?.id || !Array.isArray(cart.items) || !cart.items.length) {
+      return
+    }
+
+    emitStoreAnalyticsEvent(
+      "begin_checkout",
+      {
+        currency: cart.currency_code || "USD",
+        value: minorToDecimal(cart.total || 0, cart.currency_code || "USD"),
+        items: cart.items.map((item) => ({
+          item_id: item.variant_id || item.id,
+          item_name: item.title || "Digital product",
+          quantity: item.quantity || 1,
+          price: minorToDecimal(item.unit_price || 0, cart.currency_code || "USD"),
+        })),
+      },
+      {
+        dedupeKey: `begin_checkout:${cart.id}:${cart.total || 0}`,
+      }
+    )
+  }, [cart?.currency_code, cart?.id, cart?.items, cart?.total])
 
   useEffect(() => {
     if (!paymentAttempt?.id || !claimToken || orderAccessToken) {
@@ -117,6 +169,7 @@ export function CheckoutView() {
         }
 
         setPaymentAttempt(attempt)
+        setResolvedMarketing(normalizeResolvedMarketing(attempt.marketing_context))
 
         if (attempt.status === "paid") {
           if (attempt.order_access_claimed_at) {
@@ -141,6 +194,26 @@ export function CheckoutView() {
           window.localStorage.setItem(
             ORDER_ACCESS_TOKEN_KEY,
             claimed.access_token
+          )
+          emitStoreAnalyticsEvent(
+            "purchase",
+            {
+              transaction_id: claimed.order_id,
+              payment_attempt_id: attempt.id,
+              currency: attempt.currency || "USD",
+              value: minorToDecimal(
+                Number(attempt.amount || 0),
+                attempt.currency || "USD"
+              ),
+              items: cart?.items?.map((item) => ({
+                item_id: item.variant_id || item.id,
+                item_name: item.title || "Digital product",
+                quantity: item.quantity || 1,
+              })) || [{ item_id: "unknown_variant", item_name: "Digital product", quantity: 1 }],
+            },
+            {
+              dedupeKey: `purchase:${attempt.id}:${claimed.order_id}`,
+            }
           )
           clearPendingPaymentState()
           setMessage("Payment confirmed. Your order is ready.")
@@ -184,7 +257,7 @@ export function CheckoutView() {
         window.clearTimeout(timeout)
       }
     }
-  }, [claimToken, orderAccessToken, paymentAttempt?.id])
+  }, [cart?.items, claimToken, orderAccessToken, paymentAttempt?.id])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -205,11 +278,26 @@ export function CheckoutView() {
       const payment = await createCartPayment({
         cartId: nextCart.id,
         paymentMethod,
+        marketing: {
+          coupon_code: couponCode || undefined,
+          referral_code: referralCode || undefined,
+          utm_source: utmContext.utm_source || undefined,
+          utm_medium: utmContext.utm_medium || undefined,
+          utm_campaign: utmContext.utm_campaign || undefined,
+          utm_content: utmContext.utm_content || undefined,
+          utm_term: utmContext.utm_term || undefined,
+        },
+        analytics: getCheckoutAnalyticsContext(),
       })
 
       setCart(nextCart)
       setPaymentAttempt(payment.attempt)
       setInstructions(payment.instructions)
+      setResolvedMarketing(
+        normalizeResolvedMarketing(
+          payment.marketing || payment.attempt.marketing_context
+        )
+      )
       setClaimToken(payment.claim_token)
       setOrderAccessToken("")
       persistPendingPaymentState(
@@ -300,6 +388,42 @@ export function CheckoutView() {
           </p>
         </section>
 
+        <section>
+          <h2 className="text-lg font-semibold">Marketing (optional)</h2>
+          <div className="mt-4 grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="block text-sm font-medium" htmlFor="coupon_code">
+                Coupon code
+              </label>
+              <input
+                id="coupon_code"
+                value={couponCode}
+                onChange={(event) => setCouponCode(event.target.value)}
+                className="mt-2 w-full border border-stone-300 px-3 py-3 outline-none focus:border-stone-950"
+                placeholder="SAVE10"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium" htmlFor="referral_code">
+                Referral code
+              </label>
+              <input
+                id="referral_code"
+                value={referralCode}
+                onChange={(event) => setReferralCode(event.target.value)}
+                className="mt-2 w-full border border-stone-300 px-3 py-3 outline-none focus:border-stone-950"
+                placeholder="CREATOR_A"
+              />
+            </div>
+          </div>
+          {Object.values(utmContext).some(Boolean) ? (
+            <p className="mt-3 text-sm text-stone-600">
+              UTM captured: {utmContext.utm_source || "-"} /{" "}
+              {utmContext.utm_medium || "-"} / {utmContext.utm_campaign || "-"}
+            </p>
+          ) : null}
+        </section>
+
         <button
           type="submit"
           disabled={saving}
@@ -332,6 +456,36 @@ export function CheckoutView() {
               Status: {paymentAttempt.status}
               {claiming ? " | Claiming order access..." : ""}
             </p>
+          </section>
+        ) : null}
+
+        {resolvedMarketing ? (
+          <section className="border border-stone-200 bg-stone-50 p-4">
+            <h2 className="text-base font-semibold text-stone-900">
+              Applied marketing context
+            </h2>
+            <div className="mt-3 space-y-2 text-sm text-stone-700">
+              {resolvedMarketing.coupon?.code ? (
+                <p>Coupon: {resolvedMarketing.coupon.code}</p>
+              ) : null}
+              {resolvedMarketing.referral?.code ? (
+                <p>Referral: {resolvedMarketing.referral.code}</p>
+              ) : null}
+              {resolvedMarketing.attribution?.source ||
+              resolvedMarketing.attribution?.campaign ? (
+                <p>
+                  Attribution: {resolvedMarketing.attribution?.source || "-"} /{" "}
+                  {resolvedMarketing.attribution?.medium || "-"} /{" "}
+                  {resolvedMarketing.attribution?.campaign || "-"}
+                </p>
+              ) : null}
+              {resolvedMarketing.tags?.length ? (
+                <p>Tags: {resolvedMarketing.tags.join(", ")}</p>
+              ) : null}
+              {resolvedMarketing.warnings?.length ? (
+                <p>Warnings: {resolvedMarketing.warnings.join(", ")}</p>
+              ) : null}
+            </div>
           </section>
         ) : null}
 
@@ -400,4 +554,12 @@ function clearPendingPaymentState() {
   window.localStorage.removeItem(PENDING_PAYMENT_ATTEMPT_ID_KEY)
   window.localStorage.removeItem(PENDING_PAYMENT_CLAIM_TOKEN_KEY)
   window.localStorage.removeItem(PENDING_PAYMENT_INSTRUCTIONS_KEY)
+}
+
+function normalizeResolvedMarketing(value: unknown): MarketingResolvedContext | null {
+  if (!value || typeof value !== "object") {
+    return null
+  }
+
+  return value as MarketingResolvedContext
 }

@@ -58,12 +58,31 @@ export function hasPaymentProvider(code: string) {
 }
 
 export function listPaymentProviders() {
-  return getPlatformRuntime()
+  const runtime = getPlatformRuntime()
+  const sortedNames = runtime
     .listContracts("payment-provider")
-    .filter((contract) =>
-      Boolean(getPaymentProvider(contract.name))
+    .sort((left, right) => (right.priority ?? 0) - (left.priority ?? 0))
+    .map((contract) => contract.name)
+  const seen = new Set<string>()
+  const providers: PaymentProvider[] = []
+
+  for (const name of sortedNames) {
+    if (seen.has(name)) {
+      continue
+    }
+
+    seen.add(name)
+    const provider = runtime.resolveContract<PaymentProvider>(
+      "payment-provider",
+      name
     )
-    .map((contract) => contract.implementation as PaymentProvider)
+
+    if (provider) {
+      providers.push(provider)
+    }
+  }
+
+  return providers
 }
 
 export function listPaymentProviderCodes() {

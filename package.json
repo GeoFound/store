@@ -25,7 +25,7 @@
     "restore:db": "scripts/restore-postgres.sh",
     "acceptance": "scripts/local-acceptance.sh",
     "lint": "pnpm -r lint",
-    "test": "pnpm -r test"
+    "test": "pnpm --dir apps/backend test && pnpm --dir apps/storefront test"
   },
   "engines": {
     "node": ">=22"

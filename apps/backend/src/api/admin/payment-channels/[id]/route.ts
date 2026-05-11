@@ -21,6 +21,14 @@ export const POST = async (
     req.scope.resolve(PAYMENT_ROUTER_MODULE)
   const existing = await paymentRouter.retrievePaymentChannel(req.params.id)
   paymentRouter.assertProviderRegistered(existing.provider_code)
+  const currency = normalizeCurrencyCode(req.body.currency)
+
+  if (typeof req.body.currency !== "undefined" && req.body.currency !== null && !currency) {
+    res.status(400).json({
+      message: "currency must be a valid 3-letter code",
+    })
+    return
+  }
 
   const channel = await paymentRouter.updatePaymentChannels({
     id: req.params.id,
@@ -40,7 +48,7 @@ export const POST = async (
       ? { max_amount: req.body.max_amount }
       : {}),
     ...(typeof req.body.currency !== "undefined"
-      ? { currency: req.body.currency || null }
+      ? { currency: currency || null }
       : {}),
     ...(req.body.health_status ? { health_status: req.body.health_status } : {}),
     ...(typeof req.body.config_json !== "undefined"
@@ -51,4 +59,14 @@ export const POST = async (
   res.json({
     channel,
   })
+}
+
+function normalizeCurrencyCode(value: unknown) {
+  if (typeof value !== "string") {
+    return ""
+  }
+
+  const normalized = value.trim().toLowerCase()
+
+  return /^[a-z]{3}$/.test(normalized) ? normalized : ""
 }

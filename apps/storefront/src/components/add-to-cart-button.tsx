@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { addLineItem, createCart } from "@/lib/medusa"
+import { emitStoreAnalyticsEvent, minorToDecimal } from "@/lib/analytics"
 
 const CART_ID_KEY = "store_cart_id"
 
@@ -10,12 +11,19 @@ type AddToCartButtonProps = {
   variantId?: string
   disabled?: boolean
   disabledLabel?: string
+  analyticsItem?: {
+    item_id?: string
+    item_name?: string
+    currency?: string
+    price_minor?: number
+  }
 }
 
 export function AddToCartButton({
   variantId,
   disabled = false,
   disabledLabel = "Sold out",
+  analyticsItem,
 }: AddToCartButtonProps) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -49,6 +57,25 @@ export function AddToCartButton({
         variantId,
         quantity: 1,
       })
+
+      const currency = analyticsItem?.currency || "USD"
+      emitStoreAnalyticsEvent(
+        "add_to_cart",
+        {
+          currency,
+          value: minorToDecimal(analyticsItem?.price_minor || 0, currency),
+          items: [
+            {
+              item_id: analyticsItem?.item_id || variantId,
+              item_name: analyticsItem?.item_name || "Digital product",
+              quantity: 1,
+            },
+          ],
+        },
+        {
+          dedupeKey: `add_to_cart:${variantId}:${cartId}`,
+        }
+      )
 
       router.push("/cart")
     } catch (err) {

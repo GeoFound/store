@@ -4,6 +4,7 @@ import { Modules } from "@medusajs/framework/utils"
 import GuestOrderAccessModuleService from "../../../../../modules/guest-order-access/service"
 import { GUEST_ORDER_ACCESS_MODULE } from "../../../../../modules/guest-order-access"
 import { ensureSupportAuditHooksRegistered } from "../../../../../modules/support-audit/hooks"
+import { ensureAnalyticsGa4HooksRegistered } from "../../../../../modules/analytics-ga4/hooks"
 import { emitOrderAccessTokenIssuedEvent } from "../../../../../platform/events"
 import { ensurePlatformObservabilityHooksRegistered } from "../../../../../platform/observability"
 import { getOrderAccessProvider } from "../../../../../platform/order-access"
@@ -69,6 +70,7 @@ export const POST = async (
 
   ensureSupportAuditHooksRegistered()
   ensurePlatformObservabilityHooksRegistered()
+  ensureAnalyticsGa4HooksRegistered()
   await emitOrderAccessTokenIssuedEvent(req.scope, {
     orderId: String(order.id),
     customerEmail: String(order.email),

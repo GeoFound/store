@@ -6,7 +6,8 @@
     "dev": "next dev --port 8000",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test": "pnpm run lint"
   },
   "dependencies": {
     "next": "16.2.6",

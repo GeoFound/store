@@ -63,6 +63,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
             Back to products
           </Link>
           <ProductPurchasePanel
+            productId={product.id}
             productTitle={product.title}
             template={template}
             variants={product.variants}

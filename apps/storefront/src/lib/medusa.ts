@@ -15,6 +15,9 @@ import type {
   OrderLookupResult,
   PaymentAttempt,
   PaymentMethod,
+  MarketingCheckoutInput,
+  AnalyticsCheckoutContext,
+  MarketingResolvedContext,
   Product,
   Region,
 } from "./types"
@@ -220,15 +223,20 @@ export async function listPaymentMethods(input?: {
 export async function createCartPayment(input: {
   cartId: string
   paymentMethod: PaymentMethod["code"]
+  marketing?: MarketingCheckoutInput
+  analytics?: AnalyticsCheckoutContext
 }): Promise<{
   attempt: PaymentAttempt
   instructions: ManualPaymentInstructions
   claim_token: string
+  marketing?: MarketingResolvedContext
 }> {
   return medusaFetch(`/store/carts/${input.cartId}/payments`, {
     method: "POST",
     body: {
       payment_method: input.paymentMethod,
+      marketing: input.marketing || {},
+      analytics: input.analytics || {},
     },
   })
 }

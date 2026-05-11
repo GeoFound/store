@@ -4,6 +4,7 @@ import { MedusaError, Modules } from "@medusajs/framework/utils"
 import PaymentRouterModuleService from "../../../../../modules/payment-router/service"
 import { PAYMENT_ROUTER_MODULE } from "../../../../../modules/payment-router"
 import { ensureSupportAuditHooksRegistered } from "../../../../../modules/support-audit/hooks"
+import { ensureAnalyticsGa4HooksRegistered } from "../../../../../modules/analytics-ga4/hooks"
 import { emitOrderAccessTokenIssuedEvent } from "../../../../../platform/events"
 import { ensurePlatformObservabilityHooksRegistered } from "../../../../../platform/observability"
 import { getOrderAccessProvider } from "../../../../../platform/order-access"
@@ -123,6 +124,7 @@ export const POST = async (
 
   ensureSupportAuditHooksRegistered()
   ensurePlatformObservabilityHooksRegistered()
+  ensureAnalyticsGa4HooksRegistered()
   await emitOrderAccessTokenIssuedEvent(req.scope, {
     orderId: claimResult.orderId,
     customerEmail: claimResult.customerEmail,
