@@ -9,8 +9,8 @@ import {
   createStep,
   StepResponse,
 } from "@medusajs/framework/workflows-sdk"
-import type { CreatePaymentAttemptInput } from "../../../modules/payment-router/types"
-import { handleMarketingAttemptClosed } from "../../../modules/marketing-engine/hooks"
+import { handlePaymentAttemptClosed } from "../../../platform/attempt-lifecycle"
+import type { CreatePaymentAttemptInput } from "../../../platform/payment-providers"
 import { resolvePaymentRouterService } from "../../../platform/services"
 import { extractInventoryReservations } from "../../../utils/payment-attempt"
 import { releaseInventoryReservations } from "./inventory-reservation-cleanup"
@@ -106,7 +106,7 @@ export const createPaymentAttemptStep = createStep(
           })
 
           try {
-            await handleMarketingAttemptClosed(container, {
+            await handlePaymentAttemptClosed(container, {
               attemptId: closedAttempt.id,
               customerEmail:
                 typeof closedAttempt.request_payload === "object" &&

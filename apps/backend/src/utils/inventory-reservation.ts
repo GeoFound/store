@@ -1,7 +1,7 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import type { ILockingModule } from "@medusajs/framework/types"
 import { Modules } from "@medusajs/framework/utils"
-import type { ReserveCredentialInput } from "../modules/credential-inventory/types"
+import type { ReserveCredentialInput } from "../platform/credential-inventory"
 import { resolveCredentialInventoryService } from "../platform/services"
 
 export async function reserveCredentialsWithLock(

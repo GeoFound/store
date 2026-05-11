@@ -1,15 +1,12 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import type { ILockingModule } from "@medusajs/framework/types"
 import { Modules } from "@medusajs/framework/utils"
-import CredentialInventoryModuleService from "../modules/credential-inventory/service"
-import { CREDENTIAL_INVENTORY_MODULE } from "../modules/credential-inventory"
+import { resolveCredentialInventoryService } from "../platform/services"
 
 export default async function releaseExpiredCredentialReservations(
   container: MedusaContainer
 ) {
-  const inventory: CredentialInventoryModuleService = container.resolve(
-    CREDENTIAL_INVENTORY_MODULE
-  )
+  const inventory = resolveCredentialInventoryService(container)
   const locking: ILockingModule = container.resolve(Modules.LOCKING)
   const logger = container.resolve("logger")
   const now = new Date()

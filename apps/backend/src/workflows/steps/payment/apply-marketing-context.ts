@@ -4,12 +4,12 @@ import type {
   MarketingCheckoutContextInput,
   MarketingResolvedContext,
 } from "../../../platform/marketing"
+import { handlePaymentAttemptClosed } from "../../../platform/attempt-lifecycle"
 import { resolveMarketingContext } from "../../../platform/marketing"
 import {
   ensurePlatformIntegrationsRegistered,
 } from "../../../platform/integrations"
 import { isPlatformPluginEnabled } from "../../../platform/runtime"
-import { handleMarketingAttemptClosed } from "../../../modules/marketing-engine/hooks"
 import {
   resolveMarketingEngineService,
   resolvePaymentRouterService,
@@ -112,7 +112,7 @@ export const applyMarketingContextStep = createStep(
       })
 
       try {
-        await handleMarketingAttemptClosed(container, {
+        await handlePaymentAttemptClosed(container, {
           attemptId: input.attemptId,
           customerEmail: input.customerEmail || null,
           reason: "marketing_context_failed",

@@ -1,7 +1,7 @@
 import { createWorkflow, WorkflowResponse } from "@medusajs/framework/workflows-sdk"
-import type { CreatePaymentAttemptInput } from "../modules/payment-router/types"
 import type { FulfillmentCartItem } from "../platform/inventory"
 import type { MarketingCheckoutContextInput } from "../platform/marketing"
+import type { CreatePaymentAttemptInput } from "../platform/payment-providers"
 import { applyMarketingContextStep } from "./steps/payment/apply-marketing-context"
 import { createPaymentAttemptStep } from "./steps/payment/create-payment-attempt"
 import { reserveCartInventoryStep } from "./steps/payment/reserve-cart-inventory"

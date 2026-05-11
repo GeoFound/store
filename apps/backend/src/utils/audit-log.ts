@@ -2,7 +2,7 @@ import type { MedusaContainer } from "@medusajs/framework/types"
 import { PLATFORM_HOOKS } from "../platform/hooks"
 import { emitPlatformHook } from "../platform/runtime"
 import { ensurePlatformIntegrationsRegistered } from "../platform/integrations"
-import type { WriteAuditLogInput } from "../modules/support-audit/types"
+import type { WriteAuditLogInput } from "../platform/support-audit"
 
 export async function emitAuditLog(
   scope: MedusaContainer,

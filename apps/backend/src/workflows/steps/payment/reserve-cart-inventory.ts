@@ -7,6 +7,7 @@ import { MedusaError } from "@medusajs/framework/utils"
 import { resolveProductFulfillmentPolicy } from "../../../platform/delivery"
 import { emitPaymentAttemptReservedEvent } from "../../../platform/events"
 import { ensurePlatformIntegrationsRegistered } from "../../../platform/integrations"
+import { handlePaymentAttemptClosed } from "../../../platform/attempt-lifecycle"
 import {
   getCartItemMetadata,
   getCartItemProductType,
@@ -16,7 +17,6 @@ import {
   type FulfillmentCartItem,
   type InventoryReservation,
 } from "../../../platform/inventory"
-import { handleMarketingAttemptClosed } from "../../../modules/marketing-engine/hooks"
 import { resolveProductTemplate } from "../../../platform/product-templates"
 import { resolvePaymentRouterService } from "../../../platform/services"
 import { attachClaimToken } from "../../../utils/payment-attempt"
@@ -177,7 +177,7 @@ export const reserveCartInventoryStep = createStep(
       })
 
       try {
-        await handleMarketingAttemptClosed(container, {
+        await handlePaymentAttemptClosed(container, {
           attemptId: input.attemptId,
           customerEmail:
             typeof failedAttempt.request_payload === "object" &&

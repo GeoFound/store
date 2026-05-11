@@ -1,6 +1,6 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { getPaymentProvider } from "../../../../modules/payment-router/providers/registry"
-import { handleMarketingAttemptClosed } from "../../../../modules/marketing-engine/hooks"
+import { handlePaymentAttemptClosed } from "../../../../platform/attempt-lifecycle"
+import { getPaymentProvider } from "../../../../platform/payment-providers"
 import { resolvePaymentRouterService } from "../../../../platform/services"
 import { emitAuditLog } from "../../../../utils/audit-log"
 import finalizeSuccessfulPaymentAttemptWorkflow from "../../../../workflows/finalize-successful-payment-attempt"
@@ -55,7 +55,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
           })
 
     try {
-      await handleMarketingAttemptClosed(req.scope, {
+      await handlePaymentAttemptClosed(req.scope, {
         attemptId: attempt.id,
         customerEmail:
           typeof attempt.request_payload === "object" &&

@@ -1,5 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { getPaymentProvider } from "../../../../modules/payment-router/providers/registry"
+import { getPaymentProvider } from "../../../../platform/payment-providers"
 import { emitAuditLog } from "../../../../utils/audit-log"
 import finalizeSuccessfulPaymentAttemptWorkflow from "../../../../workflows/finalize-successful-payment-attempt"
 

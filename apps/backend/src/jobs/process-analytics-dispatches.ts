@@ -1,18 +1,15 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { Modules } from "@medusajs/framework/utils"
 import {
-  ANALYTICS_CORE_MODULE,
-} from "../modules/analytics-core"
-import type AnalyticsCoreModuleService from "../modules/analytics-core/service"
-import { getAnalyticsDispatchConfig } from "../modules/analytics-core/config"
-import {
+  getAnalyticsDispatchConfig,
   getAnalyticsDestination,
   listAnalyticsDestinations,
-} from "../modules/analytics-core/destinations/registry"
+} from "../platform/analytics"
 import {
   isPlatformPluginEnabled,
 } from "../platform/runtime"
 import { ensurePlatformIntegrationsRegistered } from "../platform/integrations"
+import { resolveAnalyticsCoreService } from "../platform/services"
 
 export default async function processAnalyticsDispatches(container: MedusaContainer) {
   ensurePlatformIntegrationsRegistered()
@@ -27,9 +24,7 @@ export default async function processAnalyticsDispatches(container: MedusaContai
     return
   }
 
-  const analytics: AnalyticsCoreModuleService = container.resolve(
-    ANALYTICS_CORE_MODULE
-  )
+  const analytics = resolveAnalyticsCoreService(container)
   const locking = container.resolve(Modules.LOCKING)
   const logger = container.resolve("logger") as {
     info: (message: string, meta?: Record<string, unknown>) => void

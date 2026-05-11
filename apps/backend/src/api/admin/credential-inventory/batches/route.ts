@@ -1,5 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import type { CreateCredentialBatchInput } from "../../../../modules/credential-inventory/types"
+import type { CreateCredentialBatchInput } from "../../../../platform/credential-inventory"
 import { resolveProductTemplate } from "../../../../platform/product-templates"
 import { resolveCredentialInventoryService } from "../../../../platform/services"
 
