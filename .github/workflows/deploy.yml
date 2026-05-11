@@ -1,0 +1,143 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      operation:
+        description: deploy or rollback
+        required: true
+        default: deploy
+        type: choice
+        options:
+          - deploy
+          - rollback
+      environment:
+        description: target environment
+        required: true
+        default: production
+        type: choice
+        options:
+          - staging
+          - production
+      ref:
+        description: git ref to deploy (branch/tag/sha)
+        required: false
+        default: main
+        type: string
+      rollback_to:
+        description: rollback release id (optional)
+        required: false
+        type: string
+      run_db_migrations:
+        description: run db migrations during deploy
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ github.event.inputs.environment || 'production' }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment || 'production' }}
+    steps:
+      - name: Validate required secrets
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          DEPLOY_HOST_KEY: ${{ secrets.DEPLOY_HOST_KEY }}
+          DEPLOY_REPO_PATH: ${{ secrets.DEPLOY_REPO_PATH }}
+        run: |
+          set -euo pipefail
+          for key in DEPLOY_HOST DEPLOY_SSH_USER DEPLOY_SSH_PRIVATE_KEY DEPLOY_HOST_KEY DEPLOY_REPO_PATH; do
+            if [ -z "${!key}" ]; then
+              echo "Missing required secret: $key" >&2
+              exit 1
+            fi
+          done
+
+      - name: Start SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+
+      - name: Configure known_hosts
+        env:
+          DEPLOY_HOST_KEY: ${{ secrets.DEPLOY_HOST_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_HOST_KEY" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Execute remote operation
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+          DEPLOY_REPO_PATH: ${{ secrets.DEPLOY_REPO_PATH }}
+          APP_ROOT: ${{ secrets.APP_ROOT }}
+          OPERATION: ${{ github.event.inputs.operation || 'deploy' }}
+          INPUT_REF: ${{ github.event.inputs.ref || 'main' }}
+          ROLLBACK_TO: ${{ github.event.inputs.rollback_to }}
+          RUN_DB_MIGRATIONS: ${{ github.event.inputs.run_db_migrations || 'true' }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "$APP_ROOT" ]; then
+            APP_ROOT="/opt/store"
+          fi
+
+          if ! [[ "$APP_ROOT" =~ ^/[A-Za-z0-9._/-]+$ ]]; then
+            echo "Invalid APP_ROOT: $APP_ROOT" >&2
+            exit 1
+          fi
+
+          if ! [[ "$DEPLOY_REPO_PATH" =~ ^/[A-Za-z0-9._/-]+$ ]]; then
+            echo "Invalid DEPLOY_REPO_PATH: $DEPLOY_REPO_PATH" >&2
+            exit 1
+          fi
+
+          SSH_TARGET="$DEPLOY_SSH_USER@$DEPLOY_HOST"
+
+          if [ "$OPERATION" = "rollback" ]; then
+            if [ -n "$ROLLBACK_TO" ]; then
+              if ! [[ "$ROLLBACK_TO" =~ ^[A-Za-z0-9._/-]+$ ]]; then
+                echo "Invalid rollback_to: $ROLLBACK_TO" >&2
+                exit 1
+              fi
+
+              ssh -o BatchMode=yes -o StrictHostKeyChecking=yes "$SSH_TARGET" \
+                "set -euo pipefail; cd '$DEPLOY_REPO_PATH'; APP_ROOT='$APP_ROOT' bash scripts/deploy/rollback.sh --to '$ROLLBACK_TO'"
+            else
+              ssh -o BatchMode=yes -o StrictHostKeyChecking=yes "$SSH_TARGET" \
+                "set -euo pipefail; cd '$DEPLOY_REPO_PATH'; APP_ROOT='$APP_ROOT' bash scripts/deploy/rollback.sh"
+            fi
+
+            exit 0
+          fi
+
+          TARGET_REF="$INPUT_REF"
+          if [ -z "$TARGET_REF" ]; then
+            TARGET_REF="main"
+          fi
+
+          if ! [[ "$TARGET_REF" =~ ^[A-Za-z0-9._/-]+$ ]]; then
+            echo "Invalid ref: $TARGET_REF" >&2
+            exit 1
+          fi
+
+          if [ "$RUN_DB_MIGRATIONS" = "true" ]; then
+            MIGRATIONS_FLAG="1"
+          else
+            MIGRATIONS_FLAG="0"
+          fi
+
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes "$SSH_TARGET" \
+            "set -euo pipefail; cd '$DEPLOY_REPO_PATH'; APP_ROOT='$APP_ROOT' RUN_DB_MIGRATIONS='$MIGRATIONS_FLAG' bash scripts/deploy/deploy.sh --ref '$TARGET_REF'"

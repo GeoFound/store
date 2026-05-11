@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+JWT_SECRET="${JWT_SECRET:-local_acceptance_jwt_secret}"
+COOKIE_SECRET="${COOKIE_SECRET:-local_acceptance_cookie_secret}"
+MANUAL_WEBHOOK_SECRET="${MANUAL_WEBHOOK_SECRET:-local_acceptance_manual_webhook_secret}"
+
+pnpm services:up
+JWT_SECRET="$JWT_SECRET" COOKIE_SECRET="$COOKIE_SECRET" MANUAL_WEBHOOK_SECRET="$MANUAL_WEBHOOK_SECRET" pnpm --dir apps/backend exec medusa db:migrate
+JWT_SECRET="$JWT_SECRET" COOKIE_SECRET="$COOKIE_SECRET" MANUAL_WEBHOOK_SECRET="$MANUAL_WEBHOOK_SECRET" pnpm --dir apps/backend build
+pnpm --dir apps/storefront lint
+pnpm --dir apps/storefront build
+
+echo "local-acceptance: build checks passed"
+echo "Start backend and storefront, then run scripts/health-check.sh for live endpoint checks."

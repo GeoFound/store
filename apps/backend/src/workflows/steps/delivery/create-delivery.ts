@@ -1,0 +1,133 @@
+import type { MedusaContainer } from "@medusajs/framework/types"
+import { createStep, StepResponse } from "@medusajs/framework/workflows-sdk"
+import DigitalDeliveryModuleService from "../../../modules/digital-delivery/service"
+import { DIGITAL_DELIVERY_MODULE } from "../../../modules/digital-delivery"
+import PaymentRouterModuleService from "../../../modules/payment-router/service"
+import { PAYMENT_ROUTER_MODULE } from "../../../modules/payment-router"
+import { emitDeliveryCreatedEvent } from "../../../platform/events"
+import { ensurePlatformObservabilityHooksRegistered } from "../../../platform/observability"
+import { resolveProductTemplate } from "../../../platform/product-templates"
+
+export type CreateDeliveryStepInput = {
+  orderId?: string
+  cartId?: string
+  paymentAttemptId?: string
+  orderItemId?: string
+  accountItemId?: string | null
+  productVariantId?: string
+  productType?: string | null
+  fulfillmentPolicyCode?: string | null
+  deliveryHandlerCode?: string | null
+  deliveryPayload?: Record<string, unknown> | string
+  deliveredBy?: string
+  deliveryNote?: string
+  metadata?: Record<string, unknown>
+}
+
+export const createDeliveryStep = createStep(
+  "create-delivery",
+  async (
+    input: CreateDeliveryStepInput,
+    { container }: { container: MedusaContainer }
+  ) => {
+    ensurePlatformObservabilityHooksRegistered()
+
+    const deliveryService: DigitalDeliveryModuleService = container.resolve(
+      DIGITAL_DELIVERY_MODULE
+    )
+    const paymentRouter: PaymentRouterModuleService = container.resolve(
+      PAYMENT_ROUTER_MODULE
+    )
+
+    const deliveryMetadata = {
+      ...(input.metadata || {}),
+    }
+    const productTemplate = resolveProductTemplate({
+      code:
+        toOptionalString(
+          deliveryMetadata.template_code ||
+            deliveryMetadata.templateCode ||
+            deliveryMetadata.product_template ||
+            deliveryMetadata.productTemplate
+        ) || undefined,
+      productType:
+        toOptionalString(
+          deliveryMetadata.product_type || deliveryMetadata.productType
+        ) || null,
+      metadata: deliveryMetadata,
+    })
+
+    const paymentAttempt = input.paymentAttemptId
+      ? await paymentRouter.retrievePaymentAttempt(input.paymentAttemptId)
+      : null
+    const orderId = input.orderId || paymentAttempt?.order_id || undefined
+
+    const result = await deliveryService.createDelivery({
+      scope: container,
+      orderId,
+      cartId: input.cartId,
+      paymentAttemptId: input.paymentAttemptId,
+      orderItemId: input.orderItemId,
+      accountItemId: input.accountItemId,
+      productVariantId: input.productVariantId,
+      productType:
+        input.productType ||
+        toOptionalString(
+          deliveryMetadata.product_type || deliveryMetadata.productType
+        ) ||
+        productTemplate?.productType ||
+        null,
+      fulfillmentPolicyCode:
+        input.fulfillmentPolicyCode ||
+        toOptionalString(
+          deliveryMetadata.fulfillment_policy_code ||
+            deliveryMetadata.fulfillmentPolicyCode
+        ) ||
+        productTemplate?.fulfillmentPolicyCode ||
+        undefined,
+      deliveryHandlerCode:
+        input.deliveryHandlerCode ||
+        toOptionalString(
+          deliveryMetadata.delivery_handler_code ||
+            deliveryMetadata.deliveryHandlerCode
+        ) ||
+        productTemplate?.deliveryHandlerCode ||
+        (input.accountItemId ? "credential" : undefined) ||
+        undefined,
+      deliveryPayload: input.deliveryPayload,
+      deliveredBy: input.deliveredBy,
+      deliveryNote: input.deliveryNote,
+      metadata: {
+        template_code: productTemplate?.code || null,
+        ...deliveryMetadata,
+      },
+    })
+
+    try {
+      await emitDeliveryCreatedEvent(container, {
+        delivery: result.delivery,
+        accessToken: result.accessToken,
+        orderId,
+        metadata: {
+          template_code: productTemplate?.code || null,
+          ...deliveryMetadata,
+        },
+      })
+    } catch {
+      // Hook consumers must not break the delivery flow.
+    }
+
+    return new StepResponse({
+      ...result,
+      orderId,
+      deliveryMetadata: {
+        template_code: productTemplate?.code || null,
+        ...deliveryMetadata,
+      },
+    })
+  }
+)
+
+function toOptionalString(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : ""
+}

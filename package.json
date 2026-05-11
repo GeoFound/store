@@ -1,0 +1,34 @@
+{
+  "name": "single-store-digital-goods",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Single-store independent digital goods storefront built with Medusa and Next.js.",
+  "scripts": {
+    "services:up": "docker compose up -d postgres redis",
+    "services:ps": "docker compose ps",
+    "db:migrate": "pnpm --dir apps/backend exec medusa db:migrate",
+    "dev:backend": "pnpm --dir apps/backend dev",
+    "dev:storefront": "pnpm --dir apps/storefront dev",
+    "dev": "pnpm -r --parallel dev",
+    "dev:check": "bash scripts/dev-check.sh",
+    "dev:check:quick": "bash scripts/dev-check.sh --quick",
+    "dev:check:full": "bash scripts/dev-check.sh --full",
+    "dev:check:live": "bash scripts/dev-check.sh --standard --live",
+    "health": "scripts/health-check.sh",
+    "smoke:order": "bash scripts/live-order-smoke.sh",
+    "smoke:recovery": "bash scripts/live-order-recovery-smoke.sh",
+    "smoke:cleanup": "bash scripts/cleanup-live-smoke-data.sh",
+    "deploy:health": "bash scripts/deploy/health-gate.sh",
+    "deploy:regression": "bash scripts/deploy/regression-webhook-claim-recover.sh",
+    "acceptance:live": "bash scripts/live-acceptance.sh",
+    "backup:db": "scripts/backup-postgres.sh",
+    "restore:db": "scripts/restore-postgres.sh",
+    "acceptance": "scripts/local-acceptance.sh",
+    "lint": "pnpm -r lint",
+    "test": "pnpm -r test"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@10.32.1"
+}

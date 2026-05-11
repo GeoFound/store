@@ -1,0 +1,205 @@
+import {
+  createStep,
+  StepResponse,
+} from "@medusajs/framework/workflows-sdk"
+import type { MedusaContainer } from "@medusajs/framework/types"
+import PaymentRouterModuleService from "../../../modules/payment-router/service"
+import { PAYMENT_ROUTER_MODULE } from "../../../modules/payment-router"
+import { resolveProductFulfillmentPolicy } from "../../../platform/delivery"
+import { emitPaymentAttemptReservedEvent } from "../../../platform/events"
+import { ensurePlatformObservabilityHooksRegistered } from "../../../platform/observability"
+import {
+  getCartItemMetadata,
+  getCartItemProductType,
+  getCartItemVariantId,
+  getInventoryHandler,
+  normalizeFulfillmentQuantity,
+  type FulfillmentCartItem,
+  type InventoryReservation,
+} from "../../../platform/inventory"
+import { resolveProductTemplate } from "../../../platform/product-templates"
+import { attachClaimToken } from "../../../utils/payment-attempt"
+import { createTokenWithPrefix } from "../../../utils/token"
+
+export type ReserveCartInventoryStepInput = {
+  cartId: string
+  attemptId: string
+  items: FulfillmentCartItem[]
+  attemptResponsePayload?: Record<string, unknown> | null
+}
+
+export const reserveCartInventoryStep = createStep(
+  "reserve-cart-inventory",
+  async (
+    input: ReserveCartInventoryStepInput,
+    { container }: { container: MedusaContainer }
+  ) => {
+    ensurePlatformObservabilityHooksRegistered()
+
+    const paymentRouter: PaymentRouterModuleService = container.resolve(
+      PAYMENT_ROUTER_MODULE
+    )
+    const reservations: InventoryReservation[] = []
+
+    try {
+      for (const rawItem of input.items) {
+        const variantId = getCartItemVariantId(rawItem)
+        const quantity = normalizeFulfillmentQuantity(rawItem.quantity) || 1
+        const itemId = typeof rawItem.id === "string" ? rawItem.id : variantId
+        const reservationKey = `payment_attempt:${input.attemptId}:${itemId}`
+        const metadata = getCartItemMetadata(rawItem)
+        const productType = getCartItemProductType(rawItem)
+        const template = resolveProductTemplate({
+          productType,
+          metadata,
+        })
+        const plan = await resolveProductFulfillmentPolicy({
+          code:
+            toOptionalString(metadata.fulfillment_policy_code) ||
+            toOptionalString(metadata.fulfillmentPolicyCode) ||
+            template?.fulfillmentPolicyCode,
+          productVariantId: variantId,
+          productType: productType || template?.productType || null,
+          metadata: {
+            template_code: template?.code || null,
+            product_type: template?.productType || productType || null,
+            product_variant_id: variantId,
+            ...metadata,
+          },
+        })
+
+        if (plan?.inventoryMode === "none") {
+          continue
+        }
+
+        const handlerCode =
+          toOptionalString(metadata.inventory_handler_code) ||
+          toOptionalString(metadata.inventoryHandlerCode) ||
+          plan?.inventoryHandlerCode
+
+        if (!handlerCode) {
+          throw new Error(
+            `No inventory handler configured for variant ${variantId}`
+          )
+        }
+
+        const handler = getInventoryHandler(handlerCode, {
+          productTypeCode: productType || template?.productType || undefined,
+        })
+
+        if (!handler) {
+          throw new Error(`Inventory handler ${handlerCode} is not registered`)
+        }
+
+        const reservationMetadata = {
+          template_code: template?.code || null,
+          product_type: template?.productType || productType || null,
+          product_variant_id: variantId,
+          fulfillment_policy_code: plan?.code || null,
+          delivery_handler_code: plan?.deliveryHandlerCode || null,
+          inventory_handler_code: handler.code,
+          ...metadata,
+        }
+
+        const reserved = await handler.reserve({
+          scope: container,
+          cartId: input.cartId,
+          attemptId: input.attemptId,
+          item: rawItem,
+          productVariantId: variantId,
+          quantity,
+          reservationKey,
+          metadata: reservationMetadata,
+        })
+
+        reservations.push(
+          ...reserved.map((reservation) => ({
+            ...reservation,
+            handler_code: reservation.handler_code || handler.code,
+          }))
+        )
+      }
+
+      const claimToken = createTokenWithPrefix("claim")
+      const responsePayload = attachClaimToken(
+        {
+          ...(input.attemptResponsePayload || {}),
+          inventory_reservations: reservations,
+        },
+        claimToken
+      )
+
+      const attempt = await paymentRouter.updatePaymentAttempts({
+        id: input.attemptId,
+        response_payload: responsePayload,
+      })
+
+      try {
+        await emitPaymentAttemptReservedEvent(container, {
+          attempt,
+          inventoryReservations: reservations,
+          claimToken,
+          responsePayload,
+        })
+      } catch {
+        // Hook consumers must not break the payment flow.
+      }
+
+      return new StepResponse({
+        attempt,
+        inventoryReservations: reservations,
+        claimToken,
+        responsePayload,
+      })
+    } catch (err) {
+      await releaseReservedInventory(container, reservations)
+
+      await paymentRouter.markAttemptFailed({
+        id: input.attemptId,
+        errorMessage:
+          err instanceof Error ? err.message : "Failed to reserve inventory",
+        callbackPayload: {
+          source: "inventory_reservation",
+        },
+      })
+
+      throw err
+    }
+  }
+)
+
+function toOptionalString(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : ""
+}
+
+async function releaseReservedInventory(
+  container: MedusaContainer,
+  reservations: InventoryReservation[]
+) {
+  const handledKeys = new Set<string>()
+
+  for (const reservation of reservations) {
+    const handlerCode = reservation.handler_code || "credential-inventory"
+    const dedupeKey = `${handlerCode}:${reservation.reservation_key}`
+
+    if (handledKeys.has(dedupeKey)) {
+      continue
+    }
+
+    handledKeys.add(dedupeKey)
+    const handler = getInventoryHandler(handlerCode)
+
+    if (!handler?.releaseReservation) {
+      continue
+    }
+
+    try {
+      await handler.releaseReservation({
+        scope: container,
+        reservationKey: reservation.reservation_key,
+      })
+    } catch {
+      // Best-effort cleanup. The expiry job still acts as a final safeguard.
+    }
+  }
+}

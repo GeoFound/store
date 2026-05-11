@@ -1,0 +1,17 @@
+import type { MedusaContainer } from "@medusajs/framework/types"
+import { PLATFORM_HOOKS } from "../platform/hooks"
+import { emitPlatformHook } from "../platform/runtime"
+import { ensureSupportAuditHooksRegistered } from "../modules/support-audit/hooks"
+import type { WriteAuditLogInput } from "../modules/support-audit/types"
+
+export async function emitAuditLog(
+  scope: MedusaContainer,
+  input: WriteAuditLogInput
+) {
+  ensureSupportAuditHooksRegistered()
+
+  await emitPlatformHook(PLATFORM_HOOKS.auditLog, {
+    scope,
+    ...input,
+  })
+}

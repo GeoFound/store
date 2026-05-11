@@ -1,0 +1,36 @@
+{
+  email ops@example.com
+  admin off
+}
+
+{$STOREFRONT_DOMAIN} {
+  encode zstd gzip
+
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    X-Content-Type-Options "nosniff"
+    Referrer-Policy "strict-origin-when-cross-origin"
+    Permissions-Policy "camera=(), microphone=(), geolocation=()"
+  }
+
+  # Optional canary route: enable only after deploying a canary instance on 127.0.0.1:8010
+  # @canary {
+  #   header X-Release-Channel canary
+  # }
+  # reverse_proxy @canary 127.0.0.1:8010
+
+  reverse_proxy 127.0.0.1:8000
+}
+
+{$API_DOMAIN} {
+  encode zstd gzip
+
+  header {
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    X-Content-Type-Options "nosniff"
+    Referrer-Policy "strict-origin-when-cross-origin"
+    Permissions-Policy "camera=(), microphone=(), geolocation=()"
+  }
+
+  reverse_proxy 127.0.0.1:9002
+}
