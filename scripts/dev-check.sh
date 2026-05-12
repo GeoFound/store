@@ -138,6 +138,60 @@ if (key.length !== 32) {
   exit 2
 }
 
+assert_encryption_key_list() {
+  local name="$1"
+  local value="${!name:-}"
+
+  if [[ -z "$value" ]]; then
+    return 0
+  fi
+
+  if KEY_LIST="$value" KEY_NAME="$name" node -e '
+const raw = process.env.KEY_LIST || "";
+const keyName = process.env.KEY_NAME || "encryption key list";
+const entries = raw.split(/[\n,]/).map((item) => item.trim()).filter(Boolean);
+if (!entries.length) {
+  process.exit(1);
+}
+for (const entry of entries) {
+  if (entry.toLowerCase().startsWith("replace-with-")) {
+    process.exit(1);
+  }
+  const key = /^[0-9a-f]{64}$/i.test(entry) ? Buffer.from(entry, "hex") : Buffer.from(entry, "base64");
+  if (key.length !== 32) {
+    process.exit(1);
+  }
+}
+' >/dev/null 2>&1; then
+    return 0
+  fi
+
+  echo "$name must be a comma-separated list of 32-byte keys (base64 or 64-char hex)" >&2
+  exit 2
+}
+
+is_truthy() {
+  local value="${1:-}"
+  local normalized
+  normalized="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
+  [[ "$normalized" == "1" || "$normalized" == "true" || "$normalized" == "yes" || "$normalized" == "on" ]]
+}
+
+assert_email_like() {
+  local name="$1"
+  local value="${!name:-}"
+
+  if [[ -z "$value" ]]; then
+    echo "Missing required backend config in $BACKEND_ENV_FILE: $name" >&2
+    exit 2
+  fi
+
+  if [[ ! "$value" =~ @ ]]; then
+    echo "$name must contain an email address-like value" >&2
+    exit 2
+  fi
+}
+
 check_services_running() {
   local output
   output="$(docker compose ps --status running postgres redis)"
@@ -167,7 +221,14 @@ assert_backend_secret JWT_SECRET
 assert_backend_secret COOKIE_SECRET
 assert_backend_secret MANUAL_WEBHOOK_SECRET
 assert_encryption_key CREDENTIAL_ENCRYPTION_KEY
+assert_encryption_key_list CREDENTIAL_ENCRYPTION_KEY_PREVIOUS
 assert_encryption_key DELIVERY_ENCRYPTION_KEY
+assert_encryption_key_list DELIVERY_ENCRYPTION_KEY_PREVIOUS
+
+if is_truthy "${RESEND_ENABLED:-false}"; then
+  assert_backend_secret RESEND_API_KEY
+  assert_email_like RESEND_FROM_EMAIL
+fi
 
 section "Infrastructure"
 cd "$ROOT_DIR"

@@ -13,9 +13,68 @@ REQUIRE_STOREFRONT_HEALTH="${REQUIRE_STOREFRONT_HEALTH:-0}"
 XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-/tmp/store-smoke-config}"
 SMOKE_HOME="${SMOKE_HOME:-/tmp/store-smoke-home}"
 POSTGRES_CONTAINER="${POSTGRES_CONTAINER:-store-postgres}"
+BACKEND_ENV_FILE="${BACKEND_ENV_FILE:-$ROOT_DIR/apps/backend/.env}"
 JWT_SECRET="${JWT_SECRET:-store_live_smoke_jwt_secret}"
 COOKIE_SECRET="${COOKIE_SECRET:-store_live_smoke_cookie_secret}"
 MANUAL_WEBHOOK_SECRET="${MANUAL_WEBHOOK_SECRET:-store_live_smoke_webhook_secret}"
+
+read_backend_env_value() {
+  local key="$1"
+
+  if [[ ! -f "$BACKEND_ENV_FILE" ]]; then
+    return 0
+  fi
+
+  awk -F= -v target="$key" '$1 == target {print substr($0, index($0, "=") + 1)}' "$BACKEND_ENV_FILE" | tail -n 1
+}
+
+is_valid_encryption_key() {
+  local value="$1"
+
+  if [[ -z "$value" ]] || [[ "$value" == "replace-with-"* ]]; then
+    return 1
+  fi
+
+  KEY_VALUE="$value" node -e '
+const raw = process.env.KEY_VALUE || "";
+const key = /^[0-9a-f]{64}$/i.test(raw) ? Buffer.from(raw, "hex") : Buffer.from(raw, "base64");
+if (key.length !== 32) process.exit(1);
+' >/dev/null 2>&1
+}
+
+resolve_encryption_key() {
+  local key_name="$1"
+  local fallback_value="$2"
+  local candidate="${!key_name:-}"
+
+  if [[ -z "$candidate" ]]; then
+    candidate="$(read_backend_env_value "$key_name")"
+  fi
+
+  if is_valid_encryption_key "$candidate"; then
+    printf '%s' "$candidate"
+    return 0
+  fi
+
+  printf '%s' "$fallback_value"
+}
+
+resolve_optional_env_value() {
+  local key_name="$1"
+  local candidate="${!key_name:-}"
+
+  if [[ -z "$candidate" ]]; then
+    candidate="$(read_backend_env_value "$key_name")"
+  fi
+
+  printf '%s' "$candidate"
+}
+
+DEFAULT_ENCRYPTION_KEY="0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+CREDENTIAL_ENCRYPTION_KEY="$(resolve_encryption_key CREDENTIAL_ENCRYPTION_KEY "$DEFAULT_ENCRYPTION_KEY")"
+DELIVERY_ENCRYPTION_KEY="$(resolve_encryption_key DELIVERY_ENCRYPTION_KEY "$CREDENTIAL_ENCRYPTION_KEY")"
+CREDENTIAL_ENCRYPTION_KEY_PREVIOUS="$(resolve_optional_env_value CREDENTIAL_ENCRYPTION_KEY_PREVIOUS)"
+DELIVERY_ENCRYPTION_KEY_PREVIOUS="$(resolve_optional_env_value DELIVERY_ENCRYPTION_KEY_PREVIOUS)"
 
 if [[ -z "$ORDER_ID" ]]; then
   echo "ORDER_ID is required" >&2
@@ -110,7 +169,11 @@ if [[ "$MANAGE_SERVICES" == "1" ]]; then
     JWT_SECRET="$JWT_SECRET" \
     COOKIE_SECRET="$COOKIE_SECRET" \
     MANUAL_WEBHOOK_SECRET="$MANUAL_WEBHOOK_SECRET" \
-    pnpm dev:backend >"$BACKEND_LOG" 2>&1
+    CREDENTIAL_ENCRYPTION_KEY="$CREDENTIAL_ENCRYPTION_KEY" \
+    CREDENTIAL_ENCRYPTION_KEY_PREVIOUS="$CREDENTIAL_ENCRYPTION_KEY_PREVIOUS" \
+    DELIVERY_ENCRYPTION_KEY="$DELIVERY_ENCRYPTION_KEY" \
+    DELIVERY_ENCRYPTION_KEY_PREVIOUS="$DELIVERY_ENCRYPTION_KEY_PREVIOUS" \
+    pnpm --dir apps/backend dev >"$BACKEND_LOG" 2>&1
   ) &
   backend_pid="$!"
 
@@ -118,7 +181,7 @@ if [[ "$MANAGE_SERVICES" == "1" ]]; then
     echo "Starting storefront..."
     (
       cd "$ROOT_DIR"
-      HOSTNAME=127.0.0.1 pnpm dev:storefront >"$STOREFRONT_LOG" 2>&1
+      pnpm --dir apps/storefront dev -- --hostname 127.0.0.1 >"$STOREFRONT_LOG" 2>&1
     ) &
     storefront_pid="$!"
   fi

@@ -3,6 +3,9 @@
   admin off
 }
 
+# HTTPS is mandatory for production.
+# If fronted by Cloudflare, keep origin HTTPS enabled and set Cloudflare SSL/TLS mode to Full (strict).
+
 {$STOREFRONT_DOMAIN} {
   encode zstd gzip
 

@@ -1,4 +1,5 @@
 import type { MedusaRequest } from "@medusajs/framework/http"
+import { normalizeUserAgent, resolveRequestIp } from "./security-request"
 
 export function getRequestAuditContext(req: MedusaRequest) {
   const authContext = (
@@ -12,8 +13,8 @@ export function getRequestAuditContext(req: MedusaRequest) {
 
   return {
     actorId: authContext?.actor_id,
-    ipAddress: getHeader(req, "x-forwarded-for") || getHeader(req, "x-real-ip"),
-    userAgent: getHeader(req, "user-agent"),
+    ipAddress: resolveRequestIp(req),
+    userAgent: normalizeUserAgent(getHeader(req, "user-agent")),
   }
 }
 

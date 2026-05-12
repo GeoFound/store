@@ -20,6 +20,10 @@ import {
 } from "../modules/analytics-ga4/hooks"
 import { resetAnalyticsGa4DestinationForTests } from "../modules/analytics-ga4/destination"
 import { resetNotificationHooksForTests } from "../utils/notification"
+import {
+  ensureNotificationResendHooksRegistered,
+  resetNotificationResendHooksForTests,
+} from "../modules/notification-resend/hooks"
 
 let integrationsRegistered = false
 
@@ -36,6 +40,7 @@ export function ensurePlatformIntegrationsRegistered() {
     ensureGuestOrderAccessHooksRegistered()
     ensureMarketingHooksRegistered()
     ensureAnalyticsGa4HooksRegistered()
+    ensureNotificationResendHooksRegistered()
   } catch (error) {
     integrationsRegistered = false
     throw error
@@ -51,4 +56,5 @@ export function resetPlatformIntegrationsForTests() {
   resetAnalyticsGa4HooksForTests()
   resetAnalyticsGa4DestinationForTests()
   resetNotificationHooksForTests()
+  resetNotificationResendHooksForTests()
 }

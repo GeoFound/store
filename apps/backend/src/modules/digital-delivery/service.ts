@@ -3,6 +3,10 @@ import { MedusaError, MedusaService } from "@medusajs/framework/utils"
 import OrderDelivery from "./models/order-delivery"
 import type { CreateManualDeliveryInput } from "./types"
 import {
+  decodeEncryptionKey,
+  resolveEncryptionKeyRing,
+} from "../../utils/runtime-secrets"
+import {
   getDeliveryHandler,
   resolveProductFulfillmentPolicy,
 } from "../../platform/delivery"
@@ -254,11 +258,25 @@ class DigitalDeliveryModuleService extends MedusaService({
   }
 
   private decryptPayload(blob: string) {
-    const parsed = JSON.parse(blob) as {
-      alg: string
-      iv: string
-      tag: string
-      data: string
+    let parsed: {
+      alg?: string
+      iv?: string
+      tag?: string
+      data?: string
+    }
+
+    try {
+      parsed = JSON.parse(blob) as {
+        alg?: string
+        iv?: string
+        tag?: string
+        data?: string
+      }
+    } catch {
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        "Delivery payload is not valid JSON"
+      )
     }
 
     if (parsed.alg !== "aes-256-gcm") {
@@ -268,49 +286,68 @@ class DigitalDeliveryModuleService extends MedusaService({
       )
     }
 
-    const decipher = crypto.createDecipheriv(
-      "aes-256-gcm",
-      this.getEncryptionKey(),
-      Buffer.from(parsed.iv, "base64")
-    )
-    decipher.setAuthTag(Buffer.from(parsed.tag, "base64"))
-
-    const decrypted = Buffer.concat([
-      decipher.update(Buffer.from(parsed.data, "base64")),
-      decipher.final(),
-    ]).toString("utf8")
-
-    try {
-      return JSON.parse(decrypted)
-    } catch {
-      return decrypted
+    if (!parsed.iv || !parsed.tag || !parsed.data) {
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        "Delivery payload is missing encryption fields"
+      )
     }
+
+    for (const key of this.getDecryptionKeys()) {
+      try {
+        const decipher = crypto.createDecipheriv(
+          "aes-256-gcm",
+          key,
+          Buffer.from(parsed.iv, "base64")
+        )
+        decipher.setAuthTag(Buffer.from(parsed.tag, "base64"))
+
+        const decrypted = Buffer.concat([
+          decipher.update(Buffer.from(parsed.data, "base64")),
+          decipher.final(),
+        ]).toString("utf8")
+
+        try {
+          return JSON.parse(decrypted)
+        } catch {
+          return decrypted
+        }
+      } catch {
+        continue
+      }
+    }
+
+    throw new MedusaError(
+      MedusaError.Types.INVALID_DATA,
+      "Delivery payload could not be decrypted with configured encryption keys"
+    )
   }
 
   private getEncryptionKey() {
-    const value =
-      process.env.DELIVERY_ENCRYPTION_KEY ||
-      process.env.CREDENTIAL_ENCRYPTION_KEY
+    return this.getDecryptionKeys()[0]
+  }
 
-    if (!value) {
+  private getDecryptionKeys() {
+    try {
+      const keyValues = resolveEncryptionKeyRing("DELIVERY_ENCRYPTION_KEY", {
+        fallbackName: "CREDENTIAL_ENCRYPTION_KEY",
+        previousNames: [
+          "DELIVERY_ENCRYPTION_KEY_PREVIOUS",
+          "CREDENTIAL_ENCRYPTION_KEY_PREVIOUS",
+        ],
+      })
+
+      return keyValues.map((value) =>
+        decodeEncryptionKey(value, "DELIVERY_ENCRYPTION_KEY")
+      )
+    } catch (error) {
       throw new MedusaError(
         MedusaError.Types.INVALID_DATA,
-        "DELIVERY_ENCRYPTION_KEY or CREDENTIAL_ENCRYPTION_KEY is required"
+        error instanceof Error
+          ? error.message
+          : "Delivery encryption key configuration is invalid"
       )
     }
-
-    const key = /^[0-9a-f]{64}$/i.test(value)
-      ? Buffer.from(value, "hex")
-      : Buffer.from(value, "base64")
-
-    if (key.length !== 32) {
-      throw new MedusaError(
-        MedusaError.Types.INVALID_DATA,
-        "Delivery encryption key must decode to 32 bytes"
-      )
-    }
-
-    return key
   }
 
   private createAccessToken() {

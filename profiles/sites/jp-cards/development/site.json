@@ -1,0 +1,44 @@
+{
+  "site": {
+    "id": "jp-cards",
+    "name": "Shiro Keys",
+    "description": "Digital cards and account stock for Japan market",
+    "locale": "ja-JP",
+    "currency": "jpy",
+    "timezone": "Asia/Tokyo"
+  },
+  "domains": {
+    "storefront": "jp.example.com",
+    "api": "api.jp.example.com"
+  },
+  "theme": {
+    "background": "#faf7f2",
+    "foreground": "#111827",
+    "accent": "#be123c",
+    "accent_secondary": "#0f766e",
+    "surface": "#ffffff",
+    "surface_muted": "#fff1f2"
+  },
+  "content": {
+    "navigation": {
+      "products": "商品",
+      "orders": "注文照会",
+      "cart": "カート"
+    },
+    "home": {
+      "headline": "即時受取できるデジタル商品ストア",
+      "description": "ゲスト購入に対応。決済完了後、注文アクセスリンクから納品内容を確認できます。",
+      "browse_cta": "商品を見る",
+      "orders_cta": "注文を確認",
+      "products_heading": "販売中の商品",
+      "products_description": "本サイト向けのデジタル在庫を提供しています。",
+      "hero_pattern": "linear-gradient(140deg,#be123c 0%,#be123c 42%,#0f766e 42%,#0f766e 70%,#111827 70%)"
+    }
+  },
+  "platform": {
+    "enabled_plugins": [],
+    "disabled_plugins": [],
+    "enabled_contracts": {},
+    "disabled_contracts": {}
+  }
+}

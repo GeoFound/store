@@ -11,15 +11,17 @@ Required:
 | Name | Purpose | Production note |
 | --- | --- | --- |
 | `DATABASE_URL` | PostgreSQL connection string | Use a strong DB password and private network address. |
-| `REDIS_URL` | Redis connection string | Use private network address. |
+| `REDIS_URL` | Redis connection string | Use private network address; when Redis auth is enabled include password (for example `redis://:password@127.0.0.1:6380`). |
 | `JWT_SECRET` | Medusa auth JWT signing secret | Generate a long random value. |
 | `COOKIE_SECRET` | Medusa cookie signing secret | Generate a long random value, different from `JWT_SECRET`. |
 | `MANUAL_WEBHOOK_SECRET` | HMAC secret for `/hooks/payment/manual` signatures | Must be shared only with trusted webhook caller. Rotate periodically. |
 | `MANUAL_WEBHOOK_SIGNATURE_TOLERANCE_SECONDS` | Manual webhook timestamp tolerance window | Default `300`. Keep small to reduce replay window. |
 | `ORDER_RECOVERY_MAX_FAILED_ATTEMPTS` | Max failed verify attempts before temporary block | Default `5`. |
 | `ORDER_RECOVERY_BLOCK_SECONDS` | Temporary block duration for recovery verification | Default `600` seconds. |
-| `CREDENTIAL_ENCRYPTION_KEY` | AES-256-GCM key for inventory credentials | Must decode to 32 bytes. Do not rotate without a migration plan. |
-| `DELIVERY_ENCRYPTION_KEY` | AES-256-GCM key for delivery snapshots | Must decode to 32 bytes. Can fall back to credential key locally, but keep separate in production. |
+| `CREDENTIAL_ENCRYPTION_KEY` | Primary AES-256-GCM key for inventory credentials | Must decode to 32 bytes. |
+| `CREDENTIAL_ENCRYPTION_KEY_PREVIOUS` | Optional previous inventory keys for key rotation (comma-separated) | Each key must decode to 32 bytes. Keep old keys only during migration window. |
+| `DELIVERY_ENCRYPTION_KEY` | Primary AES-256-GCM key for delivery snapshots | Must decode to 32 bytes. Can fall back to credential key locally, but keep separate in production. |
+| `DELIVERY_ENCRYPTION_KEY_PREVIOUS` | Optional previous delivery keys for key rotation (comma-separated) | Each key must decode to 32 bytes. Keep old keys only during migration window. |
 | `STORE_CORS` | Allowed storefront origins | Set to the public storefront origin. |
 | `ADMIN_CORS` | Allowed Admin origins | Set to the Admin/backend origin. |
 | `AUTH_CORS` | Allowed auth origins | Include Admin and storefront origins. |
@@ -37,10 +39,31 @@ Optional analytics and observability:
 | `GA4_ENABLED` | Enable GA4 backend dispatch destination | Requires both `GA4_MEASUREMENT_ID` and `GA4_API_SECRET`. |
 | `GA4_MEASUREMENT_ID` | GA4 Measurement ID (`G-XXXX`) for Measurement Protocol | Treat as environment config, not client secret. |
 | `GA4_API_SECRET` | GA4 Measurement Protocol API secret | Keep private in backend env only. |
+| `RESEND_ENABLED` | Enable Resend transactional email delivery for notification hooks | Default `false`. Set to `true` only when all Resend fields below are configured. |
+| `RESEND_API_KEY` | Resend API key | Required when `RESEND_ENABLED=true`; keep private in backend env only. |
+| `RESEND_FROM_EMAIL` | Sender identity used by Resend (`no-reply@example.com` or `Store <no-reply@example.com>`) | Required when `RESEND_ENABLED=true`; domain must be verified in Resend. |
+| `RESEND_REPLY_TO_EMAIL` | Optional reply-to address for support workflows | Recommended for recovery/support emails. |
+| `RESEND_API_BASE_URL` | Resend API base URL | Default `https://api.resend.com`; override only for controlled proxies. |
+| `SECURITY_ALLOWED_ORIGINS` | Additional origin allow-list for sensitive POST routes | Optional; merged with `STORE_CORS` / `ADMIN_CORS` / `AUTH_CORS`. |
+| `SECURITY_TRUST_PROXY_HEADERS` | Trust `X-Forwarded-For` / `X-Real-IP` for client IP resolution | Enable (`true`) only when traffic is always behind trusted proxy/load balancer. |
+| `SECURITY_HEADERS_ENABLED` | Enable backend response security headers middleware | Default `true`. |
+| `SECURITY_ENFORCE_ORIGIN_CHECKS` | Enforce origin/referer allow-list checks on sensitive POST routes | Default `true`. |
+| `SECURITY_HSTS_MAX_AGE_SECONDS` | HSTS max-age for HTTPS requests | Set `31536000` in production HTTPS; keep `0` in local HTTP. |
+| `SECURITY_HSTS_INCLUDE_SUBDOMAINS` | Add `includeSubDomains` directive to HSTS | Default `true`. |
+| `SECURITY_HSTS_PRELOAD` | Add `preload` directive to HSTS | Default `false`; enable only after domain-wide HSTS readiness review. |
+| `SECURITY_RATE_LIMIT_MAX_KEYS` | In-memory cap for tracked rate-limit buckets | Default `50000`; adjust with traffic profile and memory budget. |
+| `SECURITY_LIMIT_RECOVER_REQUEST_*` | Per-policy rate-limit knobs for `/store/orders/recover` | Supports `_MAX_REQUESTS`, `_WINDOW_SECONDS`, `_BLOCK_SECONDS`. |
+| `SECURITY_LIMIT_RECOVER_VERIFY_*` | Per-policy rate-limit knobs for `/store/orders/recover/verify` | Supports `_MAX_REQUESTS`, `_WINDOW_SECONDS`, `_BLOCK_SECONDS`. |
+| `SECURITY_LIMIT_CLAIM_ORDER_ACCESS_*` | Per-policy rate-limit knobs for claim endpoint | Supports `_MAX_REQUESTS`, `_WINDOW_SECONDS`, `_BLOCK_SECONDS`. |
+| `SECURITY_LIMIT_CREATE_CART_PAYMENT_*` | Per-policy rate-limit knobs for cart payment creation | Supports `_MAX_REQUESTS`, `_WINDOW_SECONDS`, `_BLOCK_SECONDS`. |
+| `SECURITY_LIMIT_PAYMENT_WEBHOOK_*` | Per-policy rate-limit knobs for payment webhooks | Supports `_MAX_REQUESTS`, `_WINDOW_SECONDS`, `_BLOCK_SECONDS`. |
+| `SECURITY_LIMIT_ADMIN_MUTATION_*` | Per-policy rate-limit knobs for admin POST mutations | Supports `_MAX_REQUESTS`, `_WINDOW_SECONDS`, `_BLOCK_SECONDS`. |
 | `PLATFORM_ENABLED_PLUGINS` | Backend plugin allow-list (comma-separated IDs). | Merged with `NEXT_PUBLIC_PLATFORM_ENABLED_PLUGINS`; duplicates removed. |
 | `PLATFORM_DISABLED_PLUGINS` | Backend plugin deny-list (comma-separated IDs). | Merged with `NEXT_PUBLIC_PLATFORM_DISABLED_PLUGINS`; duplicates removed. |
 | `PLATFORM_ENABLED_CONTRACTS` | Capability contract allow-list (`capability:name1,name2;...`). | Applied before plugin registration for deterministic startup behavior. |
 | `PLATFORM_DISABLED_CONTRACTS` | Capability contract deny-list (`capability:name1,name2;...`). | Useful for fine-grained strategy/hook shutdown without disabling whole plugin. |
+| `SITE_ID` | Logical site identifier for profile-driven multi-site runtime. | Required for profile-driven runtime (`site-1`, `jp-cards`, etc). No default fallback. |
+| `SITE_ENV` | Site profile environment key (`production`, `staging`, etc). | Used with `SITE_ID` to resolve `profiles/sites/<site-id>/<site-env>/site.json`. |
 
 Plugin dependency enablement is evaluated at runtime: if a plugin's required dependency is disabled, the dependent plugin is treated as disabled automatically.
 
@@ -61,6 +84,7 @@ Required:
 | `NEXT_PUBLIC_MEDUSA_BACKEND_URL` | Public URL of the backend Store API. |
 | `NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY` | Medusa publishable API key. |
 | `NEXT_PUBLIC_MEDUSA_REGION_ID` | Optional fixed region id. |
+| `NEXT_PUBLIC_ALLOWED_IMAGE_HOSTS` | Comma-separated image hosts or URLs allowed by Next Image remote patterns. |
 
 Optional analytics and plugin runtime:
 
@@ -69,10 +93,34 @@ Optional analytics and plugin runtime:
 | `NEXT_PUBLIC_GA4_MEASUREMENT_ID` | Enables GA4 storefront script injection when non-empty. |
 | `NEXT_PUBLIC_HOTJAR_SITE_ID` | Enables Hotjar storefront script injection when non-empty. |
 | `NEXT_PUBLIC_HOTJAR_SNIPPET_VERSION` | Hotjar snippet version, default `6`. |
+| `NEXT_PUBLIC_PRIVACY_BANNER_ENABLED` | Toggle storefront cookie/analytics consent banner. Default `true`. |
+| `NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT` | Require explicit consent before GA4/Hotjar scripts and analytics events. Default `true`. |
 | `NEXT_PUBLIC_PLATFORM_ENABLED_PLUGINS` | Storefront plugin allow-list (comma-separated IDs). |
 | `NEXT_PUBLIC_PLATFORM_DISABLED_PLUGINS` | Comma-separated plugin IDs to disable on storefront (for example `analytics-hotjar,analytics-ga4`). |
+| `NEXT_PUBLIC_SITE_ID` | Public site identifier for profile-driven storefront rendering. |
+| `NEXT_PUBLIC_SITE_ENV` | Public site profile environment key (`production`, `staging`, etc). |
 
 Do not place payment provider secrets or encryption keys in storefront env.
+
+## Infrastructure Services
+
+File (production scripts): `/opt/store/shared/services.env`
+
+Required:
+
+| Name | Purpose |
+| --- | --- |
+| `POSTGRES_PASSWORD` | PostgreSQL container password used by `docker-compose.yml`. |
+| `REDIS_PASSWORD` | Redis password used by `docker-compose.yml` and backend `REDIS_URL`. |
+
+Optional:
+
+| Name | Purpose |
+| --- | --- |
+| `POSTGRES_BIND_IP` | Host bind IP for PostgreSQL port mapping. Default `127.0.0.1`. |
+| `POSTGRES_PORT` | Host port for PostgreSQL. Default `5433`. |
+| `REDIS_BIND_IP` | Host bind IP for Redis port mapping. Default `127.0.0.1`. |
+| `REDIS_PORT` | Host port for Redis. Default `6380`. |
 
 ## Deployment Layout
 
@@ -80,6 +128,7 @@ When using the production deployment scripts, runtime env files are managed outs
 
 - Backend: `/opt/store/shared/backend.env`
 - Storefront: `/opt/store/shared/storefront.env`
+- Infrastructure services (`docker compose`): `/opt/store/shared/services.env`
 
 Each new release symlinks these files into:
 

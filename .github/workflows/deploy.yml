@@ -42,7 +42,52 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  quality-gate:
+    if: ${{ github.event.inputs.operation != 'rollback' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      JWT_SECRET: ci_deploy_gate_jwt_secret
+      COOKIE_SECRET: ci_deploy_gate_cookie_secret
+      MANUAL_WEBHOOK_SECRET: ci_deploy_gate_manual_webhook_secret
+      CREDENTIAL_ENCRYPTION_KEY: 1111111111111111111111111111111111111111111111111111111111111111
+      DELIVERY_ENCRYPTION_KEY: 2222222222222222222222222222222222222222222222222222222222222222
+      NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: pk_ci_deploy_gate
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || 'main' }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Prepare env files
+        run: |
+          cp apps/backend/.env.template apps/backend/.env
+          cp apps/storefront/.env.example apps/storefront/.env.local
+
+      - name: Run quality gate
+        run: pnpm check:ci
+
+      - name: Run acceptance gate
+        run: pnpm acceptance
+
   deploy:
+    needs: [quality-gate]
+    if: ${{ always() && (github.event.inputs.operation == 'rollback' || needs.quality-gate.result == 'success') }}
     runs-on: ubuntu-latest
     environment: ${{ github.event.inputs.environment || 'production' }}
     steps:
@@ -87,6 +132,11 @@ jobs:
           INPUT_REF: ${{ github.event.inputs.ref || 'main' }}
           ROLLBACK_TO: ${{ github.event.inputs.rollback_to }}
           RUN_DB_MIGRATIONS: ${{ github.event.inputs.run_db_migrations || 'true' }}
+          STOREFRONT_PUBLIC_URL: ${{ secrets.STOREFRONT_PUBLIC_URL }}
+          API_PUBLIC_URL: ${{ secrets.API_PUBLIC_URL }}
+          EXPECT_CLOUDFLARE: ${{ secrets.EXPECT_CLOUDFLARE }}
+          CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
         run: |
           set -euo pipefail
 
@@ -139,5 +189,12 @@ jobs:
             MIGRATIONS_FLAG="0"
           fi
 
+          EDGE_PREFLIGHT_ENABLED="0"
+          if [ -n "${STOREFRONT_PUBLIC_URL:-}" ] && [ -n "${API_PUBLIC_URL:-}" ]; then
+            EDGE_PREFLIGHT_ENABLED="1"
+          fi
+
+          EXPECT_CLOUDFLARE_VALUE="${EXPECT_CLOUDFLARE:-false}"
+
           ssh -o BatchMode=yes -o StrictHostKeyChecking=yes "$SSH_TARGET" \
-            "set -euo pipefail; cd '$DEPLOY_REPO_PATH'; APP_ROOT='$APP_ROOT' RUN_DB_MIGRATIONS='$MIGRATIONS_FLAG' bash scripts/deploy/deploy.sh --ref '$TARGET_REF'"
+            "set -euo pipefail; cd '$DEPLOY_REPO_PATH'; APP_ROOT='$APP_ROOT' RUN_DB_MIGRATIONS='$MIGRATIONS_FLAG' EDGE_PREFLIGHT_ENABLED='$EDGE_PREFLIGHT_ENABLED' STOREFRONT_PUBLIC_URL='$STOREFRONT_PUBLIC_URL' API_PUBLIC_URL='$API_PUBLIC_URL' EXPECT_CLOUDFLARE='$EXPECT_CLOUDFLARE_VALUE' CLOUDFLARE_ZONE_ID='$CLOUDFLARE_ZONE_ID' CLOUDFLARE_API_TOKEN='$CLOUDFLARE_API_TOKEN' bash scripts/deploy/deploy.sh --ref '$TARGET_REF'"

@@ -34,6 +34,7 @@
   - `/opt/store/current`（symlink）
   - `/opt/store/shared/backend.env`
   - `/opt/store/shared/storefront.env`
+  - `/opt/store/shared/services.env`
   - `/opt/store/shared/pnpm-store`
 
 仓库已提供：
@@ -85,8 +86,21 @@ sudo APP_ROOT=/opt/store APP_USER=store bash scripts/deploy/bootstrap-vps.sh
 
 - `/opt/store/shared/backend.env`
 - `/opt/store/shared/storefront.env`
+- `/opt/store/shared/services.env`
 
 务必替换所有密钥、域名、数据库密码。
+
+若启用 Resend 邮件发送，还需要在 `backend.env` 设置：
+
+- `RESEND_ENABLED=true`
+- `RESEND_API_KEY`
+- `RESEND_FROM_EMAIL`
+- 可选 `RESEND_REPLY_TO_EMAIL`
+
+若进行加密密钥轮换，迁移窗口内还应设置：
+
+- 可选 `CREDENTIAL_ENCRYPTION_KEY_PREVIOUS`（逗号分隔）
+- 可选 `DELIVERY_ENCRYPTION_KEY_PREVIOUS`（逗号分隔）
 
 ### 3.3 安装 systemd 服务
 
@@ -99,7 +113,7 @@ sudo APP_ROOT=/opt/store APP_USER=store bash scripts/deploy/install-systemd.sh
 
 ```bash
 cd /opt/store/repo
-pnpm services:up
+APP_ROOT=/opt/store pnpm services:up:prod
 ```
 
 ### 3.5 配置 Caddy
@@ -115,6 +129,27 @@ pnpm services:up
 
 - `example.com -> 127.0.0.1:8000`
 - `api.example.com -> 127.0.0.1:9002`
+
+### 3.5.1 Cloudflare（可选但推荐）
+
+若站点前置 Cloudflare，建议：
+
+- DNS 记录走 Proxied（橙云）；
+- SSL/TLS mode 使用 `Full (strict)`；
+- 不使用 `Flexible`（会导致 Cloudflare 到源站链路非严格加密）；
+- 仍在源站保留有效 HTTPS（Cloudflare Origin CA 或公网受信证书）。
+
+可选 API 校验（部署后）：
+
+```bash
+STOREFRONT_PUBLIC_URL=https://example.com \
+API_PUBLIC_URL=https://api.example.com \
+EXPECT_CLOUDFLARE=true \
+REQUIRE_CLOUDFLARE_SSL_MODE=strict \
+CLOUDFLARE_ZONE_ID=<zone-id> \
+CLOUDFLARE_API_TOKEN=<token-with-zone-settings-read> \
+  bash scripts/deploy/edge-preflight.sh
+```
 
 ### 3.6 首次发布
 
@@ -227,7 +262,10 @@ scripts/deploy/send-manual-webhook.sh --provider-order-id <id> --status paid
 
 - 永远不要使用默认弱密钥。
 - `backend.env`/`storefront.env` 权限保持最小（640）。
+- `services.env` 权限保持最小（640）。
 - Postgres/Redis 仅监听内网，不暴露公网。
+- 生产环境建议启用 `SECURITY_TRUST_PROXY_HEADERS=true`、`SECURITY_ENFORCE_ORIGIN_CHECKS=true`、`SECURITY_HEADERS_ENABLED=true`。
+- 若已全站 HTTPS，建议设置 `SECURITY_HSTS_MAX_AGE_SECONDS=31536000` 并评估 `includeSubDomains` / `preload`。
 - 强制 HTTPS。
 - 每日备份 + 异机备份 + 定期恢复演练。
 - 至少保留最近 8 个 release，确保快速回滚。
@@ -238,6 +276,12 @@ scripts/deploy/send-manual-webhook.sh --provider-order-id <id> --status paid
 
 ```bash
 APP_ROOT=/opt/store bash scripts/deploy/deploy.sh --ref main
+```
+
+启动数据层：
+
+```bash
+APP_ROOT=/opt/store pnpm services:up:prod
 ```
 
 回滚：
@@ -252,6 +296,15 @@ APP_ROOT=/opt/store bash scripts/deploy/rollback.sh
 BACKEND_HEALTH_URL=http://127.0.0.1:9002/health \
 STOREFRONT_HEALTH_URL=http://127.0.0.1:8000/api/health \
   bash scripts/deploy/health-gate.sh
+```
+
+公网 HTTPS / Edge 校验：
+
+```bash
+STOREFRONT_PUBLIC_URL=https://example.com \
+API_PUBLIC_URL=https://api.example.com \
+EXPECT_CLOUDFLARE=false \
+  bash scripts/deploy/edge-preflight.sh
 ```
 
 回归：

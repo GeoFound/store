@@ -1,6 +1,21 @@
 import { loadEnv, defineConfig } from '@medusajs/framework/utils'
+import {
+  resolveEncryptionKeyRing,
+  resolveSecuritySecret,
+} from "./src/utils/runtime-secrets"
 
 loadEnv(process.env.NODE_ENV || 'development', process.cwd())
+
+resolveEncryptionKeyRing("CREDENTIAL_ENCRYPTION_KEY", {
+  previousNames: ["CREDENTIAL_ENCRYPTION_KEY_PREVIOUS"],
+})
+resolveEncryptionKeyRing("DELIVERY_ENCRYPTION_KEY", {
+  fallbackName: "CREDENTIAL_ENCRYPTION_KEY",
+  previousNames: [
+    "DELIVERY_ENCRYPTION_KEY_PREVIOUS",
+    "CREDENTIAL_ENCRYPTION_KEY_PREVIOUS",
+  ],
+})
 
 module.exports = defineConfig({
   projectConfig: {
@@ -9,8 +24,12 @@ module.exports = defineConfig({
       storeCors: process.env.STORE_CORS!,
       adminCors: process.env.ADMIN_CORS!,
       authCors: process.env.AUTH_CORS!,
-      jwtSecret: resolveSecuritySecret("JWT_SECRET", "test-jwt-secret"),
-      cookieSecret: resolveSecuritySecret("COOKIE_SECRET", "test-cookie-secret"),
+      jwtSecret: resolveSecuritySecret("JWT_SECRET", {
+        testFallback: "test-jwt-secret",
+      }),
+      cookieSecret: resolveSecuritySecret("COOKIE_SECRET", {
+        testFallback: "test-cookie-secret",
+      }),
     }
   },
   modules: [
@@ -96,19 +115,3 @@ module.exports = defineConfig({
     },
   ],
 })
-
-function resolveSecuritySecret(name: string, testFallback: string) {
-  const value = process.env[name]?.trim()
-
-  if (value && value !== "supersecret") {
-    return value
-  }
-
-  if (process.env.NODE_ENV === "test") {
-    return testFallback
-  }
-
-  throw new Error(
-    `${name} must be configured with a strong secret and cannot use defaults`
-  )
-}

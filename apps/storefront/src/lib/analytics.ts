@@ -1,5 +1,7 @@
 "use client"
 
+import { hasAnalyticsConsent } from "./privacy-consent"
+
 export type StoreAnalyticsEventDetail = {
   name: string
   params: Record<string, unknown>
@@ -18,6 +20,10 @@ export function emitStoreAnalyticsEvent(
   options: StoreAnalyticsEmitOptions = {}
 ) {
   if (typeof window === "undefined") {
+    return false
+  }
+
+  if (!hasAnalyticsConsent()) {
     return false
   }
 
@@ -48,6 +54,10 @@ export function emitStoreAnalyticsEvent(
 
 export function getCheckoutAnalyticsContext() {
   if (typeof window === "undefined") {
+    return {}
+  }
+
+  if (!hasAnalyticsConsent()) {
     return {}
   }
 

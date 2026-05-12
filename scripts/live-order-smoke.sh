@@ -8,6 +8,7 @@ BUYER_EMAIL="${BUYER_EMAIL:-buyer@example.com}"
 BACKEND_LOG="${BACKEND_LOG:-/tmp/store-backend-smoke.log}"
 STOREFRONT_LOG="${STOREFRONT_LOG:-/tmp/store-storefront-smoke.log}"
 POSTGRES_CONTAINER="${POSTGRES_CONTAINER:-store-postgres}"
+BACKEND_ENV_FILE="${BACKEND_ENV_FILE:-$ROOT_DIR/apps/backend/.env}"
 MANAGE_SERVICES="${MANAGE_SERVICES:-1}"
 RUN_RECOVERY_SMOKE="${RUN_RECOVERY_SMOKE:-0}"
 XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-/tmp/store-smoke-config}"
@@ -15,6 +16,265 @@ SMOKE_HOME="${SMOKE_HOME:-/tmp/store-smoke-home}"
 MANUAL_WEBHOOK_SECRET="${MANUAL_WEBHOOK_SECRET:-}"
 JWT_SECRET="${JWT_SECRET:-store_live_smoke_jwt_secret}"
 COOKIE_SECRET="${COOKIE_SECRET:-store_live_smoke_cookie_secret}"
+
+read_backend_env_value() {
+  local key="$1"
+
+  if [[ ! -f "$BACKEND_ENV_FILE" ]]; then
+    return 0
+  fi
+
+  awk -F= -v target="$key" '$1 == target {print substr($0, index($0, "=") + 1)}' "$BACKEND_ENV_FILE" | tail -n 1
+}
+
+is_valid_encryption_key() {
+  local value="$1"
+
+  if [[ -z "$value" ]] || [[ "$value" == "replace-with-"* ]]; then
+    return 1
+  fi
+
+  KEY_VALUE="$value" node -e '
+const raw = process.env.KEY_VALUE || "";
+const key = /^[0-9a-f]{64}$/i.test(raw) ? Buffer.from(raw, "hex") : Buffer.from(raw, "base64");
+if (key.length !== 32) process.exit(1);
+' >/dev/null 2>&1
+}
+
+resolve_encryption_key() {
+  local key_name="$1"
+  local fallback_value="$2"
+  local candidate="${!key_name:-}"
+
+  if [[ -z "$candidate" ]]; then
+    candidate="$(read_backend_env_value "$key_name")"
+  fi
+
+  if is_valid_encryption_key "$candidate"; then
+    printf '%s' "$candidate"
+    return 0
+  fi
+
+  printf '%s' "$fallback_value"
+}
+
+resolve_optional_env_value() {
+  local key_name="$1"
+  local candidate="${!key_name:-}"
+
+  if [[ -z "$candidate" ]]; then
+    candidate="$(read_backend_env_value "$key_name")"
+  fi
+
+  printf '%s' "$candidate"
+}
+
+select_decryptable_variant_id() {
+  local candidates_json
+  candidates_json="$(
+    docker exec "$POSTGRES_CONTAINER" \
+      psql -U store -d store -tAc \
+      "select coalesce(json_agg(row_to_json(candidate_rows))::text, '[]') from (
+        select distinct on (product_variant_id)
+          product_variant_id,
+          credential_blob
+        from account_item
+        where status = 'in_stock'
+          and deleted_at is null
+        order by product_variant_id, created_at asc
+      ) as candidate_rows;"
+  )"
+
+  CANDIDATES_JSON="$candidates_json" \
+  PRIMARY_KEY="$CREDENTIAL_ENCRYPTION_KEY" \
+  PREVIOUS_KEYS="$CREDENTIAL_ENCRYPTION_KEY_PREVIOUS" \
+    node -e '
+const crypto = require("crypto");
+const candidates = JSON.parse(process.env.CANDIDATES_JSON || "[]");
+const rawKeys = [
+  process.env.PRIMARY_KEY || "",
+  ...(process.env.PREVIOUS_KEYS || "").split(/[\n,]/).map((entry) => entry.trim()),
+].filter(Boolean);
+
+const keyBuffers = [];
+const seen = new Set();
+for (const rawKey of rawKeys) {
+  if (rawKey.toLowerCase().startsWith("replace-with-") || seen.has(rawKey)) {
+    continue;
+  }
+  const decoded = /^[0-9a-f]{64}$/i.test(rawKey)
+    ? Buffer.from(rawKey, "hex")
+    : Buffer.from(rawKey, "base64");
+  if (decoded.length !== 32) {
+    continue;
+  }
+  seen.add(rawKey);
+  keyBuffers.push(decoded);
+}
+
+for (const candidate of candidates) {
+  if (!candidate || typeof candidate.product_variant_id !== "string" || typeof candidate.credential_blob !== "string") {
+    continue;
+  }
+
+  let payload;
+  try {
+    payload = JSON.parse(candidate.credential_blob);
+  } catch {
+    continue;
+  }
+
+  if (
+    !payload ||
+    payload.alg !== "aes-256-gcm" ||
+    typeof payload.iv !== "string" ||
+    typeof payload.tag !== "string" ||
+    typeof payload.data !== "string"
+  ) {
+    continue;
+  }
+
+  for (const key of keyBuffers) {
+    try {
+      const decipher = crypto.createDecipheriv(
+        "aes-256-gcm",
+        key,
+        Buffer.from(payload.iv, "base64")
+      );
+      decipher.setAuthTag(Buffer.from(payload.tag, "base64"));
+      Buffer.concat([
+        decipher.update(Buffer.from(payload.data, "base64")),
+        decipher.final(),
+      ]);
+      process.stdout.write(candidate.product_variant_id);
+      process.exit(0);
+    } catch {
+      continue;
+    }
+  }
+}
+'
+}
+
+encrypt_smoke_credential_blob() {
+  local payload_json="$1"
+
+  CREDENTIAL_KEY="$CREDENTIAL_ENCRYPTION_KEY" \
+  PAYLOAD_JSON="$payload_json" \
+    node -e '
+const crypto = require("crypto");
+const rawKey = process.env.CREDENTIAL_KEY || "";
+const payload = process.env.PAYLOAD_JSON || "{}";
+const key = /^[0-9a-f]{64}$/i.test(rawKey)
+  ? Buffer.from(rawKey, "hex")
+  : Buffer.from(rawKey, "base64");
+
+if (key.length !== 32) {
+  process.exit(1);
+}
+
+const iv = crypto.randomBytes(12);
+const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
+const encrypted = Buffer.concat([cipher.update(payload, "utf8"), cipher.final()]);
+const tag = cipher.getAuthTag();
+
+process.stdout.write(
+  JSON.stringify({
+    alg: "aes-256-gcm",
+    iv: iv.toString("base64"),
+    tag: tag.toString("base64"),
+    data: encrypted.toString("base64"),
+  })
+);
+'
+}
+
+seed_smoke_inventory_for_variant() {
+  local variant_id="$1"
+  local nonce
+  local batch_id
+  local item_id
+  local account_identifier
+  local display_label
+  local credential_payload
+  local credential_blob
+
+  nonce="$(date +%s)-$RANDOM"
+  batch_id="acbatch_smoke_${nonce}"
+  item_id="acitem_smoke_${nonce}"
+  account_identifier="acct_smoke_${nonce}"
+  display_label="Smoke Credential ${nonce}"
+  credential_payload="{\"username\":\"smoke_${nonce}\",\"password\":\"smoke_${nonce}\"}"
+  credential_blob="$(encrypt_smoke_credential_blob "$credential_payload")"
+
+  docker exec -i "$POSTGRES_CONTAINER" psql -U store -d store <<SQL
+begin;
+insert into account_batch (
+  id,
+  name,
+  product_variant_id,
+  status,
+  source_note,
+  total_count,
+  available_count,
+  reserved_count,
+  sold_count,
+  locked_count,
+  metadata_json,
+  created_at,
+  updated_at
+) values (
+  '${batch_id}',
+  'Live Smoke Auto Batch',
+  '${variant_id}',
+  'active',
+  'live-smoke-auto-seed',
+  1,
+  1,
+  0,
+  0,
+  0,
+  '{"source":"live-smoke-auto-seed"}'::jsonb,
+  '1970-01-01T00:00:00.000Z',
+  '1970-01-01T00:00:00.000Z'
+);
+
+insert into account_item (
+  id,
+  batch_id,
+  product_variant_id,
+  status,
+  account_identifier,
+  display_label,
+  credential_blob,
+  credential_version,
+  source_note,
+  metadata_json,
+  created_at,
+  updated_at
+) values (
+  '${item_id}',
+  '${batch_id}',
+  '${variant_id}',
+  'in_stock',
+  '${account_identifier}',
+  '${display_label}',
+  '${credential_blob}',
+  1,
+  'live-smoke-auto-seed',
+  '{"source":"live-smoke-auto-seed"}'::jsonb,
+  '1970-01-01T00:00:00.000Z',
+  '1970-01-01T00:00:00.000Z'
+);
+commit;
+SQL
+}
+
+DEFAULT_ENCRYPTION_KEY="0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+CREDENTIAL_ENCRYPTION_KEY="$(resolve_encryption_key CREDENTIAL_ENCRYPTION_KEY "$DEFAULT_ENCRYPTION_KEY")"
+DELIVERY_ENCRYPTION_KEY="$(resolve_encryption_key DELIVERY_ENCRYPTION_KEY "$CREDENTIAL_ENCRYPTION_KEY")"
+CREDENTIAL_ENCRYPTION_KEY_PREVIOUS="$(resolve_optional_env_value CREDENTIAL_ENCRYPTION_KEY_PREVIOUS)"
+DELIVERY_ENCRYPTION_KEY_PREVIOUS="$(resolve_optional_env_value DELIVERY_ENCRYPTION_KEY_PREVIOUS)"
 
 if [[ -f "$ROOT_DIR/apps/storefront/.env.local" ]]; then
   set -a
@@ -136,14 +396,18 @@ if [[ "$MANAGE_SERVICES" == "1" ]]; then
     MANUAL_WEBHOOK_SECRET="$MANUAL_WEBHOOK_SECRET" \
     JWT_SECRET="$JWT_SECRET" \
     COOKIE_SECRET="$COOKIE_SECRET" \
-    pnpm dev:backend >"$BACKEND_LOG" 2>&1
+    CREDENTIAL_ENCRYPTION_KEY="$CREDENTIAL_ENCRYPTION_KEY" \
+    CREDENTIAL_ENCRYPTION_KEY_PREVIOUS="$CREDENTIAL_ENCRYPTION_KEY_PREVIOUS" \
+    DELIVERY_ENCRYPTION_KEY="$DELIVERY_ENCRYPTION_KEY" \
+    DELIVERY_ENCRYPTION_KEY_PREVIOUS="$DELIVERY_ENCRYPTION_KEY_PREVIOUS" \
+    pnpm --dir apps/backend dev >"$BACKEND_LOG" 2>&1
   ) &
   backend_pid="$!"
 
   echo "Starting storefront..."
   (
     cd "$ROOT_DIR"
-    HOSTNAME=127.0.0.1 pnpm dev:storefront >"$STOREFRONT_LOG" 2>&1
+    pnpm --dir apps/storefront dev -- --hostname 127.0.0.1 >"$STOREFRONT_LOG" 2>&1
   ) &
   storefront_pid="$!"
 fi
@@ -155,15 +419,36 @@ echo "Fetching region and product data..."
 regions_json="$(api_get "/store/regions")"
 region_id="$(json_get "$regions_json" '.regions[0].id')"
 products_json="$(api_get "/store/products?limit=1&region_id=$region_id&fields=id,title,handle,*variants")"
-variant_id="$(
-  docker exec "$POSTGRES_CONTAINER" \
-    psql -U store -d store -tAc \
-    "select product_variant_id from account_item where status = 'in_stock' group by product_variant_id order by count(*) desc, product_variant_id limit 1;"
-)"
+variant_id="$(select_decryptable_variant_id)"
 variant_id="$(printf '%s' "$variant_id" | tr -d '[:space:]')"
 
 if [[ -z "$variant_id" ]]; then
-  echo "No in_stock credential inventory is available for the live smoke test" >&2
+  fallback_variant_id="$(
+    docker exec "$POSTGRES_CONTAINER" \
+      psql -U store -d store -tAc \
+      "select product_variant_id from account_item where status = 'in_stock' and deleted_at is null order by created_at asc limit 1;"
+  )"
+  fallback_variant_id="$(printf '%s' "$fallback_variant_id" | tr -d '[:space:]')"
+
+  if [[ -z "$fallback_variant_id" ]]; then
+    fallback_variant_id="$(json_get "$products_json" '.products[0].variants[0].id // empty' || true)"
+  fi
+
+  fallback_variant_id="$(printf '%s' "$fallback_variant_id" | tr -d '[:space:]')"
+
+  if [[ -z "$fallback_variant_id" ]]; then
+    echo "No decryptable inventory was found and no storefront variant is available for smoke seeding" >&2
+    exit 1
+  fi
+
+  echo "No decryptable inventory found; seeding temporary smoke inventory for variant $fallback_variant_id..."
+  seed_smoke_inventory_for_variant "$fallback_variant_id"
+  variant_id="$(select_decryptable_variant_id)"
+  variant_id="$(printf '%s' "$variant_id" | tr -d '[:space:]')"
+fi
+
+if [[ -z "$variant_id" ]]; then
+  echo "Smoke inventory seeding did not produce a decryptable variant" >&2
   exit 1
 fi
 

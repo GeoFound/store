@@ -38,7 +38,10 @@ Database backups do not include `.env` files. Keep a separate secure backup of:
 - `JWT_SECRET`
 - `COOKIE_SECRET`
 - `CREDENTIAL_ENCRYPTION_KEY`
+- `CREDENTIAL_ENCRYPTION_KEY_PREVIOUS` (if rotation window is active)
 - `DELIVERY_ENCRYPTION_KEY`
+- `DELIVERY_ENCRYPTION_KEY_PREVIOUS` (if rotation window is active)
+- `RESEND_API_KEY` (if Resend is enabled)
 - Payment provider secrets when added
 
 Without encryption keys, stored credentials and delivery snapshots cannot be decrypted.

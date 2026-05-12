@@ -1,0 +1,44 @@
+{
+  "site": {
+    "id": "site-1",
+    "name": "Atlas Digital",
+    "description": "Independent digital goods store",
+    "locale": "en-US",
+    "currency": "usd",
+    "timezone": "America/Los_Angeles"
+  },
+  "domains": {
+    "storefront": "example.com",
+    "api": "api.example.com"
+  },
+  "theme": {
+    "background": "#f7f5f0",
+    "foreground": "#1c1917",
+    "accent": "#0f766e",
+    "accent_secondary": "#f97316",
+    "surface": "#ffffff",
+    "surface_muted": "#f5f5f4"
+  },
+  "content": {
+    "navigation": {
+      "products": "Products",
+      "orders": "Orders",
+      "cart": "Cart"
+    },
+    "home": {
+      "headline": "Digital goods, delivered from your order page.",
+      "description": "Browse, checkout as a guest, pay, and use your order access link to view delivery details. No account is required to buy.",
+      "browse_cta": "Browse products",
+      "orders_cta": "Find an order",
+      "products_heading": "Available products",
+      "products_description": "Managed by Medusa, sold through this storefront.",
+      "hero_pattern": "linear-gradient(135deg,#0f766e 0%,#0f766e 45%,#f97316 45%,#f97316 68%,#1c1917 68%)"
+    }
+  },
+  "platform": {
+    "enabled_plugins": [],
+    "disabled_plugins": [],
+    "enabled_contracts": {},
+    "disabled_contracts": {}
+  }
+}

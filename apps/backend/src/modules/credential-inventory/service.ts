@@ -2,6 +2,10 @@ import crypto from "crypto"
 import { MedusaError, MedusaService } from "@medusajs/framework/utils"
 import AccountBatch from "./models/account-batch"
 import AccountItem from "./models/account-item"
+import {
+  decodeEncryptionKey,
+  resolveEncryptionKeyRing,
+} from "../../utils/runtime-secrets"
 import type {
   AccountItemStatus,
   CreateCredentialBatchInput,
@@ -486,11 +490,25 @@ class CredentialInventoryModuleService extends MedusaService({
   }
 
   private decryptCredential(blob: string) {
-    const parsed = JSON.parse(blob) as {
-      alg: string
-      iv: string
-      tag: string
-      data: string
+    let parsed: {
+      alg?: string
+      iv?: string
+      tag?: string
+      data?: string
+    }
+
+    try {
+      parsed = JSON.parse(blob) as {
+        alg?: string
+        iv?: string
+        tag?: string
+        data?: string
+      }
+    } catch {
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        "Credential payload is not valid JSON"
+      )
     }
 
     if (parsed.alg !== "aes-256-gcm") {
@@ -500,47 +518,64 @@ class CredentialInventoryModuleService extends MedusaService({
       )
     }
 
-    const decipher = crypto.createDecipheriv(
-      "aes-256-gcm",
-      this.getEncryptionKey(),
-      Buffer.from(parsed.iv, "base64")
-    )
-    decipher.setAuthTag(Buffer.from(parsed.tag, "base64"))
-
-    const decrypted = Buffer.concat([
-      decipher.update(Buffer.from(parsed.data, "base64")),
-      decipher.final(),
-    ]).toString("utf8")
-
-    try {
-      return JSON.parse(decrypted)
-    } catch {
-      return decrypted
+    if (!parsed.iv || !parsed.tag || !parsed.data) {
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        "Credential payload is missing encryption fields"
+      )
     }
+
+    for (const key of this.getDecryptionKeys()) {
+      try {
+        const decipher = crypto.createDecipheriv(
+          "aes-256-gcm",
+          key,
+          Buffer.from(parsed.iv, "base64")
+        )
+        decipher.setAuthTag(Buffer.from(parsed.tag, "base64"))
+
+        const decrypted = Buffer.concat([
+          decipher.update(Buffer.from(parsed.data, "base64")),
+          decipher.final(),
+        ]).toString("utf8")
+
+        try {
+          return JSON.parse(decrypted)
+        } catch {
+          return decrypted
+        }
+      } catch {
+        continue
+      }
+    }
+
+    throw new MedusaError(
+      MedusaError.Types.INVALID_DATA,
+      "Credential payload could not be decrypted with configured encryption keys"
+    )
   }
 
   private getEncryptionKey() {
-    const value = process.env.CREDENTIAL_ENCRYPTION_KEY
+    return this.getDecryptionKeys()[0]
+  }
 
-    if (!value) {
+  private getDecryptionKeys() {
+    try {
+      const keyValues = resolveEncryptionKeyRing("CREDENTIAL_ENCRYPTION_KEY", {
+        previousNames: ["CREDENTIAL_ENCRYPTION_KEY_PREVIOUS"],
+      })
+
+      return keyValues.map((value) =>
+        decodeEncryptionKey(value, "CREDENTIAL_ENCRYPTION_KEY")
+      )
+    } catch (error) {
       throw new MedusaError(
         MedusaError.Types.INVALID_DATA,
-        "CREDENTIAL_ENCRYPTION_KEY is required"
+        error instanceof Error
+          ? error.message
+          : "Credential encryption key configuration is invalid"
       )
     }
-
-    const key = /^[0-9a-f]{64}$/i.test(value)
-      ? Buffer.from(value, "hex")
-      : Buffer.from(value, "base64")
-
-    if (key.length !== 32) {
-      throw new MedusaError(
-        MedusaError.Types.INVALID_DATA,
-        "CREDENTIAL_ENCRYPTION_KEY must decode to 32 bytes"
-      )
-    }
-
-    return key
   }
 
   private createCredentialIdentifier(credential: Record<string, unknown> | string) {

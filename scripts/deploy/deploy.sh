@@ -35,6 +35,12 @@ Environment:
   BACKEND_ENV_FILE              Backend env file path (default: APP_ROOT/shared/backend.env)
   STOREFRONT_ENV_FILE           Storefront env file path (default: APP_ROOT/shared/storefront.env)
   RUN_DB_MIGRATIONS             1 to run migrations (default), 0 to skip
+  EDGE_PREFLIGHT_ENABLED        1 to verify public HTTPS/edge headers after deploy
+  STOREFRONT_PUBLIC_URL         Public storefront URL for edge preflight
+  API_PUBLIC_URL                Public API URL for edge preflight
+  EXPECT_CLOUDFLARE             true/false for Cloudflare header and SSL mode checks
+  CLOUDFLARE_ZONE_ID            Optional Cloudflare zone id for SSL mode API validation
+  CLOUDFLARE_API_TOKEN          Optional Cloudflare API token for SSL mode API validation
   POST_DEPLOY_CHECK_COMMAND     Optional post-deploy verification command
   SYSTEMD_SCOPE                 system or user (default: system)
   BACKEND_SERVICE               Backend systemd unit name (default: store-backend)
@@ -87,6 +93,163 @@ require_cmd() {
     echo "Missing required command: $cmd" >&2
     exit 2
   fi
+}
+
+load_env_file() {
+  local env_file="$1"
+
+  set -a
+  # shellcheck disable=SC1090
+  source "$env_file"
+  set +a
+}
+
+assert_required_env() {
+  local name="$1"
+  local value="${!name:-}"
+
+  if [[ -z "$value" ]]; then
+    echo "Missing required env variable in deploy configuration: $name" >&2
+    exit 2
+  fi
+}
+
+assert_safe_env_value() {
+  local name="$1"
+  local value="${!name:-}"
+
+  if [[ -z "$value" ]]; then
+    return 0
+  fi
+
+  local normalized
+  normalized="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
+
+  if [[ "$normalized" == replace-with-* ]] || [[ "$normalized" == supersecret ]]; then
+    echo "Unsafe placeholder value for $name in deployment env file" >&2
+    exit 2
+  fi
+}
+
+assert_encryption_key() {
+  local name="$1"
+  local value="${!name:-}"
+
+  assert_required_env "$name"
+  assert_safe_env_value "$name"
+
+  if KEY_VALUE="$value" node -e '
+const raw = process.env.KEY_VALUE || "";
+const key = /^[0-9a-f]{64}$/i.test(raw) ? Buffer.from(raw, "hex") : Buffer.from(raw, "base64");
+if (key.length !== 32) {
+  process.exit(1);
+}
+' >/dev/null 2>&1; then
+    return 0
+  fi
+
+  echo "$name must decode to 32 bytes (base64 or 64-char hex)" >&2
+  exit 2
+}
+
+assert_encryption_key_list() {
+  local name="$1"
+  local value="${!name:-}"
+
+  if [[ -z "$value" ]]; then
+    return 0
+  fi
+
+  if KEY_LIST="$value" KEY_NAME="$name" node -e '
+const raw = process.env.KEY_LIST || "";
+const entries = raw.split(/[\n,]/).map((item) => item.trim()).filter(Boolean);
+if (!entries.length) {
+  process.exit(1);
+}
+for (const entry of entries) {
+  if (entry.toLowerCase().startsWith("replace-with-")) {
+    process.exit(1);
+  }
+  const key = /^[0-9a-f]{64}$/i.test(entry) ? Buffer.from(entry, "hex") : Buffer.from(entry, "base64");
+  if (key.length !== 32) {
+    process.exit(1);
+  }
+}
+' >/dev/null 2>&1; then
+    return 0
+  fi
+
+  echo "$name must be a comma-separated list of 32-byte keys (base64 or 64-char hex)" >&2
+  exit 2
+}
+
+assert_email_like_env() {
+  local name="$1"
+  local value="${!name:-}"
+
+  assert_required_env "$name"
+
+  if [[ "$value" != *"@"* ]]; then
+    echo "$name must look like an email address in deployment env file" >&2
+    exit 2
+  fi
+}
+
+is_truthy() {
+  local value="${1:-}"
+  local normalized
+  normalized="$(printf '%s' "$value" | tr '[:upper:]' '[:lower:]')"
+  [[ "$normalized" == "1" || "$normalized" == "true" || "$normalized" == "yes" || "$normalized" == "on" ]]
+}
+
+validate_backend_env_file() {
+  local env_file="$1"
+  load_env_file "$env_file"
+
+  local required_vars=(
+    DATABASE_URL
+    REDIS_URL
+    JWT_SECRET
+    COOKIE_SECRET
+    MANUAL_WEBHOOK_SECRET
+    CREDENTIAL_ENCRYPTION_KEY
+    DELIVERY_ENCRYPTION_KEY
+    STORE_CORS
+    ADMIN_CORS
+    AUTH_CORS
+  )
+
+  for key in "${required_vars[@]}"; do
+    assert_required_env "$key"
+    assert_safe_env_value "$key"
+  done
+
+  assert_encryption_key CREDENTIAL_ENCRYPTION_KEY
+  assert_encryption_key_list CREDENTIAL_ENCRYPTION_KEY_PREVIOUS
+  assert_encryption_key DELIVERY_ENCRYPTION_KEY
+  assert_encryption_key_list DELIVERY_ENCRYPTION_KEY_PREVIOUS
+
+  if is_truthy "${RESEND_ENABLED:-false}"; then
+    assert_required_env RESEND_API_KEY
+    assert_safe_env_value RESEND_API_KEY
+    assert_safe_env_value RESEND_FROM_EMAIL
+    assert_email_like_env RESEND_FROM_EMAIL
+  fi
+}
+
+validate_storefront_env_file() {
+  local env_file="$1"
+  load_env_file "$env_file"
+
+  local required_vars=(
+    NEXT_PUBLIC_MEDUSA_BACKEND_URL
+    NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
+  )
+
+  for key in "${required_vars[@]}"; do
+    assert_required_env "$key"
+    assert_safe_env_value "$key"
+  done
 }
 
 systemctl_run() {
@@ -149,6 +312,7 @@ require_cmd pnpm
 require_cmd tar
 require_cmd flock
 require_cmd readlink
+require_cmd node
 
 if [[ ! -d "$RELEASES_DIR" || ! -d "$SHARED_DIR" ]]; then
   echo "Deployment directories are missing under $APP_ROOT. Run scripts/deploy/bootstrap-vps.sh first." >&2
@@ -164,6 +328,9 @@ if [[ ! -f "$STOREFRONT_ENV_FILE" ]]; then
   echo "Storefront env file not found: $STOREFRONT_ENV_FILE" >&2
   exit 2
 fi
+
+validate_backend_env_file "$BACKEND_ENV_FILE"
+validate_storefront_env_file "$STOREFRONT_ENV_FILE"
 
 exec 9>"$LOCK_FILE"
 if ! flock -n 9; then
@@ -222,6 +389,15 @@ restart_services
 BACKEND_HEALTH_URL="${BACKEND_HEALTH_URL:-http://127.0.0.1:9002/health}" \
 STOREFRONT_HEALTH_URL="${STOREFRONT_HEALTH_URL:-http://127.0.0.1:8000/api/health}" \
   bash "$REPO_ROOT/scripts/deploy/health-gate.sh"
+
+if is_truthy "${EDGE_PREFLIGHT_ENABLED:-0}"; then
+  STOREFRONT_PUBLIC_URL="${STOREFRONT_PUBLIC_URL:-}" \
+  API_PUBLIC_URL="${API_PUBLIC_URL:-}" \
+  EXPECT_CLOUDFLARE="${EXPECT_CLOUDFLARE:-false}" \
+  CLOUDFLARE_ZONE_ID="${CLOUDFLARE_ZONE_ID:-}" \
+  CLOUDFLARE_API_TOKEN="${CLOUDFLARE_API_TOKEN:-}" \
+  bash "$REPO_ROOT/scripts/deploy/edge-preflight.sh"
+fi
 
 if [[ -n "$POST_DEPLOY_CHECK_COMMAND" ]]; then
   echo "Running post deploy checks..."

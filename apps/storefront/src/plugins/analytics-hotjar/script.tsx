@@ -3,6 +3,7 @@
 import Script from "next/script"
 import { useEffect } from "react"
 import type { StoreAnalyticsEventDetail } from "@/lib/analytics"
+import { useAnalyticsConsent } from "@/lib/privacy-consent"
 
 declare global {
   interface Window {
@@ -18,8 +19,10 @@ const siteId = process.env.NEXT_PUBLIC_HOTJAR_SITE_ID || ""
 const snippetVersion = process.env.NEXT_PUBLIC_HOTJAR_SNIPPET_VERSION || "6"
 
 export function HotjarStorefrontScript() {
+  const hasAnalyticsConsent = useAnalyticsConsent()
+
   useEffect(() => {
-    if (!siteId || typeof window === "undefined") {
+    if (!siteId || !hasAnalyticsConsent || typeof window === "undefined") {
       return
     }
 
@@ -38,9 +41,9 @@ export function HotjarStorefrontScript() {
     return () => {
       window.removeEventListener("store:analytics", handler)
     }
-  }, [])
+  }, [hasAnalyticsConsent])
 
-  if (!siteId) {
+  if (!siteId || !hasAnalyticsConsent) {
     return null
   }
 

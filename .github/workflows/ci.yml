@@ -33,3 +33,40 @@ jobs:
 
       - name: Run quality gate
         run: pnpm check:ci
+
+  acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      JWT_SECRET: ci_acceptance_jwt_secret
+      COOKIE_SECRET: ci_acceptance_cookie_secret
+      MANUAL_WEBHOOK_SECRET: ci_acceptance_manual_webhook_secret
+      CREDENTIAL_ENCRYPTION_KEY: 1111111111111111111111111111111111111111111111111111111111111111
+      DELIVERY_ENCRYPTION_KEY: 2222222222222222222222222222222222222222222222222222222222222222
+      NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: pk_ci_acceptance
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Prepare env files
+        run: |
+          cp apps/backend/.env.template apps/backend/.env
+          cp apps/storefront/.env.example apps/storefront/.env.local
+
+      - name: Run docker-backed acceptance
+        run: pnpm acceptance

@@ -6,7 +6,11 @@ This repository now includes a production deployment toolchain for a single-VPS 
 - `scripts/deploy/install-systemd.sh`: install backend/storefront systemd services.
 - `scripts/deploy/deploy.sh`: lock, build, migrate, switch symlink, restart, health-gate, and rollback-on-failure.
 - `scripts/deploy/rollback.sh`: switch to previous (or target) release and restart services.
+- `scripts/deploy/edge-preflight.sh`: verify public HTTPS, HSTS, and optional Cloudflare SSL mode.
 - `.github/workflows/deploy.yml`: one-click deploy/rollback from GitHub Actions.
+- `.github/workflows/deploy-sites.yml`: profile-driven multi-site deployment to multiple isolated VPS targets.
+
+`Deploy` workflow now runs `pnpm check:ci` and `pnpm acceptance` as quality gates before remote deploy (rollback skips these gates).
 
 ## Recommended First Production Shape
 
@@ -29,11 +33,33 @@ sudo APP_ROOT=/opt/store APP_USER=store bash scripts/deploy/bootstrap-vps.sh
 
 - `/opt/store/shared/backend.env`
 - `/opt/store/shared/storefront.env`
+- `/opt/store/shared/services.env`
+
+Recommended security baseline in `backend.env`:
+
+- `SECURITY_TRUST_PROXY_HEADERS=true` (when behind reverse proxy)
+- `SECURITY_ENFORCE_ORIGIN_CHECKS=true`
+- `SECURITY_HEADERS_ENABLED=true`
+- `SECURITY_HSTS_MAX_AGE_SECONDS=31536000` (HTTPS production only)
+
+HTTPS / edge baseline:
+
+- Public storefront and API endpoints must use HTTPS.
+- If Cloudflare is enabled, use SSL/TLS mode `Full (strict)` (do not use `Flexible` in production).
+- Stripe live webhook endpoints require HTTPS.
 
 If analytics plugins are enabled in production, also fill:
 
 - backend: `ANALYTICS_*`, `GA4_ENABLED`, `GA4_MEASUREMENT_ID`, `GA4_API_SECRET`
 - storefront: `NEXT_PUBLIC_GA4_MEASUREMENT_ID`, `NEXT_PUBLIC_HOTJAR_SITE_ID`, `NEXT_PUBLIC_HOTJAR_SNIPPET_VERSION`
+
+If Resend is enabled in production, also fill:
+
+- backend: `RESEND_ENABLED=true`, `RESEND_API_KEY`, `RESEND_FROM_EMAIL`, optional `RESEND_REPLY_TO_EMAIL`
+
+If rotating encryption keys, keep previous keys temporarily:
+
+- backend: optional `CREDENTIAL_ENCRYPTION_KEY_PREVIOUS`, `DELIVERY_ENCRYPTION_KEY_PREVIOUS` (comma-separated)
 
 3. Install systemd units (run as root on server):
 
@@ -44,7 +70,7 @@ sudo APP_ROOT=/opt/store APP_USER=store bash scripts/deploy/install-systemd.sh
 4. Start infrastructure on server:
 
 ```bash
-pnpm services:up
+APP_ROOT=/opt/store pnpm services:up:prod
 ```
 
 If deploy is triggered by a non-root user, that user must have sudo permission for `systemctl` commands used by `scripts/deploy/deploy.sh` and `rollback.sh`.
@@ -62,6 +88,35 @@ BACKEND_HEALTH_URL=http://127.0.0.1:9002/health \
 STOREFRONT_HEALTH_URL=http://127.0.0.1:8000/api/health \
   bash scripts/deploy/health-gate.sh
 ```
+
+7. Verify public HTTPS edge:
+
+```bash
+STOREFRONT_PUBLIC_URL=https://example.com \
+API_PUBLIC_URL=https://api.example.com \
+EXPECT_CLOUDFLARE=false \
+  bash scripts/deploy/edge-preflight.sh
+```
+
+When Cloudflare is enabled and you want SSL mode verification via API:
+
+```bash
+STOREFRONT_PUBLIC_URL=https://example.com \
+API_PUBLIC_URL=https://api.example.com \
+EXPECT_CLOUDFLARE=true \
+REQUIRE_CLOUDFLARE_SSL_MODE=strict \
+CLOUDFLARE_ZONE_ID=<zone-id> \
+CLOUDFLARE_API_TOKEN=<token-with-zone-settings-read> \
+  bash scripts/deploy/edge-preflight.sh
+```
+
+GitHub Actions optional edge secrets (for `.github/workflows/deploy.yml`):
+
+- `STOREFRONT_PUBLIC_URL`
+- `API_PUBLIC_URL`
+- `EXPECT_CLOUDFLARE` (`true` / `false`)
+- `CLOUDFLARE_ZONE_ID`
+- `CLOUDFLARE_API_TOKEN`
 
 ## Rollback
 
@@ -107,3 +162,4 @@ This sends:
 For cloud choices, GitHub one-click deployment, release governance, and canary strategy:
 
 - `docs/ops/production-runbook.md`
+- `docs/ops/multi-site-deployment.md`

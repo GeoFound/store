@@ -1,6 +1,6 @@
 # Single Store Digital Goods
 
-单店自营虚拟数字商品独立站。
+单店优先、可扩展到多站的虚拟数字商品独立站基座。
 
 ## Stack
 
@@ -15,6 +15,7 @@
 - [AI build task](docs/ai-build-task.yaml)
 - [Environment variables](docs/ops/environment.md)
 - [Deployment guide](docs/ops/deployment.md)
+- [Multi-site deployment](docs/ops/multi-site-deployment.md)
 - [Production runbook](docs/ops/production-runbook.md)
 - [Marketing engine](docs/marketing-engine.md)
 - [Analytics module](docs/analytics.md)
@@ -55,6 +56,15 @@ Live runtime verification with real local services:
 pnpm acceptance:live
 ```
 
+Production edge verification (public HTTPS / optional Cloudflare):
+
+```bash
+STOREFRONT_PUBLIC_URL=https://example.com \
+API_PUBLIC_URL=https://api.example.com \
+EXPECT_CLOUDFLARE=false \
+  pnpm deploy:edge
+```
+
 When both dev servers are running:
 
 ```bash
@@ -66,6 +76,10 @@ Default local URLs:
 - Storefront: http://localhost:8000
 - Medusa backend: http://localhost:9002
 - Medusa Admin: http://localhost:9002/app
+
+Profile-driven runtime requires `SITE_ID` / `SITE_ENV` (backend) and
+`NEXT_PUBLIC_SITE_ID` / `NEXT_PUBLIC_SITE_ENV` (storefront). There is no default
+site fallback.
 
 ## Backup
 

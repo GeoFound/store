@@ -241,6 +241,9 @@ describe("platform registry", () => {
     expect(manifests.map((manifest) => manifest.id)).toContain(
       "marketing-engine"
     )
+    expect(manifests.map((manifest) => manifest.id)).toContain(
+      "notification-resend"
+    )
     expect(manifests.map((manifest) => manifest.id)).toContain("analytics-core")
     expect(manifests.map((manifest) => manifest.id)).toContain("analytics-ga4")
     expect(manifests.map((manifest) => manifest.id)).toContain(

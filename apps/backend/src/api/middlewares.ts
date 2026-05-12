@@ -8,6 +8,20 @@ import {
 import { MedusaError } from "@medusajs/framework/utils"
 import { z, ZodError, type ZodTypeAny } from "zod"
 import { ensurePlatformIntegrationsRegistered } from "../platform/integrations"
+import { isPlatformPluginEnabled } from "../platform/runtime"
+import { emitAuditLog } from "../utils/audit-log"
+import { getRequestAuditContext } from "../utils/request-audit"
+import {
+  type RateLimitPolicy,
+  evaluateRateLimit,
+  resolveRateLimitPolicyFromEnv,
+} from "../utils/security-rate-limit"
+import {
+  buildClientFingerprint,
+  parseAllowedOriginsFromEnv,
+  resolveRequestIp,
+  resolveRequestOrigin,
+} from "../utils/security-request"
 
 const limitSchema = z.coerce.number().int().min(1).max(200).optional()
 
@@ -155,6 +169,94 @@ const manualPaymentWebhookSchema = z.object({
   status: z.literal("paid"),
 })
 
+const recoverRequestRateLimit = resolveRateLimitPolicyFromEnv(
+  process.env,
+  "SECURITY_LIMIT_RECOVER_REQUEST",
+  {
+    id: "recover-request",
+    maxRequests: 6,
+    windowSeconds: 10 * 60,
+    blockSeconds: 15 * 60,
+  }
+)
+
+const recoverVerifyRateLimit = resolveRateLimitPolicyFromEnv(
+  process.env,
+  "SECURITY_LIMIT_RECOVER_VERIFY",
+  {
+    id: "recover-verify",
+    maxRequests: 20,
+    windowSeconds: 10 * 60,
+    blockSeconds: 15 * 60,
+  }
+)
+
+const claimOrderAccessRateLimit = resolveRateLimitPolicyFromEnv(
+  process.env,
+  "SECURITY_LIMIT_CLAIM_ORDER_ACCESS",
+  {
+    id: "claim-order-access",
+    maxRequests: 40,
+    windowSeconds: 10 * 60,
+    blockSeconds: 10 * 60,
+  }
+)
+
+const createCartPaymentRateLimit = resolveRateLimitPolicyFromEnv(
+  process.env,
+  "SECURITY_LIMIT_CREATE_CART_PAYMENT",
+  {
+    id: "create-cart-payment",
+    maxRequests: 30,
+    windowSeconds: 5 * 60,
+    blockSeconds: 10 * 60,
+  }
+)
+
+const paymentWebhookRateLimit = resolveRateLimitPolicyFromEnv(
+  process.env,
+  "SECURITY_LIMIT_PAYMENT_WEBHOOK",
+  {
+    id: "payment-webhook",
+    maxRequests: 180,
+    windowSeconds: 60,
+    blockSeconds: 2 * 60,
+  }
+)
+
+const adminMutationRateLimit = resolveRateLimitPolicyFromEnv(
+  process.env,
+  "SECURITY_LIMIT_ADMIN_MUTATION",
+  {
+    id: "admin-mutation",
+    maxRequests: 120,
+    windowSeconds: 60,
+    blockSeconds: 2 * 60,
+  }
+)
+
+const SECURITY_GUARD_PLUGIN_ID = "security-guard"
+const securityAllowedOrigins = parseAllowedOriginsFromEnv(process.env)
+const securityHeadersEnabled = parseBooleanFlag(
+  process.env.SECURITY_HEADERS_ENABLED,
+  true
+)
+const securityOriginEnforcementEnabled = parseBooleanFlag(
+  process.env.SECURITY_ENFORCE_ORIGIN_CHECKS,
+  true
+)
+const securityHstsMaxAgeSeconds = parseNonNegativeInt(
+  process.env.SECURITY_HSTS_MAX_AGE_SECONDS
+)
+const securityHstsIncludeSubdomains = parseBooleanFlag(
+  process.env.SECURITY_HSTS_INCLUDE_SUBDOMAINS,
+  true
+)
+const securityHstsPreload = parseBooleanFlag(
+  process.env.SECURITY_HSTS_PRELOAD,
+  false
+)
+
 function validateAndTransformSimpleQuery(schema: ZodTypeAny) {
   return (req: MedusaRequest, _res: MedusaResponse, next: MedusaNextFunction) => {
     try {
@@ -176,6 +278,355 @@ function validateAndTransformSimpleQuery(schema: ZodTypeAny) {
   }
 }
 
+type SecurityRiskLevel = "low" | "medium" | "high"
+
+type RateLimitMiddlewareOptions = {
+  action: string
+  riskLevel?: SecurityRiskLevel
+  keyParts?: (req: MedusaRequest) => Array<string | undefined | null>
+}
+
+function createSecurityHeadersMiddleware() {
+  return (
+    req: MedusaRequest,
+    res: MedusaResponse,
+    next: MedusaNextFunction
+  ) => {
+    if (!securityHeadersEnabled || !isSecurityGuardEnabled()) {
+      next()
+      return
+    }
+
+    setHeaderIfMissing(res, "X-Content-Type-Options", "nosniff")
+    setHeaderIfMissing(res, "X-Frame-Options", "DENY")
+    setHeaderIfMissing(res, "Referrer-Policy", "strict-origin-when-cross-origin")
+    setHeaderIfMissing(
+      res,
+      "Permissions-Policy",
+      "camera=(), microphone=(), geolocation=()"
+    )
+    setHeaderIfMissing(res, "X-DNS-Prefetch-Control", "off")
+
+    if (isHttpsRequest(req) && securityHstsMaxAgeSeconds > 0) {
+      const hstsSegments = [`max-age=${securityHstsMaxAgeSeconds}`]
+
+      if (securityHstsIncludeSubdomains) {
+        hstsSegments.push("includeSubDomains")
+      }
+
+      if (securityHstsPreload) {
+        hstsSegments.push("preload")
+      }
+
+      setHeaderIfMissing(res, "Strict-Transport-Security", hstsSegments.join("; "))
+    }
+
+    next()
+  }
+}
+
+function createOriginGuardMiddleware(action: string) {
+  return async (
+    req: MedusaRequest,
+    res: MedusaResponse,
+    next: MedusaNextFunction
+  ) => {
+    if (
+      !securityOriginEnforcementEnabled ||
+      !securityAllowedOrigins.length ||
+      !isSecurityGuardEnabled()
+    ) {
+      next()
+      return
+    }
+
+    const originHeader = getHeaderValue(req, "origin")
+    const refererHeader = getHeaderValue(req, "referer")
+
+    if (!originHeader && !refererHeader) {
+      // Non-browser/API clients are allowed when no browser origin signal exists.
+      next()
+      return
+    }
+
+    const resolvedOrigin = resolveRequestOrigin(req)
+
+    if (resolvedOrigin && securityAllowedOrigins.includes(resolvedOrigin)) {
+      next()
+      return
+    }
+
+    await emitSecurityGuardAuditLog(req, {
+      action,
+      riskLevel: "high",
+      metadata: {
+        reason: "origin_not_allowed",
+        request_origin: resolvedOrigin || null,
+        origin_header: originHeader || null,
+        referer_header: refererHeader || null,
+        allowed_origins: securityAllowedOrigins,
+        request_path: getRequestPath(req),
+        request_method: getRequestMethod(req),
+      },
+    })
+
+    res.status(403).json({
+      message: "Request origin is not allowed",
+      code: "origin_not_allowed",
+    })
+  }
+}
+
+function createRateLimitMiddleware(
+  policy: RateLimitPolicy,
+  options: RateLimitMiddlewareOptions
+) {
+  return async (
+    req: MedusaRequest,
+    res: MedusaResponse,
+    next: MedusaNextFunction
+  ) => {
+    if (!isSecurityGuardEnabled()) {
+      next()
+      return
+    }
+
+    const requestPath = getRequestPath(req)
+    const requestMethod = getRequestMethod(req)
+    const requestOrigin = resolveRequestOrigin(req)
+    const requestIp = resolveRequestIp(req)
+    const userAgent = getRequestAuditContext(req).userAgent
+    const customKeyParts = options.keyParts?.(req) || []
+
+    const key = buildClientFingerprint([
+      policy.id,
+      requestPath,
+      requestMethod,
+      requestOrigin,
+      requestIp,
+      userAgent,
+      ...customKeyParts,
+    ])
+    const decision = evaluateRateLimit(policy, key)
+
+    setRateLimitHeaders(res, decision)
+
+    if (decision.allowed) {
+      next()
+      return
+    }
+
+    if (decision.retryAfterSeconds > 0) {
+      res.setHeader("Retry-After", String(decision.retryAfterSeconds))
+    }
+
+    await emitSecurityGuardAuditLog(req, {
+      action: options.action,
+      riskLevel: options.riskLevel || "high",
+      metadata: {
+        reason: "rate_limited",
+        policy_id: policy.id,
+        request_path: requestPath,
+        request_method: requestMethod,
+        request_origin: requestOrigin || null,
+        retry_after_seconds: decision.retryAfterSeconds,
+        rate_limit: decision.limit,
+      },
+    })
+
+    res.status(429).json({
+      message: "Too many requests",
+      code: "rate_limited",
+      retry_after_seconds: decision.retryAfterSeconds,
+    })
+  }
+}
+
+async function emitSecurityGuardAuditLog(
+  req: MedusaRequest,
+  input: {
+    action: string
+    riskLevel: SecurityRiskLevel
+    metadata?: Record<string, unknown>
+  }
+) {
+  try {
+    const context = getRequestAuditContext(req)
+
+    await emitAuditLog(req.scope, {
+      actorType: resolveAuditActorType(req),
+      actorId: context.actorId,
+      action: input.action,
+      entityType: "security",
+      riskLevel: input.riskLevel,
+      ipAddress: context.ipAddress,
+      userAgent: context.userAgent,
+      metadata: input.metadata,
+    })
+  } catch {
+    // Security audit logging is best-effort and must not block request flow.
+  }
+}
+
+function resolveAuditActorType(req: MedusaRequest) {
+  const authContext = (
+    req as MedusaRequest & {
+      auth_context?: {
+        actor_type?: string
+      }
+    }
+  ).auth_context
+  const actorType = normalizeString(authContext?.actor_type)
+  const path = getRequestPath(req)
+
+  if (actorType === "admin") {
+    return "admin" as const
+  }
+
+  if (actorType === "customer") {
+    return "customer" as const
+  }
+
+  if (path.startsWith("/hooks/")) {
+    return "webhook" as const
+  }
+
+  if (path.startsWith("/admin/")) {
+    return "admin" as const
+  }
+
+  return "guest" as const
+}
+
+function isSecurityGuardEnabled() {
+  return isPlatformPluginEnabled(SECURITY_GUARD_PLUGIN_ID)
+}
+
+function isHttpsRequest(req: MedusaRequest) {
+  const forwardedProto = normalizeString(getHeaderValue(req, "x-forwarded-proto"))
+
+  if (forwardedProto.split(",").map((entry) => entry.trim()).includes("https")) {
+    return true
+  }
+
+  const requestWithProtocol = req as MedusaRequest & {
+    protocol?: string
+    secure?: boolean
+  }
+
+  if (requestWithProtocol.secure === true) {
+    return true
+  }
+
+  return normalizeString(requestWithProtocol.protocol) === "https"
+}
+
+function setRateLimitHeaders(res: MedusaResponse, decision: ReturnType<typeof evaluateRateLimit>) {
+  const resetAtMs = Date.parse(decision.resetAt)
+  const resetAfterSeconds = Number.isFinite(resetAtMs)
+    ? Math.max(0, Math.ceil((resetAtMs - Date.now()) / 1000))
+    : Math.max(0, decision.retryAfterSeconds)
+
+  res.setHeader("X-RateLimit-Limit", String(decision.limit))
+  res.setHeader("X-RateLimit-Remaining", String(decision.remaining))
+  res.setHeader("X-RateLimit-Reset", String(resetAfterSeconds))
+}
+
+function setHeaderIfMissing(res: MedusaResponse, name: string, value: string) {
+  if (!res.getHeader(name)) {
+    res.setHeader(name, value)
+  }
+}
+
+function getHeaderValue(req: MedusaRequest, headerName: string) {
+  const value = req.headers[headerName] ?? req.headers[headerName.toLowerCase()]
+
+  if (Array.isArray(value)) {
+    return value[0]
+  }
+
+  return typeof value === "string" ? value : ""
+}
+
+function getRequestPath(req: MedusaRequest) {
+  const requestWithPath = req as MedusaRequest & {
+    originalUrl?: string
+    path?: string
+    url?: string
+  }
+
+  return (
+    normalizeString(requestWithPath.originalUrl) ||
+    normalizeString(requestWithPath.path) ||
+    normalizeString(requestWithPath.url) ||
+    "/"
+  )
+}
+
+function getRequestMethod(req: MedusaRequest) {
+  return normalizeString(
+    (req as MedusaRequest & { method?: string }).method
+  ).toUpperCase()
+}
+
+function getBodyValue(req: MedusaRequest, key: string) {
+  const body = (
+    ((req as MedusaRequest & { validatedBody?: Record<string, unknown> }).validatedBody ||
+      req.body ||
+      {}) as Record<string, unknown>
+  )[key]
+
+  if (Array.isArray(body)) {
+    return normalizeString(body[0])
+  }
+
+  if (typeof body === "number" || typeof body === "boolean") {
+    return String(body)
+  }
+
+  return normalizeString(body)
+}
+
+function getParamValue(req: MedusaRequest, key: string) {
+  const value = (
+    (req as MedusaRequest & { params?: Record<string, string | undefined> }).params ||
+    {}
+  )[key]
+  return normalizeString(value)
+}
+
+function normalizeString(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : ""
+}
+
+function parseBooleanFlag(value: string | undefined, fallback: boolean) {
+  const normalized = normalizeString(value).toLowerCase()
+
+  if (!normalized) {
+    return fallback
+  }
+
+  if (["1", "true", "yes", "on"].includes(normalized)) {
+    return true
+  }
+
+  if (["0", "false", "no", "off"].includes(normalized)) {
+    return false
+  }
+
+  return fallback
+}
+
+function parseNonNegativeInt(value: string | undefined) {
+  const parsed = Number(value)
+
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return 0
+  }
+
+  return Math.floor(parsed)
+}
+
 export default defineMiddlewares({
   routes: [
     {
@@ -189,6 +640,7 @@ export default defineMiddlewares({
           ensurePlatformIntegrationsRegistered()
           next()
         },
+        createSecurityHeadersMiddleware(),
       ],
     },
     {
@@ -197,7 +649,14 @@ export default defineMiddlewares({
       bodyParser: {
         preserveRawBody: true,
       },
-      middlewares: [validateAndTransformBody(paymentWebhookSchema.passthrough())],
+      middlewares: [
+        createRateLimitMiddleware(paymentWebhookRateLimit, {
+          action: "security.payment_webhook.rate_limited",
+          riskLevel: "high",
+          keyParts: (req) => [getParamValue(req, "provider_code")],
+        }),
+        validateAndTransformBody(paymentWebhookSchema.passthrough()),
+      ],
     },
     {
       matcher: "/hooks/payment/manual",
@@ -205,7 +664,14 @@ export default defineMiddlewares({
       bodyParser: {
         preserveRawBody: true,
       },
-      middlewares: [validateAndTransformBody(manualPaymentWebhookSchema.passthrough())],
+      middlewares: [
+        createRateLimitMiddleware(paymentWebhookRateLimit, {
+          action: "security.manual_webhook.rate_limited",
+          riskLevel: "high",
+          keyParts: () => ["manual"],
+        }),
+        validateAndTransformBody(manualPaymentWebhookSchema.passthrough()),
+      ],
     },
     {
       matcher: "/store/payment-methods",
@@ -225,7 +691,15 @@ export default defineMiddlewares({
     {
       matcher: "/admin/marketing/campaigns",
       methods: ["POST"],
-      middlewares: [validateAndTransformBody(createMarketingCampaignBodySchema)],
+      middlewares: [
+        createRateLimitMiddleware(adminMutationRateLimit, {
+          action: "security.admin_mutation.rate_limited",
+          riskLevel: "medium",
+          keyParts: (req) => [getRequestPath(req)],
+        }),
+        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        validateAndTransformBody(createMarketingCampaignBodySchema),
+      ],
     },
     {
       matcher: "/admin/marketing/offers",
@@ -235,7 +709,15 @@ export default defineMiddlewares({
     {
       matcher: "/admin/marketing/offers",
       methods: ["POST"],
-      middlewares: [validateAndTransformBody(createMarketingOfferBodySchema)],
+      middlewares: [
+        createRateLimitMiddleware(adminMutationRateLimit, {
+          action: "security.admin_mutation.rate_limited",
+          riskLevel: "medium",
+          keyParts: (req) => [getRequestPath(req)],
+        }),
+        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        validateAndTransformBody(createMarketingOfferBodySchema),
+      ],
     },
     {
       matcher: "/admin/marketing/coupons",
@@ -245,7 +727,15 @@ export default defineMiddlewares({
     {
       matcher: "/admin/marketing/coupons",
       methods: ["POST"],
-      middlewares: [validateAndTransformBody(createMarketingCouponBodySchema)],
+      middlewares: [
+        createRateLimitMiddleware(adminMutationRateLimit, {
+          action: "security.admin_mutation.rate_limited",
+          riskLevel: "medium",
+          keyParts: (req) => [getRequestPath(req)],
+        }),
+        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        validateAndTransformBody(createMarketingCouponBodySchema),
+      ],
     },
     {
       matcher: "/admin/marketing/referral-links",
@@ -255,7 +745,15 @@ export default defineMiddlewares({
     {
       matcher: "/admin/marketing/referral-links",
       methods: ["POST"],
-      middlewares: [validateAndTransformBody(createMarketingReferralLinkBodySchema)],
+      middlewares: [
+        createRateLimitMiddleware(adminMutationRateLimit, {
+          action: "security.admin_mutation.rate_limited",
+          riskLevel: "medium",
+          keyParts: (req) => [getRequestPath(req)],
+        }),
+        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        validateAndTransformBody(createMarketingReferralLinkBodySchema),
+      ],
     },
     {
       matcher: "/admin/marketing/touchpoints",
@@ -275,7 +773,15 @@ export default defineMiddlewares({
     {
       matcher: "/admin/analytics/dispatches",
       methods: ["POST"],
-      middlewares: [validateAndTransformBody(replayAnalyticsDispatchBodySchema)],
+      middlewares: [
+        createRateLimitMiddleware(adminMutationRateLimit, {
+          action: "security.admin_mutation.rate_limited",
+          riskLevel: "medium",
+          keyParts: (req) => [getRequestPath(req)],
+        }),
+        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        validateAndTransformBody(replayAnalyticsDispatchBodySchema),
+      ],
     },
     {
       matcher: "/admin/after-sales",
@@ -315,22 +821,57 @@ export default defineMiddlewares({
     {
       matcher: "/store/orders/recover",
       methods: ["POST"],
-      middlewares: [validateAndTransformBody(recoverOrderBodySchema)],
+      middlewares: [
+        createRateLimitMiddleware(recoverRequestRateLimit, {
+          action: "security.order_recover.rate_limited",
+          riskLevel: "high",
+          keyParts: (req) => [getBodyValue(req, "email"), getBodyValue(req, "order_id")],
+        }),
+        createOriginGuardMiddleware("security.order_recover.origin_blocked"),
+        validateAndTransformBody(recoverOrderBodySchema),
+      ],
     },
     {
       matcher: "/store/orders/recover/verify",
       methods: ["POST"],
-      middlewares: [validateAndTransformBody(verifyRecoverBodySchema)],
+      middlewares: [
+        createRateLimitMiddleware(recoverVerifyRateLimit, {
+          action: "security.order_recover_verify.rate_limited",
+          riskLevel: "high",
+          keyParts: (req) => [getBodyValue(req, "order_id")],
+        }),
+        createOriginGuardMiddleware("security.order_recover_verify.origin_blocked"),
+        validateAndTransformBody(verifyRecoverBodySchema),
+      ],
     },
     {
       matcher: "/store/payment-attempts/:id/claim-order-access",
       methods: ["POST"],
-      middlewares: [validateAndTransformBody(claimOrderAccessBodySchema)],
+      middlewares: [
+        createRateLimitMiddleware(claimOrderAccessRateLimit, {
+          action: "security.claim_order_access.rate_limited",
+          riskLevel: "high",
+          keyParts: (req) => [getParamValue(req, "id"), getBodyValue(req, "claim_token")],
+        }),
+        createOriginGuardMiddleware("security.claim_order_access.origin_blocked"),
+        validateAndTransformBody(claimOrderAccessBodySchema),
+      ],
     },
     {
       matcher: "/store/carts/:cart_id/payments",
       methods: ["POST"],
-      middlewares: [validateAndTransformBody(createCartPaymentBodySchema)],
+      middlewares: [
+        createRateLimitMiddleware(createCartPaymentRateLimit, {
+          action: "security.create_cart_payment.rate_limited",
+          riskLevel: "high",
+          keyParts: (req) => [
+            getParamValue(req, "cart_id"),
+            getBodyValue(req, "payment_method"),
+          ],
+        }),
+        createOriginGuardMiddleware("security.create_cart_payment.origin_blocked"),
+        validateAndTransformBody(createCartPaymentBodySchema),
+      ],
     },
   ],
 })

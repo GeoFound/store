@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "targets": [
+    {
+      "site_id": "site-1",
+      "site_env": "production",
+      "enabled": true,
+      "github_environment": "production",
+      "deploy_host_secret": "DEPLOY_HOST_SITE_1",
+      "deploy_user_secret": "DEPLOY_SSH_USER_SITE_1",
+      "deploy_key_secret": "DEPLOY_SSH_PRIVATE_KEY_SITE_1",
+      "deploy_host_key_secret": "DEPLOY_HOST_KEY_SITE_1",
+      "deploy_repo_path_secret": "DEPLOY_REPO_PATH_SITE_1",
+      "app_root_secret": "APP_ROOT_SITE_1",
+      "backend_env_secret": "BACKEND_ENV_SITE_1",
+      "storefront_env_secret": "STOREFRONT_ENV_SITE_1",
+      "services_env_secret": "SERVICES_ENV_SITE_1"
+    },
+    {
+      "site_id": "jp-cards",
+      "site_env": "production",
+      "enabled": false,
+      "github_environment": "production",
+      "deploy_host_secret": "DEPLOY_HOST_JP",
+      "deploy_user_secret": "DEPLOY_SSH_USER_JP",
+      "deploy_key_secret": "DEPLOY_SSH_PRIVATE_KEY_JP",
+      "deploy_host_key_secret": "DEPLOY_HOST_KEY_JP",
+      "deploy_repo_path_secret": "DEPLOY_REPO_PATH_JP",
+      "app_root_secret": "APP_ROOT_JP",
+      "backend_env_secret": "BACKEND_ENV_JP",
+      "storefront_env_secret": "STOREFRONT_ENV_JP",
+      "services_env_secret": "SERVICES_ENV_JP"
+    }
+  ]
+}

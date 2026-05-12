@@ -50,6 +50,16 @@ If you run backend/storefront outside `acceptance:live`, ensure both the backend
 export MANUAL_WEBHOOK_SECRET=replace-with-strong-shared-secret
 ```
 
+Also ensure backend runtime encryption keys are valid 32-byte values:
+
+```bash
+export CREDENTIAL_ENCRYPTION_KEY=0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+export DELIVERY_ENCRYPTION_KEY=abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789
+# Optional during key rotation (comma-separated list)
+export CREDENTIAL_ENCRYPTION_KEY_PREVIOUS=
+export DELIVERY_ENCRYPTION_KEY_PREVIOUS=
+```
+
 This creates a cart, reserves inventory, confirms manual payment through the webhook, claims order access, and verifies that at least one delivery record with non-empty payload is readable from the order access endpoint.
 
 ## Manual Full Flow Checklist

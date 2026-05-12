@@ -10,7 +10,7 @@ export type NotificationSendInput = {
   data: Record<string, unknown>
 }
 
-type NotificationSendHookInput = NotificationSendInput & {
+export type NotificationSendHookInput = NotificationSendInput & {
   scope: MedusaContainer
 }
 

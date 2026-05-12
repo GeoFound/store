@@ -1,0 +1,286 @@
+name: Deploy Sites
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: git ref to deploy (branch/tag/sha)
+        required: false
+        default: main
+        type: string
+      site_env:
+        description: profile environment under profiles/sites/<site-id>/<site_env>
+        required: true
+        default: production
+        type: string
+      targets:
+        description: comma-separated site ids or all
+        required: true
+        default: all
+        type: string
+      run_db_migrations:
+        description: run db migrations during deploy
+        required: true
+        default: true
+        type: boolean
+      run_edge_preflight:
+        description: run public HTTPS edge preflight after deploy
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-sites-${{ github.event.inputs.site_env || 'production' }}
+  cancel-in-progress: false
+
+jobs:
+  quality-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      JWT_SECRET: ci_deploy_sites_jwt_secret
+      COOKIE_SECRET: ci_deploy_sites_cookie_secret
+      MANUAL_WEBHOOK_SECRET: ci_deploy_sites_manual_webhook_secret
+      CREDENTIAL_ENCRYPTION_KEY: 1111111111111111111111111111111111111111111111111111111111111111
+      DELIVERY_ENCRYPTION_KEY: 2222222222222222222222222222222222222222222222222222222222222222
+      NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY: pk_ci_deploy_sites
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || 'main' }}
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Prepare env files
+        run: |
+          cp apps/backend/.env.template apps/backend/.env
+          cp apps/storefront/.env.example apps/storefront/.env.local
+
+      - name: Run quality gate
+        run: pnpm check:ci
+
+      - name: Run acceptance gate
+        run: pnpm acceptance
+
+  resolve-targets:
+    needs: [quality-gate]
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.resolve.outputs.matrix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || 'main' }}
+
+      - name: Resolve target matrix
+        id: resolve
+        env:
+          SITE_ENV: ${{ github.event.inputs.site_env || 'production' }}
+          TARGETS: ${{ github.event.inputs.targets || 'all' }}
+        run: |
+          set -euo pipefail
+
+          matrix_json=$(node scripts/profile/resolve-target-matrix.mjs --site-env "$SITE_ENV" --targets "$TARGETS")
+
+          {
+            echo "matrix<<EOF"
+            echo "$matrix_json"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: [resolve-targets]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.resolve-targets.outputs.matrix) }}
+    environment: ${{ matrix.github_environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.ref || 'main' }}
+
+      - name: Validate site profile
+        run: |
+          set -euo pipefail
+          bash scripts/profile/validate.sh --site-id '${{ matrix.site_id }}' --site-env '${{ matrix.site_env }}'
+
+      - name: Resolve public URLs from profile
+        id: profile_urls
+        run: |
+          set -euo pipefail
+
+          profile_file="profiles/sites/${{ matrix.site_id }}/${{ matrix.site_env }}/site.json"
+          if [ ! -f "$profile_file" ]; then
+            echo "Profile file not found: $profile_file" >&2
+            exit 1
+          fi
+
+          storefront_public_url=$(PROFILE_FILE="$profile_file" node -e '
+const fs = require("node:fs");
+const raw = fs.readFileSync(process.env.PROFILE_FILE, "utf8");
+const profile = JSON.parse(raw);
+const rawValue = String(profile?.domains?.storefront || "").trim();
+if (!rawValue) process.exit(1);
+const normalized = /^https?:\/\//i.test(rawValue) ? rawValue : `https://${rawValue}`;
+const parsed = new URL(normalized);
+process.stdout.write(`https://${parsed.host}`);
+')
+          api_public_url=$(PROFILE_FILE="$profile_file" node -e '
+const fs = require("node:fs");
+const raw = fs.readFileSync(process.env.PROFILE_FILE, "utf8");
+const profile = JSON.parse(raw);
+const rawValue = String(profile?.domains?.api || "").trim();
+if (!rawValue) process.exit(1);
+const normalized = /^https?:\/\//i.test(rawValue) ? rawValue : `https://${rawValue}`;
+const parsed = new URL(normalized);
+process.stdout.write(`https://${parsed.host}`);
+')
+
+          echo "storefront_public_url=$storefront_public_url" >> "$GITHUB_OUTPUT"
+          echo "api_public_url=$api_public_url" >> "$GITHUB_OUTPUT"
+
+      - name: Read target secrets
+        id: secrets
+        env:
+          DEPLOY_HOST: ${{ secrets[matrix.deploy_host_secret] }}
+          DEPLOY_USER: ${{ secrets[matrix.deploy_user_secret] }}
+          DEPLOY_KEY: ${{ secrets[matrix.deploy_key_secret] }}
+          DEPLOY_HOST_KEY: ${{ secrets[matrix.deploy_host_key_secret] }}
+          DEPLOY_REPO_PATH: ${{ secrets[matrix.deploy_repo_path_secret] }}
+          APP_ROOT: ${{ secrets[matrix.app_root_secret] }}
+          BACKEND_ENV_BASE: ${{ secrets[matrix.backend_env_secret] }}
+          STOREFRONT_ENV_BASE: ${{ secrets[matrix.storefront_env_secret] }}
+          SERVICES_ENV_BASE: ${{ secrets[matrix.services_env_secret] }}
+        run: |
+          set -euo pipefail
+
+          for key in DEPLOY_HOST DEPLOY_USER DEPLOY_KEY DEPLOY_HOST_KEY DEPLOY_REPO_PATH BACKEND_ENV_BASE STOREFRONT_ENV_BASE SERVICES_ENV_BASE; do
+            if [ -z "${!key}" ]; then
+              echo "Missing required secret content: $key" >&2
+              exit 1
+            fi
+          done
+
+          if [ -z "$APP_ROOT" ]; then
+            APP_ROOT="/opt/store"
+          fi
+
+          if ! [[ "$APP_ROOT" =~ ^/[A-Za-z0-9._/-]+$ ]]; then
+            echo "Invalid APP_ROOT: $APP_ROOT" >&2
+            exit 1
+          fi
+
+          if ! [[ "$DEPLOY_REPO_PATH" =~ ^/[A-Za-z0-9._/-]+$ ]]; then
+            echo "Invalid DEPLOY_REPO_PATH: $DEPLOY_REPO_PATH" >&2
+            exit 1
+          fi
+
+          echo "deploy_host=$DEPLOY_HOST" >> "$GITHUB_OUTPUT"
+          echo "deploy_user=$DEPLOY_USER" >> "$GITHUB_OUTPUT"
+          echo "deploy_repo_path=$DEPLOY_REPO_PATH" >> "$GITHUB_OUTPUT"
+          echo "app_root=$APP_ROOT" >> "$GITHUB_OUTPUT"
+
+          env_dir="$RUNNER_TEMP/site-env-${{ matrix.site_id }}"
+          mkdir -p "$env_dir"
+
+          printf '%s\n' "$BACKEND_ENV_BASE" > "$env_dir/backend.base.env"
+          printf '%s\n' "$STOREFRONT_ENV_BASE" > "$env_dir/storefront.base.env"
+          printf '%s\n' "$SERVICES_ENV_BASE" > "$env_dir/services.base.env"
+
+          bash scripts/profile/prepare-env-files.sh \
+            --site-id '${{ matrix.site_id }}' \
+            --site-env '${{ matrix.site_env }}' \
+            --backend-base-file "$env_dir/backend.base.env" \
+            --storefront-base-file "$env_dir/storefront.base.env" \
+            --services-base-file "$env_dir/services.base.env" \
+            --output-dir "$env_dir/output"
+
+          echo "env_dir=$env_dir/output" >> "$GITHUB_OUTPUT"
+
+      - name: Start SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets[matrix.deploy_key_secret] }}
+
+      - name: Configure known_hosts
+        env:
+          DEPLOY_HOST_KEY: ${{ secrets[matrix.deploy_host_key_secret] }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_HOST_KEY" >> ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Sync env files to target host
+        env:
+          SSH_TARGET: ${{ steps.secrets.outputs.deploy_user }}@${{ steps.secrets.outputs.deploy_host }}
+          APP_ROOT: ${{ steps.secrets.outputs.app_root }}
+          ENV_DIR: ${{ steps.secrets.outputs.env_dir }}
+        run: |
+          set -euo pipefail
+
+          scp -o BatchMode=yes -o StrictHostKeyChecking=yes "$ENV_DIR/backend.env" "$SSH_TARGET:/tmp/store-backend.env"
+          scp -o BatchMode=yes -o StrictHostKeyChecking=yes "$ENV_DIR/storefront.env" "$SSH_TARGET:/tmp/store-storefront.env"
+          scp -o BatchMode=yes -o StrictHostKeyChecking=yes "$ENV_DIR/services.env" "$SSH_TARGET:/tmp/store-services.env"
+
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes "$SSH_TARGET" \
+            "set -euo pipefail; install -d -m 750 '$APP_ROOT/shared'; install -m 640 /tmp/store-backend.env '$APP_ROOT/shared/backend.env'; install -m 640 /tmp/store-storefront.env '$APP_ROOT/shared/storefront.env'; install -m 640 /tmp/store-services.env '$APP_ROOT/shared/services.env'; rm -f /tmp/store-backend.env /tmp/store-storefront.env /tmp/store-services.env"
+
+      - name: Deploy on target host
+        env:
+          SSH_TARGET: ${{ steps.secrets.outputs.deploy_user }}@${{ steps.secrets.outputs.deploy_host }}
+          APP_ROOT: ${{ steps.secrets.outputs.app_root }}
+          DEPLOY_REPO_PATH: ${{ steps.secrets.outputs.deploy_repo_path }}
+          INPUT_REF: ${{ github.event.inputs.ref || 'main' }}
+          RUN_DB_MIGRATIONS: ${{ github.event.inputs.run_db_migrations || 'true' }}
+          STOREFRONT_PUBLIC_URL: ${{ steps.profile_urls.outputs.storefront_public_url }}
+          API_PUBLIC_URL: ${{ steps.profile_urls.outputs.api_public_url }}
+          RUN_EDGE_PREFLIGHT: ${{ github.event.inputs.run_edge_preflight || 'true' }}
+        run: |
+          set -euo pipefail
+
+          TARGET_REF="$INPUT_REF"
+          if [ -z "$TARGET_REF" ]; then
+            TARGET_REF="main"
+          fi
+
+          if ! [[ "$TARGET_REF" =~ ^[A-Za-z0-9._/-]+$ ]]; then
+            echo "Invalid ref: $TARGET_REF" >&2
+            exit 1
+          fi
+
+          if [ "$RUN_DB_MIGRATIONS" = "true" ]; then
+            MIGRATIONS_FLAG="1"
+          else
+            MIGRATIONS_FLAG="0"
+          fi
+
+          if [ "$RUN_EDGE_PREFLIGHT" = "true" ]; then
+            EDGE_PREFLIGHT_ENABLED="1"
+          else
+            EDGE_PREFLIGHT_ENABLED="0"
+          fi
+
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes "$SSH_TARGET" \
+            "set -euo pipefail; cd '$DEPLOY_REPO_PATH'; APP_ROOT='$APP_ROOT' RUN_DB_MIGRATIONS='$MIGRATIONS_FLAG' EDGE_PREFLIGHT_ENABLED='$EDGE_PREFLIGHT_ENABLED' STOREFRONT_PUBLIC_URL='$STOREFRONT_PUBLIC_URL' API_PUBLIC_URL='$API_PUBLIC_URL' EXPECT_CLOUDFLARE='false' bash scripts/deploy/deploy.sh --ref '$TARGET_REF'"

@@ -6,9 +6,9 @@ services:
     environment:
       POSTGRES_DB: store
       POSTGRES_USER: store
-      POSTGRES_PASSWORD: store
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-store}
     ports:
-      - "5433:5432"
+      - "${POSTGRES_BIND_IP:-127.0.0.1}:${POSTGRES_PORT:-5433}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -21,12 +21,22 @@ services:
     image: redis:7-alpine
     container_name: store-redis
     restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    command:
+      - sh
+      - -c
+      - |
+        if [ -n "$${REDIS_PASSWORD}" ]; then
+          exec redis-server --appendonly yes --requirepass "$${REDIS_PASSWORD}"
+        fi
+        exec redis-server --appendonly yes
     ports:
-      - "6380:6379"
+      - "${REDIS_BIND_IP:-127.0.0.1}:${REDIS_PORT:-6380}:6379"
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD-SHELL", "if [ -n \"$${REDIS_PASSWORD}\" ]; then redis-cli -a \"$${REDIS_PASSWORD}\" ping; else redis-cli ping; fi"]
       interval: 5s
       timeout: 5s
       retries: 20
