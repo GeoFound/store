@@ -1,7 +1,11 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { createStep, StepResponse } from "@medusajs/framework/workflows-sdk"
 import { MedusaError } from "@medusajs/framework/utils"
-import { emitDeliveryCreatedEvent } from "../../../platform/events"
+import {
+  emitDeliveryCompletedEvent,
+  emitDeliveryCreatedEvent,
+} from "../../../platform/events"
+import { resolveDeliveryHandlerCode } from "../../../platform/delivery"
 import { ensurePlatformIntegrationsRegistered } from "../../../platform/integrations"
 import { resolveProductTemplate } from "../../../platform/product-templates"
 import {
@@ -10,6 +14,7 @@ import {
 } from "../../../platform/services"
 
 export type CreateDeliveryStepInput = {
+  deliveryId?: string
   orderId?: string
   cartId?: string
   paymentAttemptId?: string
@@ -19,6 +24,7 @@ export type CreateDeliveryStepInput = {
   productType?: string | null
   fulfillmentPolicyCode?: string | null
   deliveryHandlerCode?: string | null
+  deliveryStatus?: "pending" | "delivered"
   deliveryPayload?: Record<string, unknown> | string
   deliveredBy?: string
   deliveryNote?: string
@@ -69,6 +75,7 @@ export const createDeliveryStep = createStep(
 
     const result = await deliveryService.createDelivery({
       scope: container,
+      deliveryId: input.deliveryId,
       orderId,
       cartId: input.cartId,
       paymentAttemptId: input.paymentAttemptId,
@@ -90,16 +97,17 @@ export const createDeliveryStep = createStep(
         ) ||
         productTemplate?.fulfillmentPolicyCode ||
         undefined,
-      deliveryHandlerCode:
-        input.deliveryHandlerCode ||
-        toOptionalString(
-          deliveryMetadata.delivery_handler_code ||
-            deliveryMetadata.deliveryHandlerCode
-        ) ||
-        productTemplate?.deliveryHandlerCode ||
-        (input.accountItemId ? "credential" : undefined) ||
-        undefined,
+      deliveryHandlerCode: resolveDeliveryHandlerCode({
+        deliveryHandlerCode: input.deliveryHandlerCode,
+        metadata: deliveryMetadata,
+        accountItemId: input.accountItemId || null,
+        templateDeliveryHandlerCode: productTemplate?.deliveryHandlerCode,
+        deliveryId: input.deliveryId || null,
+        deliveryPayload: input.deliveryPayload,
+        defaultHandlerCode: "manual",
+      }),
       deliveryPayload: input.deliveryPayload,
+      deliveryStatus: input.deliveryStatus,
       deliveredBy: input.deliveredBy,
       deliveryNote: input.deliveryNote,
       metadata: {
@@ -108,18 +116,28 @@ export const createDeliveryStep = createStep(
       },
     })
 
-    try {
-      await emitDeliveryCreatedEvent(container, {
-        delivery: result.delivery,
-        accessToken: result.accessToken,
-        orderId,
-        metadata: {
-          template_code: productTemplate?.code || null,
-          ...deliveryMetadata,
-        },
-      })
-    } catch {
-      // Hook consumers must not break the delivery flow.
+    const eventPayload = {
+      delivery: result.delivery,
+      accessToken: result.accessToken,
+      orderId,
+      metadata: {
+        template_code: productTemplate?.code || null,
+        ...deliveryMetadata,
+      },
+    }
+
+    if (result.created === false && result.updated) {
+      try {
+        await emitDeliveryCompletedEvent(container, eventPayload)
+      } catch {
+        // Hook consumers must not break the delivery flow.
+      }
+    } else if (result.created !== false) {
+      try {
+        await emitDeliveryCreatedEvent(container, eventPayload)
+      } catch {
+        // Hook consumers must not break the delivery flow.
+      }
     }
 
     return new StepResponse({

@@ -178,8 +178,18 @@ export const getSiteConfig = cache(() => {
 })
 
 function resolveSiteProfilePath(siteId: string, siteEnv: string) {
-  const root = path.join(process.cwd(), "profiles", "sites")
+  const root = resolveProfilesRoot()
   return path.join(root, siteId, siteEnv, "site.json")
+}
+
+function resolveProfilesRoot() {
+  const explicitRoot = toOptionalString(process.env.SITE_PROFILES_ROOT)
+
+  if (explicitRoot) {
+    return path.resolve(explicitRoot)
+  }
+
+  return path.resolve(process.cwd(), "..", "..", "profiles", "sites")
 }
 
 function resolveSiteId() {

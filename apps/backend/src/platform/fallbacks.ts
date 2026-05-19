@@ -55,6 +55,8 @@ export function createNoopDeliveryHandler(reason = "noop"): DeliveryHandler {
           fallback_reason: reason,
         },
         accessToken: null,
+        created: true,
+        updated: false,
       }
     },
   }

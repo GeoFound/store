@@ -100,6 +100,9 @@ export type PaymentAttempt = {
   paid_at?: string | null
   order_access_claimed_at?: string | null
   order_access_claim_token_hint?: string | null
+  payment_finalized_at?: string | null
+  payment_finalization_status?: "processing" | "failed" | "finalized" | null
+  payment_finalization_error?: string | null
   marketing_context?: Record<string, unknown> | null
 }
 

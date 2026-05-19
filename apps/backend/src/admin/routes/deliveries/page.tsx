@@ -10,12 +10,15 @@ import { renderAdminExtensions } from "../../extensions/registry"
 import { adminApi, formatDate } from "../../lib/admin-api"
 
 type PendingItem = {
+  kind?: "credential" | "delivery"
   id: string
+  delivery_id?: string
   display_label: string
   account_identifier: string
   product_variant_id: string
   cart_id?: string | null
   order_id?: string | null
+  payment_attempt_id?: string | null
 }
 
 type Delivery = {
@@ -36,10 +39,13 @@ const DeliveriesPage = () => {
   const [pending, setPending] = useState<PendingItem[]>([])
   const [deliveries, setDeliveries] = useState<Delivery[]>([])
   const [accountItemId, setAccountItemId] = useState("")
+  const [deliveryId, setDeliveryId] = useState("")
+  const [orderId, setOrderId] = useState("")
   const [cartId, setCartId] = useState("")
   const [paymentAttemptId, setPaymentAttemptId] = useState("")
   const [deliveredBy, setDeliveredBy] = useState("admin")
   const [deliveryNote, setDeliveryNote] = useState("")
+  const [deliveryPayload, setDeliveryPayload] = useState("")
   const [lastAccessToken, setLastAccessToken] = useState("")
   const [error, setError] = useState("")
   const [message, setMessage] = useState("")
@@ -59,9 +65,16 @@ const DeliveriesPage = () => {
   }
 
   function selectPending(item: PendingItem) {
-    setAccountItemId(item.id)
+    setDeliveryId(item.kind === "delivery" ? item.delivery_id || item.id : "")
+    setAccountItemId(item.kind === "delivery" ? "" : item.id)
+    setOrderId(item.order_id || "")
     setCartId(item.cart_id || "")
-    setPaymentAttemptId("")
+    setPaymentAttemptId(item.payment_attempt_id || "")
+    setDeliveryNote("")
+    setDeliveryPayload("")
+    setError("")
+    setMessage("")
+    setLastAccessToken("")
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -78,9 +91,12 @@ const DeliveriesPage = () => {
       }>("/admin/digital-delivery/deliveries", {
         method: "POST",
         body: {
-          account_item_id: accountItemId,
+          delivery_id: deliveryId || undefined,
+          account_item_id: accountItemId || undefined,
+          order_id: orderId || undefined,
           cart_id: cartId || undefined,
           payment_attempt_id: paymentAttemptId || undefined,
+          delivery_payload: parseDeliveryPayload(deliveryPayload),
           delivered_by: deliveredBy,
           delivery_note: deliveryNote || undefined,
         },
@@ -99,12 +115,12 @@ const DeliveriesPage = () => {
     <div className="flex flex-col gap-y-4">
       <AdminSection
         title="Pending Delivery"
-        description="Sold credentials that have not been delivered."
+        description="Items awaiting fulfillment, including sold credentials and pending delivery records."
       >
         <Table>
           <Table.Header>
             <Table.Row>
-              <Table.HeaderCell>Credential</Table.HeaderCell>
+              <Table.HeaderCell>Item</Table.HeaderCell>
               <Table.HeaderCell>Variant</Table.HeaderCell>
               <Table.HeaderCell>Cart/Order</Table.HeaderCell>
               <Table.HeaderCell></Table.HeaderCell>
@@ -117,7 +133,7 @@ const DeliveriesPage = () => {
                   <div>
                     <Heading level="h3">{item.display_label}</Heading>
                     <Text className="font-mono text-ui-fg-subtle">
-                      {item.account_identifier}
+                      {item.kind || "credential"} · {item.account_identifier}
                     </Text>
                   </div>
                 </Table.Cell>
@@ -138,9 +154,19 @@ const DeliveriesPage = () => {
         <form onSubmit={handleSubmit} className="grid gap-4">
           <div className="grid gap-4 md:grid-cols-2">
             <Input
+              value={deliveryId}
+              onChange={(event) => setDeliveryId(event.target.value)}
+              placeholder="delivery_id for pending delivery"
+            />
+            <Input
               value={accountItemId}
               onChange={(event) => setAccountItemId(event.target.value)}
               placeholder="account_item_id"
+            />
+            <Input
+              value={orderId}
+              onChange={(event) => setOrderId(event.target.value)}
+              placeholder="order_id"
             />
             <Input
               value={cartId}
@@ -162,6 +188,11 @@ const DeliveriesPage = () => {
             value={deliveryNote}
             onChange={(event) => setDeliveryNote(event.target.value)}
             placeholder="Delivery note"
+          />
+          <Textarea
+            value={deliveryPayload}
+            onChange={(event) => setDeliveryPayload(event.target.value)}
+            placeholder="Delivery payload for manual/file/API fulfillment. JSON objects are accepted; plain text is stored as-is."
           />
           <div className="flex items-center gap-3">
             <Button type="submit" disabled={loading}>
@@ -220,3 +251,21 @@ export const config = defineRouteConfig({
 })
 
 export default DeliveriesPage
+
+function parseDeliveryPayload(value: string) {
+  const trimmed = value.trim()
+
+  if (!trimmed) {
+    return undefined
+  }
+
+  if (!["{", "["].includes(trimmed[0])) {
+    return trimmed
+  }
+
+  try {
+    return JSON.parse(trimmed) as Record<string, unknown>
+  } catch {
+    return trimmed
+  }
+}

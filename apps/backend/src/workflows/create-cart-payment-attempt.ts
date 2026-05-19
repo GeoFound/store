@@ -45,6 +45,7 @@ const createCartPaymentAttemptWorkflow = createWorkflow(
       attempt: reservationResult.attempt,
       instructions: attemptResult.instructions,
       inventoryReservations: reservationResult.inventoryReservations,
+      fulfillmentItems: reservationResult.fulfillmentItems,
       claimToken: reservationResult.claimToken,
       responsePayload: reservationResult.responsePayload,
       marketingContext: marketingResult.marketingContext,

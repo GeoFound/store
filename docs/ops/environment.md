@@ -97,6 +97,7 @@ Optional analytics and plugin runtime:
 | `NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT` | Require explicit consent before GA4/Hotjar scripts and analytics events. Default `true`. |
 | `NEXT_PUBLIC_PLATFORM_ENABLED_PLUGINS` | Storefront plugin allow-list (comma-separated IDs). |
 | `NEXT_PUBLIC_PLATFORM_DISABLED_PLUGINS` | Comma-separated plugin IDs to disable on storefront (for example `analytics-hotjar,analytics-ga4`). |
+| `SITE_PROFILES_ROOT` | Filesystem path to `profiles/sites`. Defaults to `../../profiles/sites` from the storefront app. |
 | `NEXT_PUBLIC_SITE_ID` | Public site identifier for profile-driven storefront rendering. |
 | `NEXT_PUBLIC_SITE_ENV` | Public site profile environment key (`production`, `staging`, etc). |
 

@@ -178,6 +178,22 @@ export function CheckoutView() {
         setResolvedMarketing(normalizeResolvedMarketing(attempt.marketing_context))
 
         if (attempt.status === "paid") {
+          if (!attempt.payment_finalized_at) {
+            if (attempt.payment_finalization_status === "failed") {
+              setError(
+                attempt.payment_finalization_error ||
+                  "Payment was confirmed, but order fulfillment needs support review."
+              )
+              return
+            }
+
+            setMessage("Payment confirmed. Preparing order access...")
+            timeout = window.setTimeout(() => {
+              void pollAttempt()
+            }, 4000)
+            return
+          }
+
           if (attempt.order_access_claimed_at) {
             clearPendingPaymentState()
             setMessage(
@@ -391,7 +407,7 @@ export function CheckoutView() {
             ))}
           </div>
           <p className="mt-3 text-sm text-stone-600">
-            Payment providers are isolated behind the payment-router module.
+            Choose an available payment method for this order.
           </p>
         </section>
 

@@ -5,6 +5,7 @@ import { emitOrderAccessTokenIssuedEvent } from "../../../../../platform/events"
 import { getOrderAccessProvider } from "../../../../../platform/order-access"
 import { resolvePaymentRouterService } from "../../../../../platform/services"
 import {
+  isPaymentAttemptFinalized,
   isClaimTemporarilyBlocked,
   markClaimTokenConsumed,
   normalizeAttemptPayload,
@@ -42,7 +43,11 @@ export const POST = async (
     async () => {
       const attempt = await paymentRouter.retrievePaymentAttempt(req.params.id)
 
-      if (attempt.status !== "paid" || !attempt.order_id) {
+      if (
+        attempt.status !== "paid" ||
+        !attempt.order_id ||
+        !isPaymentAttemptFinalized(attempt.response_payload)
+      ) {
         throw new MedusaError(
           MedusaError.Types.NOT_ALLOWED,
           "Payment attempt is not ready for order access"

@@ -8,6 +8,7 @@ export const PLATFORM_HOOKS = {
   paymentAttemptReserved: "payment_attempt.reserved",
   paymentAttemptFinalized: "payment_attempt.finalized",
   deliveryCreated: "delivery.created",
+  deliveryCompleted: "delivery.completed",
 } as const
 
 export type PlatformHookHandler<T = unknown> = (input: T) => Promise<void> | void

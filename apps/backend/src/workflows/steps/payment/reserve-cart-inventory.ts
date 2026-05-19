@@ -19,7 +19,10 @@ import {
 } from "../../../platform/inventory"
 import { resolveProductTemplate } from "../../../platform/product-templates"
 import { resolvePaymentRouterService } from "../../../platform/services"
-import { attachClaimToken } from "../../../utils/payment-attempt"
+import {
+  attachClaimToken,
+  type FulfillmentItemSummary,
+} from "../../../utils/payment-attempt"
 import { createTokenWithPrefix } from "../../../utils/token"
 import { releaseInventoryReservations } from "./inventory-reservation-cleanup"
 
@@ -40,13 +43,15 @@ export const reserveCartInventoryStep = createStep(
 
     const paymentRouter = resolvePaymentRouterService(container)
     const reservations: InventoryReservation[] = []
+    const fulfillmentItems: FulfillmentItemSummary[] = []
 
     try {
       for (const rawItem of input.items) {
         const variantId = getCartItemVariantId(rawItem)
         const quantity = normalizeFulfillmentQuantity(rawItem.quantity) || 1
         const itemId = typeof rawItem.id === "string" ? rawItem.id : variantId
-        const reservationKey = `payment_attempt:${input.attemptId}:${itemId}`
+        const fulfillmentKey = `payment_attempt:${input.attemptId}:${itemId}`
+        const reservationKey = fulfillmentKey
         const metadata = getCartItemMetadata(rawItem)
         const productType = getCartItemProductType(rawItem)
         const template = resolveProductTemplate({
@@ -82,6 +87,37 @@ export const reserveCartInventoryStep = createStep(
         })
 
         if (plan?.inventoryMode === "none") {
+          const deliveryHandlerCode = plan.deliveryHandlerCode
+
+          if (!deliveryHandlerCode || deliveryHandlerCode === "noop") {
+            throw new Error(
+              `No delivery handler configured for no-inventory variant ${variantId}`
+            )
+          }
+
+          fulfillmentItems.push({
+            fulfillment_key: fulfillmentKey,
+            cart_item_id: itemId,
+            product_variant_id: variantId,
+            quantity,
+            inventory_mode: "none",
+            inventory_handler_code: plan.inventoryHandlerCode || null,
+            delivery_handler_code: deliveryHandlerCode,
+            fulfillment_policy_code: plan.code || null,
+            product_type: productType || template?.productType || null,
+            template_code: template?.code || null,
+            metadata: {
+              template_code: template?.code || null,
+              product_type: template?.productType || productType || null,
+              product_variant_id: variantId,
+              cart_item_id: itemId,
+              fulfillment_key: fulfillmentKey,
+              fulfillment_policy_code: plan.code || null,
+              delivery_handler_code: deliveryHandlerCode,
+              inventory_handler_code: plan.inventoryHandlerCode || null,
+              ...metadata,
+            },
+          })
           continue
         }
 
@@ -129,8 +165,31 @@ export const reserveCartInventoryStep = createStep(
           ...reserved.map((reservation) => ({
             ...reservation,
             handler_code: reservation.handler_code || handler.code,
+            metadata: {
+              cart_item_id: itemId,
+              fulfillment_key: fulfillmentKey,
+              ...(reservation.metadata || {}),
+            },
           }))
         )
+        fulfillmentItems.push({
+          fulfillment_key: fulfillmentKey,
+          cart_item_id: itemId,
+          product_variant_id: variantId,
+          quantity,
+          inventory_mode: plan?.inventoryMode || "reserve",
+          inventory_handler_code: handler.code,
+          delivery_handler_code: plan?.deliveryHandlerCode || "credential",
+          fulfillment_policy_code: plan?.code || null,
+          product_type: productType || template?.productType || null,
+          template_code: template?.code || null,
+          reservation_keys: reserved.map((reservation) => reservation.reservation_key),
+          metadata: {
+            ...reservationMetadata,
+            cart_item_id: itemId,
+            fulfillment_key: fulfillmentKey,
+          },
+        })
       }
 
       const claimToken = createTokenWithPrefix("claim")
@@ -138,6 +197,7 @@ export const reserveCartInventoryStep = createStep(
         {
           ...(input.attemptResponsePayload || {}),
           inventory_reservations: reservations,
+          fulfillment_items: fulfillmentItems,
         },
         claimToken
       )
@@ -151,6 +211,7 @@ export const reserveCartInventoryStep = createStep(
         await emitPaymentAttemptReservedEvent(container, {
           attempt,
           inventoryReservations: reservations,
+          fulfillmentItems,
           claimToken,
           responsePayload,
         })
@@ -161,6 +222,7 @@ export const reserveCartInventoryStep = createStep(
       return new StepResponse({
         attempt,
         inventoryReservations: reservations,
+        fulfillmentItems,
         claimToken,
         responsePayload,
       })

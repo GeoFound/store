@@ -1,4 +1,5 @@
 import type { NextConfig } from "next"
+import path from "node:path"
 
 type RemotePattern = NonNullable<
   NonNullable<NextConfig["images"]>["remotePatterns"]
@@ -7,6 +8,7 @@ type RemotePattern = NonNullable<
 const remotePatterns = resolveRemoteImagePatterns()
 
 const nextConfig: NextConfig = {
+  outputFileTracingRoot: path.resolve(process.cwd(), "../.."),
   images: {
     unoptimized: true,
     remotePatterns,

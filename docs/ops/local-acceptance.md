@@ -25,6 +25,10 @@ This verifies:
 - Storefront lints.
 - Storefront builds.
 
+`pnpm acceptance` defaults to `SITE_ID=site-1`, `SITE_ENV=development`, and
+`SITE_PROFILES_ROOT=profiles/sites` from the repository root. Override those
+variables when validating a different local site profile.
+
 For live endpoint checks, start both apps:
 
 ```bash

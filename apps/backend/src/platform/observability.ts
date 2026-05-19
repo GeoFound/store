@@ -1,5 +1,6 @@
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
 import type {
+  DeliveryCompletedEvent,
   DeliveryCreatedEvent,
   OrderAccessRecoveryCodeCreatedEvent,
   OrderAccessTokenIssuedEvent,
@@ -68,6 +69,27 @@ export function ensurePlatformObservabilityHooksRegistered() {
       }
 
       logger.info("Platform event: delivery created", {
+        event: event.name,
+        occurred_at: event.occurredAt,
+        delivery_id: event.payload.delivery.id,
+        order_id: event.payload.orderId || null,
+        access_token_issued: Boolean(event.payload.accessToken),
+      })
+    },
+  })
+
+  registerPlatformHook<DeliveryCompletedEvent>({
+    hook: PLATFORM_HOOKS.deliveryCompleted,
+    pluginId: "platform.observability",
+    name: "platform.observability.delivery-completed",
+    version: "1.0.0",
+    enabled: true,
+    handler: async (event) => {
+      const logger = event.scope.resolve(ContainerRegistrationKeys.LOGGER) as {
+        info: (message: string, meta?: Record<string, unknown>) => void
+      }
+
+      logger.info("Platform event: delivery completed", {
         event: event.name,
         occurred_at: event.occurredAt,
         delivery_id: event.payload.delivery.id,

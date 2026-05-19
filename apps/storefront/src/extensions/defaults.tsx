@@ -28,57 +28,59 @@ export function ensureStorefrontExtensionsRegistered() {
     return
   }
 
-  registerSlot("home.hero.after", {
-    name: "guest-order-access.recovery-hint",
-    pluginId: "guest-order-access",
-    order: 10,
-    component: () => (
-      <ExtensionCard
-        eyebrow="guest-order-access"
-        title="Guest recovery stays outside checkout friction"
-        body="Order recovery, access-link claim, and delivery lookup all run through the same event-driven guest access layer."
-      />
-    ),
-  })
+  if (shouldShowPlatformDemoExtensions()) {
+    registerSlot("home.hero.after", {
+      name: "guest-order-access.recovery-hint",
+      pluginId: "guest-order-access",
+      order: 10,
+      component: () => (
+        <ExtensionCard
+          eyebrow="guest-order-access"
+          title="Guest recovery stays outside checkout friction"
+          body="Order recovery, access-link claim, and delivery lookup all run through the same event-driven guest access layer."
+        />
+      ),
+    })
 
-  registerSlot("home.products.after", {
-    name: "digital-delivery.delivery-note",
-    pluginId: "digital-delivery",
-    order: 10,
-    component: () => (
-      <ExtensionCard
-        eyebrow="digital-delivery"
-        title="Delivery handlers are swappable"
-        body="The storefront is no longer coupled to one fulfillment mode. Credential, code, file, or manual delivery handlers can plug into the same purchase flow."
-      />
-    ),
-  })
+    registerSlot("home.products.after", {
+      name: "digital-delivery.delivery-note",
+      pluginId: "digital-delivery",
+      order: 10,
+      component: () => (
+        <ExtensionCard
+          eyebrow="digital-delivery"
+          title="Delivery handlers are swappable"
+          body="The storefront is no longer coupled to one fulfillment mode. Credential, code, file, or manual delivery handlers can plug into the same purchase flow."
+        />
+      ),
+    })
 
-  registerSlot("products.header.after", {
-    name: "payment-router.channel-note",
-    pluginId: "payment-router",
-    order: 10,
-    component: () => (
-      <ExtensionCard
-        eyebrow="payment-router"
-        title="Payment channels can vary by plugin"
-        body="This catalog can stay stable while payment providers and channel policies change underneath through the platform registry."
-      />
-    ),
-  })
+    registerSlot("products.header.after", {
+      name: "payment-router.channel-note",
+      pluginId: "payment-router",
+      order: 10,
+      component: () => (
+        <ExtensionCard
+          eyebrow="payment-router"
+          title="Payment channels can vary by plugin"
+          body="This catalog can stay stable while payment providers and channel policies change underneath through the platform registry."
+        />
+      ),
+    })
 
-  registerSlot("products.header.after", {
-    name: "marketing-engine.checkout-attribution-note",
-    pluginId: "marketing-engine",
-    order: 20,
-    component: () => (
-      <ExtensionCard
-        eyebrow="marketing-engine"
-        title="Checkout accepts coupon, referral, and attribution context"
-        body="Marketing strategies are resolved during payment attempt creation. Valid coupon/referral signals are attached to the payment record and finalized after successful payment."
-      />
-    ),
-  })
+    registerSlot("products.header.after", {
+      name: "marketing-engine.checkout-attribution-note",
+      pluginId: "marketing-engine",
+      order: 20,
+      component: () => (
+        <ExtensionCard
+          eyebrow="marketing-engine"
+          title="Checkout accepts coupon, referral, and attribution context"
+          body="Marketing strategies are resolved during payment attempt creation. Valid coupon/referral signals are attached to the payment record and finalized after successful payment."
+        />
+      ),
+    })
+  }
 
   registerSlot("layout.body.end", {
     name: "analytics-ga4.storefront-script",
@@ -112,4 +114,8 @@ function registerSlot(
 
 export function resetStorefrontExtensionDefaultsForTests() {
   registered = false
+}
+
+function shouldShowPlatformDemoExtensions() {
+  return process.env.NEXT_PUBLIC_SHOW_PLATFORM_DEMO_EXTENSIONS === "true"
 }

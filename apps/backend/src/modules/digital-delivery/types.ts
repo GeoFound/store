@@ -1,5 +1,6 @@
 export type CreateManualDeliveryInput = {
   scope?: import("@medusajs/framework/types").MedusaContainer
+  deliveryId?: string
   orderId?: string
   cartId?: string
   paymentAttemptId?: string
@@ -9,6 +10,7 @@ export type CreateManualDeliveryInput = {
   productType?: string | null
   fulfillmentPolicyCode?: string | null
   deliveryHandlerCode?: string | null
+  deliveryStatus?: "pending" | "delivered"
   inventoryReservation?: {
     handler_code?: string
     reservation_key: string

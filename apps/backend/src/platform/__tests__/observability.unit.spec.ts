@@ -1,6 +1,10 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
-import { emitDeliveryCreatedEvent, emitPaymentAttemptFinalizedEvent } from "../events"
+import {
+  emitDeliveryCompletedEvent,
+  emitDeliveryCreatedEvent,
+  emitPaymentAttemptFinalizedEvent,
+} from "../events"
 import {
   ensurePlatformObservabilityHooksRegistered,
   resetPlatformObservabilityForTests,
@@ -89,6 +93,42 @@ describe("platform observability hooks", () => {
         delivery_id: "delivery_1",
         order_id: "order_1",
         access_token_issued: true,
+      })
+    )
+  })
+
+  it("logs completed delivery events through the observability subscriber", async () => {
+    const logger = {
+      info: jest.fn(),
+    }
+    const container = {
+      resolve: jest.fn((token: unknown) => {
+        if (token === ContainerRegistrationKeys.LOGGER) {
+          return logger
+        }
+
+        throw new Error(`Unexpected resolve token: ${String(token)}`)
+      }),
+    } as unknown as MedusaContainer
+
+    ensurePlatformObservabilityHooksRegistered()
+
+    await emitDeliveryCompletedEvent(container, {
+      delivery: {
+        id: "delivery_1",
+      },
+      accessToken: null,
+      orderId: "order_1",
+      metadata: {},
+    })
+
+    expect(logger.info).toHaveBeenCalledWith(
+      "Platform event: delivery completed",
+      expect.objectContaining({
+        event: "delivery.completed",
+        delivery_id: "delivery_1",
+        order_id: "order_1",
+        access_token_issued: false,
       })
     )
   })

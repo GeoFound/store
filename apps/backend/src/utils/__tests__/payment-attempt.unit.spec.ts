@@ -1,10 +1,13 @@
 import {
   assertClaimToken,
   attachClaimToken,
+  extractFulfillmentItems,
   extractInventoryReservations,
   isClaimTemporarilyBlocked,
   isPaymentAttemptFinalized,
+  markPaymentAttemptFinalizationFailed,
   markPaymentAttemptFinalized,
+  markPaymentAttemptFinalizing,
   markClaimTokenConsumed,
   normalizeAttemptPayload,
   recordFailedClaimAttempt,
@@ -34,6 +37,44 @@ describe("payment attempt payload utils", () => {
       {
         reservation_key: "payment_attempt:1:item_1",
         item_ids: ["acc_1"],
+      },
+    ])
+  })
+
+  it("extracts explicit fulfillment items for no-inventory deliveries", () => {
+    const payload = {
+      fulfillment_items: [
+        {
+          fulfillment_key: "payment_attempt:1:item_file",
+          cart_item_id: "item_file",
+          product_variant_id: "variant_file",
+          quantity: 1,
+          inventory_mode: "none",
+          delivery_handler_code: "manual",
+          metadata: {
+            fulfillment_key: "payment_attempt:1:item_file",
+          },
+        },
+        {
+          fulfillment_key: "bad_missing_delivery_handler",
+          product_variant_id: "variant_bad",
+          quantity: 1,
+          inventory_mode: "none",
+        },
+      ],
+    }
+
+    expect(extractFulfillmentItems(payload)).toEqual([
+      {
+        fulfillment_key: "payment_attempt:1:item_file",
+        cart_item_id: "item_file",
+        product_variant_id: "variant_file",
+        quantity: 1,
+        inventory_mode: "none",
+        delivery_handler_code: "manual",
+        metadata: {
+          fulfillment_key: "payment_attempt:1:item_file",
+        },
       },
     ])
   })
@@ -76,5 +117,23 @@ describe("payment attempt payload utils", () => {
     const payload = markPaymentAttemptFinalized({})
 
     expect(isPaymentAttemptFinalized(payload)).toBe(true)
+    expect(payload.payment_finalization_status).toBe("finalized")
+    expect(payload.payment_finalization_error).toBeNull()
+  })
+
+  it("tracks payment finalization processing and failed states", () => {
+    const processing = markPaymentAttemptFinalizing({})
+    const failed = markPaymentAttemptFinalizationFailed(
+      processing,
+      "Delivery handler manual is not registered"
+    )
+
+    expect(processing.payment_finalization_status).toBe("processing")
+    expect(processing.payment_finalization_error).toBeNull()
+    expect(failed.payment_finalization_status).toBe("failed")
+    expect(failed.payment_finalization_error).toBe(
+      "Delivery handler manual is not registered"
+    )
+    expect(isPaymentAttemptFinalized(failed)).toBe(false)
   })
 })

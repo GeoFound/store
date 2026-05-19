@@ -2,6 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+source "$ROOT_DIR/scripts/profile/env.sh"
 BUYER_EMAIL="${BUYER_EMAIL:-buyer@example.com}"
 order_id=""
 smoke_log="$(mktemp)"
@@ -10,6 +11,7 @@ storefront_pid=""
 BACKEND_URL="${BACKEND_URL:-http://localhost:9002}"
 STOREFRONT_URL="${STOREFRONT_URL:-http://localhost:8000}"
 BACKEND_ENV_FILE="${BACKEND_ENV_FILE:-$ROOT_DIR/apps/backend/.env}"
+STOREFRONT_ENV_FILE="${STOREFRONT_ENV_FILE:-$ROOT_DIR/apps/storefront/.env.local}"
 BACKEND_LOG="${BACKEND_LOG:-/tmp/store-backend-live-acceptance.log}"
 STOREFRONT_LOG="${STOREFRONT_LOG:-/tmp/store-storefront-live-acceptance.log}"
 MANUAL_WEBHOOK_SECRET="${MANUAL_WEBHOOK_SECRET:-store_live_smoke_webhook_secret}"
@@ -26,6 +28,21 @@ read_backend_env_value() {
   fi
 
   awk -F= -v target="$key" '$1 == target {print substr($0, index($0, "=") + 1)}' "$BACKEND_ENV_FILE" | tail -n 1
+}
+
+read_storefront_env_value() {
+  local key="$1"
+
+  if [[ ! -f "$STOREFRONT_ENV_FILE" ]]; then
+    return 0
+  fi
+
+  awk -F= -v target="$key" '$1 == target {print substr($0, index($0, "=") + 1)}' "$STOREFRONT_ENV_FILE" | tail -n 1
+}
+
+assert_site_profile() {
+  assert_site_profile_env_match "$SITE_ID" "$SITE_ENV" "$NEXT_PUBLIC_SITE_ID" "$NEXT_PUBLIC_SITE_ENV"
+  validate_site_profile "$SITE_ID" "$SITE_ENV" "$SITE_PROFILES_ROOT"
 }
 
 is_valid_encryption_key() {
@@ -75,6 +92,17 @@ CREDENTIAL_ENCRYPTION_KEY="$(resolve_encryption_key CREDENTIAL_ENCRYPTION_KEY "$
 DELIVERY_ENCRYPTION_KEY="$(resolve_encryption_key DELIVERY_ENCRYPTION_KEY "$CREDENTIAL_ENCRYPTION_KEY")"
 CREDENTIAL_ENCRYPTION_KEY_PREVIOUS="$(resolve_optional_env_value CREDENTIAL_ENCRYPTION_KEY_PREVIOUS)"
 DELIVERY_ENCRYPTION_KEY_PREVIOUS="$(resolve_optional_env_value DELIVERY_ENCRYPTION_KEY_PREVIOUS)"
+SITE_ID="${SITE_ID:-$(read_backend_env_value SITE_ID)}"
+SITE_ID="${SITE_ID:-site-1}"
+SITE_ENV="${SITE_ENV:-$(read_backend_env_value SITE_ENV)}"
+SITE_ENV="${SITE_ENV:-development}"
+NEXT_PUBLIC_SITE_ID="${NEXT_PUBLIC_SITE_ID:-$(read_storefront_env_value NEXT_PUBLIC_SITE_ID)}"
+NEXT_PUBLIC_SITE_ID="${NEXT_PUBLIC_SITE_ID:-$SITE_ID}"
+NEXT_PUBLIC_SITE_ENV="${NEXT_PUBLIC_SITE_ENV:-$(read_storefront_env_value NEXT_PUBLIC_SITE_ENV)}"
+NEXT_PUBLIC_SITE_ENV="${NEXT_PUBLIC_SITE_ENV:-$SITE_ENV}"
+SITE_PROFILES_ROOT="${SITE_PROFILES_ROOT:-$(read_storefront_env_value SITE_PROFILES_ROOT)}"
+SITE_PROFILES_ROOT="${SITE_PROFILES_ROOT:-$(read_backend_env_value SITE_PROFILES_ROOT)}"
+SITE_PROFILES_ROOT="$(resolve_site_profiles_root "$ROOT_DIR" "$SITE_PROFILES_ROOT")"
 
 cleanup() {
   if [[ -n "$backend_pid" ]] && kill -0 "$backend_pid" 2>/dev/null; then
@@ -111,6 +139,7 @@ wait_for_url() {
 
 rm -f "$BACKEND_LOG" "$STOREFRONT_LOG"
 mkdir -p "$XDG_CONFIG_HOME" "$SMOKE_HOME"
+assert_site_profile
 
 echo "Starting shared backend..."
 (
@@ -124,6 +153,9 @@ echo "Starting shared backend..."
   CREDENTIAL_ENCRYPTION_KEY_PREVIOUS="$CREDENTIAL_ENCRYPTION_KEY_PREVIOUS" \
   DELIVERY_ENCRYPTION_KEY="$DELIVERY_ENCRYPTION_KEY" \
   DELIVERY_ENCRYPTION_KEY_PREVIOUS="$DELIVERY_ENCRYPTION_KEY_PREVIOUS" \
+  SITE_ID="$SITE_ID" \
+  SITE_ENV="$SITE_ENV" \
+  SITE_PROFILES_ROOT="$SITE_PROFILES_ROOT" \
     pnpm --dir apps/backend dev >"$BACKEND_LOG" 2>&1
 ) &
 backend_pid="$!"
@@ -131,7 +163,12 @@ backend_pid="$!"
 echo "Starting shared storefront..."
 (
   cd "$ROOT_DIR"
-  pnpm --dir apps/storefront dev -- --hostname 127.0.0.1 >"$STOREFRONT_LOG" 2>&1
+  SITE_ID="$SITE_ID" \
+  SITE_ENV="$SITE_ENV" \
+  NEXT_PUBLIC_SITE_ID="$NEXT_PUBLIC_SITE_ID" \
+  NEXT_PUBLIC_SITE_ENV="$NEXT_PUBLIC_SITE_ENV" \
+  SITE_PROFILES_ROOT="$SITE_PROFILES_ROOT" \
+    pnpm --dir apps/storefront exec next dev --port 8000 --hostname 127.0.0.1 >"$STOREFRONT_LOG" 2>&1
 ) &
 storefront_pid="$!"
 
@@ -148,6 +185,11 @@ CREDENTIAL_ENCRYPTION_KEY="$CREDENTIAL_ENCRYPTION_KEY" \
 CREDENTIAL_ENCRYPTION_KEY_PREVIOUS="$CREDENTIAL_ENCRYPTION_KEY_PREVIOUS" \
 DELIVERY_ENCRYPTION_KEY="$DELIVERY_ENCRYPTION_KEY" \
 DELIVERY_ENCRYPTION_KEY_PREVIOUS="$DELIVERY_ENCRYPTION_KEY_PREVIOUS" \
+SITE_ID="$SITE_ID" \
+SITE_ENV="$SITE_ENV" \
+NEXT_PUBLIC_SITE_ID="$NEXT_PUBLIC_SITE_ID" \
+NEXT_PUBLIC_SITE_ENV="$NEXT_PUBLIC_SITE_ENV" \
+SITE_PROFILES_ROOT="$SITE_PROFILES_ROOT" \
   bash "$ROOT_DIR/scripts/live-order-smoke.sh" | tee "$smoke_log"
 
 order_id="$(awk -F= '/^order_id=/{print $2}' "$smoke_log" | tail -n 1)"
@@ -167,6 +209,11 @@ CREDENTIAL_ENCRYPTION_KEY="$CREDENTIAL_ENCRYPTION_KEY" \
 CREDENTIAL_ENCRYPTION_KEY_PREVIOUS="$CREDENTIAL_ENCRYPTION_KEY_PREVIOUS" \
 DELIVERY_ENCRYPTION_KEY="$DELIVERY_ENCRYPTION_KEY" \
 DELIVERY_ENCRYPTION_KEY_PREVIOUS="$DELIVERY_ENCRYPTION_KEY_PREVIOUS" \
+SITE_ID="$SITE_ID" \
+SITE_ENV="$SITE_ENV" \
+NEXT_PUBLIC_SITE_ID="$NEXT_PUBLIC_SITE_ID" \
+NEXT_PUBLIC_SITE_ENV="$NEXT_PUBLIC_SITE_ENV" \
+SITE_PROFILES_ROOT="$SITE_PROFILES_ROOT" \
 bash "$ROOT_DIR/scripts/live-order-recovery-smoke.sh"
 
 echo "Live acceptance passed"

@@ -2,6 +2,7 @@ import { createWorkflow, WorkflowResponse } from "@medusajs/framework/workflows-
 import { createDeliveryStep } from "./steps/delivery/create-delivery"
 
 export type CreateManualDeliveryWorkflowInput = {
+  deliveryId?: string
   orderId?: string
   cartId?: string
   paymentAttemptId?: string
@@ -11,6 +12,7 @@ export type CreateManualDeliveryWorkflowInput = {
   productType?: string | null
   fulfillmentPolicyCode?: string | null
   deliveryHandlerCode?: string | null
+  deliveryStatus?: "pending" | "delivered"
   deliveryPayload?: Record<string, unknown> | string
   deliveredBy?: string
   deliveryNote?: string

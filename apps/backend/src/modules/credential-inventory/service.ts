@@ -127,7 +127,12 @@ class CredentialInventoryModuleService extends MedusaService({
     productVariantId?: string
     status?: string
     limit?: number
+    undeliveredOnly?: boolean
   }) {
+    if (input?.undeliveredOnly) {
+      return this.listFilteredAccountItemsSafe(input)
+    }
+
     const items = await this.listAccountItems(
       {
         ...(input?.productVariantId
@@ -144,6 +149,60 @@ class CredentialInventoryModuleService extends MedusaService({
     )
 
     return items.map((item) => this.sanitizeAccountItem(item))
+  }
+
+  private async listFilteredAccountItemsSafe(input: {
+    productVariantId?: string
+    status?: string
+    limit?: number
+    undeliveredOnly?: boolean
+  }) {
+    const limit = input.limit || 50
+    const pageSize = Math.max(limit, 50)
+    const result: SafeAccountItem[] = []
+    let skip = 0
+
+    while (result.length < limit) {
+      const items = await this.listAccountItems(
+        {
+          ...(input.productVariantId
+            ? { product_variant_id: input.productVariantId }
+            : {}),
+          ...(input.status ? { status: input.status } : {}),
+        },
+        {
+          take: pageSize,
+          skip,
+          order: {
+            created_at: "DESC",
+          },
+        }
+      )
+
+      if (!items.length) {
+        break
+      }
+
+      for (const item of items) {
+        if (input.undeliveredOnly && item.delivered_at) {
+          continue
+        }
+
+        result.push(this.sanitizeAccountItem(item))
+
+        if (result.length >= limit) {
+          break
+        }
+      }
+
+      if (items.length < pageSize) {
+        break
+      }
+
+      skip += items.length
+    }
+
+    return result
   }
 
   async reserveCredentials(input: ReserveCredentialInput) {

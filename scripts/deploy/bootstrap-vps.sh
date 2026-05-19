@@ -89,6 +89,7 @@ PORT=8000
 HOSTNAME=127.0.0.1
 SITE_ID=site-1
 SITE_ENV=production
+SITE_PROFILES_ROOT=../../profiles/sites
 NEXT_PUBLIC_MEDUSA_BACKEND_URL=https://api.example.com
 NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY=replace-with-medusa-publishable-key
 NEXT_PUBLIC_MEDUSA_REGION_ID=

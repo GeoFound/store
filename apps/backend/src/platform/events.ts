@@ -17,6 +17,7 @@ export type PaymentAttemptReservedEvent = PlatformEventEnvelope<
       reservation_key: string
       item_ids: string[]
     }>
+    fulfillmentItems?: Array<Record<string, unknown>>
     claimToken: string
     responsePayload: Record<string, unknown>
   }
@@ -32,6 +33,16 @@ export type PaymentAttemptFinalizedEvent = PlatformEventEnvelope<
 
 export type DeliveryCreatedEvent = PlatformEventEnvelope<
   typeof PLATFORM_HOOKS.deliveryCreated,
+  {
+    delivery: Record<string, unknown>
+    accessToken: string | null
+    orderId?: string
+    metadata: Record<string, unknown>
+  }
+>
+
+export type DeliveryCompletedEvent = PlatformEventEnvelope<
+  typeof PLATFORM_HOOKS.deliveryCompleted,
   {
     delivery: Record<string, unknown>
     accessToken: string | null
@@ -104,6 +115,21 @@ export async function emitDeliveryCreatedEvent(
     occurredAt: new Date().toISOString(),
     payload,
   })
+}
+
+export async function emitDeliveryCompletedEvent(
+  scope: MedusaContainer,
+  payload: DeliveryCompletedEvent["payload"]
+) {
+  await emitPlatformHook<DeliveryCompletedEvent>(
+    PLATFORM_HOOKS.deliveryCompleted,
+    {
+      scope,
+      name: PLATFORM_HOOKS.deliveryCompleted,
+      occurredAt: new Date().toISOString(),
+      payload,
+    }
+  )
 }
 
 export async function emitOrderAccessRecoveryCodeCreatedEvent(

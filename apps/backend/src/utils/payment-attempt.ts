@@ -8,15 +8,33 @@ export type InventoryReservationSummary = {
   metadata?: Record<string, unknown>
 }
 
+export type FulfillmentItemSummary = {
+  fulfillment_key: string
+  cart_item_id?: string | null
+  product_variant_id: string
+  quantity: number
+  inventory_mode: "reserve" | "consume" | "none"
+  inventory_handler_code?: string | null
+  delivery_handler_code: string
+  fulfillment_policy_code?: string | null
+  product_type?: string | null
+  template_code?: string | null
+  reservation_keys?: string[]
+  metadata?: Record<string, unknown>
+}
+
 export type PaymentAttemptResponsePayload = {
   instructions?: unknown
   inventory_reservations?: InventoryReservationSummary[]
+  fulfillment_items?: FulfillmentItemSummary[]
   order_access_claim_token_hash?: string | null
   order_access_claim_token_hint?: string | null
   order_access_claimed_at?: string | null
   order_access_claim_failed_attempts?: number
   order_access_claim_blocked_until?: string | null
   payment_finalized_at?: string | null
+  payment_finalization_status?: "processing" | "failed" | "finalized" | null
+  payment_finalization_error?: string | null
   marketing_input?: Record<string, unknown>
   marketing_context?: Record<string, unknown>
   [key: string]: unknown
@@ -49,6 +67,28 @@ export function extractInventoryReservations(
       typeof item.reservation_key === "string" &&
       Array.isArray(item.item_ids) &&
       (!("handler_code" in item) || typeof item.handler_code === "string")
+  )
+}
+
+export function extractFulfillmentItems(
+  payload: unknown
+): FulfillmentItemSummary[] {
+  const normalized = normalizeAttemptPayload(payload)
+  const items = normalized.fulfillment_items
+
+  if (!Array.isArray(items)) {
+    return []
+  }
+
+  return items.filter(
+    (item): item is FulfillmentItemSummary =>
+      !!item &&
+      typeof item === "object" &&
+      typeof item.fulfillment_key === "string" &&
+      typeof item.product_variant_id === "string" &&
+      typeof item.quantity === "number" &&
+      ["reserve", "consume", "none"].includes(String(item.inventory_mode)) &&
+      typeof item.delivery_handler_code === "string"
   )
 }
 
@@ -111,7 +151,34 @@ export function markPaymentAttemptFinalized(
 
   return {
     ...normalized,
+    payment_finalization_status: "finalized",
+    payment_finalization_error: null,
     payment_finalized_at: at.toISOString(),
+  }
+}
+
+export function markPaymentAttemptFinalizing(
+  payload: unknown
+): PaymentAttemptResponsePayload {
+  const normalized = normalizeAttemptPayload(payload)
+
+  return {
+    ...normalized,
+    payment_finalization_status: "processing",
+    payment_finalization_error: null,
+  }
+}
+
+export function markPaymentAttemptFinalizationFailed(
+  payload: unknown,
+  errorMessage: string
+): PaymentAttemptResponsePayload {
+  const normalized = normalizeAttemptPayload(payload)
+
+  return {
+    ...normalized,
+    payment_finalization_status: "failed",
+    payment_finalization_error: errorMessage,
   }
 }
 

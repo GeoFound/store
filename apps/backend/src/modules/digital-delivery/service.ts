@@ -8,6 +8,7 @@ import {
 } from "../../utils/runtime-secrets"
 import {
   getDeliveryHandler,
+  resolveDeliveryHandlerCode,
   resolveProductFulfillmentPolicy,
 } from "../../platform/delivery"
 
@@ -26,8 +27,15 @@ class DigitalDeliveryModuleService extends MedusaService({
       metadata: input.metadata || null,
     })
 
-    const handlerCode =
-      input.deliveryHandlerCode || policyPlan?.deliveryHandlerCode || "manual"
+    const handlerCode = resolveDeliveryHandlerCode({
+      deliveryHandlerCode: input.deliveryHandlerCode,
+      metadata: input.metadata || null,
+      accountItemId: input.accountItemId || null,
+      templateDeliveryHandlerCode: policyPlan?.deliveryHandlerCode,
+      deliveryId: input.deliveryId || null,
+      deliveryPayload: input.deliveryPayload,
+      defaultHandlerCode: "manual",
+    })
     const handler = getDeliveryHandler(handlerCode)
 
     if (!handler) {
@@ -52,36 +60,65 @@ class DigitalDeliveryModuleService extends MedusaService({
   }
 
   private async createManualDeliveryRecord(input: CreateManualDeliveryInput) {
-    const existing = input.accountItemId
-      ? await this.listOrderDeliveries({
-          account_item_id: input.accountItemId,
-        })
-      : []
-    const activeDelivery = input.accountItemId
-      ? existing.find((delivery) =>
-          ["delivered", "confirmed"].includes(delivery.delivery_status)
-        )
-      : null
+    const deliveryStatus = input.deliveryStatus || "delivered"
+    const deliveryPayload =
+      input.deliveryPayload ??
+      this.buildDefaultDeliveryPayload(input, deliveryStatus)
+
+    if (input.deliveryId) {
+      const delivery = await this.retrieveOrderDelivery(input.deliveryId)
+
+      if (
+        delivery.delivery_status !== "pending" &&
+        deliveryStatus === "delivered"
+      ) {
+        return {
+          delivery: this.sanitizeDelivery(delivery),
+          accessToken: null,
+          created: false,
+          updated: false,
+        }
+      }
+
+      return this.updateExistingDeliveryRecord(delivery, {
+        ...input,
+        deliveryPayload,
+        deliveryStatus,
+      })
+    }
+
+    const activeDelivery = await this.findExistingDelivery(input)
 
     if (activeDelivery) {
+      if (
+        activeDelivery.delivery_status === "pending" &&
+        deliveryStatus === "delivered"
+      ) {
+        return this.updateExistingDeliveryRecord(activeDelivery, {
+          ...input,
+          deliveryPayload,
+          deliveryStatus,
+        })
+      }
+
       return {
         delivery: this.sanitizeDelivery(activeDelivery),
         accessToken: null,
+        created: false,
+        updated: false,
       }
     }
 
     const accessToken = this.createAccessToken()
-    const deliveredAt = new Date()
+    const deliveredAt = deliveryStatus === "delivered" ? new Date() : null
     const delivery = await this.createOrderDeliveries({
       order_id: input.orderId || null,
       cart_id: input.cartId || null,
       payment_attempt_id: input.paymentAttemptId || null,
       order_item_id: input.orderItemId || null,
       account_item_id: input.accountItemId || null,
-      delivery_status: "delivered",
-      delivery_payload_encrypted: this.encryptPayload(
-        input.deliveryPayload || {}
-      ),
+      delivery_status: deliveryStatus,
+      delivery_payload_encrypted: this.encryptPayload(deliveryPayload),
       delivery_payload_version: 1,
       access_token_hash: this.hashAccessToken(accessToken),
       access_token_hint: accessToken.slice(-6),
@@ -97,7 +134,139 @@ class DigitalDeliveryModuleService extends MedusaService({
     return {
       delivery: this.sanitizeDelivery(delivery),
       accessToken,
+      created: true,
+      updated: false,
     }
+  }
+
+  private async findExistingDelivery(input: CreateManualDeliveryInput) {
+    if (input.accountItemId) {
+      const deliveries = await this.listOrderDeliveries({
+        account_item_id: input.accountItemId,
+      })
+
+      return deliveries.find((delivery) =>
+        this.isActiveDeliveryStatus(String(delivery.delivery_status))
+      )
+    }
+
+    if (input.paymentAttemptId && input.orderItemId) {
+      const deliveries = await this.listOrderDeliveries({
+        payment_attempt_id: input.paymentAttemptId,
+        order_item_id: input.orderItemId,
+      })
+
+      return deliveries.find((delivery) =>
+        this.isActiveDeliveryStatus(String(delivery.delivery_status))
+      )
+    }
+
+    const fulfillmentKey = this.extractFulfillmentKey(input.metadata)
+    if (input.paymentAttemptId && fulfillmentKey) {
+      const deliveries = await this.listOrderDeliveries({
+        payment_attempt_id: input.paymentAttemptId,
+      })
+
+      return deliveries.find(
+        (delivery) =>
+          this.isActiveDeliveryStatus(String(delivery.delivery_status)) &&
+          this.extractFulfillmentKey(
+            delivery.metadata_json as Record<string, unknown> | null
+          ) === fulfillmentKey
+      )
+    }
+
+    return null
+  }
+
+  private async updateExistingDeliveryRecord(
+    delivery: Record<string, any>,
+    input: CreateManualDeliveryInput & {
+      deliveryPayload: Record<string, unknown> | string
+      deliveryStatus: "pending" | "delivered"
+    }
+  ) {
+    const deliveredAt =
+      input.deliveryStatus === "delivered"
+        ? delivery.delivered_at || new Date()
+        : delivery.delivered_at || null
+    const nextDelivery = await this.updateOrderDeliveries({
+      id: delivery.id,
+      order_id: input.orderId || delivery.order_id || null,
+      cart_id: input.cartId || delivery.cart_id || null,
+      payment_attempt_id:
+        input.paymentAttemptId || delivery.payment_attempt_id || null,
+      order_item_id: input.orderItemId || delivery.order_item_id || null,
+      account_item_id: input.accountItemId || delivery.account_item_id || null,
+      delivery_status: input.deliveryStatus,
+      delivery_payload_encrypted: this.encryptPayload(input.deliveryPayload),
+      delivery_payload_version: Number(delivery.delivery_payload_version || 1),
+      delivered_by: input.deliveredBy || delivery.delivered_by || null,
+      delivered_at: deliveredAt,
+      delivery_note: input.deliveryNote || delivery.delivery_note || null,
+      metadata_json: {
+        ...this.normalizeRecord(delivery.metadata_json),
+        ...(input.metadata || {}),
+      },
+    })
+
+    return {
+      delivery: this.sanitizeDelivery(nextDelivery),
+      accessToken: null,
+      created: false,
+      updated: true,
+    }
+  }
+
+  private buildDefaultDeliveryPayload(
+    input: CreateManualDeliveryInput,
+    deliveryStatus: "pending" | "delivered"
+  ) {
+    if (deliveryStatus === "pending") {
+      return {
+        status: "pending",
+        message: "Delivery is pending manual fulfillment.",
+        product_variant_id: input.productVariantId || null,
+        product_type: input.productType || null,
+      }
+    }
+
+    return {}
+  }
+
+  private isActiveDeliveryStatus(status: string) {
+    return ["pending", "delivered", "confirmed"].includes(status)
+  }
+
+  private extractFulfillmentKey(metadata?: Record<string, unknown> | null) {
+    const normalized = this.normalizeRecord(metadata)
+    const value = normalized.fulfillment_key || normalized.fulfillmentKey
+
+    return typeof value === "string" && value.trim() ? value.trim() : ""
+  }
+
+  private normalizeRecord(value: unknown) {
+    return value && typeof value === "object"
+      ? (value as Record<string, unknown>)
+      : {}
+  }
+
+  private matchesProductVariant(metadata: unknown, productVariantId: string) {
+    const normalized = this.normalizeRecord(metadata)
+    const target = this.toOptionalString(productVariantId)
+
+    if (!target) {
+      return true
+    }
+
+    return (
+      this.toOptionalString(normalized.product_variant_id) === target ||
+      this.toOptionalString(normalized.productVariantId) === target
+    )
+  }
+
+  private toOptionalString(value: unknown) {
+    return typeof value === "string" && value.trim() ? value.trim() : ""
   }
 
   async listDeliveriesSafe(input?: {
@@ -105,8 +274,13 @@ class DigitalDeliveryModuleService extends MedusaService({
     orderId?: string
     cartId?: string
     paymentAttemptId?: string
+    productVariantId?: string
     limit?: number
   }) {
+    if (input?.productVariantId) {
+      return this.listFilteredDeliveriesSafe(input)
+    }
+
     const deliveries = await this.listOrderDeliveries(
       {
         ...(input?.status ? { delivery_status: input.status } : {}),
@@ -125,6 +299,70 @@ class DigitalDeliveryModuleService extends MedusaService({
     )
 
     return deliveries.map((delivery) => this.sanitizeDelivery(delivery))
+  }
+
+  private async listFilteredDeliveriesSafe(input: {
+    status?: string
+    orderId?: string
+    cartId?: string
+    paymentAttemptId?: string
+    productVariantId?: string
+    limit?: number
+  }) {
+    const limit = input.limit || 50
+    const pageSize = Math.max(limit, 50)
+    const result: Record<string, unknown>[] = []
+    let skip = 0
+
+    while (result.length < limit) {
+      const deliveries = await this.listOrderDeliveries(
+        {
+          ...(input.status ? { delivery_status: input.status } : {}),
+          ...(input.orderId ? { order_id: input.orderId } : {}),
+          ...(input.cartId ? { cart_id: input.cartId } : {}),
+          ...(input.paymentAttemptId
+            ? { payment_attempt_id: input.paymentAttemptId }
+            : {}),
+        },
+        {
+          take: pageSize,
+          skip,
+          order: {
+            created_at: "DESC",
+          },
+        }
+      )
+
+      if (!deliveries.length) {
+        break
+      }
+
+      for (const delivery of deliveries) {
+        if (
+          input.productVariantId &&
+          !this.matchesProductVariant(
+            delivery.metadata_json,
+            input.productVariantId
+          )
+        ) {
+          continue
+        }
+
+        result.push(this.sanitizeDelivery(delivery))
+
+        if (result.length >= limit) {
+          break
+        }
+      }
+
+      if (deliveries.length < pageSize) {
+        break
+      }
+
+      skip += deliveries.length
+    }
+
+    return result
   }
 
   async retrieveDeliveryByAccessToken(accessToken: string) {
@@ -226,6 +464,13 @@ class DigitalDeliveryModuleService extends MedusaService({
   private async confirmDeliveryRecord(delivery: Record<string, any>) {
     if (delivery.delivery_status === "confirmed") {
       return this.sanitizeDelivery(delivery)
+    }
+
+    if (delivery.delivery_status !== "delivered") {
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        "Delivery must be delivered before it can be confirmed"
+      )
     }
 
     const nextDelivery = await this.updateOrderDeliveries({

@@ -2,6 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+source "$ROOT_DIR/scripts/profile/env.sh"
 MODE="standard"
 AUTO_START_SERVICES="1"
 RUN_LIVE="0"
@@ -93,6 +94,50 @@ load_backend_env() {
   set -a
   source "$BACKEND_ENV_FILE"
   set +a
+}
+
+load_storefront_env() {
+  set -a
+  source "$STOREFRONT_ENV_FILE"
+  set +a
+}
+
+assert_site_profile_env() {
+  local backend_site_id="$1"
+  local backend_site_env="$2"
+  local storefront_site_id="$3"
+  local storefront_site_env="$4"
+  local profiles_root="$5"
+
+  if [[ -z "$backend_site_id" ]]; then
+    echo "Missing required backend site profile config in $BACKEND_ENV_FILE: SITE_ID" >&2
+    exit 2
+  fi
+
+  if [[ -z "$backend_site_env" ]]; then
+    echo "Missing required backend site profile config in $BACKEND_ENV_FILE: SITE_ENV" >&2
+    exit 2
+  fi
+
+  if [[ -z "$storefront_site_id" ]]; then
+    echo "Missing required storefront site profile config in $STOREFRONT_ENV_FILE: NEXT_PUBLIC_SITE_ID or SITE_ID" >&2
+    exit 2
+  fi
+
+  if [[ -z "$storefront_site_env" ]]; then
+    echo "Missing required storefront site profile config in $STOREFRONT_ENV_FILE: NEXT_PUBLIC_SITE_ENV or SITE_ENV" >&2
+    exit 2
+  fi
+
+  if [[ "$backend_site_id" != "$storefront_site_id" || "$backend_site_env" != "$storefront_site_env" ]]; then
+    echo "Backend/storefront site profile mismatch: backend=$backend_site_id/$backend_site_env storefront=$storefront_site_id/$storefront_site_env" >&2
+    exit 2
+  fi
+
+  if [[ ! -f "$profiles_root/$backend_site_id/$backend_site_env/site.json" ]]; then
+    echo "Site profile file not found: $profiles_root/$backend_site_id/$backend_site_env/site.json" >&2
+    exit 2
+  fi
 }
 
 assert_backend_secret() {
@@ -217,6 +262,18 @@ section "Environment"
 ensure_env_file "$BACKEND_ENV_FILE" "$ROOT_DIR/apps/backend/.env.template"
 ensure_env_file "$STOREFRONT_ENV_FILE" "$ROOT_DIR/apps/storefront/.env.example"
 load_backend_env
+BACKEND_SITE_ID="${SITE_ID:-}"
+BACKEND_SITE_ENV="${SITE_ENV:-}"
+load_storefront_env
+STOREFRONT_SITE_ID="${NEXT_PUBLIC_SITE_ID:-${SITE_ID:-}}"
+STOREFRONT_SITE_ENV="${NEXT_PUBLIC_SITE_ENV:-${SITE_ENV:-}}"
+SITE_PROFILES_ROOT="$(resolve_site_profiles_root "$ROOT_DIR" "${SITE_PROFILES_ROOT:-}")"
+assert_site_profile_env "$BACKEND_SITE_ID" "$BACKEND_SITE_ENV" "$STOREFRONT_SITE_ID" "$STOREFRONT_SITE_ENV" "$SITE_PROFILES_ROOT"
+export SITE_ID="$BACKEND_SITE_ID"
+export SITE_ENV="$BACKEND_SITE_ENV"
+export NEXT_PUBLIC_SITE_ID="$STOREFRONT_SITE_ID"
+export NEXT_PUBLIC_SITE_ENV="$STOREFRONT_SITE_ENV"
+export SITE_PROFILES_ROOT
 assert_backend_secret JWT_SECRET
 assert_backend_secret COOKIE_SECRET
 assert_backend_secret MANUAL_WEBHOOK_SECRET

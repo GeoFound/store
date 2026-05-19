@@ -390,13 +390,17 @@ export function OrderLookupView() {
                       onClick={() => void handleConfirm(item.delivery.id)}
                       disabled={
                         confirmingDeliveryId === item.delivery.id ||
-                        item.delivery.delivery_status === "confirmed"
+                        item.delivery.delivery_status !== "delivered"
                       }
                       className="bg-teal-700 px-4 py-2 text-sm font-semibold text-white disabled:bg-stone-400"
                     >
                       {confirmingDeliveryId === item.delivery.id
                         ? "Confirming..."
-                        : "Confirm received"}
+                        : item.delivery.delivery_status === "pending"
+                          ? "Pending fulfillment"
+                          : item.delivery.delivery_status === "confirmed"
+                            ? "Confirmed"
+                            : "Confirm received"}
                     </button>
                   </div>
                   <pre className="mt-4 overflow-auto bg-stone-950 p-4 text-sm leading-6 text-stone-50">
@@ -560,11 +564,17 @@ function DeliveryPanel(input: {
           onClick={input.onConfirm}
           disabled={
             input.confirming ||
-            input.result.delivery.delivery_status === "confirmed"
+            input.result.delivery.delivery_status !== "delivered"
           }
           className="bg-teal-700 px-4 py-2 text-sm font-semibold text-white disabled:bg-stone-400"
         >
-          {input.confirming ? "Confirming..." : "Confirm received"}
+          {input.confirming
+            ? "Confirming..."
+            : input.result.delivery.delivery_status === "pending"
+              ? "Pending fulfillment"
+              : input.result.delivery.delivery_status === "confirmed"
+                ? "Confirmed"
+                : "Confirm received"}
         </button>
       </div>
 

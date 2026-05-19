@@ -7,6 +7,7 @@ import { getPlatformRuntime } from "./runtime"
 
 export type CreateDeliveryInput = {
   scope?: MedusaContainer
+  deliveryId?: string
   orderId?: string
   cartId?: string
   paymentAttemptId?: string
@@ -22,6 +23,7 @@ export type CreateDeliveryInput = {
   productType?: string | null
   fulfillmentPolicyCode?: string | null
   deliveryHandlerCode?: string | null
+  deliveryStatus?: "pending" | "delivered"
   deliveryPayload?: Record<string, unknown> | string
   deliveredBy?: string
   deliveryNote?: string
@@ -31,6 +33,8 @@ export type CreateDeliveryInput = {
 export type CreateDeliveryResult = {
   delivery: Record<string, unknown>
   accessToken: string | null
+  created?: boolean
+  updated?: boolean
 }
 
 export interface DeliveryHandler {
@@ -138,6 +142,44 @@ export function getProductFulfillmentPolicy(
     code,
     context
   )
+}
+
+export function resolveDeliveryHandlerCode(input: {
+  deliveryHandlerCode?: string | null
+  metadata?: Record<string, unknown> | null
+  accountItemId?: string | null
+  templateDeliveryHandlerCode?: string | null
+  deliveryId?: string | null
+  deliveryPayload?: Record<string, unknown> | string
+  defaultHandlerCode?: string
+}): string {
+  const explicitHandlerCode =
+    toOptionalString(input.deliveryHandlerCode) ||
+    toOptionalString(input.metadata?.delivery_handler_code) ||
+    toOptionalString(input.metadata?.deliveryHandlerCode)
+
+  if (explicitHandlerCode) {
+    return explicitHandlerCode
+  }
+
+  if (toOptionalString(input.accountItemId)) {
+    return "credential"
+  }
+
+  const templateHandlerCode = toOptionalString(input.templateDeliveryHandlerCode)
+  if (templateHandlerCode) {
+    return templateHandlerCode
+  }
+
+  if (toOptionalString(input.deliveryId) || typeof input.deliveryPayload !== "undefined") {
+    return input.defaultHandlerCode || "manual"
+  }
+
+  return input.defaultHandlerCode || "manual"
+}
+
+function toOptionalString(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : ""
 }
 
 export function resolveProductFulfillmentPolicy(input: {

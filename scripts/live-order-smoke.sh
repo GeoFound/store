@@ -2,6 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+source "$ROOT_DIR/scripts/profile/env.sh"
 BACKEND_URL="${BACKEND_URL:-http://localhost:9002}"
 STOREFRONT_URL="${STOREFRONT_URL:-http://localhost:8000}"
 BUYER_EMAIL="${BUYER_EMAIL:-buyer@example.com}"
@@ -9,6 +10,7 @@ BACKEND_LOG="${BACKEND_LOG:-/tmp/store-backend-smoke.log}"
 STOREFRONT_LOG="${STOREFRONT_LOG:-/tmp/store-storefront-smoke.log}"
 POSTGRES_CONTAINER="${POSTGRES_CONTAINER:-store-postgres}"
 BACKEND_ENV_FILE="${BACKEND_ENV_FILE:-$ROOT_DIR/apps/backend/.env}"
+STOREFRONT_ENV_FILE="${STOREFRONT_ENV_FILE:-$ROOT_DIR/apps/storefront/.env.local}"
 MANAGE_SERVICES="${MANAGE_SERVICES:-1}"
 RUN_RECOVERY_SMOKE="${RUN_RECOVERY_SMOKE:-0}"
 XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-/tmp/store-smoke-config}"
@@ -25,6 +27,11 @@ read_backend_env_value() {
   fi
 
   awk -F= -v target="$key" '$1 == target {print substr($0, index($0, "=") + 1)}' "$BACKEND_ENV_FILE" | tail -n 1
+}
+
+assert_site_profile() {
+  assert_site_profile_env_match "$SITE_ID" "$SITE_ENV" "$NEXT_PUBLIC_SITE_ID" "$NEXT_PUBLIC_SITE_ENV"
+  validate_site_profile "$SITE_ID" "$SITE_ENV" "$SITE_PROFILES_ROOT"
 }
 
 is_valid_encryption_key() {
@@ -275,13 +282,26 @@ CREDENTIAL_ENCRYPTION_KEY="$(resolve_encryption_key CREDENTIAL_ENCRYPTION_KEY "$
 DELIVERY_ENCRYPTION_KEY="$(resolve_encryption_key DELIVERY_ENCRYPTION_KEY "$CREDENTIAL_ENCRYPTION_KEY")"
 CREDENTIAL_ENCRYPTION_KEY_PREVIOUS="$(resolve_optional_env_value CREDENTIAL_ENCRYPTION_KEY_PREVIOUS)"
 DELIVERY_ENCRYPTION_KEY_PREVIOUS="$(resolve_optional_env_value DELIVERY_ENCRYPTION_KEY_PREVIOUS)"
+REQUESTED_SITE_ID="${SITE_ID:-}"
+REQUESTED_SITE_ENV="${SITE_ENV:-}"
+REQUESTED_NEXT_PUBLIC_SITE_ID="${NEXT_PUBLIC_SITE_ID:-}"
+REQUESTED_NEXT_PUBLIC_SITE_ENV="${NEXT_PUBLIC_SITE_ENV:-}"
+REQUESTED_SITE_PROFILES_ROOT="${SITE_PROFILES_ROOT:-}"
+BACKEND_SITE_ID="${REQUESTED_SITE_ID:-$(read_backend_env_value SITE_ID)}"
+BACKEND_SITE_ENV="${REQUESTED_SITE_ENV:-$(read_backend_env_value SITE_ENV)}"
 
-if [[ -f "$ROOT_DIR/apps/storefront/.env.local" ]]; then
+if [[ -f "$STOREFRONT_ENV_FILE" ]]; then
   set -a
-  source "$ROOT_DIR/apps/storefront/.env.local"
+  source "$STOREFRONT_ENV_FILE"
   set +a
 fi
 
+SITE_ID="${BACKEND_SITE_ID:-${SITE_ID:-site-1}}"
+SITE_ENV="${BACKEND_SITE_ENV:-${SITE_ENV:-development}}"
+NEXT_PUBLIC_SITE_ID="${REQUESTED_NEXT_PUBLIC_SITE_ID:-${NEXT_PUBLIC_SITE_ID:-$SITE_ID}}"
+NEXT_PUBLIC_SITE_ENV="${REQUESTED_NEXT_PUBLIC_SITE_ENV:-${NEXT_PUBLIC_SITE_ENV:-$SITE_ENV}}"
+SITE_PROFILES_ROOT="${REQUESTED_SITE_PROFILES_ROOT:-${SITE_PROFILES_ROOT:-$(read_backend_env_value SITE_PROFILES_ROOT)}}"
+SITE_PROFILES_ROOT="$(resolve_site_profiles_root "$ROOT_DIR" "$SITE_PROFILES_ROOT")"
 PUBLISHABLE_KEY="${NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY:-}"
 
 if [[ -z "$PUBLISHABLE_KEY" ]]; then
@@ -386,6 +406,7 @@ manual_webhook_signature() {
 }
 
 if [[ "$MANAGE_SERVICES" == "1" ]]; then
+  assert_site_profile
   rm -f "$BACKEND_LOG" "$STOREFRONT_LOG"
 
   echo "Starting backend..."
@@ -400,6 +421,9 @@ if [[ "$MANAGE_SERVICES" == "1" ]]; then
     CREDENTIAL_ENCRYPTION_KEY_PREVIOUS="$CREDENTIAL_ENCRYPTION_KEY_PREVIOUS" \
     DELIVERY_ENCRYPTION_KEY="$DELIVERY_ENCRYPTION_KEY" \
     DELIVERY_ENCRYPTION_KEY_PREVIOUS="$DELIVERY_ENCRYPTION_KEY_PREVIOUS" \
+    SITE_ID="$SITE_ID" \
+    SITE_ENV="$SITE_ENV" \
+    SITE_PROFILES_ROOT="$SITE_PROFILES_ROOT" \
     pnpm --dir apps/backend dev >"$BACKEND_LOG" 2>&1
   ) &
   backend_pid="$!"
@@ -407,7 +431,12 @@ if [[ "$MANAGE_SERVICES" == "1" ]]; then
   echo "Starting storefront..."
   (
     cd "$ROOT_DIR"
-    pnpm --dir apps/storefront dev -- --hostname 127.0.0.1 >"$STOREFRONT_LOG" 2>&1
+    SITE_ID="$SITE_ID" \
+    SITE_ENV="$SITE_ENV" \
+    NEXT_PUBLIC_SITE_ID="$NEXT_PUBLIC_SITE_ID" \
+    NEXT_PUBLIC_SITE_ENV="$NEXT_PUBLIC_SITE_ENV" \
+    SITE_PROFILES_ROOT="$SITE_PROFILES_ROOT" \
+      pnpm --dir apps/storefront exec next dev --port 8000 --hostname 127.0.0.1 >"$STOREFRONT_LOG" 2>&1
   ) &
   storefront_pid="$!"
 fi
