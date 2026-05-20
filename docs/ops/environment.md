@@ -44,6 +44,18 @@ Optional analytics and observability:
 | `RESEND_FROM_EMAIL` | Sender identity used by Resend (`no-reply@example.com` or `Store <no-reply@example.com>`) | Required when `RESEND_ENABLED=true`; domain must be verified in Resend. |
 | `RESEND_REPLY_TO_EMAIL` | Optional reply-to address for support workflows | Recommended for recovery/support emails. |
 | `RESEND_API_BASE_URL` | Resend API base URL | Default `https://api.resend.com`; override only for controlled proxies. |
+| `SUPPLIER_ENCRYPTION_KEY` | Primary AES-256-GCM key for supplier fulfillment snapshots | Must decode to 32 bytes. Defaults to `DELIVERY_ENCRYPTION_KEY` when omitted. Keep separate in production when supplier payloads include redeemable secrets. |
+| `SUPPLIER_ENCRYPTION_KEY_PREVIOUS` | Optional previous supplier keys for key rotation (comma-separated) | Each key must decode to 32 bytes. |
+| `RELOADLY_ENV` | Reloadly environment selector (`sandbox` or `production`) | Default `sandbox`. |
+| `RELOADLY_CLIENT_ID` | Reloadly OAuth client id | Required to use `supplier-provider:reloadly`; backend only. |
+| `RELOADLY_CLIENT_SECRET` | Reloadly OAuth client secret | Required to use `supplier-provider:reloadly`; backend only. |
+| `RELOADLY_AUTH_URL` | Reloadly OAuth token URL | Default `https://auth.reloadly.com/oauth/token`. |
+| `RELOADLY_AUDIENCE` | Reloadly OAuth audience | Defaults to the gift-card API base URL. Override per Reloadly product/API family when needed. |
+| `RELOADLY_GIFTCARDS_BASE_URL` | Reloadly gift-card API base URL | Defaults to sandbox or production gift-card host based on `RELOADLY_ENV`. |
+| `RELOADLY_AIRTIME_BASE_URL` | Reloadly airtime/top-up API base URL | Defaults to sandbox or production top-up host based on `RELOADLY_ENV`. |
+| `RELOADLY_SENDER_NAME` | Sender name used in default gift-card order payloads | Default `Store`. |
+| `G2A_API_BASE_URL` | G2A Export API base URL | Default `https://api.g2a.com`; set the exact Export API host/version for your account. |
+| `G2A_ACCESS_TOKEN` / `G2A_API_TOKEN` / `G2A_API_KEY` | G2A API credential | One is required to use `supplier-provider:g2a`; backend only. |
 | `SECURITY_ALLOWED_ORIGINS` | Additional origin allow-list for sensitive POST routes | Optional; merged with `STORE_CORS` / `ADMIN_CORS` / `AUTH_CORS`. |
 | `SECURITY_TRUST_PROXY_HEADERS` | Trust `X-Forwarded-For` / `X-Real-IP` for client IP resolution | Enable (`true`) only when traffic is always behind trusted proxy/load balancer. |
 | `SECURITY_HEADERS_ENABLED` | Enable backend response security headers middleware | Default `true`. |

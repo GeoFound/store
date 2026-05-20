@@ -337,16 +337,16 @@ export function CheckoutView() {
   }
 
   if (loading) {
-    return <p className="text-sm text-stone-600">Loading checkout...</p>
+    return <p className="text-sm opacity-70">Loading checkout...</p>
   }
 
   if (!cart?.items?.length) {
     return (
-      <div className="space-y-5 border border-stone-200 bg-white p-6">
-        <p className="text-stone-700">Your cart is empty.</p>
+      <div className="theme-panel space-y-5 p-6">
+        <p className="opacity-75">Your cart is empty.</p>
         <Link
           href="/products"
-          className="inline-flex bg-stone-950 px-4 py-3 text-sm font-semibold text-white"
+          className="theme-primary-action inline-flex px-4 py-3 text-sm font-semibold"
         >
           Browse products
         </Link>
@@ -358,7 +358,7 @@ export function CheckoutView() {
     <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
       <form
         onSubmit={handleSubmit}
-        className="space-y-6 border border-stone-200 bg-white p-5"
+        className="theme-panel space-y-6 p-5"
       >
         <section>
           <h2 className="text-lg font-semibold">Guest details</h2>
@@ -371,10 +371,10 @@ export function CheckoutView() {
             required
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            className="mt-2 w-full border border-stone-300 px-3 py-3 outline-none focus:border-stone-950"
+            className="theme-border mt-2 w-full border bg-[var(--surface)] px-3 py-3 outline-none focus:border-[var(--foreground)]"
             placeholder="buyer@example.com"
           />
-          <p className="mt-2 text-sm text-stone-600">
+          <p className="mt-2 text-sm opacity-70">
             No account or password is required. This email is used for receipt,
             order recovery, and secure order access.
           </p>
@@ -386,13 +386,13 @@ export function CheckoutView() {
             {paymentMethods.map((method) => (
               <label
                 key={method.code}
-                className="flex cursor-pointer items-center justify-between border border-stone-300 p-4"
+                className="theme-border flex cursor-pointer items-center justify-between border p-4"
               >
                 <span>
                   <span className="block font-medium">
                     {method.display_name}
                   </span>
-                  <span className="mt-1 block text-xs text-stone-500">
+                  <span className="mt-1 block text-xs opacity-60">
                     {method.health_status}
                   </span>
                 </span>
@@ -406,7 +406,7 @@ export function CheckoutView() {
               </label>
             ))}
           </div>
-          <p className="mt-3 text-sm text-stone-600">
+          <p className="mt-3 text-sm opacity-70">
             Choose an available payment method for this order.
           </p>
         </section>
@@ -422,7 +422,7 @@ export function CheckoutView() {
                 id="coupon_code"
                 value={couponCode}
                 onChange={(event) => setCouponCode(event.target.value)}
-                className="mt-2 w-full border border-stone-300 px-3 py-3 outline-none focus:border-stone-950"
+                className="theme-border mt-2 w-full border bg-[var(--surface)] px-3 py-3 outline-none focus:border-[var(--foreground)]"
                 placeholder="SAVE10"
               />
             </div>
@@ -434,13 +434,13 @@ export function CheckoutView() {
                 id="referral_code"
                 value={referralCode}
                 onChange={(event) => setReferralCode(event.target.value)}
-                className="mt-2 w-full border border-stone-300 px-3 py-3 outline-none focus:border-stone-950"
+                className="theme-border mt-2 w-full border bg-[var(--surface)] px-3 py-3 outline-none focus:border-[var(--foreground)]"
                 placeholder="CREATOR_A"
               />
             </div>
           </div>
           {Object.values(utmContext).some(Boolean) ? (
-            <p className="mt-3 text-sm text-stone-600">
+            <p className="mt-3 text-sm opacity-70">
               UTM captured: {utmContext.utm_source || "-"} /{" "}
               {utmContext.utm_medium || "-"} / {utmContext.utm_campaign || "-"}
             </p>
@@ -450,32 +450,32 @@ export function CheckoutView() {
         <button
           type="submit"
           disabled={saving}
-          className="w-full bg-stone-950 px-4 py-3 text-sm font-semibold text-white hover:bg-stone-800 disabled:bg-stone-400"
+          className="theme-primary-action w-full px-4 py-3 text-sm font-semibold disabled:opacity-50"
         >
           {saving ? "Creating..." : "Create payment"}
         </button>
 
-        {message ? <p className="text-sm text-teal-700">{message}</p> : null}
-        {error ? <p className="text-sm text-red-700">{error}</p> : null}
+        {message ? <p className="text-sm text-[var(--success)]">{message}</p> : null}
+        {error ? <p className="text-sm text-[var(--danger)]">{error}</p> : null}
 
         {paymentAttempt && instructions ? (
-          <section className="border border-teal-700 bg-teal-50 p-4">
-            <h2 className="text-base font-semibold text-teal-950">
+          <section className="theme-panel theme-status-success p-4">
+            <h2 className="text-base font-semibold">
               {instructions.title}
             </h2>
-            <p className="mt-2 text-sm leading-6 text-teal-900">
+            <p className="mt-2 text-sm leading-6">
               {instructions.body}
             </p>
-            <div className="mt-3 border border-teal-200 bg-white p-3 text-sm">
-              <span className="block text-stone-600">Payment reference</span>
+            <div className="theme-panel mt-3 p-3 text-sm">
+              <span className="block opacity-70">Payment reference</span>
               <span className="mt-1 block font-mono font-semibold">
                 {instructions.reference}
               </span>
             </div>
-            <p className="mt-3 text-sm text-teal-900">
+            <p className="mt-3 text-sm">
               Attempt ID: {paymentAttempt.id}
             </p>
-            <p className="mt-1 text-sm text-teal-900">
+            <p className="mt-1 text-sm">
               Status: {paymentAttempt.status}
               {claiming ? " | Claiming order access..." : ""}
             </p>
@@ -483,11 +483,11 @@ export function CheckoutView() {
         ) : null}
 
         {resolvedMarketing ? (
-          <section className="border border-stone-200 bg-stone-50 p-4">
-            <h2 className="text-base font-semibold text-stone-900">
+          <section className="theme-panel theme-muted-surface p-4">
+            <h2 className="text-base font-semibold">
               Applied marketing context
             </h2>
-            <div className="mt-3 space-y-2 text-sm text-stone-700">
+            <div className="mt-3 space-y-2 text-sm opacity-75">
               {resolvedMarketing.coupon?.code ? (
                 <p>Coupon: {resolvedMarketing.coupon.code}</p>
               ) : null}
@@ -513,15 +513,15 @@ export function CheckoutView() {
         ) : null}
 
         {orderAccessToken ? (
-          <section className="border border-stone-950 bg-stone-950 p-4 text-white">
+          <section className="theme-primary-action p-4">
             <h2 className="text-base font-semibold">Order ready</h2>
-            <p className="mt-2 text-sm text-stone-200">
+            <p className="mt-2 text-sm opacity-75">
               Your payment was confirmed and this browser stored the order access
               token.
             </p>
             <Link
               href="/orders"
-              className="mt-4 inline-flex bg-white px-4 py-3 text-sm font-semibold text-stone-950"
+              className="theme-secondary-action mt-4 inline-flex px-4 py-3 text-sm font-semibold"
             >
               View order
             </Link>
@@ -529,7 +529,7 @@ export function CheckoutView() {
         ) : null}
       </form>
 
-      <aside className="h-fit border border-stone-200 bg-white p-5">
+      <aside className="theme-panel h-fit p-5">
         <h2 className="text-base font-semibold">Order summary</h2>
         <div className="mt-4 space-y-3">
           {cart.items.map((item) => (
@@ -546,7 +546,7 @@ export function CheckoutView() {
             </div>
           ))}
         </div>
-        <div className="mt-5 flex items-center justify-between border-t border-stone-200 pt-4">
+        <div className="theme-border mt-5 flex items-center justify-between border-t pt-4">
           <span>Total</span>
           <span className="font-semibold">
             {formatMoney(cart.total, cart.currency_code)}

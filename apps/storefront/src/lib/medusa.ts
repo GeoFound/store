@@ -58,9 +58,9 @@ export async function listProducts(): Promise<Product[]> {
   const regionId = await getDefaultRegionId()
   const templateDefinitions = await safeListProductTemplates()
   const query = new URLSearchParams({
-    limit: "24",
+    limit: "48",
     region_id: regionId,
-    fields: "id,title,handle,description,thumbnail,metadata,type,*variants,*categories",
+    fields: "id,title,handle,description,thumbnail,created_at,updated_at,metadata,type,*variants,*categories",
   })
 
   const data = await medusaFetch<{ products: Product[] }>(
@@ -76,7 +76,7 @@ export async function retrieveProduct(handle: string): Promise<Product | null> {
   const query = new URLSearchParams({
     handle,
     region_id: regionId,
-    fields: "id,title,handle,description,thumbnail,metadata,type,*variants,*categories",
+    fields: "id,title,handle,description,thumbnail,created_at,updated_at,metadata,type,*variants,*categories",
   })
 
   const data = await medusaFetch<{ products: Product[] }>(

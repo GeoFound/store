@@ -71,7 +71,7 @@ export function ProductPurchasePanel({
 
   return (
     <>
-      <h1 className="mt-4 text-3xl font-semibold text-stone-950">
+      <h1 className="mt-4 text-3xl font-semibold">
         {productTitle}
       </h1>
       <p className="mt-3 text-2xl font-semibold">
@@ -80,12 +80,12 @@ export function ProductPurchasePanel({
 
       {variants.length > 1 ? (
         <div className="mt-4">
-          <label className="block text-sm font-medium text-stone-700" htmlFor="variant">
+          <label className="block text-sm font-medium opacity-80" htmlFor="variant">
             Option
           </label>
           <select
             id="variant"
-            className="mt-2 w-full border border-stone-300 bg-white px-3 py-3 text-sm outline-none focus:border-stone-950"
+            className="theme-surface theme-border mt-2 w-full border px-3 py-3 text-sm outline-none focus:border-[var(--foreground)]"
             value={selectedVariant?.id || ""}
             onChange={(event) => setSelectedVariantId(event.target.value)}
           >
@@ -102,35 +102,35 @@ export function ProductPurchasePanel({
         <span
           className={`inline-flex px-2 py-1 text-xs font-semibold uppercase tracking-[0.14em] ${
             isSoldOut
-              ? "bg-stone-950 text-white"
-              : "bg-emerald-100 text-emerald-800"
+              ? "theme-status-danger"
+              : "theme-status-success"
           }`}
         >
           {isSoldOut ? "Sold out" : "In stock"}
         </span>
       </div>
 
-      <div className="mt-5 space-y-3 border-y border-stone-200 py-5 text-sm text-stone-700">
+      <div className="theme-border mt-5 space-y-3 border-y py-5 text-sm opacity-80">
         <div className="flex justify-between gap-4">
           <span>Delivery</span>
-          <span className="font-medium text-stone-950">
+          <span className="font-medium text-[var(--foreground)]">
             {template?.deliveryLabel || "Digital"}
           </span>
         </div>
         <div className="flex justify-between gap-4">
           <span>Checkout</span>
-          <span className="font-medium text-stone-950">Guest allowed</span>
+          <span className="font-medium text-[var(--foreground)]">Guest allowed</span>
         </div>
         <div className="flex justify-between gap-4">
           <span>Fulfillment</span>
-          <span className="font-medium text-stone-950">
+          <span className="font-medium text-[var(--foreground)]">
             {template?.title || "After payment"}
           </span>
         </div>
         {requiresInventory && typeof selectedVariant?.available_quantity === "number" ? (
           <div className="flex justify-between gap-4">
             <span>Available</span>
-            <span className="font-medium text-stone-950">
+            <span className="font-medium text-[var(--foreground)]">
               {selectedVariant.available_quantity}
             </span>
           </div>

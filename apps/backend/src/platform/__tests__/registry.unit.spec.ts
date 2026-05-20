@@ -20,6 +20,7 @@ import {
 } from "../runtime"
 import { getInventoryHandler } from "../inventory"
 import { getOrderAccessProvider } from "../order-access"
+import { getSupplierProvider } from "../supplier"
 
 describe("platform registry", () => {
   beforeEach(() => {
@@ -250,6 +251,13 @@ describe("platform registry", () => {
       "analytics-hotjar"
     )
     expect(manifests.map((manifest) => manifest.id)).toContain(
+      "supplier-procurement"
+    )
+    expect(manifests.map((manifest) => manifest.id)).toContain(
+      "supplier-reloadly"
+    )
+    expect(manifests.map((manifest) => manifest.id)).toContain("supplier-g2a")
+    expect(manifests.map((manifest) => manifest.id)).toContain(
       "platform.inventory.noop"
     )
     expect(manifests.map((manifest) => manifest.id)).toContain(
@@ -288,6 +296,26 @@ describe("platform registry", () => {
     })).toMatchObject({
       code: "default:no-inventory",
       deliveryHandlerCode: "manual",
+      inventoryHandlerCode: "noop",
+      inventoryMode: "none",
+    })
+  })
+
+  it("registers supplier procurement capabilities by default", async () => {
+    getPlatformRuntime()
+
+    expect(getSupplierProvider("reloadly")?.code).toBe("reloadly")
+    expect(getSupplierProvider("g2a")?.code).toBe("g2a")
+    expect(getDeliveryHandlerOrFallback("supplier-procurement")?.code).toBe(
+      "supplier-procurement"
+    )
+    expect(await resolveProductFulfillmentPolicy({
+      code: "external-api",
+      productVariantId: "variant_api",
+      productType: "api",
+    })).toMatchObject({
+      code: "external-api:supplier-procurement",
+      deliveryHandlerCode: "supplier-procurement",
       inventoryHandlerCode: "noop",
       inventoryMode: "none",
     })

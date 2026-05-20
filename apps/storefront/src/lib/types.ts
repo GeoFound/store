@@ -40,6 +40,8 @@ export type Product = {
   handle: string
   description?: string | null
   thumbnail?: string | null
+  created_at?: string
+  updated_at?: string
   status?: string
   metadata?: Record<string, unknown> | null
   type?: {

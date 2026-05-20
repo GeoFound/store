@@ -24,6 +24,14 @@ Profile data drives:
 - Backend/storefront plugin toggles.
 - Site-level CORS defaults derived from domains.
 
+Storefront profiles can now tune the first-screen storefront without code
+changes:
+
+- `theme.id`, colors, border, status colors, radius, and density.
+- `content.home.featured_limit` and `content.home.announcements`.
+- `content.categories.links` for pinned homepage category entry points.
+- `content.catalog` labels for product listing filters and sorting.
+
 ## 2. Deployment Targets
 
 Deployment targets are listed in:

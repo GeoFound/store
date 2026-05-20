@@ -28,7 +28,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
       <SiteHeader />
       <main className="mx-auto grid w-full max-w-6xl flex-1 gap-8 px-4 py-10 sm:px-6 lg:grid-cols-[1fr_420px]">
         <section className="space-y-6">
-          <div className="relative aspect-[4/3] overflow-hidden border border-stone-200 bg-stone-100">
+          <div className="theme-panel theme-muted-surface relative aspect-[4/3] overflow-hidden">
             {product.thumbnail ? (
               <Image
                 src={product.thumbnail}
@@ -39,27 +39,27 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 className="object-cover"
               />
             ) : (
-              <div className="flex h-full items-center justify-center bg-teal-700 text-7xl font-semibold text-white">
+              <div className="theme-accent-surface flex h-full items-center justify-center text-7xl font-semibold">
                 {product.title.slice(0, 1)}
               </div>
             )}
           </div>
-          <div className="border border-stone-200 bg-white p-5">
+          <div className="theme-panel p-5">
             <h2 className="text-lg font-semibold">Product details</h2>
-            <p className="mt-3 whitespace-pre-line text-sm leading-6 text-stone-700">
+            <p className="mt-3 whitespace-pre-line text-sm leading-6 opacity-75">
               {product.description || "Digital product with manual delivery."}
             </p>
             {template ? (
-              <div className="mt-4 border-t border-stone-200 pt-4 text-sm text-stone-700">
-                <div className="font-semibold text-stone-950">{template.title}</div>
+              <div className="theme-border mt-4 border-t pt-4 text-sm opacity-75">
+                <div className="font-semibold text-[var(--foreground)]">{template.title}</div>
                 <p className="mt-1 leading-6">{template.description}</p>
               </div>
             ) : null}
           </div>
         </section>
 
-        <aside className="h-fit border border-stone-200 bg-white p-5">
-          <Link href="/products" className="text-sm text-stone-600">
+        <aside className="theme-panel h-fit p-5">
+          <Link href="/products" className="text-sm opacity-70">
             Back to products
           </Link>
           <ProductPurchasePanel

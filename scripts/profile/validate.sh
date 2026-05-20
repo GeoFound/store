@@ -82,6 +82,27 @@ assert(isNonEmptyString(profile?.domains?.api), "domains.api is required")
 assert(profile?.theme && typeof profile.theme === "object", "theme object is required")
 assert(profile?.content && typeof profile.content === "object", "content object is required")
 assert(profile?.platform && typeof profile.platform === "object", "platform object is required")
+assert(isNonEmptyString(profile.theme.background), "theme.background is required")
+assert(isNonEmptyString(profile.theme.foreground), "theme.foreground is required")
+assert(isNonEmptyString(profile.theme.accent), "theme.accent is required")
+
+if (profile.content?.home?.announcements !== undefined) {
+  assert(Array.isArray(profile.content.home.announcements), "content.home.announcements must be an array")
+
+  for (const [index, announcement] of profile.content.home.announcements.entries()) {
+    assert(isNonEmptyString(announcement?.title), `content.home.announcements[${index}].title is required`)
+    assert(isNonEmptyString(announcement?.body), `content.home.announcements[${index}].body is required`)
+  }
+}
+
+if (profile.content?.categories?.links !== undefined) {
+  assert(Array.isArray(profile.content.categories.links), "content.categories.links must be an array")
+
+  for (const [index, link] of profile.content.categories.links.entries()) {
+    assert(isNonEmptyString(link?.label), `content.categories.links[${index}].label is required`)
+    assert(isNonEmptyString(link?.href), `content.categories.links[${index}].href is required`)
+  }
+}
 
 process.stdout.write(`profile ok: ${profile.site.id}\n`)
 NODE

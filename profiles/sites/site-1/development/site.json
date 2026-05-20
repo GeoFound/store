@@ -12,12 +12,19 @@
     "api": "api.example.com"
   },
   "theme": {
+    "id": "atlas",
     "background": "#f7f5f0",
     "foreground": "#1c1917",
     "accent": "#0f766e",
     "accent_secondary": "#f97316",
     "surface": "#ffffff",
-    "surface_muted": "#f5f5f4"
+    "surface_muted": "#f5f5f4",
+    "border": "#e7e5e4",
+    "success": "#047857",
+    "danger": "#b91c1c",
+    "warning": "#b45309",
+    "radius": "6px",
+    "density": "comfortable"
   },
   "content": {
     "navigation": {
@@ -32,7 +39,46 @@
       "orders_cta": "Find an order",
       "products_heading": "Available products",
       "products_description": "Managed by Medusa, sold through this storefront.",
-      "hero_pattern": "linear-gradient(135deg,#0f766e 0%,#0f766e 45%,#f97316 45%,#f97316 68%,#1c1917 68%)"
+      "hero_pattern": "linear-gradient(135deg,#0f766e 0%,#0f766e 45%,#f97316 45%,#f97316 68%,#1c1917 68%)",
+      "featured_limit": 6,
+      "announcements": [
+        {
+          "title": "Guest checkout is enabled",
+          "body": "Orders can be recovered later with the buyer email and order verification flow.",
+          "tone": "info"
+        }
+      ]
+    },
+    "categories": {
+      "heading": "Shop by digital product type",
+      "description": "Pin the storefront's most important product groups without changing code.",
+      "links": [
+        {
+          "label": "Access keys",
+          "href": "/products?category=access-keys",
+          "description": "Credential, code, and license inventory."
+        },
+        {
+          "label": "Accounts",
+          "href": "/products?category=accounts",
+          "description": "Account handoff products with secure delivery."
+        },
+        {
+          "label": "Manual services",
+          "href": "/products?category=manual-services",
+          "description": "Human-assisted digital fulfillment."
+        }
+      ]
+    },
+    "catalog": {
+      "title": "Products",
+      "description": "Filter by category, choose a product, and checkout as a guest.",
+      "all_products_label": "All products",
+      "sort_label": "Sort",
+      "sort_default_label": "Default",
+      "sort_price_asc_label": "Price low to high",
+      "sort_price_desc_label": "Price high to low",
+      "sort_newest_label": "Newest"
     }
   },
   "platform": {

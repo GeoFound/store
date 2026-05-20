@@ -13,12 +13,12 @@ function ExtensionCard(props: {
   body: string
 }) {
   return (
-    <div className="border border-stone-200 bg-stone-50 p-5">
-      <div className="text-xs font-semibold uppercase tracking-[0.2em] text-stone-500">
+    <div className="theme-panel theme-muted-surface p-5">
+      <div className="text-xs font-semibold uppercase tracking-[0.2em] opacity-60">
         {props.eyebrow}
       </div>
-      <h3 className="mt-2 text-lg font-semibold text-stone-950">{props.title}</h3>
-      <p className="mt-2 text-sm leading-6 text-stone-700">{props.body}</p>
+      <h3 className="mt-2 text-lg font-semibold">{props.title}</h3>
+      <p className="mt-2 text-sm leading-6 opacity-75">{props.body}</p>
     </div>
   )
 }

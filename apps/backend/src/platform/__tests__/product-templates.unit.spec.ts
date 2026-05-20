@@ -1,4 +1,8 @@
 import {
+  ensureSupplierProductTemplatesRegistered,
+  resetSupplierProductTemplatesForTests,
+} from "../../modules/supplier-procurement/templates"
+import {
   getProductTemplate,
   listProductTemplates,
   registerProductTemplate,
@@ -9,6 +13,7 @@ import {
 describe("product templates", () => {
   beforeEach(() => {
     resetProductTemplatesForTests()
+    resetSupplierProductTemplatesForTests()
   })
 
   it("registers default templates on first access", () => {
@@ -78,6 +83,21 @@ describe("product templates", () => {
     ).toMatchObject({
       code: "credential",
       productType: "credential",
+    })
+  })
+
+  it("registers supplier-backed templates without changing core defaults", () => {
+    ensureSupplierProductTemplatesRegistered()
+
+    expect(getProductTemplate("reloadly-gift-card")).toMatchObject({
+      code: "reloadly-gift-card",
+      fulfillmentPolicyCode: "external-api",
+      deliveryHandlerCode: "supplier-procurement",
+      inventoryHandlerCode: "noop",
+    })
+    expect(getProductTemplate("g2a-key")).toMatchObject({
+      code: "g2a-key",
+      fulfillmentPolicyCode: "external-api",
     })
   })
 })

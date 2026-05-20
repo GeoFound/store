@@ -17,6 +17,7 @@
 - [Deployment guide](docs/ops/deployment.md)
 - [Multi-site deployment](docs/ops/multi-site-deployment.md)
 - [Production runbook](docs/ops/production-runbook.md)
+- [Supplier procurement](docs/ops/supplier-procurement.md)
 - [Marketing engine](docs/marketing-engine.md)
 - [Analytics module](docs/analytics.md)
 - [Backup and restore](docs/ops/backup-restore.md)

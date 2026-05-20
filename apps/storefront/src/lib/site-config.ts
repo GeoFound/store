@@ -3,12 +3,31 @@ import path from "node:path"
 import { cache } from "react"
 
 export type SiteThemeConfig = {
+  id: string
   background: string
   foreground: string
   accent: string
   accentSecondary: string
   surface: string
   surfaceMuted: string
+  border: string
+  success: string
+  danger: string
+  warning: string
+  radius: string
+  density: "comfortable" | "compact"
+}
+
+export type SiteAnnouncementConfig = {
+  title: string
+  body: string
+  tone: "info" | "success" | "warning"
+}
+
+export type SiteCategoryLinkConfig = {
+  label: string
+  href: string
+  description?: string
 }
 
 export type SiteContentConfig = {
@@ -25,6 +44,23 @@ export type SiteContentConfig = {
     productsHeading: string
     productsDescription: string
     heroPattern: string
+    featuredLimit: number
+    announcements: SiteAnnouncementConfig[]
+  }
+  categories: {
+    heading: string
+    description: string
+    links: SiteCategoryLinkConfig[]
+  }
+  catalog: {
+    title: string
+    description: string
+    allProductsLabel: string
+    sortLabel: string
+    sortDefaultLabel: string
+    sortPriceAscLabel: string
+    sortPriceDescLabel: string
+    sortNewestLabel: string
   }
 }
 
@@ -64,6 +100,19 @@ type SiteConfigInput = Partial<SiteConfig> & {
       products_heading?: string
       products_description?: string
       hero_pattern?: string
+      featured_limit?: unknown
+      announcements?: unknown
+    }
+    categories?: Partial<SiteContentConfig["categories"]> & {
+      links?: unknown
+    }
+    catalog?: Partial<SiteContentConfig["catalog"]> & {
+      all_products_label?: string
+      sort_label?: string
+      sort_default_label?: string
+      sort_price_asc_label?: string
+      sort_price_desc_label?: string
+      sort_newest_label?: string
     }
   }
   platform?: {
@@ -88,12 +137,19 @@ const BASE_SITE_CONFIG: SiteConfig = {
     api: "api.example.com",
   },
   theme: {
+    id: "base",
     background: "#f7f5f0",
     foreground: "#1c1917",
     accent: "#0f766e",
     accentSecondary: "#f97316",
     surface: "#ffffff",
     surfaceMuted: "#f5f5f4",
+    border: "#e7e5e4",
+    success: "#047857",
+    danger: "#b91c1c",
+    warning: "#b45309",
+    radius: "6px",
+    density: "comfortable",
   },
   content: {
     navigation: {
@@ -111,6 +167,24 @@ const BASE_SITE_CONFIG: SiteConfig = {
       productsDescription: "Managed by Medusa, sold through this storefront.",
       heroPattern:
         "linear-gradient(135deg,#0f766e 0%,#0f766e 45%,#f97316 45%,#f97316 68%,#1c1917 68%)",
+      featuredLimit: 6,
+      announcements: [],
+    },
+    categories: {
+      heading: "Shop by category",
+      description: "Use the storefront profile to pin important product groups.",
+      links: [],
+    },
+    catalog: {
+      title: "Products",
+      description:
+        "Guest checkout is supported. Add a product, enter an email, and pay without creating an account.",
+      allProductsLabel: "All products",
+      sortLabel: "Sort",
+      sortDefaultLabel: "Default",
+      sortPriceAscLabel: "Price low to high",
+      sortPriceDescLabel: "Price high to low",
+      sortNewestLabel: "Newest",
     },
   },
   platform: {
@@ -235,6 +309,7 @@ function normalizeSiteConfig(
       api: toOptionalString(input?.domains?.api) || fallback.domains.api,
     },
     theme: {
+      id: toOptionalString(input?.theme?.id) || fallback.theme.id,
       background:
         toOptionalString(input?.theme?.background) || fallback.theme.background,
       foreground:
@@ -249,6 +324,12 @@ function normalizeSiteConfig(
         toOptionalString(input?.theme?.surfaceMuted) ||
         toOptionalString(input?.theme?.surface_muted) ||
         fallback.theme.surfaceMuted,
+      border: toOptionalString(input?.theme?.border) || fallback.theme.border,
+      success: toOptionalString(input?.theme?.success) || fallback.theme.success,
+      danger: toOptionalString(input?.theme?.danger) || fallback.theme.danger,
+      warning: toOptionalString(input?.theme?.warning) || fallback.theme.warning,
+      radius: toOptionalString(input?.theme?.radius) || fallback.theme.radius,
+      density: normalizeThemeDensity(input?.theme?.density, fallback.theme.density),
     },
     content: {
       navigation: {
@@ -289,6 +370,57 @@ function normalizeSiteConfig(
           toOptionalString(input?.content?.home?.heroPattern) ||
           toOptionalString(input?.content?.home?.hero_pattern) ||
           fallback.content.home.heroPattern,
+        featuredLimit:
+          toPositiveInteger(
+            input?.content?.home?.featuredLimit ||
+              input?.content?.home?.featured_limit
+          ) || fallback.content.home.featuredLimit,
+        announcements:
+          toAnnouncementArray(input?.content?.home?.announcements) ||
+          fallback.content.home.announcements,
+      },
+      categories: {
+        heading:
+          toOptionalString(input?.content?.categories?.heading) ||
+          fallback.content.categories.heading,
+        description:
+          toOptionalString(input?.content?.categories?.description) ||
+          fallback.content.categories.description,
+        links:
+          toCategoryLinkArray(input?.content?.categories?.links) ??
+          fallback.content.categories.links,
+      },
+      catalog: {
+        title:
+          toOptionalString(input?.content?.catalog?.title) ||
+          fallback.content.catalog.title,
+        description:
+          toOptionalString(input?.content?.catalog?.description) ||
+          fallback.content.catalog.description,
+        allProductsLabel:
+          toOptionalString(input?.content?.catalog?.allProductsLabel) ||
+          toOptionalString(input?.content?.catalog?.all_products_label) ||
+          fallback.content.catalog.allProductsLabel,
+        sortLabel:
+          toOptionalString(input?.content?.catalog?.sortLabel) ||
+          toOptionalString(input?.content?.catalog?.sort_label) ||
+          fallback.content.catalog.sortLabel,
+        sortDefaultLabel:
+          toOptionalString(input?.content?.catalog?.sortDefaultLabel) ||
+          toOptionalString(input?.content?.catalog?.sort_default_label) ||
+          fallback.content.catalog.sortDefaultLabel,
+        sortPriceAscLabel:
+          toOptionalString(input?.content?.catalog?.sortPriceAscLabel) ||
+          toOptionalString(input?.content?.catalog?.sort_price_asc_label) ||
+          fallback.content.catalog.sortPriceAscLabel,
+        sortPriceDescLabel:
+          toOptionalString(input?.content?.catalog?.sortPriceDescLabel) ||
+          toOptionalString(input?.content?.catalog?.sort_price_desc_label) ||
+          fallback.content.catalog.sortPriceDescLabel,
+        sortNewestLabel:
+          toOptionalString(input?.content?.catalog?.sortNewestLabel) ||
+          toOptionalString(input?.content?.catalog?.sort_newest_label) ||
+          fallback.content.catalog.sortNewestLabel,
       },
     },
     platform: {
@@ -342,6 +474,94 @@ function toStringArrayMap(value: unknown) {
   }, {})
 
   return normalized
+}
+
+function toAnnouncementArray(value: unknown) {
+  if (!Array.isArray(value)) {
+    return undefined
+  }
+
+  const announcements = value
+    .map((item): SiteAnnouncementConfig | null => {
+      if (!item || typeof item !== "object") {
+        return null
+      }
+
+      const source = item as Record<string, unknown>
+      const title = toOptionalString(source.title)
+      const body = toOptionalString(source.body)
+
+      if (!title || !body) {
+        return null
+      }
+
+      return {
+        title,
+        body,
+        tone: normalizeAnnouncementTone(source.tone),
+      }
+    })
+    .filter((item): item is SiteAnnouncementConfig => Boolean(item))
+
+  return announcements.length ? announcements : undefined
+}
+
+function toCategoryLinkArray(value: unknown) {
+  if (!Array.isArray(value)) {
+    return undefined
+  }
+
+  const links = value
+    .map((item): SiteCategoryLinkConfig | null => {
+      if (!item || typeof item !== "object") {
+        return null
+      }
+
+      const source = item as Record<string, unknown>
+      const label = toOptionalString(source.label)
+      const href = toOptionalString(source.href)
+
+      if (!label || !href) {
+        return null
+      }
+
+      const link: SiteCategoryLinkConfig = {
+        label,
+        href,
+      }
+
+      const description = toOptionalString(source.description)
+      if (description) {
+        link.description = description
+      }
+
+      return link
+    })
+    .filter((item): item is SiteCategoryLinkConfig => Boolean(item))
+
+  return links.length ? links : undefined
+}
+
+function toPositiveInteger(value: unknown) {
+  const numberValue =
+    typeof value === "number" ? value : Number.parseInt(String(value || ""), 10)
+
+  if (!Number.isFinite(numberValue) || numberValue < 1) {
+    return undefined
+  }
+
+  return Math.floor(numberValue)
+}
+
+function normalizeAnnouncementTone(value: unknown): SiteAnnouncementConfig["tone"] {
+  return value === "success" || value === "warning" ? value : "info"
+}
+
+function normalizeThemeDensity(
+  value: unknown,
+  fallback: SiteThemeConfig["density"]
+) {
+  return value === "compact" || value === "comfortable" ? value : fallback
 }
 
 function toOptionalString(value: unknown) {

@@ -8,7 +8,7 @@ type ProductGridProps = {
 export function ProductGrid({ products }: ProductGridProps) {
   if (!products.length) {
     return (
-      <div className="border border-dashed border-stone-300 bg-white p-8 text-sm text-stone-600">
+      <div className="theme-panel border-dashed p-8 text-sm opacity-70">
         No products are available yet. Add products in Medusa Admin and refresh
         the storefront.
       </div>

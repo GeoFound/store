@@ -102,6 +102,9 @@ module.exports = defineConfig({
       resolve: "./src/modules/digital-delivery",
     },
     {
+      resolve: "./src/modules/supplier-procurement",
+    },
+    {
       resolve: "./src/modules/support-audit",
     },
     {

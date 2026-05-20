@@ -76,20 +76,20 @@ export function CartView() {
   }
 
   if (loading) {
-    return <p className="text-sm text-stone-600">Loading cart...</p>
+    return <p className="text-sm opacity-70">Loading cart...</p>
   }
 
   if (error) {
-    return <p className="text-sm text-red-700">{error}</p>
+    return <p className="text-sm text-[var(--danger)]">{error}</p>
   }
 
   if (!cart?.items?.length) {
     return (
-      <div className="space-y-5 border border-stone-200 bg-white p-6">
-        <p className="text-stone-700">Your cart is empty.</p>
+      <div className="theme-panel space-y-5 p-6">
+        <p className="opacity-75">Your cart is empty.</p>
         <Link
           href="/products"
-          className="inline-flex bg-stone-950 px-4 py-3 text-sm font-semibold text-white"
+          className="theme-primary-action inline-flex px-4 py-3 text-sm font-semibold"
         >
           Browse products
         </Link>
@@ -103,11 +103,11 @@ export function CartView() {
         {cart.items.map((item) => (
           <div
             key={item.id}
-            className="grid gap-4 border border-stone-200 bg-white p-4 sm:grid-cols-[1fr_160px]"
+            className="theme-panel grid gap-4 p-4 sm:grid-cols-[1fr_160px]"
           >
             <div>
-              <h2 className="font-semibold text-stone-950">{item.title}</h2>
-              <p className="mt-1 text-sm text-stone-600">
+              <h2 className="font-semibold">{item.title}</h2>
+              <p className="mt-1 text-sm opacity-70">
                 {item.product_title || "Digital product"}
               </p>
               <p className="mt-3 text-sm font-medium">
@@ -115,7 +115,7 @@ export function CartView() {
               </p>
             </div>
             <div className="flex items-center justify-between gap-3 sm:justify-end">
-              <div className="flex h-10 items-center border border-stone-300">
+              <div className="theme-border flex h-10 items-center border">
                 <button
                   type="button"
                   onClick={() => changeQuantity(item.id, item.quantity - 1)}
@@ -139,7 +139,7 @@ export function CartView() {
               <button
                 type="button"
                 onClick={() => changeQuantity(item.id, 0)}
-                className="text-sm text-red-700"
+                className="text-sm text-[var(--danger)]"
               >
                 Remove
               </button>
@@ -147,9 +147,9 @@ export function CartView() {
           </div>
         ))}
       </div>
-      <aside className="h-fit border border-stone-200 bg-white p-5">
+      <aside className="theme-panel h-fit p-5">
         <h2 className="text-base font-semibold">Order summary</h2>
-        <div className="mt-5 flex items-center justify-between border-t border-stone-200 pt-4">
+        <div className="theme-border mt-5 flex items-center justify-between border-t pt-4">
           <span>Total</span>
           <span className="font-semibold">
             {formatMoney(cart.total, cart.currency_code)}
@@ -157,7 +157,7 @@ export function CartView() {
         </div>
         <Link
           href="/checkout"
-          className="mt-5 flex w-full items-center justify-center bg-stone-950 px-4 py-3 text-sm font-semibold text-white hover:bg-stone-800"
+          className="theme-primary-action mt-5 flex w-full items-center justify-center px-4 py-3 text-sm font-semibold"
         >
           Continue to checkout
         </Link>

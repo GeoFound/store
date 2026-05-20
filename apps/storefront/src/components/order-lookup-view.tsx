@@ -269,7 +269,7 @@ export function OrderLookupView() {
     <div className="space-y-6">
       <form
         onSubmit={handleSubmit}
-        className="space-y-5 border border-stone-200 bg-white p-5"
+        className="theme-panel space-y-5 p-5"
       >
         <div>
           <label className="block text-sm font-medium" htmlFor="access-token">
@@ -280,10 +280,10 @@ export function OrderLookupView() {
             value={accessToken}
             onChange={(event) => setAccessToken(event.target.value)}
             required
-            className="mt-2 w-full border border-stone-300 px-3 py-3 font-mono text-sm outline-none focus:border-stone-950"
+            className="theme-border mt-2 w-full border bg-[var(--surface)] px-3 py-3 font-mono text-sm outline-none focus:border-[var(--foreground)]"
             placeholder="ord_... or dlv_..."
           />
-          <p className="mt-2 text-sm text-stone-600">
+          <p className="mt-2 text-sm opacity-70">
             Order tokens are the primary access path. Legacy delivery tokens are
             still accepted.
           </p>
@@ -291,15 +291,15 @@ export function OrderLookupView() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-stone-950 px-4 py-3 text-sm font-semibold text-white disabled:bg-stone-400"
+          className="theme-primary-action w-full px-4 py-3 text-sm font-semibold disabled:opacity-50"
         >
           {loading ? "Loading..." : "View order"}
         </button>
-        {message ? <p className="text-sm text-teal-700">{message}</p> : null}
-        {error ? <p className="text-sm text-red-700">{error}</p> : null}
+        {message ? <p className="text-sm text-[var(--success)]">{message}</p> : null}
+        {error ? <p className="text-sm text-[var(--danger)]">{error}</p> : null}
       </form>
 
-      <section className="grid gap-6 border border-stone-200 bg-white p-5 lg:grid-cols-2">
+      <section className="theme-panel grid gap-6 p-5 lg:grid-cols-2">
         <form onSubmit={handleRecover} className="space-y-4">
           <h2 className="text-base font-semibold">Recover order access</h2>
           <input
@@ -307,20 +307,20 @@ export function OrderLookupView() {
             value={recoveryEmail}
             onChange={(event) => setRecoveryEmail(event.target.value)}
             required
-            className="w-full border border-stone-300 px-3 py-3 text-sm outline-none focus:border-stone-950"
+            className="theme-border w-full border bg-[var(--surface)] px-3 py-3 text-sm outline-none focus:border-[var(--foreground)]"
             placeholder="buyer@example.com"
           />
           <input
             value={recoveryOrderId}
             onChange={(event) => setRecoveryOrderId(event.target.value)}
             required
-            className="w-full border border-stone-300 px-3 py-3 font-mono text-sm outline-none focus:border-stone-950"
+            className="theme-border w-full border bg-[var(--surface)] px-3 py-3 font-mono text-sm outline-none focus:border-[var(--foreground)]"
             placeholder="order_..."
           />
           <button
             type="submit"
             disabled={recovering}
-            className="w-full border border-stone-300 px-4 py-3 text-sm font-semibold text-stone-950 disabled:border-stone-200 disabled:text-stone-400"
+            className="theme-secondary-action w-full px-4 py-3 text-sm font-semibold disabled:opacity-50"
           >
             {recovering ? "Sending..." : "Send recovery code"}
           </button>
@@ -332,20 +332,20 @@ export function OrderLookupView() {
             value={recoveryOrderId}
             onChange={(event) => setRecoveryOrderId(event.target.value)}
             required
-            className="w-full border border-stone-300 px-3 py-3 font-mono text-sm outline-none focus:border-stone-950"
+            className="theme-border w-full border bg-[var(--surface)] px-3 py-3 font-mono text-sm outline-none focus:border-[var(--foreground)]"
             placeholder="order_..."
           />
           <input
             value={recoveryCode}
             onChange={(event) => setRecoveryCode(event.target.value)}
             required
-            className="w-full border border-stone-300 px-3 py-3 font-mono text-sm outline-none focus:border-stone-950"
+            className="theme-border w-full border bg-[var(--surface)] px-3 py-3 font-mono text-sm outline-none focus:border-[var(--foreground)]"
             placeholder="123456"
           />
           <button
             type="submit"
             disabled={verifyingRecovery}
-            className="w-full bg-teal-700 px-4 py-3 text-sm font-semibold text-white disabled:bg-stone-400"
+            className="theme-accent-action w-full px-4 py-3 text-sm font-semibold disabled:opacity-50"
           >
             {verifyingRecovery ? "Verifying..." : "Restore access"}
           </button>
@@ -361,10 +361,10 @@ export function OrderLookupView() {
       ) : null}
 
       {lookup?.kind === "order" ? (
-        <section className="space-y-5 border border-stone-200 bg-white p-5">
-          <div className="border-b border-stone-200 pb-4">
+        <section className="theme-panel space-y-5 p-5">
+          <div className="theme-border border-b pb-4">
             <h2 className="text-lg font-semibold">Order</h2>
-            <p className="mt-1 text-sm text-stone-600">
+            <p className="mt-1 text-sm opacity-70">
               {lookup.data.order.custom_display_id ||
                 (lookup.data.order.display_id
                   ? `#${lookup.data.order.display_id}`
@@ -377,11 +377,11 @@ export function OrderLookupView() {
           <div className="space-y-4">
             {lookup.data.deliveries.length ? (
               lookup.data.deliveries.map((item) => (
-                <article key={item.delivery.id} className="border border-stone-200 p-4">
+                <article key={item.delivery.id} className="theme-panel p-4">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <h3 className="font-semibold">{item.delivery.id}</h3>
-                      <p className="text-sm text-stone-600">
+                      <p className="text-sm opacity-70">
                         Status: {item.delivery.delivery_status}
                       </p>
                     </div>
@@ -392,7 +392,7 @@ export function OrderLookupView() {
                         confirmingDeliveryId === item.delivery.id ||
                         item.delivery.delivery_status !== "delivered"
                       }
-                      className="bg-teal-700 px-4 py-2 text-sm font-semibold text-white disabled:bg-stone-400"
+                      className="theme-accent-action px-4 py-2 text-sm font-semibold disabled:opacity-50"
                     >
                       {confirmingDeliveryId === item.delivery.id
                         ? "Confirming..."
@@ -403,13 +403,13 @@ export function OrderLookupView() {
                             : "Confirm received"}
                     </button>
                   </div>
-                  <pre className="mt-4 overflow-auto bg-stone-950 p-4 text-sm leading-6 text-stone-50">
+                  <pre className="theme-primary-action mt-4 overflow-auto p-4 text-sm leading-6">
                     {formatPayload(item.payload)}
                   </pre>
                 </article>
               ))
             ) : (
-              <p className="text-sm text-stone-600">
+              <p className="text-sm opacity-70">
                 Payment is confirmed, but no delivery has been created yet.
               </p>
             )}
@@ -418,14 +418,14 @@ export function OrderLookupView() {
       ) : null}
 
       {lookup ? (
-        <section className="border border-stone-200 bg-white p-5">
+        <section className="theme-panel p-5">
           <form onSubmit={handleAfterSaleSubmit} className="space-y-4">
             <h2 className="text-base font-semibold">After-sales request</h2>
             {lookup.kind === "order" && orderDeliveries.length ? (
                 <select
                 value={effectiveAfterSaleDeliveryId}
                 onChange={(event) => setAfterSaleDeliveryId(event.target.value)}
-                className="w-full border border-stone-300 px-3 py-3 text-sm outline-none focus:border-stone-950"
+                className="theme-border w-full border bg-[var(--surface)] px-3 py-3 text-sm outline-none focus:border-[var(--foreground)]"
               >
                 {orderDeliveries.map((item) => (
                   <option key={item.delivery.id} value={item.delivery.id}>
@@ -447,7 +447,7 @@ export function OrderLookupView() {
                   type="email"
                   value={afterSaleEmail}
                   onChange={(event) => setAfterSaleEmail(event.target.value)}
-                  className="mt-2 w-full border border-stone-300 px-3 py-3 text-sm outline-none focus:border-stone-950"
+                  className="theme-border mt-2 w-full border bg-[var(--surface)] px-3 py-3 text-sm outline-none focus:border-[var(--foreground)]"
                   placeholder="buyer@example.com"
                 />
               </div>
@@ -464,7 +464,7 @@ export function OrderLookupView() {
                   onChange={(event) =>
                     setAfterSaleReason(event.target.value as AfterSale["reason"])
                   }
-                  className="mt-2 w-full border border-stone-300 px-3 py-3 text-sm outline-none focus:border-stone-950"
+                  className="theme-border mt-2 w-full border bg-[var(--surface)] px-3 py-3 text-sm outline-none focus:border-[var(--foreground)]"
                 >
                   <option value="not_working">Not working</option>
                   <option value="wrong_item">Wrong item</option>
@@ -486,7 +486,7 @@ export function OrderLookupView() {
                 required
                 value={afterSaleMessage}
                 onChange={(event) => setAfterSaleMessage(event.target.value)}
-                className="mt-2 min-h-28 w-full border border-stone-300 px-3 py-3 text-sm outline-none focus:border-stone-950"
+                className="theme-border mt-2 min-h-28 w-full border bg-[var(--surface)] px-3 py-3 text-sm outline-none focus:border-[var(--foreground)]"
                 placeholder="Describe the issue."
               />
             </div>
@@ -496,12 +496,12 @@ export function OrderLookupView() {
                 submittingAfterSale ||
                 (lookup.kind === "order" && !effectiveAfterSaleDeliveryId)
               }
-              className="w-full bg-stone-950 px-4 py-3 text-sm font-semibold text-white disabled:bg-stone-400"
+              className="theme-primary-action w-full px-4 py-3 text-sm font-semibold disabled:opacity-50"
             >
               {submittingAfterSale ? "Submitting..." : "Submit request"}
             </button>
             {afterSale ? (
-              <p className="text-sm text-teal-700">
+              <p className="text-sm text-[var(--success)]">
                 After-sales request created: {afterSale.id}
               </p>
             ) : null}
@@ -551,11 +551,11 @@ function DeliveryPanel(input: {
   onConfirm: () => void
 }) {
   return (
-    <section className="border border-stone-200 bg-white p-5">
-      <div className="flex flex-col gap-2 border-b border-stone-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
+    <section className="theme-panel p-5">
+      <div className="theme-border flex flex-col gap-2 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold">Delivery</h2>
-          <p className="mt-1 text-sm text-stone-600">
+          <p className="mt-1 text-sm opacity-70">
             Status: {input.result.delivery.delivery_status}
           </p>
         </div>
@@ -566,7 +566,7 @@ function DeliveryPanel(input: {
             input.confirming ||
             input.result.delivery.delivery_status !== "delivered"
           }
-          className="bg-teal-700 px-4 py-2 text-sm font-semibold text-white disabled:bg-stone-400"
+          className="theme-accent-action px-4 py-2 text-sm font-semibold disabled:opacity-50"
         >
           {input.confirming
             ? "Confirming..."
@@ -578,7 +578,7 @@ function DeliveryPanel(input: {
         </button>
       </div>
 
-      <pre className="mt-4 overflow-auto bg-stone-950 p-4 text-sm leading-6 text-stone-50">
+      <pre className="theme-primary-action mt-4 overflow-auto p-4 text-sm leading-6">
         {formatPayload(input.result.payload)}
       </pre>
     </section>

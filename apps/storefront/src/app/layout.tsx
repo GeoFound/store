@@ -1,10 +1,10 @@
-import type { CSSProperties } from "react"
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { PrivacyConsentBanner } from "@/components/privacy-consent-banner"
 import { ensureStorefrontExtensionsRegistered } from "@/extensions/defaults"
 import { renderStorefrontExtensions } from "@/extensions/registry"
 import { getSiteConfig } from "@/lib/site-config"
+import { getStorefrontThemeAttributes } from "@/theme/storefront-theme"
 import "./globals.css"
 
 const geistSans = Geist({
@@ -35,15 +35,7 @@ export default function RootLayout({
   const locale = siteConfig.site.locale || "en-US"
   const htmlLang = locale.split("-")[0] || locale
   ensureStorefrontExtensionsRegistered()
-
-  const themeVariables = {
-    "--site-background": siteConfig.theme.background,
-    "--site-foreground": siteConfig.theme.foreground,
-    "--site-accent": siteConfig.theme.accent,
-    "--site-accent-secondary": siteConfig.theme.accentSecondary,
-    "--site-surface": siteConfig.theme.surface,
-    "--site-surface-muted": siteConfig.theme.surfaceMuted,
-  } as CSSProperties
+  const theme = getStorefrontThemeAttributes(siteConfig.theme)
 
   return (
     <html
@@ -51,9 +43,10 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body
-        className="flex min-h-full flex-col"
-        style={themeVariables}
+        className={`${theme.bodyClassName} flex min-h-full flex-col`}
+        style={theme.variables}
         data-site-id={siteConfig.site.id}
+        data-theme-id={theme.id}
       >
         {children}
         <PrivacyConsentBanner siteName={siteConfig.site.name} />

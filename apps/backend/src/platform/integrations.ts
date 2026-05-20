@@ -24,6 +24,10 @@ import {
   ensureNotificationResendHooksRegistered,
   resetNotificationResendHooksForTests,
 } from "../modules/notification-resend/hooks"
+import {
+  ensureSupplierProductTemplatesRegistered,
+  resetSupplierProductTemplatesForTests,
+} from "../modules/supplier-procurement/templates"
 
 let integrationsRegistered = false
 
@@ -41,6 +45,7 @@ export function ensurePlatformIntegrationsRegistered() {
     ensureMarketingHooksRegistered()
     ensureAnalyticsGa4HooksRegistered()
     ensureNotificationResendHooksRegistered()
+    ensureSupplierProductTemplatesRegistered()
   } catch (error) {
     integrationsRegistered = false
     throw error
@@ -57,4 +62,5 @@ export function resetPlatformIntegrationsForTests() {
   resetAnalyticsGa4DestinationForTests()
   resetNotificationHooksForTests()
   resetNotificationResendHooksForTests()
+  resetSupplierProductTemplatesForTests()
 }

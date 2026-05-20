@@ -13,6 +13,8 @@ import { PAYMENT_ROUTER_MODULE } from "../modules/payment-router"
 import type PaymentRouterModuleService from "../modules/payment-router/service"
 import { SUPPORT_AUDIT_MODULE } from "../modules/support-audit"
 import type SupportAuditModuleService from "../modules/support-audit/service"
+import { SUPPLIER_PROCUREMENT_MODULE } from "../modules/supplier-procurement"
+import type SupplierProcurementModuleService from "../modules/supplier-procurement/service"
 
 export function resolveAnalyticsCoreService(scope: MedusaContainer) {
   return scope.resolve(ANALYTICS_CORE_MODULE) as AnalyticsCoreModuleService
@@ -42,4 +44,10 @@ export function resolvePaymentRouterService(scope: MedusaContainer) {
 
 export function resolveSupportAuditService(scope: MedusaContainer) {
   return scope.resolve(SUPPORT_AUDIT_MODULE) as SupportAuditModuleService
+}
+
+export function resolveSupplierProcurementService(scope: MedusaContainer) {
+  return scope.resolve(
+    SUPPLIER_PROCUREMENT_MODULE
+  ) as SupplierProcurementModuleService
 }

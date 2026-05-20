@@ -12,12 +12,19 @@
     "api": "api.jp.example.com"
   },
   "theme": {
+    "id": "shiro-cards",
     "background": "#faf7f2",
     "foreground": "#111827",
     "accent": "#be123c",
     "accent_secondary": "#0f766e",
     "surface": "#ffffff",
-    "surface_muted": "#fff1f2"
+    "surface_muted": "#fff1f2",
+    "border": "#e7e5e4",
+    "success": "#0f766e",
+    "danger": "#be123c",
+    "warning": "#b45309",
+    "radius": "6px",
+    "density": "compact"
   },
   "content": {
     "navigation": {
@@ -32,7 +39,46 @@
       "orders_cta": "注文を確認",
       "products_heading": "販売中の商品",
       "products_description": "本サイト向けのデジタル在庫を提供しています。",
-      "hero_pattern": "linear-gradient(140deg,#be123c 0%,#be123c 42%,#0f766e 42%,#0f766e 70%,#111827 70%)"
+      "hero_pattern": "linear-gradient(140deg,#be123c 0%,#be123c 42%,#0f766e 42%,#0f766e 70%,#111827 70%)",
+      "featured_limit": 6,
+      "announcements": [
+        {
+          "title": "ゲスト購入に対応",
+          "body": "購入後は注文アクセスリンクから納品内容を確認できます。",
+          "tone": "info"
+        }
+      ]
+    },
+    "categories": {
+      "heading": "カテゴリから探す",
+      "description": "このサイトで優先して販売するデジタル商品カテゴリです。",
+      "links": [
+        {
+          "label": "ギフトカード",
+          "href": "/products?category=gift-cards",
+          "description": "即時または確認後に受け取れるデジタルカード。"
+        },
+        {
+          "label": "アカウント在庫",
+          "href": "/products?category=accounts",
+          "description": "安全な注文ページで受け取るアカウント商品。"
+        },
+        {
+          "label": "コード",
+          "href": "/products?category=codes",
+          "description": "ライセンス、交換コード、アクセスキー。"
+        }
+      ]
+    },
+    "catalog": {
+      "title": "商品",
+      "description": "カテゴリで絞り込み、ゲスト購入で注文できます。",
+      "all_products_label": "すべて",
+      "sort_label": "並び替え",
+      "sort_default_label": "標準",
+      "sort_price_asc_label": "価格が安い順",
+      "sort_price_desc_label": "価格が高い順",
+      "sort_newest_label": "新着順"
     }
   },
   "platform": {

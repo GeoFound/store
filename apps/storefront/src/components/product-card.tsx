@@ -16,11 +16,11 @@ export function ProductCard({ product }: ProductCardProps) {
   return (
     <Link
       href={`/products/${product.handle}`}
-      className="group block border border-stone-200 bg-white"
+      className="theme-card group block overflow-hidden"
     >
-      <div className="relative aspect-[4/3] overflow-hidden bg-stone-100">
+      <div className="theme-muted-surface relative aspect-[4/3] overflow-hidden">
         {isSoldOut ? (
-          <div className="absolute left-3 top-3 z-10 bg-stone-950 px-2 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-white">
+          <div className="theme-status-danger absolute left-3 top-3 z-10 px-2 py-1 text-xs font-semibold uppercase tracking-[0.16em]">
             Sold out
           </div>
         ) : null}
@@ -33,17 +33,17 @@ export function ProductCard({ product }: ProductCardProps) {
             className="object-cover transition-transform duration-200 group-hover:scale-[1.02]"
           />
         ) : (
-          <div className="flex h-full items-center justify-center bg-teal-700 text-5xl font-semibold text-white">
+          <div className="theme-accent-surface flex h-full items-center justify-center text-5xl font-semibold">
             {product.title.slice(0, 1)}
           </div>
         )}
       </div>
       <div className="space-y-3 p-4">
         <div>
-          <h3 className="line-clamp-2 text-base font-semibold text-stone-950">
+          <h3 className="line-clamp-2 text-base font-semibold">
             {product.title}
           </h3>
-          <p className="mt-1 text-sm text-stone-600">
+          <p className="mt-1 text-sm opacity-70">
             {template?.deliveryLabel || "Digital delivery after payment"}
           </p>
         </div>
@@ -51,7 +51,7 @@ export function ProductCard({ product }: ProductCardProps) {
           <span className="text-base font-semibold">
             {formatMoney(amount, currencyCode)}
           </span>
-          <span className={`text-sm ${isSoldOut ? "text-stone-500" : "text-teal-700"}`}>
+          <span className={`text-sm ${isSoldOut ? "opacity-60" : "theme-accent-text"}`}>
             {isSoldOut ? "Unavailable" : template?.title || "View"}
           </span>
         </div>

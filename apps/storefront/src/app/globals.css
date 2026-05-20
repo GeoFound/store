@@ -7,6 +7,11 @@
   --accent-secondary: var(--site-accent-secondary, #f97316);
   --surface: var(--site-surface, #ffffff);
   --surface-muted: var(--site-surface-muted, #f5f5f4);
+  --border: var(--site-border, #e7e5e4);
+  --success: var(--site-success, #047857);
+  --danger: var(--site-danger, #b91c1c);
+  --warning: var(--site-warning, #b45309);
+  --radius: var(--site-radius, 6px);
 }
 
 @theme inline {
@@ -25,5 +30,98 @@ body {
 a,
 button,
 input {
-  border-radius: 6px;
+  border-radius: var(--radius);
+}
+
+.theme-surface {
+  background: var(--surface);
+  color: var(--foreground);
+}
+
+.theme-muted-surface {
+  background: var(--surface-muted);
+}
+
+.theme-overlay-surface {
+  background: color-mix(in srgb, var(--surface) 95%, transparent);
+}
+
+.theme-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.theme-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.theme-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 65%, var(--border));
+}
+
+.theme-border {
+  border-color: var(--border);
+}
+
+.theme-primary-action {
+  background: var(--foreground);
+  color: var(--surface);
+}
+
+.theme-primary-action:hover {
+  background: color-mix(in srgb, var(--foreground) 88%, var(--accent));
+}
+
+.theme-secondary-action {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+}
+
+.theme-secondary-action:hover {
+  border-color: var(--foreground);
+}
+
+.theme-accent-action {
+  background: var(--accent);
+  color: var(--surface);
+}
+
+.theme-accent-action:hover {
+  background: color-mix(in srgb, var(--accent) 86%, var(--foreground));
+}
+
+.theme-accent-text {
+  color: var(--accent);
+}
+
+.theme-accent-surface {
+  background: var(--accent);
+  color: var(--surface);
+}
+
+.theme-status-success {
+  background: color-mix(in srgb, var(--success) 14%, var(--surface));
+  color: var(--success);
+}
+
+.theme-status-danger {
+  background: var(--foreground);
+  color: var(--surface);
+}
+
+.theme-status-warning {
+  background: color-mix(in srgb, var(--warning) 14%, var(--surface));
+  color: var(--warning);
+}
+
+.theme-density-compact {
+  --storefront-section-y: 2rem;
+}
+
+.theme-density-comfortable {
+  --storefront-section-y: 2.5rem;
 }
