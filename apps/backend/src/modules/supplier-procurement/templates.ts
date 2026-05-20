@@ -15,6 +15,12 @@ export function ensureSupplierProductTemplatesRegistered() {
     fulfillmentPolicyCode: "external-api",
     deliveryHandlerCode: "supplier-procurement",
     inventoryHandlerCode: "noop",
+    translations: {
+      "zh-CN": {
+        title: "Reloadly 礼品卡",
+        description: "支付后通过 Reloadly 履约的礼品卡。",
+      },
+    },
   })
 
   registerProductTemplate({
@@ -25,6 +31,12 @@ export function ensureSupplierProductTemplatesRegistered() {
     fulfillmentPolicyCode: "external-api",
     deliveryHandlerCode: "supplier-procurement",
     inventoryHandlerCode: "noop",
+    translations: {
+      "zh-CN": {
+        title: "Reloadly 话费",
+        description: "支付后通过 Reloadly 履约的手机充值。",
+      },
+    },
   })
 
   registerProductTemplate({
@@ -35,6 +47,12 @@ export function ensureSupplierProductTemplatesRegistered() {
     fulfillmentPolicyCode: "external-api",
     deliveryHandlerCode: "supplier-procurement",
     inventoryHandlerCode: "noop",
+    translations: {
+      "zh-CN": {
+        title: "G2A 产品密钥",
+        description: "支付后从 G2A 采购的游戏、软件或礼品卡密钥。",
+      },
+    },
   })
 
   registered = true

@@ -1,3 +1,5 @@
+import { translateServiceErrorMessage } from "../../utils/localization"
+
 export async function adminApi<T>(
   path: string,
   options: {
@@ -18,7 +20,10 @@ export async function adminApi<T>(
   })
 
   if (!response.ok) {
-    const message = await readErrorMessage(response)
+    const message = translateServiceErrorMessage(
+      locale,
+      await readErrorMessage(response)
+    )
     throw new Error(message || fallbackRequestError(response.status))
   }
 

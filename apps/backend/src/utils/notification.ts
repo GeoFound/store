@@ -2,12 +2,14 @@ import type { MedusaContainer } from "@medusajs/framework/types"
 import { Modules } from "@medusajs/framework/utils"
 import { PLATFORM_HOOKS } from "../platform/hooks"
 import { emitPlatformHook, registerPlatformHook } from "../platform/runtime"
+import type { SupportedLocale } from "./localization"
 
 export type NotificationSendInput = {
   to: string
   channel: string
   template: string
   data: Record<string, unknown>
+  locale?: SupportedLocale
 }
 
 export type NotificationSendHookInput = NotificationSendInput & {
@@ -69,6 +71,7 @@ export async function sendGuestOrderRecoveryCode(
     orderId: string
     code: string
     expiresAt?: string | null
+    locale?: SupportedLocale
   }
 ) {
   await emitNotification(container, {
@@ -80,5 +83,6 @@ export async function sendGuestOrderRecoveryCode(
       code: input.code,
       expires_at: input.expiresAt || null,
     },
+    locale: input.locale,
   })
 }

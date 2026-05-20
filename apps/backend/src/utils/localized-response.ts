@@ -1,6 +1,10 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-
-type SupportedLocale = "en" | "zh-CN"
+import {
+  DEFAULT_LOCALE,
+  interpolateText,
+  resolveLocaleFromHeaders,
+  type SupportedLocale,
+} from "./localization"
 
 type LocalizedMessageKey =
   | "analytics.disabled"
@@ -27,8 +31,6 @@ type LocalizedMessageKey =
   | "supplier.procurementIdRequired"
   | "supplier.providerNotRegistered"
   | "template.unknown"
-
-const DEFAULT_LOCALE: SupportedLocale = "en"
 
 const messages: Record<LocalizedMessageKey, Record<SupportedLocale, string>> = {
   "analytics.disabled": {
@@ -151,56 +153,7 @@ export function localizedError(
 }
 
 export function resolveRequestLocale(req: MedusaRequest): SupportedLocale {
-  const explicitLocale =
-    getHeader(req, "x-admin-locale") || getHeader(req, "x-store-locale")
-  const resolvedExplicit = resolveLocaleFromHeader(explicitLocale)
-
-  if (resolvedExplicit) {
-    return resolvedExplicit
-  }
-
-  return resolveLocaleFromHeader(getHeader(req, "accept-language")) || DEFAULT_LOCALE
+  return resolveLocaleFromHeaders(req.headers as Record<string, unknown>)
 }
 
-function resolveLocaleFromHeader(value?: string): SupportedLocale | undefined {
-  if (!value) {
-    return undefined
-  }
-
-  const languageTags = value
-    .split(",")
-    .map((part) => part.trim().split(";")[0]?.toLowerCase())
-    .filter((tag): tag is string => Boolean(tag))
-
-  for (const tag of languageTags) {
-    if (tag === "zh" || tag.startsWith("zh-")) {
-      return "zh-CN"
-    }
-
-    if (tag === "en" || tag.startsWith("en-")) {
-      return "en"
-    }
-  }
-
-  return undefined
-}
-
-function getHeader(req: MedusaRequest, name: string) {
-  const value = req.headers[name] ?? req.headers[name.toLowerCase()]
-
-  if (Array.isArray(value)) {
-    return value[0]
-  }
-
-  return typeof value === "string" ? value : undefined
-}
-
-function interpolate(
-  template: string,
-  params: Record<string, string | number | boolean | null | undefined>
-) {
-  return template.replace(/\{\{(\w+)\}\}/g, (_, key: string) => {
-    const value = params[key]
-    return value === null || typeof value === "undefined" ? "" : String(value)
-  })
-}
+const interpolate = interpolateText

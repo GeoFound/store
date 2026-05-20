@@ -4,7 +4,9 @@ import {
 } from "../../modules/supplier-procurement/templates"
 import {
   getProductTemplate,
+  getLocalizedProductTemplate,
   listProductTemplates,
+  listLocalizedProductTemplates,
   registerProductTemplate,
   resetProductTemplatesForTests,
   resolveProductTemplate,
@@ -28,6 +30,16 @@ describe("product templates", () => {
       "manual",
       "api",
     ])
+  })
+
+  it("returns localized product template content for Chinese requests", () => {
+    const templates = listLocalizedProductTemplates("zh-CN")
+    const credential = templates.find((template) => template.code === "credential")
+
+    expect(credential).toMatchObject({
+      title: "凭证",
+      description: "支付后交付的单个密钥、卡密或凭证字符串。",
+    })
   })
 
   it("resolves a registered custom template code without changing core flow code", () => {
@@ -94,6 +106,9 @@ describe("product templates", () => {
       fulfillmentPolicyCode: "external-api",
       deliveryHandlerCode: "supplier-procurement",
       inventoryHandlerCode: "noop",
+    })
+    expect(getLocalizedProductTemplate("reloadly-gift-card", "zh-CN")).toMatchObject({
+      title: "Reloadly 礼品卡",
     })
     expect(getProductTemplate("g2a-key")).toMatchObject({
       code: "g2a-key",

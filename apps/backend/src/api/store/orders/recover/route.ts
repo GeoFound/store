@@ -5,7 +5,10 @@ import { emitOrderAccessRecoveryCodeCreatedEvent } from "../../../../platform/ev
 import { isPlatformPluginEnabled } from "../../../../platform/runtime"
 import { resolveGuestOrderAccessService } from "../../../../platform/services"
 import { emitAuditLog } from "../../../../utils/audit-log"
-import { localizedError } from "../../../../utils/localized-response"
+import {
+  localizedError,
+  resolveRequestLocale,
+} from "../../../../utils/localized-response"
 import { getRequestAuditContext } from "../../../../utils/request-audit"
 import { normalizeEmail, retrieveStoreOrderDetail } from "../../../../utils/store-order"
 
@@ -76,6 +79,7 @@ export const POST = async (
       recovery.record.expires_at instanceof Date
         ? recovery.record.expires_at.toISOString()
         : String(recovery.record.expires_at || ""),
+    locale: resolveRequestLocale(req),
   })
 
   await emitAuditLog(req.scope, {

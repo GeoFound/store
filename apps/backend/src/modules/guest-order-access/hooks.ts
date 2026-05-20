@@ -2,6 +2,7 @@ import { PLATFORM_HOOKS } from "../../platform/hooks"
 import { registerPlatformHook } from "../../platform/runtime"
 import type { OrderAccessRecoveryCodeCreatedEvent } from "../../platform/events"
 import { sendGuestOrderRecoveryCode } from "../../utils/notification"
+import { resolveLocaleFromValue } from "../../utils/localization"
 
 let hooksRegistered = false
 
@@ -22,6 +23,7 @@ export function ensureGuestOrderAccessHooksRegistered() {
         orderId: event.payload.orderId,
         code: event.payload.code,
         expiresAt: event.payload.expiresAt || null,
+        locale: resolveLocaleFromValue(event.payload.locale) || undefined,
       })
     },
   })

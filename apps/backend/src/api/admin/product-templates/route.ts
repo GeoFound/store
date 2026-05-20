@@ -1,8 +1,11 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { listProductTemplates } from "../../../platform/product-templates"
+import {
+  listLocalizedProductTemplates,
+} from "../../../platform/product-templates"
+import { resolveRequestLocale } from "../../../utils/localized-response"
 
-export const GET = async (_req: MedusaRequest, res: MedusaResponse) => {
+export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   res.json({
-    templates: listProductTemplates(),
+    templates: listLocalizedProductTemplates(resolveRequestLocale(req)),
   })
 }

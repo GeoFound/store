@@ -131,6 +131,55 @@ describe("notification resend hook subscriber", () => {
     })
   })
 
+  it("renders recovery emails in Chinese when locale is zh-CN", async () => {
+    process.env.RESEND_ENABLED = "true"
+    process.env.RESEND_API_KEY = "re_test_api_key"
+    process.env.RESEND_FROM_EMAIL = "Store <no-reply@example.com>"
+
+    ;(global.fetch as unknown as jest.Mock).mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({
+        id: "resend_msg_1",
+      }),
+    })
+
+    const notificationModule = {
+      createNotifications: jest.fn().mockResolvedValue({
+        id: "notif_1",
+      }),
+    }
+    const logger = {
+      info: jest.fn(),
+    }
+    const container = {
+      resolve: jest.fn((token: unknown) => {
+        if (token === Modules.NOTIFICATION) {
+          return notificationModule
+        }
+
+        if (token === ContainerRegistrationKeys.LOGGER) {
+          return logger
+        }
+
+        throw new Error(`Unexpected resolve token: ${String(token)}`)
+      }),
+    } as unknown as MedusaContainer
+
+    await sendGuestOrderRecoveryCode(container, {
+      email: "buyer@example.com",
+      orderId: "order_3",
+      code: "CODE88",
+      locale: "zh-CN",
+    })
+
+    const [, request] = (global.fetch as unknown as jest.Mock).mock.calls[0]
+    const requestBody = JSON.parse(String(request.body))
+
+    expect(requestBody.subject).toContain("订单 order_3 的恢复验证码")
+    expect(requestBody.text).toContain("恢复验证码：CODE88")
+  })
+
   it("fails fast when enabled but missing required Resend settings", async () => {
     process.env.RESEND_ENABLED = "true"
     delete process.env.RESEND_API_KEY

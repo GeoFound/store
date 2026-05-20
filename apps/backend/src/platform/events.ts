@@ -58,6 +58,7 @@ export type OrderAccessRecoveryCodeCreatedEvent = PlatformEventEnvelope<
     customerEmail: string
     code: string
     expiresAt?: string | null
+    locale?: string | null
   }
 >
 

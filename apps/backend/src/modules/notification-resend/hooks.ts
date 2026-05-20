@@ -37,6 +37,7 @@ export function ensureNotificationResendHooksRegistered() {
       const template = renderNotificationEmailTemplate({
         template: input.template,
         data: input.data,
+        locale: input.locale,
       })
 
       if (!template) {

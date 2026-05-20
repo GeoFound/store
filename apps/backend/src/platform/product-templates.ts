@@ -1,3 +1,5 @@
+import type { SupportedLocale } from "../utils/localization"
+
 export type ProductTemplateCode = string
 
 export type ProductTemplate = {
@@ -8,6 +10,9 @@ export type ProductTemplate = {
   fulfillmentPolicyCode: string
   deliveryHandlerCode: string
   inventoryHandlerCode?: string
+  translations?: Partial<
+    Record<SupportedLocale, { title: string; description: string }>
+  >
 }
 
 const templates = new Map<string, ProductTemplate>()
@@ -21,6 +26,12 @@ const defaultTemplates: ProductTemplate[] = [
     fulfillmentPolicyCode: "default",
     deliveryHandlerCode: "credential",
     inventoryHandlerCode: "credential-inventory",
+    translations: {
+      "zh-CN": {
+        title: "凭证",
+        description: "支付后交付的单个密钥、卡密或凭证字符串。",
+      },
+    },
   },
   {
     code: "account",
@@ -30,6 +41,12 @@ const defaultTemplates: ProductTemplate[] = [
     fulfillmentPolicyCode: "default",
     deliveryHandlerCode: "credential",
     inventoryHandlerCode: "credential-inventory",
+    translations: {
+      "zh-CN": {
+        title: "账号",
+        description: "用户名和密码形式的账号交付。",
+      },
+    },
   },
   {
     code: "license",
@@ -39,6 +56,12 @@ const defaultTemplates: ProductTemplate[] = [
     fulfillmentPolicyCode: "default",
     deliveryHandlerCode: "credential",
     inventoryHandlerCode: "credential-inventory",
+    translations: {
+      "zh-CN": {
+        title: "许可证密钥",
+        description: "从库存交付的许可或激活密钥。",
+      },
+    },
   },
   {
     code: "code",
@@ -48,6 +71,12 @@ const defaultTemplates: ProductTemplate[] = [
     fulfillmentPolicyCode: "default",
     deliveryHandlerCode: "credential",
     inventoryHandlerCode: "credential-inventory",
+    translations: {
+      "zh-CN": {
+        title: "兑换码",
+        description: "支付后交付的可兑换代码。",
+      },
+    },
   },
   {
     code: "file",
@@ -57,6 +86,12 @@ const defaultTemplates: ProductTemplate[] = [
     fulfillmentPolicyCode: "default",
     deliveryHandlerCode: "manual",
     inventoryHandlerCode: "noop",
+    translations: {
+      "zh-CN": {
+        title: "文件下载",
+        description: "购买后提供文件交付或下载权限。",
+      },
+    },
   },
   {
     code: "manual",
@@ -66,6 +101,12 @@ const defaultTemplates: ProductTemplate[] = [
     fulfillmentPolicyCode: "default",
     deliveryHandlerCode: "manual",
     inventoryHandlerCode: "noop",
+    translations: {
+      "zh-CN": {
+        title: "人工履约",
+        description: "需要人工协助完成的激活或服务履约。",
+      },
+    },
   },
   {
     code: "api",
@@ -75,6 +116,12 @@ const defaultTemplates: ProductTemplate[] = [
     fulfillmentPolicyCode: "default",
     deliveryHandlerCode: "manual",
     inventoryHandlerCode: "noop",
+    translations: {
+      "zh-CN": {
+        title: "API 配置型",
+        description: "由外部 API 或系统配置的数字产品。",
+      },
+    },
   },
 ]
 
@@ -101,6 +148,12 @@ export function listProductTemplates() {
   return Array.from(templates.values())
 }
 
+export function listLocalizedProductTemplates(locale?: string | null) {
+  return listProductTemplates().map((template) =>
+    localizeProductTemplate(template, locale)
+  )
+}
+
 export function getProductTemplate(code?: string | null) {
   ensureDefaultProductTemplatesRegistered()
 
@@ -109,6 +162,19 @@ export function getProductTemplate(code?: string | null) {
   }
 
   return templates.get(code)
+}
+
+export function getLocalizedProductTemplate(
+  code?: string | null,
+  locale?: string | null
+) {
+  const template = getProductTemplate(code)
+
+  if (!template) {
+    return undefined
+  }
+
+  return localizeProductTemplate(template, locale)
 }
 
 export function resolveProductTemplate(input?: {
@@ -147,6 +213,24 @@ export function resolveProductTemplate(input?: {
 
 function toOptionalString(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : ""
+}
+
+export function localizeProductTemplate(
+  template: ProductTemplate,
+  locale?: string | null
+) {
+  const resolvedLocale =
+    locale === "zh" ? "zh-CN" : (locale as SupportedLocale | undefined)
+  const localized = resolvedLocale
+    ? template.translations?.[resolvedLocale]
+    : undefined
+  const { translations: _translations, ...base } = template
+
+  return {
+    ...base,
+    title: localized?.title || template.title,
+    description: localized?.description || template.description,
+  }
 }
 
 export function resetProductTemplatesForTests() {

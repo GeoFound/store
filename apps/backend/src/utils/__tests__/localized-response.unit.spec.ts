@@ -1,5 +1,9 @@
 import type { MedusaRequest } from "@medusajs/framework/http"
-import { localizedMessage, resolveRequestLocale } from "../localized-response"
+import {
+  localizedMessage,
+  resolveRequestLocale,
+} from "../localized-response"
+import { translateServiceErrorMessage } from "../localization"
 
 function requestWithHeaders(headers: Record<string, string>): MedusaRequest {
   return {
@@ -47,5 +51,14 @@ describe("localized response helpers", () => {
     })
 
     expect(resolveRequestLocale(req)).toBe("en")
+  })
+
+  it("translates service error messages to Chinese", () => {
+    expect(
+      translateServiceErrorMessage(
+        "zh-CN",
+        "Payment provider manual is not registered"
+      )
+    ).toBe("支付提供方 manual 尚未注册")
   })
 })
