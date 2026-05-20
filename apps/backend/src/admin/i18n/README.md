@@ -14,14 +14,23 @@ To add translations, create JSON translation files for each language under the `
 }
 ```
 
-Then, export the translations in `src/admin/i18n/index.ts`:
+Then, export the translations in `src/admin/i18n/index.ts`.
+This backend uses the `Node16` TypeScript module target, so JSON imports should
+not use import attributes:
 
 ```ts
-import en from "./json/en.json" with { type: "json" }
+import en from "./json/en.json"
+import zhCN from "./json/zh-CN.json"
 
 export default {
   en: {
     translation: en,
+  },
+  zh: {
+    translation: zhCN,
+  },
+  "zh-CN": {
+    translation: zhCN,
   },
 }
 ```

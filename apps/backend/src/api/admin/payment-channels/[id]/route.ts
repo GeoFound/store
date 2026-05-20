@@ -1,5 +1,6 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { resolvePaymentRouterService } from "../../../../platform/services"
+import { localizedError } from "../../../../utils/localized-response"
 
 type UpdateChannelBody = {
   display_name?: string
@@ -22,9 +23,7 @@ export const POST = async (
   const currency = normalizeCurrencyCode(req.body.currency)
 
   if (typeof req.body.currency !== "undefined" && req.body.currency !== null && !currency) {
-    res.status(400).json({
-      message: "currency must be a valid 3-letter code",
-    })
+    localizedError(req, res, 400, "paymentChannel.currencyInvalid")
     return
   }
 

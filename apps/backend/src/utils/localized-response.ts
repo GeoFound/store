@@ -1,0 +1,206 @@
+import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+
+type SupportedLocale = "en" | "zh-CN"
+
+type LocalizedMessageKey =
+  | "analytics.disabled"
+  | "analytics.dispatchIdRequired"
+  | "common.messageRequired"
+  | "credentialBatch.itemCredentialRequired"
+  | "credentialBatch.itemsRequired"
+  | "credentialBatch.required"
+  | "credentialReservation.required"
+  | "delivery.payloadRequired"
+  | "delivery.required"
+  | "marketing.codeRequired"
+  | "marketing.disabled"
+  | "marketing.namedRequired"
+  | "orderAccess.guestUnavailable"
+  | "orderAccess.orderNotFound"
+  | "orderAccess.providerUnavailable"
+  | "orderAccess.recoveryCooldown"
+  | "paymentChannel.currencyInvalid"
+  | "paymentChannel.required"
+  | "security.originNotAllowed"
+  | "security.tooManyRequests"
+  | "supplier.mappingRequired"
+  | "supplier.procurementIdRequired"
+  | "supplier.providerNotRegistered"
+  | "template.unknown"
+
+const DEFAULT_LOCALE: SupportedLocale = "en"
+
+const messages: Record<LocalizedMessageKey, Record<SupportedLocale, string>> = {
+  "analytics.disabled": {
+    en: "Analytics core plugin is disabled",
+    "zh-CN": "分析核心插件已停用",
+  },
+  "analytics.dispatchIdRequired": {
+    en: "dispatch_id is required",
+    "zh-CN": "必须提供 dispatch_id",
+  },
+  "common.messageRequired": {
+    en: "message is required",
+    "zh-CN": "必须提供 message",
+  },
+  "credentialBatch.itemCredentialRequired": {
+    en: "Each item requires credential",
+    "zh-CN": "每个项目都必须包含 credential",
+  },
+  "credentialBatch.itemsRequired": {
+    en: "items must include at least one credential",
+    "zh-CN": "items 必须至少包含一条凭证",
+  },
+  "credentialBatch.required": {
+    en: "name and product_variant_id are required",
+    "zh-CN": "必须提供 name 和 product_variant_id",
+  },
+  "credentialReservation.required": {
+    en: "product_variant_id and reservation_key are required",
+    "zh-CN": "必须提供 product_variant_id 和 reservation_key",
+  },
+  "delivery.payloadRequired": {
+    en: "delivery_payload is required to complete a pending delivery",
+    "zh-CN": "完成待处理交付必须提供 delivery_payload",
+  },
+  "delivery.required": {
+    en: "account_item_id, delivery_payload, or delivery_id is required",
+    "zh-CN": "必须提供 account_item_id、delivery_payload 或 delivery_id",
+  },
+  "marketing.codeRequired": {
+    en: "code is required",
+    "zh-CN": "必须提供 code",
+  },
+  "marketing.disabled": {
+    en: "Marketing engine plugin is disabled",
+    "zh-CN": "营销引擎插件已停用",
+  },
+  "marketing.namedRequired": {
+    en: "code and name are required",
+    "zh-CN": "必须提供 code 和 name",
+  },
+  "orderAccess.guestUnavailable": {
+    en: "Guest order access is unavailable",
+    "zh-CN": "访客订单访问不可用",
+  },
+  "orderAccess.orderNotFound": {
+    en: "Order was not found",
+    "zh-CN": "未找到订单",
+  },
+  "orderAccess.providerUnavailable": {
+    en: "Order access provider is not available",
+    "zh-CN": "订单访问提供方不可用",
+  },
+  "orderAccess.recoveryCooldown": {
+    en: "Recovery code was recently issued. Please wait before requesting another code.",
+    "zh-CN": "恢复验证码刚刚签发，请稍后再请求新的验证码。",
+  },
+  "paymentChannel.currencyInvalid": {
+    en: "currency must be a valid 3-letter code",
+    "zh-CN": "currency 必须是有效的 3 位字母代码",
+  },
+  "paymentChannel.required": {
+    en: "code, name, and display_name are required",
+    "zh-CN": "必须提供 code、name 和 display_name",
+  },
+  "security.originNotAllowed": {
+    en: "Request origin is not allowed",
+    "zh-CN": "请求来源不被允许",
+  },
+  "security.tooManyRequests": {
+    en: "Too many requests",
+    "zh-CN": "请求过于频繁",
+  },
+  "supplier.mappingRequired": {
+    en: "product_variant_id, provider_code, and provider_sku are required",
+    "zh-CN": "必须提供 product_variant_id、provider_code 和 provider_sku",
+  },
+  "supplier.procurementIdRequired": {
+    en: "id is required",
+    "zh-CN": "必须提供 id",
+  },
+  "supplier.providerNotRegistered": {
+    en: "Supplier provider {{providerCode}} is not registered",
+    "zh-CN": "供应商 {{providerCode}} 尚未注册",
+  },
+  "template.unknown": {
+    en: "Unknown template_code: {{templateCode}}",
+    "zh-CN": "未知 template_code：{{templateCode}}",
+  },
+}
+
+export function localizedMessage(
+  req: MedusaRequest,
+  key: LocalizedMessageKey,
+  params: Record<string, string | number | boolean | null | undefined> = {}
+) {
+  const locale = resolveRequestLocale(req)
+  return interpolate(messages[key][locale], params)
+}
+
+export function localizedError(
+  req: MedusaRequest,
+  res: MedusaResponse,
+  status: number,
+  key: LocalizedMessageKey,
+  params?: Record<string, string | number | boolean | null | undefined>
+) {
+  res.status(status).json({
+    message: localizedMessage(req, key, params),
+  })
+}
+
+export function resolveRequestLocale(req: MedusaRequest): SupportedLocale {
+  const explicitLocale =
+    getHeader(req, "x-admin-locale") || getHeader(req, "x-store-locale")
+  const resolvedExplicit = resolveLocaleFromHeader(explicitLocale)
+
+  if (resolvedExplicit) {
+    return resolvedExplicit
+  }
+
+  return resolveLocaleFromHeader(getHeader(req, "accept-language")) || DEFAULT_LOCALE
+}
+
+function resolveLocaleFromHeader(value?: string): SupportedLocale | undefined {
+  if (!value) {
+    return undefined
+  }
+
+  const languageTags = value
+    .split(",")
+    .map((part) => part.trim().split(";")[0]?.toLowerCase())
+    .filter((tag): tag is string => Boolean(tag))
+
+  for (const tag of languageTags) {
+    if (tag === "zh" || tag.startsWith("zh-")) {
+      return "zh-CN"
+    }
+
+    if (tag === "en" || tag.startsWith("en-")) {
+      return "en"
+    }
+  }
+
+  return undefined
+}
+
+function getHeader(req: MedusaRequest, name: string) {
+  const value = req.headers[name] ?? req.headers[name.toLowerCase()]
+
+  if (Array.isArray(value)) {
+    return value[0]
+  }
+
+  return typeof value === "string" ? value : undefined
+}
+
+function interpolate(
+  template: string,
+  params: Record<string, string | number | boolean | null | undefined>
+) {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, key: string) => {
+    const value = params[key]
+    return value === null || typeof value === "undefined" ? "" : String(value)
+  })
+}

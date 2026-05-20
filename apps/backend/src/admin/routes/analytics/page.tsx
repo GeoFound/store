@@ -1,9 +1,11 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk"
 import { Badge, Button, Heading, Table } from "@medusajs/ui"
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { AdminSection } from "../../components/admin-section"
 import { MessageBox } from "../../components/message-box"
 import { adminApi, formatDate } from "../../lib/admin-api"
+import { translatedStatus } from "../../lib/i18n"
 
 type AnalyticsEvent = {
   id: string
@@ -28,6 +30,7 @@ type AnalyticsDispatch = {
 }
 
 const AnalyticsPage = () => {
+  const { t } = useTranslation()
   const [events, setEvents] = useState<AnalyticsEvent[]>([])
   const [dispatches, setDispatches] = useState<AnalyticsDispatch[]>([])
   const [loading, setLoading] = useState(false)
@@ -64,10 +67,10 @@ const AnalyticsPage = () => {
           dispatch_id: dispatchId,
         },
       })
-      setMessage("Dispatch queued for replay.")
+      setMessage(t("analytics.dispatchQueued"))
       await refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to replay dispatch")
+      setError(err instanceof Error ? err.message : t("analytics.failedReplay"))
     } finally {
       setLoading(false)
     }
@@ -76,18 +79,18 @@ const AnalyticsPage = () => {
   return (
     <div className="flex flex-col gap-y-4">
       <AdminSection
-        title="Analytics Events"
-        description="Canonical analytics events captured from platform hooks and storefront actions."
+        title={t("analytics.events")}
+        description={t("analytics.description")}
       >
         <Table>
           <Table.Header>
             <Table.Row>
-              <Table.HeaderCell>Event</Table.HeaderCell>
-              <Table.HeaderCell>Status</Table.HeaderCell>
-              <Table.HeaderCell>Source</Table.HeaderCell>
-              <Table.HeaderCell>Order</Table.HeaderCell>
-              <Table.HeaderCell>Attempt</Table.HeaderCell>
-              <Table.HeaderCell>Created</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.event")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.status")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.source")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.order")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.attempt")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.created")}</Table.HeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Body>
@@ -100,7 +103,7 @@ const AnalyticsPage = () => {
                   </div>
                 </Table.Cell>
                 <Table.Cell>
-                  <Badge>{event.status}</Badge>
+                  <Badge>{translatedStatus(t, event.status)}</Badge>
                 </Table.Cell>
                 <Table.Cell>{event.source}</Table.Cell>
                 <Table.Cell className="font-mono">{event.order_id || "-"}</Table.Cell>
@@ -115,18 +118,18 @@ const AnalyticsPage = () => {
       </AdminSection>
 
       <AdminSection
-        title="Dispatch Queue"
-        description="Per-destination delivery records with retry state and failure diagnostics."
+        title={t("analytics.dispatchQueue")}
+        description={t("analytics.dispatchDescription")}
       >
         <Table>
           <Table.Header>
             <Table.Row>
-              <Table.HeaderCell>Destination</Table.HeaderCell>
-              <Table.HeaderCell>Status</Table.HeaderCell>
-              <Table.HeaderCell>Attempts</Table.HeaderCell>
-              <Table.HeaderCell>Next Retry</Table.HeaderCell>
-              <Table.HeaderCell>Delivered</Table.HeaderCell>
-              <Table.HeaderCell>Error</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.destination")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.status")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("analytics.attempts")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("analytics.nextRetry")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.delivered")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.error")}</Table.HeaderCell>
               <Table.HeaderCell></Table.HeaderCell>
             </Table.Row>
           </Table.Header>
@@ -140,7 +143,7 @@ const AnalyticsPage = () => {
                   </div>
                 </Table.Cell>
                 <Table.Cell>
-                  <Badge>{dispatch.status}</Badge>
+                  <Badge>{translatedStatus(t, dispatch.status)}</Badge>
                 </Table.Cell>
                 <Table.Cell>{dispatch.attempt_count}</Table.Cell>
                 <Table.Cell>{formatDate(dispatch.next_retry_at)}</Table.Cell>
@@ -154,7 +157,7 @@ const AnalyticsPage = () => {
                     disabled={loading}
                     onClick={() => replayDispatch(dispatch.id)}
                   >
-                    Replay
+                    {t("analytics.replay")}
                   </Button>
                 </Table.Cell>
               </Table.Row>
@@ -165,7 +168,7 @@ const AnalyticsPage = () => {
 
       <div className="flex items-center gap-3">
         <Button type="button" variant="secondary" onClick={() => void refresh()}>
-          Refresh
+          {t("common.actions.refresh")}
         </Button>
       </div>
 
@@ -175,7 +178,7 @@ const AnalyticsPage = () => {
 }
 
 export const config = defineRouteConfig({
-  label: "Analytics",
+  label: "Analytics / 分析",
   rank: 27,
 })
 

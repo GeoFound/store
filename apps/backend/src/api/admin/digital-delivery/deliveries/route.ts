@@ -1,6 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { resolveDigitalDeliveryService } from "../../../../platform/services"
 import { emitAuditLog } from "../../../../utils/audit-log"
+import { localizedError } from "../../../../utils/localized-response"
 import { getRequestAuditContext } from "../../../../utils/request-audit"
 import createManualDeliveryWorkflow from "../../../../workflows/create-manual-delivery"
 
@@ -53,16 +54,12 @@ export const POST = async (
     !req.body.delivery_payload &&
     !req.body.delivery_id
   ) {
-    res.status(400).json({
-      message: "account_item_id, delivery_payload, or delivery_id is required",
-    })
+    localizedError(req, res, 400, "delivery.required")
     return
   }
 
   if (req.body.delivery_id && !req.body.delivery_payload) {
-    res.status(400).json({
-      message: "delivery_payload is required to complete a pending delivery",
-    })
+    localizedError(req, res, 400, "delivery.payloadRequired")
     return
   }
 

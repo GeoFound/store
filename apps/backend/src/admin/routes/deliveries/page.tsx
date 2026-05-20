@@ -1,6 +1,7 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk"
 import { Badge, Button, Heading, Input, Table, Text, Textarea } from "@medusajs/ui"
 import { FormEvent, useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { AdminSection } from "../../components/admin-section"
 import { MessageBox } from "../../components/message-box"
 import {
@@ -8,6 +9,7 @@ import {
 } from "../../extensions/defaults"
 import { renderAdminExtensions } from "../../extensions/registry"
 import { adminApi, formatDate } from "../../lib/admin-api"
+import { translatedStatus } from "../../lib/i18n"
 
 type PendingItem = {
   kind?: "credential" | "delivery"
@@ -35,6 +37,7 @@ type Delivery = {
 
 const DeliveriesPage = () => {
   ensureAdminExtensionsRegistered()
+  const { t } = useTranslation()
 
   const [pending, setPending] = useState<PendingItem[]>([])
   const [deliveries, setDeliveries] = useState<Delivery[]>([])
@@ -101,11 +104,11 @@ const DeliveriesPage = () => {
           delivery_note: deliveryNote || undefined,
         },
       })
-      setMessage(`Delivery created: ${result.delivery.id}`)
-      setLastAccessToken(result.accessToken || "Existing delivery returned; token is not reissued.")
+      setMessage(t("deliveries.created", { id: result.delivery.id }))
+      setLastAccessToken(result.accessToken || t("deliveries.existingToken"))
       await refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Delivery failed.")
+      setError(err instanceof Error ? err.message : t("deliveries.deliveryFailed"))
     } finally {
       setLoading(false)
     }
@@ -114,15 +117,15 @@ const DeliveriesPage = () => {
   return (
     <div className="flex flex-col gap-y-4">
       <AdminSection
-        title="Pending Delivery"
-        description="Items awaiting fulfillment, including sold credentials and pending delivery records."
+        title={t("deliveries.pending")}
+        description={t("deliveries.pendingDescription")}
       >
         <Table>
           <Table.Header>
             <Table.Row>
-              <Table.HeaderCell>Item</Table.HeaderCell>
-              <Table.HeaderCell>Variant</Table.HeaderCell>
-              <Table.HeaderCell>Cart/Order</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.item")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.variant")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.cartOrder")}</Table.HeaderCell>
               <Table.HeaderCell></Table.HeaderCell>
             </Table.Row>
           </Table.Header>
@@ -141,7 +144,7 @@ const DeliveriesPage = () => {
                 <Table.Cell className="font-mono">{item.order_id || item.cart_id || "-"}</Table.Cell>
                 <Table.Cell>
                   <Button variant="secondary" onClick={() => selectPending(item)}>
-                    Select
+                    {t("deliveries.select")}
                   </Button>
                 </Table.Cell>
               </Table.Row>
@@ -150,56 +153,56 @@ const DeliveriesPage = () => {
         </Table>
       </AdminSection>
 
-      <AdminSection title="Create Delivery">
+      <AdminSection title={t("deliveries.create")}>
         <form onSubmit={handleSubmit} className="grid gap-4">
           <div className="grid gap-4 md:grid-cols-2">
             <Input
               value={deliveryId}
               onChange={(event) => setDeliveryId(event.target.value)}
-              placeholder="delivery_id for pending delivery"
+              placeholder={t("deliveries.deliveryId")}
             />
             <Input
               value={accountItemId}
               onChange={(event) => setAccountItemId(event.target.value)}
-              placeholder="account_item_id"
+              placeholder={t("deliveries.accountItemId")}
             />
             <Input
               value={orderId}
               onChange={(event) => setOrderId(event.target.value)}
-              placeholder="order_id"
+              placeholder={t("deliveries.orderId")}
             />
             <Input
               value={cartId}
               onChange={(event) => setCartId(event.target.value)}
-              placeholder="cart_id"
+              placeholder={t("deliveries.cartId")}
             />
             <Input
               value={paymentAttemptId}
               onChange={(event) => setPaymentAttemptId(event.target.value)}
-              placeholder="payment_attempt_id"
+              placeholder={t("deliveries.paymentAttemptId")}
             />
             <Input
               value={deliveredBy}
               onChange={(event) => setDeliveredBy(event.target.value)}
-              placeholder="delivered_by"
+              placeholder={t("deliveries.deliveredBy")}
             />
           </div>
           <Textarea
             value={deliveryNote}
             onChange={(event) => setDeliveryNote(event.target.value)}
-            placeholder="Delivery note"
+            placeholder={t("deliveries.deliveryNote")}
           />
           <Textarea
             value={deliveryPayload}
             onChange={(event) => setDeliveryPayload(event.target.value)}
-            placeholder="Delivery payload for manual/file/API fulfillment. JSON objects are accepted; plain text is stored as-is."
+            placeholder={t("deliveries.deliveryPayload")}
           />
           <div className="flex items-center gap-3">
             <Button type="submit" disabled={loading}>
-              {loading ? "Delivering..." : "Create delivery"}
+              {loading ? t("deliveries.delivering") : t("deliveries.createButton")}
             </Button>
             <Button type="button" variant="secondary" onClick={refresh}>
-              Refresh
+              {t("common.actions.refresh")}
             </Button>
           </div>
           <MessageBox error={error} success={message} />
@@ -209,16 +212,16 @@ const DeliveriesPage = () => {
         </form>
       </AdminSection>
 
-      <AdminSection title="Deliveries">
+      <AdminSection title={t("deliveries.title")}>
         <Table>
           <Table.Header>
             <Table.Row>
-              <Table.HeaderCell>ID</Table.HeaderCell>
-              <Table.HeaderCell>Status</Table.HeaderCell>
-              <Table.HeaderCell>Credential</Table.HeaderCell>
-              <Table.HeaderCell>Token Hint</Table.HeaderCell>
-              <Table.HeaderCell>Delivered</Table.HeaderCell>
-              <Table.HeaderCell>Confirmed</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.id")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.status")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.credential")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("deliveries.tokenHint")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.delivered")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.confirmed")}</Table.HeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Body>
@@ -226,7 +229,7 @@ const DeliveriesPage = () => {
               <Table.Row key={delivery.id}>
                 <Table.Cell className="font-mono">{delivery.id}</Table.Cell>
                 <Table.Cell>
-                  <Badge>{delivery.delivery_status}</Badge>
+                  <Badge>{translatedStatus(t, delivery.delivery_status)}</Badge>
                 </Table.Cell>
                 <Table.Cell className="font-mono">{delivery.account_item_id}</Table.Cell>
                 <Table.Cell>{delivery.access_token_hint || "-"}</Table.Cell>
@@ -246,7 +249,7 @@ const DeliveriesPage = () => {
 }
 
 export const config = defineRouteConfig({
-  label: "Deliveries",
+  label: "Deliveries / 交付",
   rank: 21,
 })
 

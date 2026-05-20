@@ -1,6 +1,7 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk"
 import { Badge, Button, Heading, Input, Table, Text } from "@medusajs/ui"
 import { FormEvent, useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { AdminSection } from "../../components/admin-section"
 import { MessageBox } from "../../components/message-box"
 import {
@@ -8,6 +9,7 @@ import {
 } from "../../extensions/defaults"
 import { renderAdminExtensions } from "../../extensions/registry"
 import { adminApi, formatDate } from "../../lib/admin-api"
+import { translatedStatus } from "../../lib/i18n"
 
 type PaymentChannel = {
   id: string
@@ -34,6 +36,7 @@ type PaymentAttempt = {
 
 const PaymentsPage = () => {
   ensureAdminExtensionsRegistered()
+  const { t } = useTranslation()
 
   const [channels, setChannels] = useState<PaymentChannel[]>([])
   const [attempts, setAttempts] = useState<PaymentAttempt[]>([])
@@ -71,12 +74,12 @@ const PaymentsPage = () => {
           note: markPaidNote,
         },
       })
-      setMessage("Payment attempt marked paid.")
+      setMessage(t("payments.markPaidSuccess"))
       setSelectedAttemptId("")
       setMarkPaidNote("")
       await refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to mark paid.")
+      setError(err instanceof Error ? err.message : t("payments.markPaidFailed"))
     } finally {
       setLoading(false)
     }
@@ -99,12 +102,12 @@ const PaymentsPage = () => {
           provider_code: newChannelCode,
         },
       })
-      setMessage("Payment channel created.")
+      setMessage(t("payments.channelCreated"))
       setNewChannelCode("")
       setNewChannelName("")
       await refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create channel.")
+      setError(err instanceof Error ? err.message : t("payments.createFailed"))
     } finally {
       setLoading(false)
     }
@@ -121,26 +124,26 @@ const PaymentsPage = () => {
           enabled: !channel.enabled,
         },
       })
-      setMessage("Payment channel updated.")
+      setMessage(t("payments.channelUpdated"))
       await refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to update channel.")
+      setError(err instanceof Error ? err.message : t("payments.updateFailed"))
     }
   }
 
   return (
     <div className="flex flex-col gap-y-4">
       <AdminSection
-        title="Payment Channels"
-        description="Enable, disable, and inspect payment routing channels."
+        title={t("payments.channels")}
+        description={t("payments.channelsDescription")}
       >
         <Table>
           <Table.Header>
             <Table.Row>
-              <Table.HeaderCell>Channel</Table.HeaderCell>
-              <Table.HeaderCell>Type</Table.HeaderCell>
-              <Table.HeaderCell>Status</Table.HeaderCell>
-              <Table.HeaderCell>Provider</Table.HeaderCell>
+              <Table.HeaderCell>{t("payments.channel")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.type")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.status")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.provider")}</Table.HeaderCell>
               <Table.HeaderCell></Table.HeaderCell>
             </Table.Row>
           </Table.Header>
@@ -155,12 +158,17 @@ const PaymentsPage = () => {
                 </Table.Cell>
                 <Table.Cell>{channel.type}</Table.Cell>
                 <Table.Cell>
-                  <Badge>{channel.enabled ? channel.health_status : "disabled"}</Badge>
+                  <Badge>
+                    {translatedStatus(
+                      t,
+                      channel.enabled ? channel.health_status : "disabled"
+                    )}
+                  </Badge>
                 </Table.Cell>
                 <Table.Cell>{channel.provider_code}</Table.Cell>
                 <Table.Cell>
                   <Button variant="secondary" onClick={() => toggleChannel(channel)}>
-                    {channel.enabled ? "Disable" : "Enable"}
+                    {channel.enabled ? t("payments.disable") : t("payments.enable")}
                   </Button>
                 </Table.Cell>
               </Table.Row>
@@ -169,7 +177,7 @@ const PaymentsPage = () => {
         </Table>
       </AdminSection>
 
-      <AdminSection title="Create Manual Channel">
+      <AdminSection title={t("payments.createManualChannel")}>
         <form onSubmit={createChannel} className="grid gap-4">
           <div className="grid gap-4 md:grid-cols-2">
             <Input
@@ -180,24 +188,24 @@ const PaymentsPage = () => {
             <Input
               value={newChannelName}
               onChange={(event) => setNewChannelName(event.target.value)}
-              placeholder="Display name"
+              placeholder={t("payments.displayName")}
             />
           </div>
           <Button type="submit" disabled={loading}>
-            Create channel
+            {t("payments.createChannel")}
           </Button>
         </form>
       </AdminSection>
 
-      <AdminSection title="Payment Attempts">
+      <AdminSection title={t("payments.attempts")}>
         <Table>
           <Table.Header>
             <Table.Row>
-              <Table.HeaderCell>Attempt</Table.HeaderCell>
-              <Table.HeaderCell>Status</Table.HeaderCell>
-              <Table.HeaderCell>Amount</Table.HeaderCell>
-              <Table.HeaderCell>Provider Order</Table.HeaderCell>
-              <Table.HeaderCell>Created</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.attempt")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.status")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.amount")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("payments.providerOrder")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.created")}</Table.HeaderCell>
               <Table.HeaderCell></Table.HeaderCell>
             </Table.Row>
           </Table.Header>
@@ -206,7 +214,7 @@ const PaymentsPage = () => {
               <Table.Row key={attempt.id}>
                 <Table.Cell className="font-mono">{attempt.id}</Table.Cell>
                 <Table.Cell>
-                  <Badge>{attempt.status}</Badge>
+                  <Badge>{translatedStatus(t, attempt.status)}</Badge>
                 </Table.Cell>
                 <Table.Cell>
                   {attempt.amount} {attempt.currency}
@@ -221,7 +229,7 @@ const PaymentsPage = () => {
                     disabled={attempt.status === "paid"}
                     onClick={() => setSelectedAttemptId(attempt.id)}
                   >
-                    Mark paid
+                    {t("payments.markPaid")}
                   </Button>
                 </Table.Cell>
               </Table.Row>
@@ -230,7 +238,7 @@ const PaymentsPage = () => {
         </Table>
       </AdminSection>
 
-      <AdminSection title="Manual Payment Confirmation">
+      <AdminSection title={t("payments.manualConfirmation")}>
         <form onSubmit={markPaid} className="grid gap-4">
           <Input
             value={selectedAttemptId}
@@ -240,14 +248,14 @@ const PaymentsPage = () => {
           <Input
             value={markPaidNote}
             onChange={(event) => setMarkPaidNote(event.target.value)}
-            placeholder="Note"
+            placeholder={t("payments.note")}
           />
           <div className="flex items-center gap-3">
             <Button type="submit" disabled={loading || !selectedAttemptId}>
-              Mark paid
+              {t("payments.markPaid")}
             </Button>
             <Button type="button" variant="secondary" onClick={refresh}>
-              Refresh
+              {t("common.actions.refresh")}
             </Button>
           </div>
           <MessageBox error={error} success={message} />
@@ -262,7 +270,7 @@ const PaymentsPage = () => {
 }
 
 export const config = defineRouteConfig({
-  label: "Payments",
+  label: "Payments / 支付",
   rank: 24,
 })
 

@@ -1,9 +1,12 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk"
 import { Badge, Button, Heading, Input, Table } from "@medusajs/ui"
 import { FormEvent, useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { AdminSection } from "../../components/admin-section"
+import { LocalizedStatusSelect } from "../../components/localized-status-select"
 import { MessageBox } from "../../components/message-box"
 import { adminApi, formatDate } from "../../lib/admin-api"
+import { translatedStatus } from "../../lib/i18n"
 
 type MarketingCampaign = {
   id: string
@@ -49,7 +52,17 @@ type MarketingTouchpoint = {
   created_at?: string
 }
 
+const CAMPAIGN_STATUS_OPTIONS = [
+  "draft",
+  "active",
+  "paused",
+  "archived",
+] as const
+
+const COUPON_STATUS_OPTIONS = ["active", "disabled", "expired"] as const
+
 const MarketingPage = () => {
+  const { t } = useTranslation()
   const [campaigns, setCampaigns] = useState<MarketingCampaign[]>([])
   const [coupons, setCoupons] = useState<MarketingCoupon[]>([])
   const [referralLinks, setReferralLinks] = useState<MarketingReferralLink[]>([])
@@ -116,10 +129,10 @@ const MarketingPage = () => {
       setCampaignCode("")
       setCampaignName("")
       setCampaignStatus("draft")
-      setMessage("Campaign created.")
+      setMessage(t("marketing.campaignCreated"))
       await refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create campaign")
+      setError(err instanceof Error ? err.message : t("marketing.failedCampaign"))
     } finally {
       setLoading(false)
     }
@@ -145,10 +158,10 @@ const MarketingPage = () => {
       setCouponCode("")
       setCouponStatus("active")
       setCouponMaxRedemptions("")
-      setMessage("Coupon created.")
+      setMessage(t("marketing.couponCreated"))
       await refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create coupon")
+      setError(err instanceof Error ? err.message : t("marketing.failedCoupon"))
     } finally {
       setLoading(false)
     }
@@ -173,11 +186,11 @@ const MarketingPage = () => {
       setReferralCode("")
       setReferrerEmail("")
       setReferralMaxUses("")
-      setMessage("Referral link created.")
+      setMessage(t("marketing.referralCreated"))
       await refresh()
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Failed to create referral link"
+        err instanceof Error ? err.message : t("marketing.failedReferral")
       )
     } finally {
       setLoading(false)
@@ -187,8 +200,8 @@ const MarketingPage = () => {
   return (
     <div className="flex flex-col gap-y-4">
       <AdminSection
-        title="Create Campaign"
-        description="Create campaign windows that can be targeted by coupon and referral strategies."
+        title={t("marketing.createCampaign")}
+        description={t("marketing.createCampaignDescription")}
       >
         <form onSubmit={createCampaign} className="grid gap-4">
           <div className="grid gap-4 md:grid-cols-3">
@@ -200,21 +213,21 @@ const MarketingPage = () => {
             <Input
               value={campaignName}
               onChange={(event) => setCampaignName(event.target.value)}
-              placeholder="Campaign name"
+              placeholder={t("marketing.campaignName")}
             />
-            <Input
+            <LocalizedStatusSelect
               value={campaignStatus}
-              onChange={(event) => setCampaignStatus(event.target.value)}
-              placeholder="draft|active|paused|archived"
+              onValueChange={setCampaignStatus}
+              options={CAMPAIGN_STATUS_OPTIONS}
             />
           </div>
           <Button type="submit" disabled={loading}>
-            Create campaign
+            {t("marketing.createCampaign")}
           </Button>
         </form>
       </AdminSection>
 
-      <AdminSection title="Create Coupon">
+      <AdminSection title={t("marketing.createCoupon")}>
         <form onSubmit={createCoupon} className="grid gap-4">
           <div className="grid gap-4 md:grid-cols-3">
             <Input
@@ -222,24 +235,24 @@ const MarketingPage = () => {
               onChange={(event) => setCouponCode(event.target.value)}
               placeholder="SAVE10"
             />
-            <Input
+            <LocalizedStatusSelect
               value={couponStatus}
-              onChange={(event) => setCouponStatus(event.target.value)}
-              placeholder="active|disabled|expired"
+              onValueChange={setCouponStatus}
+              options={COUPON_STATUS_OPTIONS}
             />
             <Input
               value={couponMaxRedemptions}
               onChange={(event) => setCouponMaxRedemptions(event.target.value)}
-              placeholder="Max redemptions"
+              placeholder={t("marketing.maxRedemptions")}
             />
           </div>
           <Button type="submit" disabled={loading}>
-            Create coupon
+            {t("marketing.createCoupon")}
           </Button>
         </form>
       </AdminSection>
 
-      <AdminSection title="Create Referral Link">
+      <AdminSection title={t("marketing.createReferral")}>
         <form onSubmit={createReferralLink} className="grid gap-4">
           <div className="grid gap-4 md:grid-cols-3">
             <Input
@@ -255,24 +268,24 @@ const MarketingPage = () => {
             <Input
               value={referralMaxUses}
               onChange={(event) => setReferralMaxUses(event.target.value)}
-              placeholder="Max uses"
+              placeholder={t("marketing.maxUses")}
             />
           </div>
           <Button type="submit" disabled={loading}>
-            Create referral link
+            {t("marketing.createReferral")}
           </Button>
         </form>
       </AdminSection>
 
-      <AdminSection title="Campaigns">
+      <AdminSection title={t("marketing.campaigns")}>
         <Table>
           <Table.Header>
             <Table.Row>
-              <Table.HeaderCell>Code</Table.HeaderCell>
-              <Table.HeaderCell>Name</Table.HeaderCell>
-              <Table.HeaderCell>Status</Table.HeaderCell>
-              <Table.HeaderCell>Start</Table.HeaderCell>
-              <Table.HeaderCell>End</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.code")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.name")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.status")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("marketing.start")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("marketing.end")}</Table.HeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Body>
@@ -281,7 +294,7 @@ const MarketingPage = () => {
                 <Table.Cell className="font-mono">{campaign.code}</Table.Cell>
                 <Table.Cell>{campaign.name}</Table.Cell>
                 <Table.Cell>
-                  <Badge>{campaign.status}</Badge>
+                  <Badge>{translatedStatus(t, campaign.status)}</Badge>
                 </Table.Cell>
                 <Table.Cell>{formatDate(campaign.starts_at)}</Table.Cell>
                 <Table.Cell>{formatDate(campaign.ends_at)}</Table.Cell>
@@ -291,15 +304,15 @@ const MarketingPage = () => {
         </Table>
       </AdminSection>
 
-      <AdminSection title="Coupons">
+      <AdminSection title={t("marketing.coupons")}>
         <Table>
           <Table.Header>
             <Table.Row>
-              <Table.HeaderCell>Code</Table.HeaderCell>
-              <Table.HeaderCell>Status</Table.HeaderCell>
-              <Table.HeaderCell>Redeemed</Table.HeaderCell>
-              <Table.HeaderCell>Max</Table.HeaderCell>
-              <Table.HeaderCell>Expires</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.code")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.status")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("marketing.redeemed")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.max")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("marketing.expires")}</Table.HeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Body>
@@ -307,7 +320,7 @@ const MarketingPage = () => {
               <Table.Row key={coupon.id}>
                 <Table.Cell className="font-mono">{coupon.code}</Table.Cell>
                 <Table.Cell>
-                  <Badge>{coupon.status}</Badge>
+                  <Badge>{translatedStatus(t, coupon.status)}</Badge>
                 </Table.Cell>
                 <Table.Cell>{coupon.redeemed_count}</Table.Cell>
                 <Table.Cell>{coupon.max_redemptions ?? "-"}</Table.Cell>
@@ -318,15 +331,15 @@ const MarketingPage = () => {
         </Table>
       </AdminSection>
 
-      <AdminSection title="Referral Links">
+      <AdminSection title={t("marketing.referralLinks")}>
         <Table>
           <Table.Header>
             <Table.Row>
-              <Table.HeaderCell>Code</Table.HeaderCell>
-              <Table.HeaderCell>Status</Table.HeaderCell>
-              <Table.HeaderCell>Referrer</Table.HeaderCell>
-              <Table.HeaderCell>Used</Table.HeaderCell>
-              <Table.HeaderCell>Max</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.code")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.status")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("marketing.referrer")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("marketing.used")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.max")}</Table.HeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Body>
@@ -334,7 +347,7 @@ const MarketingPage = () => {
               <Table.Row key={link.id}>
                 <Table.Cell className="font-mono">{link.code}</Table.Cell>
                 <Table.Cell>
-                  <Badge>{link.status}</Badge>
+                  <Badge>{translatedStatus(t, link.status)}</Badge>
                 </Table.Cell>
                 <Table.Cell>{link.referrer_email || "-"}</Table.Cell>
                 <Table.Cell>{link.used_count}</Table.Cell>
@@ -345,17 +358,17 @@ const MarketingPage = () => {
         </Table>
       </AdminSection>
 
-      <AdminSection title="Recent Touchpoints">
+      <AdminSection title={t("marketing.recentTouchpoints")}>
         <Table>
           <Table.Header>
             <Table.Row>
-              <Table.HeaderCell>Event</Table.HeaderCell>
-              <Table.HeaderCell>Attempt</Table.HeaderCell>
-              <Table.HeaderCell>Order</Table.HeaderCell>
-              <Table.HeaderCell>Coupon</Table.HeaderCell>
-              <Table.HeaderCell>Referral</Table.HeaderCell>
-              <Table.HeaderCell>Attribution</Table.HeaderCell>
-              <Table.HeaderCell>Created</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.event")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.attempt")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.order")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("marketing.coupon")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("marketing.referral")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.attribution")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.created")}</Table.HeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Body>
@@ -383,7 +396,7 @@ const MarketingPage = () => {
 
       <div className="flex items-center gap-3">
         <Button type="button" variant="secondary" onClick={() => void refresh()}>
-          Refresh
+          {t("common.actions.refresh")}
         </Button>
       </div>
 
@@ -393,7 +406,7 @@ const MarketingPage = () => {
 }
 
 export const config = defineRouteConfig({
-  label: "Marketing",
+  label: "Marketing / 营销",
   rank: 26,
 })
 

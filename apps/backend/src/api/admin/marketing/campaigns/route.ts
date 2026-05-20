@@ -1,6 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { isPlatformPluginEnabled } from "../../../../platform/runtime"
 import { resolveMarketingEngineService } from "../../../../platform/services"
+import { localizedError } from "../../../../utils/localized-response"
 
 type CreateCampaignBody = {
   code?: string
@@ -15,9 +16,7 @@ type CreateCampaignBody = {
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   if (!isPlatformPluginEnabled("marketing-engine")) {
-    res.status(503).json({
-      message: "Marketing engine plugin is disabled",
-    })
+    localizedError(req, res, 503, "marketing.disabled")
     return
   }
 
@@ -44,18 +43,14 @@ export const POST = async (
   res: MedusaResponse
 ) => {
   if (!isPlatformPluginEnabled("marketing-engine")) {
-    res.status(503).json({
-      message: "Marketing engine plugin is disabled",
-    })
+    localizedError(req, res, 503, "marketing.disabled")
     return
   }
 
   const body = (req.validatedBody || req.body) as CreateCampaignBody
 
   if (!body.code || !body.name) {
-    res.status(400).json({
-      message: "code and name are required",
-    })
+    localizedError(req, res, 400, "marketing.namedRequired")
     return
   }
 

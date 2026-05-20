@@ -1,9 +1,11 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk"
 import { Badge, Button, Heading, Input, Table, Text, Textarea } from "@medusajs/ui"
 import { FormEvent, useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { AdminSection } from "../../components/admin-section"
 import { MessageBox } from "../../components/message-box"
 import { adminApi, formatDate } from "../../lib/admin-api"
+import { translatedStatus } from "../../lib/i18n"
 
 type AccountItem = {
   id: string
@@ -50,17 +52,19 @@ const SAMPLE_IMPORT = `demo1----secret1
 demo2,secret2
 CARD-AAAA-BBBB-CCCC`
 
-function parseCredentialLines(value: string): ImportItem[] {
+type Translate = (key: string, options?: Record<string, unknown>) => string
+
+function parseCredentialLines(value: string, t: Translate): ImportItem[] {
   const text = value.trim()
 
   if (!text) {
-    throw new Error("Credential import text is required")
+    throw new Error(t("credentials.importTextRequired"))
   }
 
   if (text.startsWith("[")) {
     const parsed = JSON.parse(text) as ImportItem[]
     if (!Array.isArray(parsed)) {
-      throw new Error("Credentials must be a JSON array")
+      throw new Error(t("credentials.jsonArrayRequired"))
     }
 
     return parsed
@@ -74,7 +78,7 @@ function parseCredentialLines(value: string): ImportItem[] {
       if (line.startsWith("{")) {
         const parsed = JSON.parse(line) as ImportItem
         if (typeof parsed.credential === "undefined") {
-          throw new Error(`Line ${index + 1} requires credential`)
+          throw new Error(t("credentials.missingCredential", { line: index + 1 }))
         }
 
         return parsed
@@ -86,7 +90,7 @@ function parseCredentialLines(value: string): ImportItem[] {
 
       if (!delimiter) {
         return {
-          display_label: `Card ${index + 1}`,
+          display_label: t("credentials.cardLabel", { number: index + 1 }),
           credential: line,
         }
       }
@@ -96,11 +100,13 @@ function parseCredentialLines(value: string): ImportItem[] {
       const password = line.slice(delimiterIndex + delimiter.length).trim()
 
       if (!username || !password) {
-        throw new Error(`Line ${index + 1} must include both account and password`)
+        throw new Error(
+          t("credentials.accountPasswordError", { line: index + 1 })
+        )
       }
 
       return {
-        display_label: `Account ${index + 1}`,
+        display_label: t("credentials.accountLabel", { number: index + 1 }),
         credential: {
           username,
           password,
@@ -110,9 +116,10 @@ function parseCredentialLines(value: string): ImportItem[] {
 }
 
 const CredentialsPage = () => {
+  const { t } = useTranslation()
   const [items, setItems] = useState<AccountItem[]>([])
   const [batches, setBatches] = useState<Batch[]>([])
-  const [name, setName] = useState("Manual import")
+  const [name, setName] = useState(t("credentials.manualImport"))
   const [productVariantId, setProductVariantId] = useState("")
   const [templateCode, setTemplateCode] = useState("credential")
   const [credentialsText, setCredentialsText] = useState(SAMPLE_IMPORT)
@@ -143,7 +150,7 @@ const CredentialsPage = () => {
     setMessage("")
 
     try {
-      const parsed = parseCredentialLines(credentialsText)
+      const parsed = parseCredentialLines(credentialsText, t)
 
       await adminApi("/admin/credential-inventory/batches", {
         method: "POST",
@@ -154,10 +161,10 @@ const CredentialsPage = () => {
           items: parsed,
         },
       })
-      setMessage("Credential batch imported.")
+      setMessage(t("credentials.imported"))
       await refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Import failed.")
+      setError(err instanceof Error ? err.message : t("credentials.importFailed"))
     } finally {
       setLoading(false)
     }
@@ -166,8 +173,8 @@ const CredentialsPage = () => {
   return (
     <div className="flex flex-col gap-y-4">
       <AdminSection
-        title="Credential Inventory"
-        description="Import encrypted digital credentials and inspect safe inventory state."
+        title={t("credentials.title")}
+        description={t("credentials.description")}
       >
         <form onSubmit={handleSubmit} className="grid gap-4">
           <div className="grid gap-4 md:grid-cols-2">
@@ -213,29 +220,28 @@ const CredentialsPage = () => {
             className="min-h-40 font-mono"
           />
           <Text className="text-ui-fg-subtle">
-            Paste one credential per line. Supported formats: card key, account----password,
-            account,password, account|password, account:password, JSON object lines, or a JSON array.
+            {t("credentials.templateHelp")}
           </Text>
           <div className="flex items-center gap-3">
             <Button type="submit" disabled={loading}>
-              {loading ? "Importing..." : "Import credentials"}
+              {loading ? t("credentials.importing") : t("credentials.importCredentials")}
             </Button>
             <Button type="button" variant="secondary" onClick={refresh}>
-              Refresh
+              {t("common.actions.refresh")}
             </Button>
           </div>
           <MessageBox error={error} success={message} />
         </form>
       </AdminSection>
 
-      <AdminSection title="Batches">
+      <AdminSection title={t("credentials.batches")}>
         <Table>
           <Table.Header>
             <Table.Row>
-              <Table.HeaderCell>Name</Table.HeaderCell>
-              <Table.HeaderCell>Variant</Table.HeaderCell>
-              <Table.HeaderCell>Status</Table.HeaderCell>
-              <Table.HeaderCell>Counts</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.name")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.variant")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.status")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("credentials.counts")}</Table.HeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Body>
@@ -244,11 +250,15 @@ const CredentialsPage = () => {
                 <Table.Cell>{batch.name}</Table.Cell>
                 <Table.Cell className="font-mono">{batch.product_variant_id}</Table.Cell>
                 <Table.Cell>
-                  <Badge>{batch.status}</Badge>
+                  <Badge>{translatedStatus(t, batch.status)}</Badge>
                 </Table.Cell>
                 <Table.Cell>
-                  {batch.available_count} available / {batch.reserved_count} reserved /{" "}
-                  {batch.sold_count} sold / {batch.total_count} total
+                  {t("credentials.countsText", {
+                    available: batch.available_count,
+                    reserved: batch.reserved_count,
+                    sold: batch.sold_count,
+                    total: batch.total_count,
+                  })}
                 </Table.Cell>
               </Table.Row>
             ))}
@@ -256,15 +266,15 @@ const CredentialsPage = () => {
         </Table>
       </AdminSection>
 
-      <AdminSection title="Credential Items">
+      <AdminSection title={t("credentials.items")}>
         <Table>
           <Table.Header>
             <Table.Row>
-              <Table.HeaderCell>Label</Table.HeaderCell>
-              <Table.HeaderCell>Status</Table.HeaderCell>
-              <Table.HeaderCell>Variant</Table.HeaderCell>
-              <Table.HeaderCell>Order</Table.HeaderCell>
-              <Table.HeaderCell>Delivered</Table.HeaderCell>
+              <Table.HeaderCell>{t("credentials.label")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.status")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.variant")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.order")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.delivered")}</Table.HeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Body>
@@ -279,7 +289,7 @@ const CredentialsPage = () => {
                   </div>
                 </Table.Cell>
                 <Table.Cell>
-                  <Badge>{item.status}</Badge>
+                  <Badge>{translatedStatus(t, item.status)}</Badge>
                 </Table.Cell>
                 <Table.Cell className="font-mono">{item.product_variant_id}</Table.Cell>
                 <Table.Cell className="font-mono">{item.order_id || item.cart_id || "-"}</Table.Cell>
@@ -294,7 +304,7 @@ const CredentialsPage = () => {
 }
 
 export const config = defineRouteConfig({
-  label: "Credentials",
+  label: "Credentials / 凭证",
   rank: 20,
 })
 

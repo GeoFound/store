@@ -1,5 +1,6 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { reserveCredentialsWithLock } from "../../../../utils/inventory-reservation"
+import { localizedError } from "../../../../utils/localized-response"
 
 type ReserveBody = {
   product_variant_id?: string
@@ -15,9 +16,7 @@ export const POST = async (
   res: MedusaResponse
 ) => {
   if (!req.body.product_variant_id || !req.body.reservation_key) {
-    res.status(400).json({
-      message: "product_variant_id and reservation_key are required",
-    })
+    localizedError(req, res, 400, "credentialReservation.required")
     return
   }
 

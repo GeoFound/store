@@ -1,5 +1,6 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { resolvePaymentRouterService } from "../../../platform/services"
+import { localizedError } from "../../../utils/localized-response"
 
 type CreateChannelBody = {
   code?: string
@@ -41,9 +42,7 @@ export const POST = async (
   res: MedusaResponse
 ) => {
   if (!req.body.code || !req.body.name || !req.body.display_name) {
-    res.status(400).json({
-      message: "code, name, and display_name are required",
-    })
+    localizedError(req, res, 400, "paymentChannel.required")
     return
   }
 
@@ -54,9 +53,7 @@ export const POST = async (
   const currency = normalizeCurrencyCode(req.body.currency)
 
   if (typeof req.body.currency !== "undefined" && req.body.currency !== null && !currency) {
-    res.status(400).json({
-      message: "currency must be a valid 3-letter code",
-    })
+    localizedError(req, res, 400, "paymentChannel.currencyInvalid")
     return
   }
 

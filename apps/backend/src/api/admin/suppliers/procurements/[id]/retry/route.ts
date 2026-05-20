@@ -1,13 +1,12 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { resolveSupplierProcurementService } from "../../../../../../platform/services"
+import { localizedError } from "../../../../../../utils/localized-response"
 
 export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
   const id = req.params.id
 
   if (!id) {
-    res.status(400).json({
-      message: "id is required",
-    })
+    localizedError(req, res, 400, "supplier.procurementIdRequired")
     return
   }
 

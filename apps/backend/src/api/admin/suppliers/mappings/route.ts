@@ -1,6 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { hasSupplierProvider } from "../../../../platform/supplier"
 import { resolveSupplierProcurementService } from "../../../../platform/services"
+import { localizedError } from "../../../../utils/localized-response"
 
 type UpsertMappingBody = {
   product_variant_id?: string
@@ -47,15 +48,13 @@ export const POST = async (
   const providerSku = toOptionalText(req.body.provider_sku)
 
   if (!productVariantId || !providerCode || !providerSku) {
-    res.status(400).json({
-      message: "product_variant_id, provider_code, and provider_sku are required",
-    })
+    localizedError(req, res, 400, "supplier.mappingRequired")
     return
   }
 
   if (!hasSupplierProvider(providerCode)) {
-    res.status(400).json({
-      message: `Supplier provider ${providerCode} is not registered`,
+    localizedError(req, res, 400, "supplier.providerNotRegistered", {
+      providerCode,
     })
     return
   }

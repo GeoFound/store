@@ -10,6 +10,7 @@ import { z, ZodError, type ZodTypeAny } from "zod"
 import { ensurePlatformIntegrationsRegistered } from "../platform/integrations"
 import { isPlatformPluginEnabled } from "../platform/runtime"
 import { emitAuditLog } from "../utils/audit-log"
+import { localizedMessage } from "../utils/localized-response"
 import { getRequestAuditContext } from "../utils/request-audit"
 import {
   type RateLimitPolicy,
@@ -371,7 +372,7 @@ function createOriginGuardMiddleware(action: string) {
     })
 
     res.status(403).json({
-      message: "Request origin is not allowed",
+      message: localizedMessage(req, "security.originNotAllowed"),
       code: "origin_not_allowed",
     })
   }
@@ -435,7 +436,7 @@ function createRateLimitMiddleware(
     })
 
     res.status(429).json({
-      message: "Too many requests",
+      message: localizedMessage(req, "security.tooManyRequests"),
       code: "rate_limited",
       retry_after_seconds: decision.retryAfterSeconds,
     })

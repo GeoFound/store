@@ -1,9 +1,11 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk"
 import { Badge, Button, Heading, Input, Table, Text, Textarea } from "@medusajs/ui"
 import { FormEvent, useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { AdminSection } from "../../components/admin-section"
 import { MessageBox } from "../../components/message-box"
 import { adminApi, formatDate } from "../../lib/admin-api"
+import { translatedStatus } from "../../lib/i18n"
 
 type SupplierProvider = {
   code: string
@@ -39,6 +41,7 @@ type SupplierProcurement = {
 }
 
 const SuppliersPage = () => {
+  const { t } = useTranslation()
   const [providers, setProviders] = useState<SupplierProvider[]>([])
   const [mappings, setMappings] = useState<SupplierMapping[]>([])
   const [procurements, setProcurements] = useState<SupplierProcurement[]>([])
@@ -98,10 +101,10 @@ const SuppliersPage = () => {
           },
         }
       )
-      setMessage(`Mapping saved: ${result.mapping.id}`)
+      setMessage(t("suppliers.mappingSaved", { id: result.mapping.id }))
       await refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save mapping.")
+      setError(err instanceof Error ? err.message : t("suppliers.failedMapping"))
     } finally {
       setLoading(false)
     }
@@ -116,10 +119,10 @@ const SuppliersPage = () => {
       await adminApi(`/admin/suppliers/procurements/${id}/retry`, {
         method: "POST",
       })
-      setMessage(`Retry submitted: ${id}`)
+      setMessage(t("suppliers.retrySubmitted", { id }))
       await refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Retry failed.")
+      setError(err instanceof Error ? err.message : t("suppliers.failedRetry"))
     } finally {
       setLoading(false)
     }
@@ -127,13 +130,13 @@ const SuppliersPage = () => {
 
   return (
     <div className="flex flex-col gap-y-4">
-      <AdminSection title="Supplier Providers">
+      <AdminSection title={t("suppliers.providers")}>
         <Table>
           <Table.Header>
             <Table.Row>
-              <Table.HeaderCell>Provider</Table.HeaderCell>
-              <Table.HeaderCell>Configured</Table.HeaderCell>
-              <Table.HeaderCell>Capabilities</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.provider")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.configured")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.capabilities")}</Table.HeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Body>
@@ -142,7 +145,9 @@ const SuppliersPage = () => {
                 <Table.Cell className="font-mono">{provider.code}</Table.Cell>
                 <Table.Cell>
                   <Badge color={provider.configured ? "green" : "orange"}>
-                    {provider.configured ? "configured" : "missing env"}
+                    {provider.configured
+                      ? t("common.states.configured")
+                      : t("common.states.missingEnv")}
                   </Badge>
                 </Table.Cell>
                 <Table.Cell>
@@ -162,7 +167,7 @@ const SuppliersPage = () => {
         </Table>
       </AdminSection>
 
-      <AdminSection title="Variant Supplier Mapping">
+      <AdminSection title={t("suppliers.variantMapping")}>
         <form onSubmit={handleSubmit} className="grid gap-4">
           <div className="grid gap-4 md:grid-cols-2">
             <Input
@@ -183,7 +188,7 @@ const SuppliersPage = () => {
                   providerCode: event.target.value,
                 }))
               }
-              placeholder="provider_code"
+              placeholder={t("suppliers.providerCode")}
             />
             <Input
               value={form.providerSku}
@@ -193,7 +198,7 @@ const SuppliersPage = () => {
                   providerSku: event.target.value,
                 }))
               }
-              placeholder="provider_sku"
+              placeholder={t("suppliers.providerSku")}
             />
             <Input
               value={form.providerProductId}
@@ -203,7 +208,7 @@ const SuppliersPage = () => {
                   providerProductId: event.target.value,
                 }))
               }
-              placeholder="provider_product_id"
+              placeholder={t("suppliers.providerProductId")}
             />
             <Input
               value={form.regionCode}
@@ -213,7 +218,7 @@ const SuppliersPage = () => {
                   regionCode: event.target.value,
                 }))
               }
-              placeholder="region_code"
+              placeholder={t("suppliers.regionCode")}
             />
             <Input
               value={form.currency}
@@ -223,7 +228,7 @@ const SuppliersPage = () => {
                   currency: event.target.value,
                 }))
               }
-              placeholder="currency"
+              placeholder={t("suppliers.currency")}
             />
             <Input
               value={form.priority}
@@ -233,7 +238,7 @@ const SuppliersPage = () => {
                   priority: event.target.value,
                 }))
               }
-              placeholder="priority"
+              placeholder={t("suppliers.priority")}
             />
           </div>
           <Textarea
@@ -244,29 +249,29 @@ const SuppliersPage = () => {
                 metadata: event.target.value,
               }))
             }
-            placeholder='metadata JSON, for example {"supplier_procure_path":"/orders"}'
+            placeholder={t("suppliers.metadataPlaceholder")}
           />
           <div className="flex items-center gap-3">
             <Button type="submit" disabled={loading}>
-              {loading ? "Saving..." : "Save mapping"}
+              {loading ? t("suppliers.saving") : t("suppliers.saveMapping")}
             </Button>
             <Button type="button" variant="secondary" onClick={refresh}>
-              Refresh
+              {t("common.actions.refresh")}
             </Button>
           </div>
           <MessageBox error={error} success={message} />
         </form>
       </AdminSection>
 
-      <AdminSection title="Mappings">
+      <AdminSection title={t("suppliers.mappings")}>
         <Table>
           <Table.Header>
             <Table.Row>
-              <Table.HeaderCell>Variant</Table.HeaderCell>
-              <Table.HeaderCell>Provider</Table.HeaderCell>
-              <Table.HeaderCell>SKU</Table.HeaderCell>
-              <Table.HeaderCell>Region</Table.HeaderCell>
-              <Table.HeaderCell>Priority</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.variant")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.provider")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.sku")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.region")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("suppliers.priority")}</Table.HeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Body>
@@ -287,15 +292,15 @@ const SuppliersPage = () => {
         </Table>
       </AdminSection>
 
-      <AdminSection title="Procurements">
+      <AdminSection title={t("suppliers.procurements")}>
         <Table>
           <Table.Header>
             <Table.Row>
-              <Table.HeaderCell>ID</Table.HeaderCell>
-              <Table.HeaderCell>Status</Table.HeaderCell>
-              <Table.HeaderCell>Provider</Table.HeaderCell>
-              <Table.HeaderCell>Order</Table.HeaderCell>
-              <Table.HeaderCell>Created</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.id")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.status")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.provider")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.order")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("common.fields.created")}</Table.HeaderCell>
               <Table.HeaderCell></Table.HeaderCell>
             </Table.Row>
           </Table.Header>
@@ -304,7 +309,7 @@ const SuppliersPage = () => {
               <Table.Row key={procurement.id}>
                 <Table.Cell className="font-mono">{procurement.id}</Table.Cell>
                 <Table.Cell>
-                  <Badge>{procurement.status}</Badge>
+                  <Badge>{translatedStatus(t, procurement.status)}</Badge>
                 </Table.Cell>
                 <Table.Cell className="font-mono">
                   {procurement.provider_code}
@@ -319,7 +324,7 @@ const SuppliersPage = () => {
                     disabled={loading || procurement.status === "fulfilled"}
                     onClick={() => retryProcurement(procurement.id)}
                   >
-                    Retry
+                    {t("common.actions.retry")}
                   </Button>
                 </Table.Cell>
               </Table.Row>
@@ -332,7 +337,7 @@ const SuppliersPage = () => {
 }
 
 export const config = defineRouteConfig({
-  label: "Suppliers",
+  label: "Suppliers / 供应商",
   rank: 22,
 })
 

@@ -1,12 +1,11 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { isPlatformPluginEnabled } from "../../../../platform/runtime"
 import { resolveAnalyticsCoreService } from "../../../../platform/services"
+import { localizedError } from "../../../../utils/localized-response"
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   if (!isPlatformPluginEnabled("analytics-core")) {
-    res.status(503).json({
-      message: "Analytics core plugin is disabled",
-    })
+    localizedError(req, res, 503, "analytics.disabled")
     return
   }
 
@@ -32,9 +31,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
 
 export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
   if (!isPlatformPluginEnabled("analytics-core")) {
-    res.status(503).json({
-      message: "Analytics core plugin is disabled",
-    })
+    localizedError(req, res, 503, "analytics.disabled")
     return
   }
 
@@ -44,9 +41,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
   }
 
   if (!body.dispatch_id || typeof body.dispatch_id !== "string") {
-    res.status(400).json({
-      message: "dispatch_id is required",
-    })
+    localizedError(req, res, 400, "analytics.dispatchIdRequired")
     return
   }
 

@@ -5,6 +5,7 @@ import { emitOrderAccessRecoveryCodeCreatedEvent } from "../../../../platform/ev
 import { isPlatformPluginEnabled } from "../../../../platform/runtime"
 import { resolveGuestOrderAccessService } from "../../../../platform/services"
 import { emitAuditLog } from "../../../../utils/audit-log"
+import { localizedError } from "../../../../utils/localized-response"
 import { getRequestAuditContext } from "../../../../utils/request-audit"
 import { normalizeEmail, retrieveStoreOrderDetail } from "../../../../utils/store-order"
 
@@ -20,9 +21,7 @@ export const POST = async (
   const body = (req.validatedBody || req.body) as RecoverOrderBody
 
   if (!isPlatformPluginEnabled("guest-order-access")) {
-    res.status(503).json({
-      message: "Guest order access is unavailable",
-    })
+    localizedError(req, res, 503, "orderAccess.guestUnavailable")
     return
   }
 
@@ -35,9 +34,7 @@ export const POST = async (
   ])
 
   if (normalizeEmail(order.email) !== normalizeEmail(body.email || "")) {
-    res.status(404).json({
-      message: "Order was not found",
-    })
+    localizedError(req, res, 404, "orderAccess.orderNotFound")
     return
   }
 
@@ -64,9 +61,7 @@ export const POST = async (
       error instanceof MedusaError &&
       error.type === MedusaError.Types.NOT_ALLOWED
     ) {
-      res.status(429).json({
-        message: error.message,
-      })
+      localizedError(req, res, 429, "orderAccess.recoveryCooldown")
       return
     }
 

@@ -1,12 +1,11 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { isPlatformPluginEnabled } from "../../../../platform/runtime"
 import { resolveMarketingEngineService } from "../../../../platform/services"
+import { localizedError } from "../../../../utils/localized-response"
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   if (!isPlatformPluginEnabled("marketing-engine")) {
-    res.status(503).json({
-      message: "Marketing engine plugin is disabled",
-    })
+    localizedError(req, res, 503, "marketing.disabled")
     return
   }
 

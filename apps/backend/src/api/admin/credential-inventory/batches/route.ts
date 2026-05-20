@@ -2,6 +2,7 @@ import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import type { CreateCredentialBatchInput } from "../../../../platform/credential-inventory"
 import { resolveProductTemplate } from "../../../../platform/product-templates"
 import { resolveCredentialInventoryService } from "../../../../platform/services"
+import { localizedError } from "../../../../utils/localized-response"
 
 type CreateBatchBody = {
   name?: string
@@ -45,16 +46,12 @@ export const POST = async (
   res: MedusaResponse
 ) => {
   if (!req.body.name || !req.body.product_variant_id) {
-    res.status(400).json({
-      message: "name and product_variant_id are required",
-    })
+    localizedError(req, res, 400, "credentialBatch.required")
     return
   }
 
   if (!req.body.items?.length) {
-    res.status(400).json({
-      message: "items must include at least one credential",
-    })
+    localizedError(req, res, 400, "credentialBatch.itemsRequired")
     return
   }
 
@@ -63,9 +60,7 @@ export const POST = async (
   )
 
   if (missingCredential) {
-    res.status(400).json({
-      message: "Each item requires credential",
-    })
+    localizedError(req, res, 400, "credentialBatch.itemCredentialRequired")
     return
   }
 
@@ -76,8 +71,8 @@ export const POST = async (
   })
 
   if (req.body.template_code && !productTemplate) {
-    res.status(400).json({
-      message: `Unknown template_code: ${req.body.template_code}`,
+    localizedError(req, res, 400, "template.unknown", {
+      templateCode: req.body.template_code,
     })
     return
   }

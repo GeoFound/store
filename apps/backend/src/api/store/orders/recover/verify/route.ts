@@ -4,6 +4,7 @@ import { Modules } from "@medusajs/framework/utils"
 import { emitOrderAccessTokenIssuedEvent } from "../../../../../platform/events"
 import { getOrderAccessProvider } from "../../../../../platform/order-access"
 import { resolveGuestOrderAccessService } from "../../../../../platform/services"
+import { localizedError } from "../../../../../utils/localized-response"
 import { getRequestAuditContext } from "../../../../../utils/request-audit"
 import { retrieveStoreOrderDetail } from "../../../../../utils/store-order"
 
@@ -21,9 +22,7 @@ export const POST = async (
   const orderAccess = getOrderAccessProvider("guest-order-access")
 
   if (!orderAccess) {
-    res.status(503).json({
-      message: "Order access provider is not available",
-    })
+    localizedError(req, res, 503, "orderAccess.providerUnavailable")
     return
   }
 

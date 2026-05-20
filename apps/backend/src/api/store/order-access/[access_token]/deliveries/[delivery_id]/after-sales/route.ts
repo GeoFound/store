@@ -5,6 +5,7 @@ import {
   resolveSupportAuditService,
 } from "../../../../../../../platform/services"
 import { emitAuditLog } from "../../../../../../../utils/audit-log"
+import { localizedError } from "../../../../../../../utils/localized-response"
 import { getRequestAuditContext } from "../../../../../../../utils/request-audit"
 
 type CreateAfterSaleBody = {
@@ -18,9 +19,7 @@ export const POST = async (
   res: MedusaResponse
 ) => {
   if (!req.body.message) {
-    res.status(400).json({
-      message: "message is required",
-    })
+    localizedError(req, res, 400, "common.messageRequired")
     return
   }
 
