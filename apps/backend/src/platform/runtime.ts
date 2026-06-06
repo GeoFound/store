@@ -177,10 +177,12 @@ export function parsePlatformRuntimeOptionsFromEnv(
       splitCommaList(env.NEXT_PUBLIC_PLATFORM_DISABLED_PLUGINS)
     ),
     enabledContracts: parseCapabilityContractMap(
-      env.PLATFORM_ENABLED_CONTRACTS
+      env.PLATFORM_ENABLED_CONTRACTS,
+      "PLATFORM_ENABLED_CONTRACTS"
     ),
     disabledContracts: parseCapabilityContractMap(
-      env.PLATFORM_DISABLED_CONTRACTS
+      env.PLATFORM_DISABLED_CONTRACTS,
+      "PLATFORM_DISABLED_CONTRACTS"
     ),
   }
 }
@@ -204,7 +206,7 @@ function mergeStringLists(...values: string[][]) {
   return merged.length ? Array.from(new Set(merged)) : undefined
 }
 
-function parseCapabilityContractMap(value?: string) {
+function parseCapabilityContractMap(value?: string, envName = "platform contracts") {
   const entries = (value || "")
     .split(";")
     .map((entry) => entry.trim())
@@ -221,12 +223,20 @@ function parseCapabilityContractMap(value?: string) {
     const capability = rawCapability?.trim()
     const contractNames = splitCommaList(names)
 
-    if (
-      !capability ||
-      !contractNames.length ||
-      !isPlatformCapabilityName(capability)
-    ) {
-      continue
+    if (!capability) {
+      throw new Error(`${envName} contains an empty capability entry`)
+    }
+
+    if (!isPlatformCapabilityName(capability)) {
+      throw new Error(
+        `${envName} contains unsupported capability "${capability}"`
+      )
+    }
+
+    if (!contractNames.length) {
+      throw new Error(
+        `${envName} entry "${capability}" must include at least one contract name`
+      )
     }
 
     result[capability] = mergeStringLists(

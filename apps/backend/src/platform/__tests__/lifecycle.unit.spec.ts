@@ -183,6 +183,26 @@ describe("platform lifecycle", () => {
     })
   })
 
+  it("rejects unsupported contract capabilities from env", () => {
+    expect(() =>
+      parsePlatformRuntimeOptionsFromEnv({
+        PLATFORM_ENABLED_CONTRACTS: "missing-capability:manual",
+      })
+    ).toThrow(
+      'PLATFORM_ENABLED_CONTRACTS contains unsupported capability "missing-capability"'
+    )
+  })
+
+  it("rejects contract env entries without contract names", () => {
+    expect(() =>
+      parsePlatformRuntimeOptionsFromEnv({
+        PLATFORM_DISABLED_CONTRACTS: "payment-provider:",
+      })
+    ).toThrow(
+      'PLATFORM_DISABLED_CONTRACTS entry "payment-provider" must include at least one contract name'
+    )
+  })
+
   it("merges backend and public plugin env lists without duplicates", () => {
     expect(
       parsePlatformRuntimeOptionsFromEnv({

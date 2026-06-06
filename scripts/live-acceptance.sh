@@ -8,8 +8,8 @@ order_id=""
 smoke_log="$(mktemp)"
 backend_pid=""
 storefront_pid=""
-BACKEND_URL="${BACKEND_URL:-http://localhost:9002}"
-STOREFRONT_URL="${STOREFRONT_URL:-http://localhost:8000}"
+BACKEND_URL="${BACKEND_URL:-http://localhost:9102}"
+STOREFRONT_URL="${STOREFRONT_URL:-http://localhost:8100}"
 BACKEND_ENV_FILE="${BACKEND_ENV_FILE:-$ROOT_DIR/apps/backend/.env}"
 STOREFRONT_ENV_FILE="${STOREFRONT_ENV_FILE:-$ROOT_DIR/apps/storefront/.env.local}"
 BACKEND_LOG="${BACKEND_LOG:-/tmp/store-backend-live-acceptance.log}"
@@ -18,7 +18,6 @@ MANUAL_WEBHOOK_SECRET="${MANUAL_WEBHOOK_SECRET:-store_live_smoke_webhook_secret}
 JWT_SECRET="${JWT_SECRET:-store_live_smoke_jwt_secret}"
 COOKIE_SECRET="${COOKIE_SECRET:-store_live_smoke_cookie_secret}"
 XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-/tmp/store-live-acceptance-config}"
-SMOKE_HOME="${SMOKE_HOME:-/tmp/store-live-acceptance-home}"
 
 read_backend_env_value() {
   local key="$1"
@@ -137,14 +136,57 @@ wait_for_url() {
   return 1
 }
 
+url_port() {
+  local url="$1"
+
+  URL_VALUE="$url" node -e '
+const parsed = new URL(process.env.URL_VALUE || "");
+if (parsed.port) {
+  process.stdout.write(parsed.port);
+  process.exit(0);
+}
+process.stdout.write(parsed.protocol === "https:" ? "443" : "80");
+'
+}
+
+BACKEND_PORT="${BACKEND_PORT:-$(url_port "$BACKEND_URL")}"
+STOREFRONT_PORT="${STOREFRONT_PORT:-$(url_port "$STOREFRONT_URL")}"
+
+wait_for_managed_url() {
+  local url="$1"
+  local pid="$2"
+  local name="$3"
+  local log_file="$4"
+  local attempts="${5:-90}"
+  local i
+
+  for ((i = 1; i <= attempts; i++)); do
+    if curl -fsS "$url" >/dev/null 2>&1; then
+      return 0
+    fi
+
+    if ! kill -0 "$pid" 2>/dev/null; then
+      echo "$name process exited while waiting for $url" >&2
+      if [[ -f "$log_file" ]]; then
+        tail -n 80 "$log_file" >&2 || true
+      fi
+      return 1
+    fi
+
+    sleep 1
+  done
+
+  echo "Timed out waiting for $url" >&2
+  return 1
+}
+
 rm -f "$BACKEND_LOG" "$STOREFRONT_LOG"
-mkdir -p "$XDG_CONFIG_HOME" "$SMOKE_HOME"
+mkdir -p "$XDG_CONFIG_HOME"
 assert_site_profile
 
 echo "Starting shared backend..."
 (
   cd "$ROOT_DIR"
-  HOME="$SMOKE_HOME" \
   XDG_CONFIG_HOME="$XDG_CONFIG_HOME" \
   MANUAL_WEBHOOK_SECRET="$MANUAL_WEBHOOK_SECRET" \
   JWT_SECRET="$JWT_SECRET" \
@@ -156,6 +198,7 @@ echo "Starting shared backend..."
   SITE_ID="$SITE_ID" \
   SITE_ENV="$SITE_ENV" \
   SITE_PROFILES_ROOT="$SITE_PROFILES_ROOT" \
+  PORT="$BACKEND_PORT" \
     pnpm --dir apps/backend dev >"$BACKEND_LOG" 2>&1
 ) &
 backend_pid="$!"
@@ -167,17 +210,20 @@ echo "Starting shared storefront..."
   SITE_ENV="$SITE_ENV" \
   NEXT_PUBLIC_SITE_ID="$NEXT_PUBLIC_SITE_ID" \
   NEXT_PUBLIC_SITE_ENV="$NEXT_PUBLIC_SITE_ENV" \
+  NEXT_PUBLIC_MEDUSA_BACKEND_URL="$BACKEND_URL" \
   SITE_PROFILES_ROOT="$SITE_PROFILES_ROOT" \
-    pnpm --dir apps/storefront exec next dev --port 8000 --hostname 127.0.0.1 >"$STOREFRONT_LOG" 2>&1
+    pnpm --dir apps/storefront exec next start --port "$STOREFRONT_PORT" --hostname 127.0.0.1 >"$STOREFRONT_LOG" 2>&1
 ) &
 storefront_pid="$!"
 
-wait_for_url "$BACKEND_URL/health"
-wait_for_url "$STOREFRONT_URL/api/health"
+wait_for_managed_url "$BACKEND_URL/health" "$backend_pid" "backend" "$BACKEND_LOG"
+wait_for_managed_url "$STOREFRONT_URL/api/health" "$storefront_pid" "storefront" "$STOREFRONT_LOG"
 
 echo "Running live order smoke..."
 BUYER_EMAIL="$BUYER_EMAIL" \
 MANAGE_SERVICES=0 \
+BACKEND_URL="$BACKEND_URL" \
+STOREFRONT_URL="$STOREFRONT_URL" \
 MANUAL_WEBHOOK_SECRET="$MANUAL_WEBHOOK_SECRET" \
 JWT_SECRET="$JWT_SECRET" \
 COOKIE_SECRET="$COOKIE_SECRET" \
@@ -203,6 +249,8 @@ echo "Running live recovery smoke..."
 BUYER_EMAIL="$BUYER_EMAIL" \
 ORDER_ID="$order_id" \
 MANAGE_SERVICES=0 \
+BACKEND_URL="$BACKEND_URL" \
+STOREFRONT_URL="$STOREFRONT_URL" \
 BACKEND_LOG="$BACKEND_LOG" \
 STOREFRONT_LOG="$STOREFRONT_LOG" \
 CREDENTIAL_ENCRYPTION_KEY="$CREDENTIAL_ENCRYPTION_KEY" \

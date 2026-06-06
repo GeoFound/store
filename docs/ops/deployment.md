@@ -10,7 +10,10 @@ This repository now includes a production deployment toolchain for a single-VPS 
 - `.github/workflows/deploy.yml`: one-click deploy/rollback from GitHub Actions.
 - `.github/workflows/deploy-sites.yml`: profile-driven multi-site deployment to multiple isolated VPS targets.
 
-`Deploy` workflow now runs `pnpm check:ci` and `pnpm acceptance` as quality gates before remote deploy (rollback skips these gates).
+`Deploy` workflow now runs `pnpm check:ci`, `pnpm acceptance:build`, and
+`pnpm acceptance:live` as quality gates before remote deploy (rollback skips
+these gates). The live gate creates and pays a local order, verifies delivery,
+claim idempotency, and order recovery.
 
 ## Recommended First Production Shape
 

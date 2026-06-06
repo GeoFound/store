@@ -16,9 +16,12 @@ SITE_ENV="${SITE_ENV:-development}"
 NEXT_PUBLIC_SITE_ID="${NEXT_PUBLIC_SITE_ID:-$SITE_ID}"
 NEXT_PUBLIC_SITE_ENV="${NEXT_PUBLIC_SITE_ENV:-$SITE_ENV}"
 SITE_PROFILES_ROOT="$(resolve_site_profiles_root "$ROOT_DIR" "${SITE_PROFILES_ROOT:-}")"
+XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-/tmp/store-local-acceptance-config}"
 
 validate_site_profile "$SITE_ID" "$SITE_ENV" "$SITE_PROFILES_ROOT"
 pnpm services:up
+mkdir -p "$XDG_CONFIG_HOME"
+XDG_CONFIG_HOME="$XDG_CONFIG_HOME" \
 JWT_SECRET="$JWT_SECRET" \
 COOKIE_SECRET="$COOKIE_SECRET" \
 MANUAL_WEBHOOK_SECRET="$MANUAL_WEBHOOK_SECRET" \
@@ -30,6 +33,7 @@ SITE_ID="$SITE_ID" \
 SITE_ENV="$SITE_ENV" \
 SITE_PROFILES_ROOT="$SITE_PROFILES_ROOT" \
   pnpm --dir apps/backend exec medusa db:migrate
+XDG_CONFIG_HOME="$XDG_CONFIG_HOME" \
 JWT_SECRET="$JWT_SECRET" \
 COOKIE_SECRET="$COOKIE_SECRET" \
 MANUAL_WEBHOOK_SECRET="$MANUAL_WEBHOOK_SECRET" \
@@ -54,5 +58,4 @@ NEXT_PUBLIC_SITE_ENV="$NEXT_PUBLIC_SITE_ENV" \
 SITE_PROFILES_ROOT="$SITE_PROFILES_ROOT" \
   pnpm --dir apps/storefront build
 
-echo "local-acceptance: build checks passed"
-echo "Start backend and storefront, then run scripts/health-check.sh for live endpoint checks."
+echo "local-acceptance: build-level checks passed"

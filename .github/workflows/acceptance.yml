@@ -42,5 +42,8 @@ jobs:
           cp apps/backend/.env.template apps/backend/.env
           cp apps/storefront/.env.example apps/storefront/.env.local
 
-      - name: Run docker-backed acceptance
-        run: pnpm acceptance
+      - name: Run build-level acceptance
+        run: pnpm acceptance:build
+
+      - name: Run live order acceptance
+        run: pnpm acceptance:live

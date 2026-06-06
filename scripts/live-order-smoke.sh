@@ -14,10 +14,38 @@ STOREFRONT_ENV_FILE="${STOREFRONT_ENV_FILE:-$ROOT_DIR/apps/storefront/.env.local
 MANAGE_SERVICES="${MANAGE_SERVICES:-1}"
 RUN_RECOVERY_SMOKE="${RUN_RECOVERY_SMOKE:-0}"
 XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-/tmp/store-smoke-config}"
-SMOKE_HOME="${SMOKE_HOME:-/tmp/store-smoke-home}"
 MANUAL_WEBHOOK_SECRET="${MANUAL_WEBHOOK_SECRET:-}"
 JWT_SECRET="${JWT_SECRET:-store_live_smoke_jwt_secret}"
 COOKIE_SECRET="${COOKIE_SECRET:-store_live_smoke_cookie_secret}"
+
+require_cmd() {
+  local cmd="$1"
+
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    echo "Missing required command: $cmd" >&2
+    exit 2
+  fi
+}
+
+require_cmd curl
+require_cmd docker
+require_cmd jq
+require_cmd node
+require_cmd openssl
+require_cmd pnpm
+
+url_port() {
+  local url="$1"
+
+  URL_VALUE="$url" node -e '
+const parsed = new URL(process.env.URL_VALUE || "");
+if (parsed.port) {
+  process.stdout.write(parsed.port);
+  process.exit(0);
+}
+process.stdout.write(parsed.protocol === "https:" ? "443" : "80");
+'
+}
 
 read_backend_env_value() {
   local key="$1"
@@ -74,6 +102,26 @@ resolve_optional_env_value() {
   fi
 
   printf '%s' "$candidate"
+}
+
+resolve_publishable_key() {
+  local env_candidate="${NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY:-}"
+  local db_candidate
+
+  db_candidate="$(
+    docker exec "$POSTGRES_CONTAINER" \
+      psql -U store -d store -tAc \
+      "select token from api_key where type = 'publishable' and revoked_at is null order by created_at desc limit 1;" \
+      2>/dev/null || true
+  )"
+  db_candidate="$(printf '%s' "$db_candidate" | tr -d '[:space:]')"
+
+  if [[ -n "$db_candidate" ]]; then
+    printf '%s' "$db_candidate"
+    return 0
+  fi
+
+  printf '%s' "$env_candidate"
 }
 
 select_decryptable_variant_id() {
@@ -302,7 +350,9 @@ NEXT_PUBLIC_SITE_ID="${REQUESTED_NEXT_PUBLIC_SITE_ID:-${NEXT_PUBLIC_SITE_ID:-$SI
 NEXT_PUBLIC_SITE_ENV="${REQUESTED_NEXT_PUBLIC_SITE_ENV:-${NEXT_PUBLIC_SITE_ENV:-$SITE_ENV}}"
 SITE_PROFILES_ROOT="${REQUESTED_SITE_PROFILES_ROOT:-${SITE_PROFILES_ROOT:-$(read_backend_env_value SITE_PROFILES_ROOT)}}"
 SITE_PROFILES_ROOT="$(resolve_site_profiles_root "$ROOT_DIR" "$SITE_PROFILES_ROOT")"
-PUBLISHABLE_KEY="${NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY:-}"
+BACKEND_PORT="${BACKEND_PORT:-$(url_port "$BACKEND_URL")}"
+STOREFRONT_PORT="${STOREFRONT_PORT:-$(url_port "$STOREFRONT_URL")}"
+PUBLISHABLE_KEY="$(resolve_publishable_key)"
 
 if [[ -z "$PUBLISHABLE_KEY" ]]; then
   echo "Missing NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY" >&2
@@ -318,7 +368,7 @@ if [[ -z "$MANUAL_WEBHOOK_SECRET" ]]; then
   exit 1
 fi
 
-mkdir -p "$XDG_CONFIG_HOME" "$SMOKE_HOME"
+mkdir -p "$XDG_CONFIG_HOME"
 
 backend_pid=""
 storefront_pid=""
@@ -350,6 +400,34 @@ wait_for_url() {
     if curl -fsS "$url" >/dev/null 2>&1; then
       return 0
     fi
+    sleep 1
+  done
+
+  echo "Timed out waiting for $url" >&2
+  return 1
+}
+
+wait_for_managed_url() {
+  local url="$1"
+  local pid="$2"
+  local name="$3"
+  local log_file="$4"
+  local attempts="${5:-90}"
+  local i
+
+  for ((i = 1; i <= attempts; i++)); do
+    if curl -fsS "$url" >/dev/null 2>&1; then
+      return 0
+    fi
+
+    if ! kill -0 "$pid" 2>/dev/null; then
+      echo "$name process exited while waiting for $url" >&2
+      if [[ -f "$log_file" ]]; then
+        tail -n 80 "$log_file" >&2 || true
+      fi
+      return 1
+    fi
+
     sleep 1
   done
 
@@ -412,7 +490,6 @@ if [[ "$MANAGE_SERVICES" == "1" ]]; then
   echo "Starting backend..."
   (
     cd "$ROOT_DIR"
-    HOME="$SMOKE_HOME" \
     XDG_CONFIG_HOME="$XDG_CONFIG_HOME" \
     MANUAL_WEBHOOK_SECRET="$MANUAL_WEBHOOK_SECRET" \
     JWT_SECRET="$JWT_SECRET" \
@@ -424,6 +501,7 @@ if [[ "$MANAGE_SERVICES" == "1" ]]; then
     SITE_ID="$SITE_ID" \
     SITE_ENV="$SITE_ENV" \
     SITE_PROFILES_ROOT="$SITE_PROFILES_ROOT" \
+    PORT="$BACKEND_PORT" \
     pnpm --dir apps/backend dev >"$BACKEND_LOG" 2>&1
   ) &
   backend_pid="$!"
@@ -435,14 +513,20 @@ if [[ "$MANAGE_SERVICES" == "1" ]]; then
     SITE_ENV="$SITE_ENV" \
     NEXT_PUBLIC_SITE_ID="$NEXT_PUBLIC_SITE_ID" \
     NEXT_PUBLIC_SITE_ENV="$NEXT_PUBLIC_SITE_ENV" \
+    NEXT_PUBLIC_MEDUSA_BACKEND_URL="$BACKEND_URL" \
     SITE_PROFILES_ROOT="$SITE_PROFILES_ROOT" \
-      pnpm --dir apps/storefront exec next dev --port 8000 --hostname 127.0.0.1 >"$STOREFRONT_LOG" 2>&1
+      pnpm --dir apps/storefront exec next dev --port "$STOREFRONT_PORT" --hostname 127.0.0.1 >"$STOREFRONT_LOG" 2>&1
   ) &
   storefront_pid="$!"
 fi
 
-wait_for_url "$BACKEND_URL/health"
-wait_for_url "$STOREFRONT_URL/api/health"
+if [[ "$MANAGE_SERVICES" == "1" ]]; then
+  wait_for_managed_url "$BACKEND_URL/health" "$backend_pid" "backend" "$BACKEND_LOG"
+  wait_for_managed_url "$STOREFRONT_URL/api/health" "$storefront_pid" "storefront" "$STOREFRONT_LOG"
+else
+  wait_for_url "$BACKEND_URL/health"
+  wait_for_url "$STOREFRONT_URL/api/health"
+fi
 
 echo "Fetching region and product data..."
 regions_json="$(api_get "/store/regions")"

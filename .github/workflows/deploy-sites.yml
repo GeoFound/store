@@ -76,8 +76,11 @@ jobs:
       - name: Run quality gate
         run: pnpm check:ci
 
-      - name: Run acceptance gate
-        run: pnpm acceptance
+      - name: Run build-level acceptance gate
+        run: pnpm acceptance:build
+
+      - name: Run live order acceptance gate
+        run: pnpm acceptance:live
 
   resolve-targets:
     needs: [quality-gate]

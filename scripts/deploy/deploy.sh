@@ -10,6 +10,7 @@ SHARED_DIR="$APP_ROOT/shared"
 CURRENT_LINK="$APP_ROOT/current"
 LOCK_FILE="$APP_ROOT/deploy.lock"
 PNPM_STORE_PATH="${PNPM_STORE_PATH:-$SHARED_DIR/pnpm-store}"
+XDG_CONFIG_HOME="${XDG_CONFIG_HOME:-$SHARED_DIR/xdg-config}"
 BACKEND_ENV_FILE="${BACKEND_ENV_FILE:-$SHARED_DIR/backend.env}"
 STOREFRONT_ENV_FILE="${STOREFRONT_ENV_FILE:-$SHARED_DIR/storefront.env}"
 KEEP_RELEASES="${KEEP_RELEASES:-8}"
@@ -364,7 +365,7 @@ else
 fi
 
 echo "Preparing release $release_id ($commit_sha)"
-mkdir -p "$new_release" "$PNPM_STORE_PATH"
+mkdir -p "$new_release" "$PNPM_STORE_PATH" "$XDG_CONFIG_HOME"
 git archive "$commit_sha" | tar -x -C "$new_release"
 
 ln -sfn "$BACKEND_ENV_FILE" "$new_release/apps/backend/.env"
@@ -373,11 +374,11 @@ ln -sfn "$STOREFRONT_ENV_FILE" "$new_release/apps/storefront/.env.local"
 (
   cd "$new_release"
   PNPM_STORE_PATH="$PNPM_STORE_PATH" pnpm install --frozen-lockfile
-  PNPM_STORE_PATH="$PNPM_STORE_PATH" pnpm --dir apps/backend build
+  XDG_CONFIG_HOME="$XDG_CONFIG_HOME" PNPM_STORE_PATH="$PNPM_STORE_PATH" pnpm --dir apps/backend build
   PNPM_STORE_PATH="$PNPM_STORE_PATH" pnpm --dir apps/storefront build
 
   if [[ "$RUN_DB_MIGRATIONS" == "1" ]]; then
-    PNPM_STORE_PATH="$PNPM_STORE_PATH" pnpm db:migrate
+    XDG_CONFIG_HOME="$XDG_CONFIG_HOME" PNPM_STORE_PATH="$PNPM_STORE_PATH" pnpm db:migrate
   fi
 )
 

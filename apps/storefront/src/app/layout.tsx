@@ -1,21 +1,10 @@
 import type { Metadata } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
 import { PrivacyConsentBanner } from "@/components/privacy-consent-banner"
 import { ensureStorefrontExtensionsRegistered } from "@/extensions/defaults"
 import { renderStorefrontExtensions } from "@/extensions/registry"
 import { getSiteConfig } from "@/lib/site-config"
 import { getStorefrontThemeAttributes } from "@/theme/storefront-theme"
 import "./globals.css"
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-})
 
 export async function generateMetadata(): Promise<Metadata> {
   const siteConfig = getSiteConfig()
@@ -40,7 +29,7 @@ export default function RootLayout({
   return (
     <html
       lang={htmlLang}
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className="h-full antialiased"
     >
       <body
         className={`${theme.bodyClassName} flex min-h-full flex-col`}

@@ -1,11 +1,15 @@
 # Local Acceptance
 
-Run the build-level acceptance check:
+Run the full local acceptance gate:
 
 ```bash
 pnpm dev:check
 pnpm acceptance
 ```
+
+`pnpm acceptance` runs the build-level gate first, then starts the backend and
+storefront and runs the live order/recovery smoke. Use
+`pnpm acceptance:build` only when you explicitly need the build-level subset.
 
 `pnpm dev:check` is the daily local sanity command. By default it validates toolchain/env, ensures PostgreSQL and Redis are running, then runs migration + backend build + storefront lint/build.
 
@@ -17,19 +21,21 @@ pnpm dev:check:full    # includes pnpm test
 pnpm dev:check:live    # includes live purchase smoke
 ```
 
-This verifies:
+The build-level subset verifies:
 
 - PostgreSQL and Redis start.
 - Medusa migrations run.
 - Backend builds.
 - Storefront lints.
 - Storefront builds.
+- Site profile platform config references real plugins, contracts, and product
+  template fulfillment capabilities.
 
 `pnpm acceptance` defaults to `SITE_ID=site-1`, `SITE_ENV=development`, and
 `SITE_PROFILES_ROOT=profiles/sites` from the repository root. Override those
 variables when validating a different local site profile.
 
-For live endpoint checks, start both apps:
+For manual live endpoint checks, start both apps:
 
 ```bash
 pnpm dev:backend
@@ -42,7 +48,7 @@ Then run:
 pnpm health
 ```
 
-For a full live purchase smoke test with local services and seeded credential inventory:
+For the live purchase smoke test with local services and seeded credential inventory:
 
 ```bash
 pnpm acceptance:live
@@ -64,7 +70,10 @@ export CREDENTIAL_ENCRYPTION_KEY_PREVIOUS=
 export DELIVERY_ENCRYPTION_KEY_PREVIOUS=
 ```
 
-This creates a cart, reserves inventory, confirms manual payment through the webhook, claims order access, and verifies that at least one delivery record with non-empty payload is readable from the order access endpoint.
+This creates a cart, reserves inventory, confirms manual payment through the
+signed webhook, races two order-access claim requests to verify one-time claim
+protection, replays the webhook to verify idempotency, verifies delivery payload
+readability, then runs order recovery.
 
 ## Manual Full Flow Checklist
 
