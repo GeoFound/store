@@ -243,6 +243,7 @@ validate_storefront_env_file() {
   load_env_file "$env_file"
 
   local required_vars=(
+    MEDUSA_BACKEND_URL
     NEXT_PUBLIC_MEDUSA_BACKEND_URL
     NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY
   )

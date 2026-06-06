@@ -8,8 +8,8 @@ order_id=""
 smoke_log="$(mktemp)"
 backend_pid=""
 storefront_pid=""
-BACKEND_URL="${BACKEND_URL:-http://localhost:9102}"
-STOREFRONT_URL="${STOREFRONT_URL:-http://localhost:8100}"
+BACKEND_URL="${BACKEND_URL:-http://127.0.0.1:9102}"
+STOREFRONT_URL="${STOREFRONT_URL:-http://127.0.0.1:8100}"
 BACKEND_ENV_FILE="${BACKEND_ENV_FILE:-$ROOT_DIR/apps/backend/.env}"
 STOREFRONT_ENV_FILE="${STOREFRONT_ENV_FILE:-$ROOT_DIR/apps/storefront/.env.local}"
 BACKEND_LOG="${BACKEND_LOG:-/tmp/store-backend-live-acceptance.log}"
@@ -177,6 +177,12 @@ wait_for_managed_url() {
   done
 
   echo "Timed out waiting for $url" >&2
+  echo "Last response from $url:" >&2
+  curl -i --max-time 5 "$url" >&2 || true
+  if [[ -f "$log_file" ]]; then
+    echo "Last $name log lines:" >&2
+    tail -n 120 "$log_file" >&2 || true
+  fi
   return 1
 }
 
@@ -210,6 +216,7 @@ echo "Starting shared storefront..."
   SITE_ENV="$SITE_ENV" \
   NEXT_PUBLIC_SITE_ID="$NEXT_PUBLIC_SITE_ID" \
   NEXT_PUBLIC_SITE_ENV="$NEXT_PUBLIC_SITE_ENV" \
+  MEDUSA_BACKEND_URL="$BACKEND_URL" \
   NEXT_PUBLIC_MEDUSA_BACKEND_URL="$BACKEND_URL" \
   SITE_PROFILES_ROOT="$SITE_PROFILES_ROOT" \
     pnpm --dir apps/storefront exec next start --port "$STOREFRONT_PORT" --hostname 127.0.0.1 >"$STOREFRONT_LOG" 2>&1

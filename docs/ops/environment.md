@@ -93,6 +93,7 @@ Required:
 
 | Name | Purpose |
 | --- | --- |
+| `MEDUSA_BACKEND_URL` | Server-side backend Store API URL used by storefront runtime routes such as `/api/health`. |
 | `NEXT_PUBLIC_MEDUSA_BACKEND_URL` | Public URL of the backend Store API. |
 | `NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY` | Medusa publishable API key. |
 | `NEXT_PUBLIC_MEDUSA_REGION_ID` | Optional fixed region id. |

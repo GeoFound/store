@@ -169,6 +169,7 @@ if (target === "storefront" || target === "all") {
   printLine("SITE_ENV", siteEnv)
   printLine("NEXT_PUBLIC_SITE_ID", resolvedSiteId)
   printLine("NEXT_PUBLIC_SITE_ENV", siteEnv)
+  printLine("MEDUSA_BACKEND_URL", apiOrigin)
   printLine("NEXT_PUBLIC_MEDUSA_BACKEND_URL", apiOrigin)
   printLine("NEXT_PUBLIC_PLATFORM_ENABLED_PLUGINS", enabledPlugins)
   printLine("NEXT_PUBLIC_PLATFORM_DISABLED_PLUGINS", disabledPlugins)

@@ -1,9 +1,13 @@
 import { NextResponse } from "next/server"
 
 const DEFAULT_BACKEND_TIMEOUT_MS = 5000
+const SERVER_BACKEND_URL_ENV = "MEDUSA_BACKEND_URL"
+const PUBLIC_BACKEND_URL_ENV = "NEXT_PUBLIC_MEDUSA_BACKEND_URL"
+
+export const dynamic = "force-dynamic"
 
 export async function GET() {
-  const backendBaseUrl = (process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "").trim()
+  const backendBaseUrl = readBackendBaseUrl()
 
   if (!backendBaseUrl) {
     return NextResponse.json(
@@ -13,7 +17,7 @@ export async function GET() {
         timestamp: new Date().toISOString(),
         backend: {
           ok: false,
-          error: "NEXT_PUBLIC_MEDUSA_BACKEND_URL is missing",
+          error: "MEDUSA_BACKEND_URL or NEXT_PUBLIC_MEDUSA_BACKEND_URL is missing",
         },
       },
       {
@@ -64,4 +68,12 @@ export async function GET() {
       }
     )
   }
+}
+
+function readBackendBaseUrl() {
+  return (
+    process.env[SERVER_BACKEND_URL_ENV] ||
+    process.env[PUBLIC_BACKEND_URL_ENV] ||
+    ""
+  ).trim()
 }
