@@ -2,11 +2,11 @@ import type {
   PlatformResolutionContext,
   VersionedPluginContract,
 } from "./contracts"
-import type { MedusaContainer } from "@medusajs/framework/types"
+import type { BackendRuntimeContext } from "./backend-context"
 import { getPlatformRuntime } from "./runtime"
 
 export type CreateDeliveryInput = {
-  scope?: MedusaContainer
+  scope?: BackendRuntimeContext
   deliveryId?: string
   orderId?: string
   cartId?: string

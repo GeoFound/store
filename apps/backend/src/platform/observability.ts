@@ -1,4 +1,4 @@
-import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import { resolveBackendLogger } from "./backend-context"
 import type {
   DeliveryCompletedEvent,
   DeliveryCreatedEvent,
@@ -24,11 +24,9 @@ export function ensurePlatformObservabilityHooksRegistered() {
     version: "1.0.0",
     enabled: true,
     handler: async (event) => {
-      const logger = event.scope.resolve(ContainerRegistrationKeys.LOGGER) as {
-        info: (message: string, meta?: Record<string, unknown>) => void
-      }
+      const logger = resolveBackendLogger(event.scope)
 
-      logger.info("Platform event: payment attempt reserved", {
+      logger.info?.("Platform event: payment attempt reserved", {
         event: event.name,
         occurred_at: event.occurredAt,
         attempt_id: event.payload.attempt.id,
@@ -44,11 +42,9 @@ export function ensurePlatformObservabilityHooksRegistered() {
     version: "1.0.0",
     enabled: true,
     handler: async (event) => {
-      const logger = event.scope.resolve(ContainerRegistrationKeys.LOGGER) as {
-        info: (message: string, meta?: Record<string, unknown>) => void
-      }
+      const logger = resolveBackendLogger(event.scope)
 
-      logger.info("Platform event: payment attempt finalized", {
+      logger.info?.("Platform event: payment attempt finalized", {
         event: event.name,
         occurred_at: event.occurredAt,
         attempt_id: event.payload.attempt.id,
@@ -64,11 +60,9 @@ export function ensurePlatformObservabilityHooksRegistered() {
     version: "1.0.0",
     enabled: true,
     handler: async (event) => {
-      const logger = event.scope.resolve(ContainerRegistrationKeys.LOGGER) as {
-        info: (message: string, meta?: Record<string, unknown>) => void
-      }
+      const logger = resolveBackendLogger(event.scope)
 
-      logger.info("Platform event: delivery created", {
+      logger.info?.("Platform event: delivery created", {
         event: event.name,
         occurred_at: event.occurredAt,
         delivery_id: event.payload.delivery.id,
@@ -85,11 +79,9 @@ export function ensurePlatformObservabilityHooksRegistered() {
     version: "1.0.0",
     enabled: true,
     handler: async (event) => {
-      const logger = event.scope.resolve(ContainerRegistrationKeys.LOGGER) as {
-        info: (message: string, meta?: Record<string, unknown>) => void
-      }
+      const logger = resolveBackendLogger(event.scope)
 
-      logger.info("Platform event: delivery completed", {
+      logger.info?.("Platform event: delivery completed", {
         event: event.name,
         occurred_at: event.occurredAt,
         delivery_id: event.payload.delivery.id,
@@ -106,11 +98,9 @@ export function ensurePlatformObservabilityHooksRegistered() {
     version: "1.0.0",
     enabled: true,
     handler: async (event) => {
-      const logger = event.scope.resolve(ContainerRegistrationKeys.LOGGER) as {
-        info: (message: string, meta?: Record<string, unknown>) => void
-      }
+      const logger = resolveBackendLogger(event.scope)
 
-      logger.info("Platform event: order access recovery code created", {
+      logger.info?.("Platform event: order access recovery code created", {
         event: event.name,
         occurred_at: event.occurredAt,
         order_id: event.payload.orderId,
@@ -126,11 +116,9 @@ export function ensurePlatformObservabilityHooksRegistered() {
     version: "1.0.0",
     enabled: true,
     handler: async (event) => {
-      const logger = event.scope.resolve(ContainerRegistrationKeys.LOGGER) as {
-        info: (message: string, meta?: Record<string, unknown>) => void
-      }
+      const logger = resolveBackendLogger(event.scope)
 
-      logger.info("Platform event: order access token issued", {
+      logger.info?.("Platform event: order access token issued", {
         event: event.name,
         occurred_at: event.occurredAt,
         order_id: event.payload.orderId,

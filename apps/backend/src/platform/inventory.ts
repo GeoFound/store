@@ -1,4 +1,4 @@
-import type { MedusaContainer } from "@medusajs/framework/types"
+import type { BackendRuntimeContext } from "./backend-context"
 import type {
   PlatformResolutionContext,
   VersionedPluginContract,
@@ -32,7 +32,7 @@ export type InventoryReservation = {
 }
 
 export type ReserveInventoryInput = {
-  scope: MedusaContainer
+  scope: BackendRuntimeContext
   cartId: string
   attemptId: string
   item: FulfillmentCartItem
@@ -44,13 +44,13 @@ export type ReserveInventoryInput = {
 }
 
 export type FinalizeInventoryReservationInput = {
-  scope: MedusaContainer
+  scope: BackendRuntimeContext
   reservation: InventoryReservation
   orderId: string
 }
 
 export type ReleaseInventoryReservationInput = {
-  scope: MedusaContainer
+  scope: BackendRuntimeContext
   reservationKey: string
 }
 
@@ -76,7 +76,7 @@ export interface InventoryHandler {
     input: ReleaseInventoryReservationInput
   ): Promise<unknown> | unknown
   listAvailability?(input: {
-    scope: MedusaContainer
+    scope: BackendRuntimeContext
     variantIds: string[]
   }): Promise<InventoryAvailability[]> | InventoryAvailability[]
 }

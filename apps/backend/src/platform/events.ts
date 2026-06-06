@@ -1,9 +1,9 @@
-import type { MedusaContainer } from "@medusajs/framework/types"
+import type { BackendRuntimeContext } from "./backend-context"
 import { PLATFORM_HOOKS } from "./hooks"
 import { emitPlatformHook } from "./runtime"
 
 export type PlatformEventEnvelope<TName extends string, TPayload> = {
-  scope: MedusaContainer
+  scope: BackendRuntimeContext
   name: TName
   occurredAt: string
   payload: TPayload
@@ -28,6 +28,16 @@ export type PaymentAttemptFinalizedEvent = PlatformEventEnvelope<
   {
     attempt: Record<string, unknown>
     orderId: string
+  }
+>
+
+export type PaymentAttemptClosedEvent = PlatformEventEnvelope<
+  typeof PLATFORM_HOOKS.paymentAttemptClosed,
+  {
+    attemptId: string
+    customerEmail?: string | null
+    reason?: string
+    payload?: Record<string, unknown> | null
   }
 >
 
@@ -77,7 +87,7 @@ export type OrderAccessTokenIssuedEvent = PlatformEventEnvelope<
 >
 
 export async function emitPaymentAttemptReservedEvent(
-  scope: MedusaContainer,
+  scope: BackendRuntimeContext,
   payload: PaymentAttemptReservedEvent["payload"]
 ) {
   await emitPlatformHook<PaymentAttemptReservedEvent>(
@@ -92,7 +102,7 @@ export async function emitPaymentAttemptReservedEvent(
 }
 
 export async function emitPaymentAttemptFinalizedEvent(
-  scope: MedusaContainer,
+  scope: BackendRuntimeContext,
   payload: PaymentAttemptFinalizedEvent["payload"]
 ) {
   await emitPlatformHook<PaymentAttemptFinalizedEvent>(
@@ -106,8 +116,23 @@ export async function emitPaymentAttemptFinalizedEvent(
   )
 }
 
+export async function emitPaymentAttemptClosedEvent(
+  scope: BackendRuntimeContext,
+  payload: PaymentAttemptClosedEvent["payload"]
+) {
+  await emitPlatformHook<PaymentAttemptClosedEvent>(
+    PLATFORM_HOOKS.paymentAttemptClosed,
+    {
+      scope,
+      name: PLATFORM_HOOKS.paymentAttemptClosed,
+      occurredAt: new Date().toISOString(),
+      payload,
+    }
+  )
+}
+
 export async function emitDeliveryCreatedEvent(
-  scope: MedusaContainer,
+  scope: BackendRuntimeContext,
   payload: DeliveryCreatedEvent["payload"]
 ) {
   await emitPlatformHook<DeliveryCreatedEvent>(PLATFORM_HOOKS.deliveryCreated, {
@@ -119,7 +144,7 @@ export async function emitDeliveryCreatedEvent(
 }
 
 export async function emitDeliveryCompletedEvent(
-  scope: MedusaContainer,
+  scope: BackendRuntimeContext,
   payload: DeliveryCompletedEvent["payload"]
 ) {
   await emitPlatformHook<DeliveryCompletedEvent>(
@@ -134,7 +159,7 @@ export async function emitDeliveryCompletedEvent(
 }
 
 export async function emitOrderAccessRecoveryCodeCreatedEvent(
-  scope: MedusaContainer,
+  scope: BackendRuntimeContext,
   payload: OrderAccessRecoveryCodeCreatedEvent["payload"]
 ) {
   await emitPlatformHook<OrderAccessRecoveryCodeCreatedEvent>(
@@ -149,7 +174,7 @@ export async function emitOrderAccessRecoveryCodeCreatedEvent(
 }
 
 export async function emitOrderAccessTokenIssuedEvent(
-  scope: MedusaContainer,
+  scope: BackendRuntimeContext,
   payload: OrderAccessTokenIssuedEvent["payload"]
 ) {
   await emitPlatformHook<OrderAccessTokenIssuedEvent>(

@@ -7,7 +7,7 @@ import { g2aSupplierProvider } from "../modules/supplier-g2a/provider"
 import { reloadlySupplierProvider } from "../modules/supplier-reloadly/provider"
 import { supplierProcurementDeliveryHandler } from "../modules/supplier-procurement/delivery-handler"
 import { externalApiFulfillmentPolicy } from "../modules/supplier-procurement/product-policy"
-import type { PaymentProvider } from "../modules/payment-router/providers/types"
+import type { PaymentProvider } from "./payment-providers"
 import {
   createDefaultFulfillmentPolicy,
   createNoopPaymentProvider,

@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { addLineItem, createCart } from "@/lib/medusa"
+import { addLineItem, createCart } from "@/lib/commerce"
 import { emitStoreAnalyticsEvent, minorToDecimal } from "@/lib/analytics"
 
 const CART_ID_KEY = "store_cart_id"

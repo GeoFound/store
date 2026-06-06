@@ -6,7 +6,7 @@ import {
   deleteLineItem,
   retrieveCart,
   updateLineItem,
-} from "@/lib/medusa"
+} from "@/lib/commerce"
 import { formatMoney } from "@/lib/format"
 import { emitStoreAnalyticsEvent, minorToDecimal } from "@/lib/analytics"
 import type { Cart } from "@/lib/types"

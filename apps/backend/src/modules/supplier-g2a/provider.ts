@@ -9,6 +9,10 @@ import { getG2aConfig } from "./config"
 export const g2aSupplierProvider: SupplierProvider = {
   code: "g2a",
 
+  isConfigured() {
+    return getG2aConfig().configured
+  },
+
   quote(input) {
     return {
       available: true,

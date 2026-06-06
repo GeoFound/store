@@ -1,5 +1,5 @@
 import crypto from "crypto"
-import type { MedusaContainer } from "@medusajs/framework/types"
+import type { ILockingModule } from "@medusajs/framework/types"
 import { MedusaError, MedusaService, Modules } from "@medusajs/framework/utils"
 import AnalyticsDispatch from "./models/analytics-dispatch"
 import AnalyticsEvent from "./models/analytics-event"
@@ -43,7 +43,7 @@ class AnalyticsCoreModuleService extends MedusaService({
     const runner = async () => this.captureEventInternal(input, destinationCodes, eventKey)
 
     if (eventKey && input.scope) {
-      const locking = input.scope.resolve(Modules.LOCKING)
+      const locking = input.scope.resolve<ILockingModule>(Modules.LOCKING)
 
       return locking.execute(`analytics_event_key:${eventKey}`, runner, {
         timeout: 20,

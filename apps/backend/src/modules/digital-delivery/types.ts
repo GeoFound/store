@@ -1,5 +1,7 @@
+import type { BackendRuntimeContext } from "../../platform/backend-context"
+
 export type CreateManualDeliveryInput = {
-  scope?: import("@medusajs/framework/types").MedusaContainer
+  scope?: BackendRuntimeContext
   deliveryId?: string
   orderId?: string
   cartId?: string

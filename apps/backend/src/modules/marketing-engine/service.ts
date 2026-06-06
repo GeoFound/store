@@ -1,4 +1,4 @@
-import type { MedusaContainer } from "@medusajs/framework/types"
+import type { ILockingModule } from "@medusajs/framework/types"
 import { MedusaError, MedusaService, Modules } from "@medusajs/framework/utils"
 import MarketingCampaign from "./models/marketing-campaign"
 import MarketingOffer from "./models/marketing-offer"
@@ -187,7 +187,7 @@ class MarketingEngineModuleService extends MedusaService({
   }
 
   async reserveCouponForAttempt(input: ReserveCouponForAttemptInput) {
-    const locking = input.scope.resolve(Modules.LOCKING)
+    const locking = input.scope.resolve<ILockingModule>(Modules.LOCKING)
     const couponCode = normalizeCode(input.couponCode, "coupon code")
     const customerEmail = normalizeEmail(input.customerEmail)
 
@@ -292,7 +292,7 @@ class MarketingEngineModuleService extends MedusaService({
   }
 
   async confirmCouponForAttempt(input: ConfirmCouponForAttemptInput) {
-    const locking = input.scope.resolve(Modules.LOCKING)
+    const locking = input.scope.resolve<ILockingModule>(Modules.LOCKING)
 
     return locking.execute(
       [`payment_attempt:${input.attemptId}`],
@@ -356,7 +356,7 @@ class MarketingEngineModuleService extends MedusaService({
   }
 
   async releaseCouponForAttempt(input: ReleaseCouponForAttemptInput) {
-    const locking = input.scope.resolve(Modules.LOCKING)
+    const locking = input.scope.resolve<ILockingModule>(Modules.LOCKING)
 
     return locking.execute(
       [`payment_attempt:${input.attemptId}`],
@@ -474,7 +474,7 @@ class MarketingEngineModuleService extends MedusaService({
       return null
     }
 
-    const locking = input.scope.resolve(Modules.LOCKING)
+    const locking = input.scope.resolve<ILockingModule>(Modules.LOCKING)
 
     return locking.execute(
       [`marketing_referral:${referral.code}`, `order:${input.orderId}`],

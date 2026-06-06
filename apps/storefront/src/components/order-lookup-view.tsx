@@ -11,7 +11,7 @@ import {
   retrieveDelivery,
   retrieveOrder,
   verifyOrderRecovery,
-} from "@/lib/medusa"
+} from "@/lib/commerce"
 import type {
   AfterSale,
   DeliveryLookupResult,

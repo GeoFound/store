@@ -70,6 +70,7 @@ export class PlatformRegistry {
       enabled: this.getContractOverride(contract.capability, contract.name) ??
         contract.enabled,
       implementation: contract.implementation,
+      scope: normalizeScope(contract.scope),
     }
     contracts.set(createContractKey(normalizedContract), normalizedContract)
     this.contracts.set(contract.capability, contracts)
@@ -284,29 +285,37 @@ export class PlatformRegistry {
     contract: VersionedPluginContract<unknown>,
     context?: PlatformResolutionContext
   ) {
-    if (!context || !contract.scope) {
+    if (!contract.scope) {
       return true
     }
 
+    if (!context) {
+      return false
+    }
+
+    const siteId = normalizeScopeValue(context.siteId)
+    const productTypeCode = normalizeScopeValue(context.productTypeCode)
+    const channelCode = normalizeScopeValue(context.channelCode)
+
     if (
       contract.scope.siteIds?.length &&
-      (!context.siteId || !contract.scope.siteIds.includes(context.siteId))
+      (!siteId || !contract.scope.siteIds.includes(siteId))
     ) {
       return false
     }
 
     if (
       contract.scope.productTypeCodes?.length &&
-      (!context.productTypeCode ||
-        !contract.scope.productTypeCodes.includes(context.productTypeCode))
+      (!productTypeCode ||
+        !contract.scope.productTypeCodes.includes(productTypeCode))
     ) {
       return false
     }
 
     if (
       contract.scope.channelCodes?.length &&
-      (!context.channelCode ||
-        !contract.scope.channelCodes.includes(context.channelCode))
+      (!channelCode ||
+        !contract.scope.channelCodes.includes(channelCode))
     ) {
       return false
     }
@@ -434,6 +443,10 @@ export class PlatformRegistry {
     pluginId: string,
     declaredCapabilities?: PlatformCapabilityName[]
   ) {
+    if (!contract.name?.trim()) {
+      throw new Error(`Plugin "${pluginId}" cannot register an unnamed contract`)
+    }
+
     const plugin = this.plugins.get(pluginId)
     const allowedCapabilities =
       declaredCapabilities ||
@@ -457,11 +470,16 @@ export class PlatformRegistry {
 
   private copyManifest(manifest: PluginManifest): PluginManifest {
     return {
-      ...manifest,
+      id: manifest.id,
+      version: manifest.version,
       capabilities: [...manifest.capabilities],
       dependencies: manifest.dependencies?.map((dependency) => ({
         ...dependency,
       })),
+      enabledByDefault: manifest.enabledByDefault,
+      migrationsOwner: manifest.migrationsOwner,
+      title: manifest.title,
+      description: manifest.description,
     }
   }
 }
@@ -502,25 +520,59 @@ function createContractKey(contract: VersionedPluginContract<unknown>) {
 }
 
 function serializeScope(scope?: PlatformScope) {
-  if (!scope) {
+  const normalizedScope = normalizeScope(scope)
+
+  if (!normalizedScope) {
     return "global"
   }
 
   return [
-    `site:${serializeScopeValues(scope.siteIds)}`,
-    `product:${serializeScopeValues(scope.productTypeCodes)}`,
-    `channel:${serializeScopeValues(scope.channelCodes)}`,
+    `site:${serializeScopeValues(normalizedScope.siteIds)}`,
+    `product:${serializeScopeValues(normalizedScope.productTypeCodes)}`,
+    `channel:${serializeScopeValues(normalizedScope.channelCodes)}`,
   ].join(";")
 }
 
 function serializeScopeValues(values?: string[]) {
-  if (!values?.length) {
+  const normalizedValues = normalizeScopeValues(values)
+
+  if (!normalizedValues.length) {
     return "-"
   }
 
-  return values
-    .map((value) => value.trim())
-    .filter(Boolean)
-    .sort()
-    .join(",")
+  return normalizedValues.join(",")
+}
+
+function normalizeScope(scope?: PlatformScope) {
+  if (!scope) {
+    return undefined
+  }
+
+  const siteIds = normalizeScopeValues(scope.siteIds)
+  const productTypeCodes = normalizeScopeValues(scope.productTypeCodes)
+  const channelCodes = normalizeScopeValues(scope.channelCodes)
+
+  if (!siteIds.length && !productTypeCodes.length && !channelCodes.length) {
+    return undefined
+  }
+
+  return {
+    ...(siteIds.length ? { siteIds } : {}),
+    ...(productTypeCodes.length ? { productTypeCodes } : {}),
+    ...(channelCodes.length ? { channelCodes } : {}),
+  }
+}
+
+function normalizeScopeValues(values?: string[]) {
+  if (!values?.length) {
+    return []
+  }
+
+  return Array.from(
+    new Set(values.map((value) => normalizeScopeValue(value)).filter(Boolean))
+  ).sort()
+}
+
+function normalizeScopeValue(value?: string) {
+  return typeof value === "string" ? value.trim() : ""
 }

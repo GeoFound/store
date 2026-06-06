@@ -1,4 +1,4 @@
-import type { MedusaContainer } from "@medusajs/framework/types"
+import type { BackendRuntimeContext } from "../../platform/backend-context"
 import type {
   MarketingCheckoutContextInput,
   MarketingResolvedContext,
@@ -53,7 +53,7 @@ export type CreateMarketingReferralLinkInput = {
 }
 
 export type ReserveCouponForAttemptInput = {
-  scope: MedusaContainer
+  scope: BackendRuntimeContext
   attemptId: string
   couponCode: string
   customerEmail?: string | null
@@ -61,19 +61,19 @@ export type ReserveCouponForAttemptInput = {
 }
 
 export type ConfirmCouponForAttemptInput = {
-  scope: MedusaContainer
+  scope: BackendRuntimeContext
   attemptId: string
   orderId: string
 }
 
 export type ReleaseCouponForAttemptInput = {
-  scope: MedusaContainer
+  scope: BackendRuntimeContext
   attemptId: string
   reason?: string
 }
 
 export type ResolveCheckoutMarketingInput = {
-  scope: MedusaContainer
+  scope: BackendRuntimeContext
   attemptId: string
   cartId: string
   amount: number
@@ -99,7 +99,7 @@ export type RecordMarketingTouchpointInput = {
 }
 
 export type FinalizeReferralRewardInput = {
-  scope: MedusaContainer
+  scope: BackendRuntimeContext
   attemptId: string
   orderId: string
   customerEmail?: string | null

@@ -9,8 +9,11 @@ import {
 import {
   getPaymentProvider,
   getPaymentProviderOrFallback,
+  listPaymentProviders,
   registerPaymentProvider,
-} from "../../modules/payment-router/providers/registry"
+} from "../payment-providers"
+import { handlePaymentAttemptClosed } from "../attempt-lifecycle"
+import { PLATFORM_HOOKS } from "../hooks"
 import {
   configurePlatformRuntime,
   emitPlatformHook,
@@ -107,6 +110,46 @@ describe("platform registry", () => {
         siteId: "site-a",
       })
     ).toBeUndefined()
+  })
+
+  it("requires matching context for scoped contracts and normalizes scope values", () => {
+    const registry = createPlatformRegistry()
+
+    registry.registerPlugin({
+      manifest: {
+        id: "plugin.normalized-scope",
+        version: "1.0.0",
+        capabilities: ["payment-provider"],
+        enabledByDefault: true,
+      },
+      contracts: [
+        {
+          capability: "payment-provider",
+          name: "scoped",
+          pluginId: "plugin.normalized-scope",
+          version: "v1",
+          scope: {
+            siteIds: [" site-a ", "site-a"],
+            productTypeCodes: [" credential "],
+          },
+          implementation: { code: "scoped" },
+        },
+      ],
+    })
+
+    expect(
+      registry.resolveContract<{ code: string }>("payment-provider", "scoped")
+    ).toBeUndefined()
+    expect(
+      registry.resolveContract<{ code: string }>("payment-provider", "scoped", {
+        siteId: " site-a ",
+        productTypeCode: " credential ",
+      })?.code
+    ).toBe("scoped")
+    expect(registry.listContracts("payment-provider")[0]?.scope).toEqual({
+      siteIds: ["site-a"],
+      productTypeCodes: ["credential"],
+    })
   })
 
   it("supports same contract name across scoped registrations", () => {
@@ -398,5 +441,87 @@ describe("platform registry", () => {
     getPlatformRuntime().setPluginEnabled("plugin.alt", false)
     expect(getPaymentProvider("alt")).toBeUndefined()
     expect(getPaymentProviderOrFallback("alt")?.code).toBe("noop")
+  })
+
+  it("emits payment attempt closed as a platform hook without default integrations", async () => {
+    configurePlatformRuntime({
+      includeDefaults: false,
+    })
+    const handler = jest.fn()
+
+    registerPlatformHook({
+      hook: PLATFORM_HOOKS.paymentAttemptClosed,
+      pluginId: "plugin.closed",
+      name: "plugin.closed.payment-attempt-closed",
+      version: "v1",
+      handler,
+    })
+
+    await handlePaymentAttemptClosed({} as never, {
+      attemptId: "payatt_1",
+      customerEmail: "buyer@example.com",
+      reason: "provider_failed",
+      payload: {
+        marketing_context: {
+          tags: ["test"],
+        },
+      },
+    })
+
+    expect(handler).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: PLATFORM_HOOKS.paymentAttemptClosed,
+        payload: expect.objectContaining({
+          attemptId: "payatt_1",
+          reason: "provider_failed",
+        }),
+      })
+    )
+    expect(
+      getPlatformRuntime()
+        .listContracts("hook-subscriber")
+        .map((contract) => contract.name)
+    ).not.toContain("marketing-engine.payment-attempt-closed")
+  })
+
+  it("lists payment providers using the provided resolution context", () => {
+    configurePlatformRuntime({
+      includeDefaults: false,
+    })
+
+    registerPaymentProvider(
+      {
+        code: "global-pay",
+        createPayment: () => ({
+          providerOrderId: "global_1",
+        }),
+      },
+      {
+        pluginId: "plugin.global-pay",
+        priority: 10,
+      }
+    )
+    registerPaymentProvider(
+      {
+        code: "site-pay",
+        createPayment: () => ({
+          providerOrderId: "site_1",
+        }),
+      },
+      {
+        pluginId: "plugin.site-pay",
+        priority: 20,
+        scope: {
+          siteIds: ["site-a"],
+        },
+      }
+    )
+
+    expect(listPaymentProviders().map((provider) => provider.code)).toEqual([
+      "global-pay",
+    ])
+    expect(
+      listPaymentProviders({ siteId: "site-a" }).map((provider) => provider.code)
+    ).toEqual(["site-pay", "global-pay"])
   })
 })

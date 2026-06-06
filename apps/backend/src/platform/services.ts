@@ -1,4 +1,4 @@
-import type { MedusaContainer } from "@medusajs/framework/types"
+import type { BackendRuntimeContext } from "./backend-context"
 import { ANALYTICS_CORE_MODULE } from "../modules/analytics-core"
 import type AnalyticsCoreModuleService from "../modules/analytics-core/service"
 import { CREDENTIAL_INVENTORY_MODULE } from "../modules/credential-inventory"
@@ -16,37 +16,37 @@ import type SupportAuditModuleService from "../modules/support-audit/service"
 import { SUPPLIER_PROCUREMENT_MODULE } from "../modules/supplier-procurement"
 import type SupplierProcurementModuleService from "../modules/supplier-procurement/service"
 
-export function resolveAnalyticsCoreService(scope: MedusaContainer) {
+export function resolveAnalyticsCoreService(scope: BackendRuntimeContext) {
   return scope.resolve(ANALYTICS_CORE_MODULE) as AnalyticsCoreModuleService
 }
 
-export function resolveCredentialInventoryService(scope: MedusaContainer) {
+export function resolveCredentialInventoryService(scope: BackendRuntimeContext) {
   return scope.resolve(
     CREDENTIAL_INVENTORY_MODULE
   ) as CredentialInventoryModuleService
 }
 
-export function resolveDigitalDeliveryService(scope: MedusaContainer) {
+export function resolveDigitalDeliveryService(scope: BackendRuntimeContext) {
   return scope.resolve(DIGITAL_DELIVERY_MODULE) as DigitalDeliveryModuleService
 }
 
-export function resolveGuestOrderAccessService(scope: MedusaContainer) {
+export function resolveGuestOrderAccessService(scope: BackendRuntimeContext) {
   return scope.resolve(GUEST_ORDER_ACCESS_MODULE) as GuestOrderAccessModuleService
 }
 
-export function resolveMarketingEngineService(scope: MedusaContainer) {
+export function resolveMarketingEngineService(scope: BackendRuntimeContext) {
   return scope.resolve(MARKETING_ENGINE_MODULE) as MarketingEngineModuleService
 }
 
-export function resolvePaymentRouterService(scope: MedusaContainer) {
+export function resolvePaymentRouterService(scope: BackendRuntimeContext) {
   return scope.resolve(PAYMENT_ROUTER_MODULE) as PaymentRouterModuleService
 }
 
-export function resolveSupportAuditService(scope: MedusaContainer) {
+export function resolveSupportAuditService(scope: BackendRuntimeContext) {
   return scope.resolve(SUPPORT_AUDIT_MODULE) as SupportAuditModuleService
 }
 
-export function resolveSupplierProcurementService(scope: MedusaContainer) {
+export function resolveSupplierProcurementService(scope: BackendRuntimeContext) {
   return scope.resolve(
     SUPPLIER_PROCUREMENT_MODULE
   ) as SupplierProcurementModuleService

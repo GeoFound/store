@@ -1,5 +1,8 @@
-import type { MedusaContainer } from "@medusajs/framework/types"
-import type { PaymentAttemptFinalizedEvent } from "../../platform/events"
+import type { BackendRuntimeContext } from "../../platform/backend-context"
+import type {
+  PaymentAttemptClosedEvent,
+  PaymentAttemptFinalizedEvent,
+} from "../../platform/events"
 import { PLATFORM_HOOKS } from "../../platform/hooks"
 import {
   emitMarketingAttemptClosed,
@@ -68,11 +71,34 @@ export function ensureMarketingHooksRegistered() {
     },
   })
 
+  registerPlatformHook<PaymentAttemptClosedEvent>({
+    hook: PLATFORM_HOOKS.paymentAttemptClosed,
+    pluginId: "marketing-engine",
+    name: "marketing-engine.payment-attempt-closed",
+    version: "v1",
+    enabled: true,
+    handler: async (event) => {
+      await recordMarketingAttemptClosed(event.scope, event.payload)
+    },
+  })
+
   hooksRegistered = true
 }
 
 export async function handleMarketingAttemptClosed(
-  scope: MedusaContainer,
+  scope: BackendRuntimeContext,
+  input: {
+    attemptId: string
+    customerEmail?: string | null
+    reason?: string
+    payload?: Record<string, unknown> | null
+  }
+) {
+  await recordMarketingAttemptClosed(scope, input)
+}
+
+async function recordMarketingAttemptClosed(
+  scope: BackendRuntimeContext,
   input: {
     attemptId: string
     customerEmail?: string | null

@@ -1,5 +1,5 @@
-import type { MedusaContainer } from "@medusajs/framework/types"
-import { handleMarketingAttemptClosed } from "../modules/marketing-engine/hooks"
+import type { BackendRuntimeContext } from "./backend-context"
+import { emitPaymentAttemptClosedEvent } from "./events"
 
 export type PaymentAttemptClosedInput = {
   attemptId: string
@@ -9,8 +9,8 @@ export type PaymentAttemptClosedInput = {
 }
 
 export async function handlePaymentAttemptClosed(
-  scope: MedusaContainer,
+  scope: BackendRuntimeContext,
   input: PaymentAttemptClosedInput
 ) {
-  await handleMarketingAttemptClosed(scope, input)
+  await emitPaymentAttemptClosedEvent(scope, input)
 }

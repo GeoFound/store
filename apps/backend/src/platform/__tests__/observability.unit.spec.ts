@@ -1,5 +1,7 @@
-import type { MedusaContainer } from "@medusajs/framework/types"
-import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import {
+  BACKEND_SERVICE_TOKENS,
+  type BackendRuntimeContext,
+} from "../backend-context"
 import {
   emitDeliveryCompletedEvent,
   emitDeliveryCreatedEvent,
@@ -34,13 +36,13 @@ describe("platform observability hooks", () => {
     }
     const container = {
       resolve: jest.fn((token: unknown) => {
-        if (token === ContainerRegistrationKeys.LOGGER) {
+        if (token === BACKEND_SERVICE_TOKENS.logger) {
           return logger
         }
 
         throw new Error(`Unexpected resolve token: ${String(token)}`)
       }),
-    } as unknown as MedusaContainer
+    } as unknown as BackendRuntimeContext
 
     ensurePlatformObservabilityHooksRegistered()
 
@@ -67,13 +69,13 @@ describe("platform observability hooks", () => {
     }
     const container = {
       resolve: jest.fn((token: unknown) => {
-        if (token === ContainerRegistrationKeys.LOGGER) {
+        if (token === BACKEND_SERVICE_TOKENS.logger) {
           return logger
         }
 
         throw new Error(`Unexpected resolve token: ${String(token)}`)
       }),
-    } as unknown as MedusaContainer
+    } as unknown as BackendRuntimeContext
 
     ensurePlatformObservabilityHooksRegistered()
 
@@ -103,13 +105,13 @@ describe("platform observability hooks", () => {
     }
     const container = {
       resolve: jest.fn((token: unknown) => {
-        if (token === ContainerRegistrationKeys.LOGGER) {
+        if (token === BACKEND_SERVICE_TOKENS.logger) {
           return logger
         }
 
         throw new Error(`Unexpected resolve token: ${String(token)}`)
       }),
-    } as unknown as MedusaContainer
+    } as unknown as BackendRuntimeContext
 
     ensurePlatformObservabilityHooksRegistered()
 

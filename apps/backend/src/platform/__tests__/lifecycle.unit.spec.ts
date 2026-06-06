@@ -8,11 +8,11 @@ import {
   replacePlatformPlugin,
   resetPlatformRuntimeForTests,
 } from "../runtime"
-import type { PaymentProvider } from "../../modules/payment-router/providers/types"
+import type { PaymentProvider } from "../payment-providers"
 import {
   getPaymentProvider,
   getPaymentProviderOrFallback,
-} from "../../modules/payment-router/providers/registry"
+} from "../payment-providers"
 
 describe("platform lifecycle", () => {
   beforeEach(() => {
@@ -161,6 +161,23 @@ describe("platform lifecycle", () => {
       enabledContracts: {
         "payment-provider": ["manual", "alt"],
         "delivery-handler": ["manual"],
+      },
+      disabledContracts: undefined,
+    })
+  })
+
+  it("trims capability names while parsing contract env entries", () => {
+    expect(
+      parsePlatformRuntimeOptionsFromEnv({
+        PLATFORM_ENABLED_CONTRACTS:
+          " payment-provider : manual ; delivery-handler : noop ",
+      })
+    ).toEqual({
+      enabledPlugins: undefined,
+      disabledPlugins: undefined,
+      enabledContracts: {
+        "payment-provider": ["manual"],
+        "delivery-handler": ["noop"],
       },
       disabledContracts: undefined,
     })

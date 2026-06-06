@@ -10,7 +10,7 @@ import {
   normalizeCatalogSort,
   sortProducts,
 } from "@/lib/catalog"
-import { listProducts } from "@/lib/medusa"
+import { listProducts } from "@/lib/commerce"
 import { getSiteConfig, type SiteCategoryLinkConfig } from "@/lib/site-config"
 import type { ProductCategory } from "@/lib/types"
 

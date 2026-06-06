@@ -1,6 +1,12 @@
 import { g2aSupplierProvider } from "../provider"
 
 describe("g2a supplier provider", () => {
+  const originalEnv = process.env
+
+  afterEach(() => {
+    process.env = originalEnv
+  })
+
   it("exposes static quotes from mapping and metadata", () => {
     expect(
       g2aSupplierProvider.quote?.({
@@ -21,5 +27,14 @@ describe("g2a supplier provider", () => {
       unitCost: 250,
       currency: "eur",
     })
+  })
+
+  it("reports whether credentials are configured", () => {
+    process.env = {
+      ...originalEnv,
+      G2A_ACCESS_TOKEN: "token_1",
+    }
+
+    expect(g2aSupplierProvider.isConfigured?.()).toBe(true)
   })
 })

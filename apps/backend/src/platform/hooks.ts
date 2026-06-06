@@ -7,6 +7,7 @@ export const PLATFORM_HOOKS = {
   orderAccessTokenIssued: "order_access.token_issued",
   paymentAttemptReserved: "payment_attempt.reserved",
   paymentAttemptFinalized: "payment_attempt.finalized",
+  paymentAttemptClosed: "payment_attempt.closed",
   deliveryCreated: "delivery.created",
   deliveryCompleted: "delivery.completed",
 } as const

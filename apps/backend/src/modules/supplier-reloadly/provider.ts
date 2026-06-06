@@ -14,6 +14,10 @@ let cachedToken: {
 export const reloadlySupplierProvider: SupplierProvider = {
   code: "reloadly",
 
+  isConfigured() {
+    return getReloadlyConfig().configured
+  },
+
   quote(input) {
     return {
       available: true,

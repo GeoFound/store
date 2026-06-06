@@ -3,7 +3,7 @@ import Link from "next/link"
 import { notFound } from "next/navigation"
 import { ProductPurchasePanel } from "@/components/product-purchase-panel"
 import { SiteHeader } from "@/components/site-header"
-import { retrieveProduct } from "@/lib/medusa"
+import { retrieveProduct } from "@/lib/commerce"
 
 export const dynamic = "force-dynamic"
 

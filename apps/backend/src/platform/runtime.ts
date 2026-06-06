@@ -134,7 +134,7 @@ export async function emitPlatformHook<T>(
   hook: PlatformHookName,
   input: T
 ) {
-  ensurePlatformIntegrationsRegistered()
+  getPlatformRuntime()
   await getPlatformHookRuntime().emitHook(hook, input)
 }
 
@@ -217,7 +217,8 @@ function parseCapabilityContractMap(value?: string) {
   const result: Partial<Record<PlatformCapabilityName, string[]>> = {}
 
   for (const entry of entries) {
-    const [capability, names] = entry.split(":")
+    const [rawCapability, names] = entry.split(":")
+    const capability = rawCapability?.trim()
     const contractNames = splitCommaList(names)
 
     if (

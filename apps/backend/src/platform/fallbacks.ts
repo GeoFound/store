@@ -1,4 +1,4 @@
-import type { PaymentProvider } from "../modules/payment-router/providers/types"
+import type { PaymentProvider } from "./payment-providers"
 import type {
   CreateDeliveryInput,
   CreateDeliveryResult,

@@ -4,7 +4,7 @@ import { SiteHeader } from "@/components/site-header"
 import { ensureStorefrontExtensionsRegistered } from "@/extensions/defaults"
 import { renderStorefrontExtensions } from "@/extensions/registry"
 import { buildProductsHref, listProductCategories } from "@/lib/catalog"
-import { listProducts } from "@/lib/medusa"
+import { listProducts } from "@/lib/commerce"
 import { getSiteConfig, type SiteCategoryLinkConfig } from "@/lib/site-config"
 import type { Product } from "@/lib/types"
 

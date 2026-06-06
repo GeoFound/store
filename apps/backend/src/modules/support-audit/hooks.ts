@@ -1,4 +1,4 @@
-import type { MedusaContainer } from "@medusajs/framework/types"
+import type { BackendRuntimeContext } from "../../platform/backend-context"
 import type { OrderAccessTokenIssuedEvent } from "../../platform/events"
 import { PLATFORM_HOOKS } from "../../platform/hooks"
 import { registerPlatformHook } from "../../platform/runtime"
@@ -7,7 +7,7 @@ import type { WriteAuditLogInput } from "./types"
 import type SupportAuditModuleService from "./service"
 
 export type AuditLogHookInput = WriteAuditLogInput & {
-  scope: MedusaContainer
+  scope: BackendRuntimeContext
 }
 
 let hooksRegistered = false

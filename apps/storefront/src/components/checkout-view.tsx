@@ -9,7 +9,7 @@ import {
   retrieveCart,
   retrievePaymentAttempt,
   updateCartEmail,
-} from "@/lib/medusa"
+} from "@/lib/commerce"
 import { formatMoney } from "@/lib/format"
 import {
   emitStoreAnalyticsEvent,

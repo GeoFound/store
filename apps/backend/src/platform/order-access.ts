@@ -1,4 +1,4 @@
-import type { MedusaContainer } from "@medusajs/framework/types"
+import type { BackendRuntimeContext } from "./backend-context"
 import type {
   PlatformResolutionContext,
   VersionedPluginContract,
@@ -6,7 +6,7 @@ import type {
 import { getPlatformRuntime } from "./runtime"
 
 export type IssueOrderAccessInput = {
-  scope: MedusaContainer
+  scope: BackendRuntimeContext
   orderId: string
   customerEmail: string
   purpose?: "view_order" | "claim_order"
@@ -25,7 +25,7 @@ export interface OrderAccessProvider {
     input: IssueOrderAccessInput
   ): Promise<IssueOrderAccessResult> | IssueOrderAccessResult
   revokeActiveTokens(input: {
-    scope: MedusaContainer
+    scope: BackendRuntimeContext
     orderId: string
     purpose?: "view_order" | "claim_order"
   }): Promise<unknown> | unknown

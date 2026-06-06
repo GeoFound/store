@@ -1,5 +1,5 @@
-import type { MedusaContainer } from "@medusajs/framework/types"
 import { Modules } from "@medusajs/framework/utils"
+import type { BackendRuntimeContext } from "../platform/backend-context"
 import { PLATFORM_HOOKS } from "../platform/hooks"
 import { emitPlatformHook, registerPlatformHook } from "../platform/runtime"
 import type { SupportedLocale } from "./localization"
@@ -13,7 +13,7 @@ export type NotificationSendInput = {
 }
 
 export type NotificationSendHookInput = NotificationSendInput & {
-  scope: MedusaContainer
+  scope: BackendRuntimeContext
 }
 
 let notificationHooksRegistered = false
@@ -53,7 +53,7 @@ export function resetNotificationHooksForTests() {
 }
 
 export async function emitNotification(
-  scope: MedusaContainer,
+  scope: BackendRuntimeContext,
   input: NotificationSendInput
 ) {
   ensureNotificationHooksRegistered()
@@ -65,7 +65,7 @@ export async function emitNotification(
 }
 
 export async function sendGuestOrderRecoveryCode(
-  container: MedusaContainer,
+  container: BackendRuntimeContext,
   input: {
     email: string
     orderId: string

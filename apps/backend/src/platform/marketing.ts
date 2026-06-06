@@ -1,4 +1,4 @@
-import type { MedusaContainer } from "@medusajs/framework/types"
+import type { BackendRuntimeContext } from "./backend-context"
 import type {
   PlatformResolutionContext,
   VersionedPluginContract,
@@ -41,7 +41,7 @@ export type MarketingResolvedContext = {
 }
 
 export type MarketingStrategyResolveInput = {
-  scope: MedusaContainer
+  scope: BackendRuntimeContext
   attemptId: string
   cartId: string
   amount: number
@@ -52,7 +52,7 @@ export type MarketingStrategyResolveInput = {
 }
 
 export type MarketingStrategyAttemptEventInput = {
-  scope: MedusaContainer
+  scope: BackendRuntimeContext
   attemptId: string
   orderId?: string
   customerEmail?: string | null

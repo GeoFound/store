@@ -1,4 +1,4 @@
-import type { MedusaContainer } from "@medusajs/framework/types"
+import type { BackendRuntimeContext } from "../../platform/backend-context"
 
 export type AnalyticsEventSource = "backend_hook" | "storefront" | "system"
 
@@ -17,7 +17,7 @@ export type AnalyticsEventStatus =
   | "partial"
 
 export type CaptureAnalyticsEventInput = {
-  scope?: MedusaContainer
+  scope?: BackendRuntimeContext
   eventName: string
   source?: AnalyticsEventSource
   eventKey?: string | null

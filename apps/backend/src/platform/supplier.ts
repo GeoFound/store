@@ -1,4 +1,4 @@
-import type { MedusaContainer } from "@medusajs/framework/types"
+import type { BackendRuntimeContext } from "./backend-context"
 import type {
   PlatformResolutionContext,
   VersionedPluginContract,
@@ -20,7 +20,7 @@ export type SupplierMappingSnapshot = {
 }
 
 export type SupplierQuoteInput = {
-  scope?: MedusaContainer
+  scope?: BackendRuntimeContext
   providerSku: string
   productVariantId?: string
   quantity: number
@@ -41,7 +41,7 @@ export type SupplierQuoteResult = {
 }
 
 export type SupplierProcureInput = {
-  scope: MedusaContainer
+  scope: BackendRuntimeContext
   idempotencyKey: string
   providerSku: string
   productVariantId?: string
@@ -69,7 +69,7 @@ export type SupplierProcureResult = {
 }
 
 export type SupplierRetrieveInput = {
-  scope: MedusaContainer
+  scope: BackendRuntimeContext
   providerOrderId: string
   providerSku?: string
   metadata?: Record<string, unknown>
@@ -89,6 +89,7 @@ export type SupplierCatalogItem = {
 
 export interface SupplierProvider {
   code: string
+  isConfigured?(): boolean
   quote?(input: SupplierQuoteInput): Promise<SupplierQuoteResult> | SupplierQuoteResult
   procure(
     input: SupplierProcureInput
@@ -97,7 +98,7 @@ export interface SupplierProvider {
     input: SupplierRetrieveInput
   ): Promise<SupplierProcureResult> | SupplierProcureResult
   syncCatalog?(input: {
-    scope: MedusaContainer
+    scope: BackendRuntimeContext
     cursor?: string | null
     metadata?: Record<string, unknown>
   }): Promise<{ items: SupplierCatalogItem[]; nextCursor?: string | null }>

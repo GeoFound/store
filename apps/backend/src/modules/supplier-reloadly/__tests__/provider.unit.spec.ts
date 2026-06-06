@@ -1,6 +1,12 @@
 import { reloadlySupplierProvider } from "../provider"
 
 describe("reloadly supplier provider", () => {
+  const originalEnv = process.env
+
+  afterEach(() => {
+    process.env = originalEnv
+  })
+
   it("exposes static quotes from mapping and metadata", () => {
     expect(
       reloadlySupplierProvider.quote?.({
@@ -21,5 +27,15 @@ describe("reloadly supplier provider", () => {
       unitCost: 450,
       currency: "usd",
     })
+  })
+
+  it("reports whether credentials are configured", () => {
+    process.env = {
+      ...originalEnv,
+      RELOADLY_CLIENT_ID: "client_1",
+      RELOADLY_CLIENT_SECRET: "secret_1",
+    }
+
+    expect(reloadlySupplierProvider.isConfigured?.()).toBe(true)
   })
 })
