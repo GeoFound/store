@@ -1,7 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import type { ILockingModule } from "@medusajs/framework/types"
 import { Modules } from "@medusajs/framework/utils"
-import { resolvePaymentRouterService } from "../../platform/services"
+import { resolvePaymentRouterService } from "../../platform-adapters/services"
 import {
   resolveEncryptionKeyRing,
   resolveSecuritySecret,

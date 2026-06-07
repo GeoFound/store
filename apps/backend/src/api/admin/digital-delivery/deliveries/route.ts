@@ -1,5 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { resolveDigitalDeliveryService } from "../../../../platform/services"
+import { resolveDigitalDeliveryService } from "../../../../platform-adapters/services"
 import { emitAuditLog } from "../../../../utils/audit-log"
 import { localizedError } from "../../../../utils/localized-response"
 import { getRequestAuditContext } from "../../../../utils/request-audit"

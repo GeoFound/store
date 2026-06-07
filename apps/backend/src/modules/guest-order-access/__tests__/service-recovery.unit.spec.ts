@@ -124,6 +124,22 @@ describe("guest order access recovery issuance", () => {
 
     expect(service.issueOrderAccessToken).toHaveBeenCalledTimes(1)
   })
+
+  it("ignores revoked recovery codes when enforcing issuance cooldown", async () => {
+    const service = createRecoveryIssuanceService([
+      buildToken({
+        created_at: new Date(Date.now() - 30_000).toISOString(),
+        revoked_at: new Date().toISOString(),
+      }),
+    ])
+
+    await service.createRecoveryCode({
+      orderId: "order_1",
+      customerEmail: "buyer@example.com",
+    })
+
+    expect(service.issueOrderAccessToken).toHaveBeenCalledTimes(1)
+  })
 })
 
 function createService(tokens: TokenRecord[]) {

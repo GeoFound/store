@@ -1,6 +1,6 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { isPlatformPluginEnabled } from "../../../../platform/runtime"
-import { resolveMarketingEngineService } from "../../../../platform/services"
+import { resolveMarketingEngineService } from "../../../../platform-adapters/services"
 import { localizedError } from "../../../../utils/localized-response"
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {

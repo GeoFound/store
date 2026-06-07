@@ -1,6 +1,5 @@
 export {
   getPaymentProvider,
-  getPaymentProviderOrFallback,
   hasPaymentProvider,
   listPaymentProviderCodes,
   listPaymentProviders,

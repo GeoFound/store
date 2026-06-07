@@ -1,4 +1,5 @@
 import { loadEnv, defineConfig } from '@medusajs/framework/utils'
+import "./src/platform-adapters/integrations"
 import {
   resolveEncryptionKeyRing,
   resolveSecuritySecret,

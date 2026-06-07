@@ -107,19 +107,6 @@ export function getPaymentProvider(
   )
 }
 
-export function getPaymentProviderOrFallback(
-  code: string,
-  fallbackCode = "noop",
-  context?: PlatformResolutionContext
-) {
-  return getPlatformRuntime().resolveContractOrFallback<PaymentProvider>(
-    "payment-provider",
-    code,
-    fallbackCode,
-    context
-  )
-}
-
 export function hasPaymentProvider(
   code: string,
   context?: PlatformResolutionContext

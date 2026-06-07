@@ -1,5 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { resolveSupportAuditService } from "../../../../platform/services"
+import { resolveSupportAuditService } from "../../../../platform-adapters/services"
 import { emitAuditLog } from "../../../../utils/audit-log"
 import { getRequestAuditContext } from "../../../../utils/request-audit"
 

@@ -4,6 +4,7 @@ import {
   Modules,
 } from "@medusajs/framework/utils"
 import { resetPlatformRuntimeForTests } from "../../../platform/runtime"
+import "../../../platform-adapters/integrations"
 import {
   resetNotificationHooksForTests,
   sendGuestOrderRecoveryCode,

@@ -25,12 +25,13 @@ Disable plugins globally (backend plugin runtime):
 PLATFORM_DISABLED_PLUGINS=analytics-ga4,analytics-hotjar
 ```
 
-Backend runtime merges both:
+Backend runtime reads only backend plugin env:
 
-- `PLATFORM_ENABLED_PLUGINS` + `NEXT_PUBLIC_PLATFORM_ENABLED_PLUGINS`
-- `PLATFORM_DISABLED_PLUGINS` + `NEXT_PUBLIC_PLATFORM_DISABLED_PLUGINS`
+- `PLATFORM_ENABLED_PLUGINS`
+- `PLATFORM_DISABLED_PLUGINS`
 
-Duplicate IDs are deduplicated.
+Storefront-only `NEXT_PUBLIC_PLATFORM_*` toggles do not affect backend
+destination or hook resolution.
 
 Disable storefront plugin slots:
 

@@ -154,11 +154,10 @@ pnpm profile:export-overrides -- --site-id site-1 --site-env production --target
 - Storefront reads profile at runtime via `SITE_ID` and `SITE_ENV`.
 - `SITE_PROFILES_ROOT` can override the profile root; the default storefront
   release layout expects `../../profiles/sites` from `apps/storefront`.
-- `SITE_ID` is required; there is no default site fallback.
+- `SITE_ID` and `SITE_ENV` must resolve to an exact
+  `<site-id>/<site-env>/site.json`; missing environment profiles fail startup
+  instead of falling back to another environment.
 - Production sites should expose storefront/API through HTTPS only.
 - If Cloudflare is used per site, set zone SSL/TLS mode to `Full (strict)`.
-- Fallback order within the same site:
-  1. `<site-id>/<site-env>`
-  2. `<site-id>/production`
 
 This keeps each site independently deployable while preserving one shared engineering base.

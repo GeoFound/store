@@ -1,36 +1,65 @@
 @import "tailwindcss";
 
 :root {
-  --background: var(--site-background, #f7f5f0);
-  --foreground: var(--site-foreground, #1c1917);
-  --accent: var(--site-accent, #0f766e);
-  --accent-secondary: var(--site-accent-secondary, #f97316);
+  --background: var(--site-background, #f6f8fb);
+  --foreground: var(--site-foreground, #111827);
+  --accent: var(--site-accent, #00796b);
+  --accent-secondary: var(--site-accent-secondary, #f59e0b);
   --surface: var(--site-surface, #ffffff);
-  --surface-muted: var(--site-surface-muted, #f5f5f4);
-  --border: var(--site-border, #e7e5e4);
+  --surface-muted: var(--site-surface-muted, #f1f5f9);
+  --border: var(--site-border, #dbe3ea);
   --success: var(--site-success, #047857);
   --danger: var(--site-danger, #b91c1c);
   --warning: var(--site-warning, #b45309);
-  --radius: var(--site-radius, 6px);
+  --radius: var(--site-radius, 8px);
+  --shadow-soft: 0 18px 55px color-mix(in srgb, var(--foreground) 9%, transparent);
+  --shadow-card: 0 12px 35px color-mix(in srgb, var(--foreground) 7%, transparent);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: Arial, Helvetica, sans-serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --font-mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+}
+
+html {
+  background: var(--background);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
 }
 
 a,
 button,
-input {
+input,
+select,
+textarea {
   border-radius: var(--radius);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+.theme-page {
+  background:
+    linear-gradient(180deg, #ffffff 0%, var(--background) 46%, #ffffff 100%);
 }
 
 .theme-surface {
@@ -43,23 +72,31 @@ input {
 }
 
 .theme-overlay-surface {
-  background: color-mix(in srgb, var(--surface) 95%, transparent);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
 }
 
 .theme-panel {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 4%, transparent);
 }
 
 .theme-card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--foreground) 4%, transparent);
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
 }
 
 .theme-card:hover {
   border-color: color-mix(in srgb, var(--accent) 65%, var(--border));
+  box-shadow: var(--shadow-card);
+  transform: translateY(-2px);
 }
 
 .theme-border {
@@ -67,31 +104,47 @@ input {
 }
 
 .theme-primary-action {
-  background: var(--foreground);
+  background: var(--accent);
   color: var(--surface);
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--accent) 22%, transparent);
+  transition:
+    background 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
 }
 
 .theme-primary-action:hover {
-  background: color-mix(in srgb, var(--foreground) 88%, var(--accent));
+  background: color-mix(in srgb, var(--accent) 88%, var(--foreground));
+  box-shadow: 0 12px 26px color-mix(in srgb, var(--accent) 28%, transparent);
+  transform: translateY(-1px);
 }
 
 .theme-secondary-action {
   background: var(--surface);
   border: 1px solid var(--border);
   color: var(--foreground);
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    color 160ms ease;
 }
 
 .theme-secondary-action:hover {
-  border-color: var(--foreground);
+  background: var(--surface-muted);
+  border-color: color-mix(in srgb, var(--foreground) 30%, var(--border));
 }
 
 .theme-accent-action {
-  background: var(--accent);
+  background: var(--foreground);
   color: var(--surface);
+  transition:
+    background 160ms ease,
+    transform 160ms ease;
 }
 
 .theme-accent-action:hover {
-  background: color-mix(in srgb, var(--accent) 86%, var(--foreground));
+  background: color-mix(in srgb, var(--foreground) 88%, var(--accent));
+  transform: translateY(-1px);
 }
 
 .theme-accent-text {
@@ -104,7 +157,7 @@ input {
 }
 
 .theme-status-success {
-  background: color-mix(in srgb, var(--success) 14%, var(--surface));
+  background: color-mix(in srgb, var(--success) 10%, var(--surface));
   color: var(--success);
 }
 
@@ -114,7 +167,7 @@ input {
 }
 
 .theme-status-warning {
-  background: color-mix(in srgb, var(--warning) 14%, var(--surface));
+  background: color-mix(in srgb, var(--warning) 12%, var(--surface));
   color: var(--warning);
 }
 
@@ -124,4 +177,64 @@ input {
 
 .theme-density-comfortable {
   --storefront-section-y: 2.5rem;
+}
+
+.atlas-hero-grid {
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--border) 42%, transparent) 1px, transparent 1px),
+    linear-gradient(180deg, color-mix(in srgb, var(--border) 42%, transparent) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.atlas-dots {
+  background-image: radial-gradient(var(--accent) 1.8px, transparent 1.9px);
+  background-size: 18px 18px;
+}
+
+.atlas-dots-amber {
+  background-image: radial-gradient(var(--accent-secondary) 1.8px, transparent 1.9px);
+  background-size: 18px 18px;
+}
+
+.theme-input {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--foreground);
+  min-height: 44px;
+  outline: none;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.theme-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 13%, transparent);
+}
+
+.theme-field-row {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: var(--radius);
+  transition:
+    border-color 160ms ease,
+    background 160ms ease;
+}
+
+.theme-field-row:hover {
+  border-color: color-mix(in srgb, var(--accent) 46%, var(--border));
+  background: color-mix(in srgb, var(--surface-muted) 36%, var(--surface));
+}
+
+.theme-code-block {
+  background: var(--foreground);
+  color: var(--surface);
+  border-radius: var(--radius);
+}
+
+.theme-subtle-grid {
+  background:
+    radial-gradient(circle at 10% 20%, color-mix(in srgb, var(--accent) 5%, transparent), transparent 26%),
+    radial-gradient(circle at 80% 0%, color-mix(in srgb, var(--accent-secondary) 6%, transparent), transparent 20%),
+    var(--background);
 }

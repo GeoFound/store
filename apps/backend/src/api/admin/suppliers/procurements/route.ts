@@ -1,5 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { resolveSupplierProcurementService } from "../../../../platform/services"
+import { resolveSupplierProcurementService } from "../../../../platform-adapters/services"
 import type { SupplierProcurementStatus } from "../../../../modules/supplier-procurement/types"
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {

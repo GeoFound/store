@@ -1,4 +1,5 @@
 import type { PluginRegistration } from "../contracts"
+import "../../platform-adapters/integrations"
 import {
   configurePlatformRuntime,
   getPlatformRuntime,
@@ -9,10 +10,7 @@ import {
   resetPlatformRuntimeForTests,
 } from "../runtime"
 import type { PaymentProvider } from "../payment-providers"
-import {
-  getPaymentProvider,
-  getPaymentProviderOrFallback,
-} from "../payment-providers"
+import { getPaymentProvider } from "../payment-providers"
 
 describe("platform lifecycle", () => {
   beforeEach(() => {
@@ -36,10 +34,9 @@ describe("platform lifecycle", () => {
     )
 
     expect(getPaymentProvider("alt")).toBeUndefined()
-    expect(getPaymentProviderOrFallback("alt")?.code).toBe("noop")
   })
 
-  it("supports install, remove, and fallback resolution", () => {
+  it("supports install and remove without guessing removed providers", () => {
     configurePlatformRuntime()
 
     installPlatformPlugin(
@@ -58,7 +55,6 @@ describe("platform lifecycle", () => {
 
     expect(removePlatformPlugin("plugin.lifecycle")).toBe(true)
     expect(getPaymentProvider("lifecycle")).toBeUndefined()
-    expect(getPaymentProviderOrFallback("lifecycle")?.code).toBe("noop")
   })
 
   it("replaces a plugin implementation and rolls back on invalid replacement", () => {
@@ -203,7 +199,7 @@ describe("platform lifecycle", () => {
     )
   })
 
-  it("merges backend and public plugin env lists without duplicates", () => {
+  it("keeps backend plugin env isolated from public storefront toggles", () => {
     expect(
       parsePlatformRuntimeOptionsFromEnv({
         PLATFORM_ENABLED_PLUGINS: "plugin.a,plugin.b",
@@ -212,8 +208,8 @@ describe("platform lifecycle", () => {
         NEXT_PUBLIC_PLATFORM_DISABLED_PLUGINS: "plugin.x,plugin.y",
       })
     ).toEqual({
-      enabledPlugins: ["plugin.a", "plugin.b", "plugin.c"],
-      disabledPlugins: ["plugin.x", "plugin.y"],
+      enabledPlugins: ["plugin.a", "plugin.b"],
+      disabledPlugins: ["plugin.x"],
       enabledContracts: undefined,
       disabledContracts: undefined,
     })

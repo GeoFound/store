@@ -6,7 +6,7 @@ import type { MedusaContainer } from "@medusajs/framework/types"
 import { MedusaError } from "@medusajs/framework/utils"
 import { resolveProductFulfillmentPolicy } from "../../../platform/delivery"
 import { emitPaymentAttemptReservedEvent } from "../../../platform/events"
-import { ensurePlatformIntegrationsRegistered } from "../../../platform/integrations"
+import { ensurePlatformIntegrationsRegistered } from "../../../platform-adapters/integrations"
 import { handlePaymentAttemptClosed } from "../../../platform/attempt-lifecycle"
 import {
   getCartItemMetadata,
@@ -18,7 +18,7 @@ import {
   type InventoryReservation,
 } from "../../../platform/inventory"
 import { resolveProductTemplate } from "../../../platform/product-templates"
-import { resolvePaymentRouterService } from "../../../platform/services"
+import { resolvePaymentRouterService } from "../../../platform-adapters/services"
 import {
   attachClaimToken,
   type FulfillmentItemSummary,
@@ -87,11 +87,14 @@ export const reserveCartInventoryStep = createStep(
         })
 
         if (plan?.inventoryMode === "none") {
-          const deliveryHandlerCode = plan.deliveryHandlerCode
+          const deliveryHandlerCode = requireConfiguredCode(
+            plan.deliveryHandlerCode,
+            `No delivery handler configured for no-inventory variant ${variantId}`
+          )
 
-          if (!deliveryHandlerCode || deliveryHandlerCode === "noop") {
+          if (deliveryHandlerCode === "noop") {
             throw new Error(
-              `No delivery handler configured for no-inventory variant ${variantId}`
+              `Delivery handler "noop" cannot fulfill no-inventory variant ${variantId}`
             )
           }
 
@@ -101,7 +104,7 @@ export const reserveCartInventoryStep = createStep(
             product_variant_id: variantId,
             quantity,
             inventory_mode: "none",
-            inventory_handler_code: plan.inventoryHandlerCode || null,
+            inventory_handler_code: plan.inventoryHandlerCode || "noop",
             delivery_handler_code: deliveryHandlerCode,
             fulfillment_policy_code: plan.code || null,
             product_type: productType || template?.productType || null,
@@ -114,23 +117,19 @@ export const reserveCartInventoryStep = createStep(
               fulfillment_key: fulfillmentKey,
               fulfillment_policy_code: plan.code || null,
               delivery_handler_code: deliveryHandlerCode,
-              inventory_handler_code: plan.inventoryHandlerCode || null,
+              inventory_handler_code: plan.inventoryHandlerCode || "noop",
               ...metadata,
             },
           })
           continue
         }
 
-        const handlerCode =
+        const handlerCode = requireConfiguredCode(
           toOptionalString(metadata.inventory_handler_code) ||
-          toOptionalString(metadata.inventoryHandlerCode) ||
-          plan?.inventoryHandlerCode
-
-        if (!handlerCode) {
-          throw new Error(
-            `No inventory handler configured for variant ${variantId}`
-          )
-        }
+            toOptionalString(metadata.inventoryHandlerCode) ||
+            plan?.inventoryHandlerCode,
+          `No inventory handler configured for variant ${variantId}`
+        )
 
         const handler = getInventoryHandler(handlerCode, {
           productTypeCode: productType || template?.productType || undefined,
@@ -164,7 +163,10 @@ export const reserveCartInventoryStep = createStep(
         reservations.push(
           ...reserved.map((reservation) => ({
             ...reservation,
-            handler_code: reservation.handler_code || handler.code,
+            handler_code: requireConfiguredCode(
+              reservation.handler_code,
+              `Inventory handler ${handler.code} returned a reservation without handler_code for variant ${variantId}`
+            ),
             metadata: {
               cart_item_id: itemId,
               fulfillment_key: fulfillmentKey,
@@ -179,7 +181,10 @@ export const reserveCartInventoryStep = createStep(
           quantity,
           inventory_mode: plan?.inventoryMode || "reserve",
           inventory_handler_code: handler.code,
-          delivery_handler_code: plan?.deliveryHandlerCode || "credential",
+          delivery_handler_code: requireConfiguredCode(
+            plan?.deliveryHandlerCode,
+            `No delivery handler configured for variant ${variantId}`
+          ),
           fulfillment_policy_code: plan?.code || null,
           product_type: productType || template?.productType || null,
           template_code: template?.code || null,
@@ -267,4 +272,14 @@ export const reserveCartInventoryStep = createStep(
 
 function toOptionalString(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : ""
+}
+
+function requireConfiguredCode(value: unknown, message: string) {
+  const code = toOptionalString(value)
+
+  if (!code) {
+    throw new Error(message)
+  }
+
+  return code
 }

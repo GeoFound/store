@@ -13,10 +13,11 @@ storefront UI, and backend adapters can evolve independently.
 - Medusa modules, API routes, workflows, models, migrations, and service
   implementations are the current backend adapter layer. They may use Medusa
   APIs, but platform contracts should not require Medusa types.
-- Module implementations can resolve current services through
-  `platform/services`, but capability callers should prefer platform ports such
-  as payment providers, inventory handlers, delivery handlers, supplier
-  providers, marketing strategies, order access providers, and hooks.
+- Module implementations can resolve current services through the backend
+  adapter layer in `platform-adapters/services`, but capability callers should
+  prefer platform ports such as payment providers, inventory handlers, delivery
+  handlers, supplier providers, marketing strategies, order access providers,
+  and hooks.
 
 ## Storefront Boundary
 

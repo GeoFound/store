@@ -65,10 +65,7 @@ export function resetStorefrontExtensionsForTests() {
 function getDisabledPluginIds() {
   return new Set(
     typeof process !== "undefined"
-      ? mergePluginEnvLists(
-          process.env.PLATFORM_DISABLED_PLUGINS,
-          process.env.NEXT_PUBLIC_PLATFORM_DISABLED_PLUGINS
-        )
+      ? splitCommaList(process.env.NEXT_PUBLIC_PLATFORM_DISABLED_PLUGINS)
       : []
   )
 }
@@ -76,17 +73,9 @@ function getDisabledPluginIds() {
 function getEnabledPluginIds() {
   return new Set(
     typeof process !== "undefined"
-      ? mergePluginEnvLists(
-          process.env.PLATFORM_ENABLED_PLUGINS,
-          process.env.NEXT_PUBLIC_PLATFORM_ENABLED_PLUGINS
-        )
+      ? splitCommaList(process.env.NEXT_PUBLIC_PLATFORM_ENABLED_PLUGINS)
       : []
   )
-}
-
-function mergePluginEnvLists(...values: Array<string | undefined>) {
-  const merged = values.flatMap(splitCommaList)
-  return Array.from(new Set(merged))
 }
 
 function splitCommaList(value?: string) {

@@ -34,7 +34,7 @@
     "lint": "pnpm -r lint",
     "typecheck": "pnpm --dir apps/backend exec tsc --noEmit && pnpm --dir apps/storefront exec tsc --noEmit",
     "test:unit": "pnpm --dir apps/backend test:unit",
-    "check:ci": "pnpm test:unit && pnpm typecheck && pnpm --dir apps/storefront lint",
+    "check:ci": "pnpm test:unit && pnpm --dir apps/storefront test && pnpm typecheck && pnpm --dir apps/storefront lint",
     "test": "pnpm --dir apps/backend test && pnpm --dir apps/storefront test"
   },
   "engines": {

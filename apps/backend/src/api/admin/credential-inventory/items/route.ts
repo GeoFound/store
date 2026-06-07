@@ -1,5 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { resolveCredentialInventoryService } from "../../../../platform/services"
+import { resolveCredentialInventoryService } from "../../../../platform-adapters/services"
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const inventory = resolveCredentialInventoryService(req.scope)

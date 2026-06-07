@@ -7,7 +7,7 @@ import { g2aSupplierProvider } from "../modules/supplier-g2a/provider"
 import { reloadlySupplierProvider } from "../modules/supplier-reloadly/provider"
 import { supplierProcurementDeliveryHandler } from "../modules/supplier-procurement/delivery-handler"
 import { externalApiFulfillmentPolicy } from "../modules/supplier-procurement/product-policy"
-import type { PaymentProvider } from "./payment-providers"
+import type { PaymentProvider } from "../platform/payment-providers"
 import {
   createDefaultFulfillmentPolicy,
   createNoopPaymentProvider,
@@ -15,12 +15,12 @@ import {
   createNoopDeliveryHandler,
   createNoopInventoryHandler,
   createNoopOrderAccessProvider,
-} from "./fallbacks"
-import type { DeliveryHandler, ProductFulfillmentPolicy } from "./delivery"
-import type { InventoryHandler } from "./inventory"
-import type { MarketingStrategy } from "./marketing"
-import type { OrderAccessProvider } from "./order-access"
-import type { SupplierProvider } from "./supplier"
+} from "../platform/fallbacks"
+import type { DeliveryHandler, ProductFulfillmentPolicy } from "../platform/delivery"
+import type { InventoryHandler } from "../platform/inventory"
+import type { MarketingStrategy } from "../platform/marketing"
+import type { OrderAccessProvider } from "../platform/order-access"
+import type { SupplierProvider } from "../platform/supplier"
 import {
   BUILTIN_NOOP_PROVIDER_PLUGIN_ID,
   CREDENTIAL_INVENTORY_PLUGIN_MANIFEST,
@@ -46,7 +46,7 @@ import {
 import {
   type PlatformRegistry,
   createPlatformRegistry,
-} from "./registry"
+} from "../platform/registry"
 
 export function registerDefaultPlatformCapabilities(
   registry: PlatformRegistry = createPlatformRegistry()

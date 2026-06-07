@@ -3,7 +3,7 @@ import type { ILockingModule } from "@medusajs/framework/types"
 import { MedusaError, Modules } from "@medusajs/framework/utils"
 import { emitOrderAccessRecoveryCodeCreatedEvent } from "../../../../platform/events"
 import { isPlatformPluginEnabled } from "../../../../platform/runtime"
-import { resolveGuestOrderAccessService } from "../../../../platform/services"
+import { resolveGuestOrderAccessService } from "../../../../platform-adapters/services"
 import { emitAuditLog } from "../../../../utils/audit-log"
 import {
   localizedError,
@@ -71,16 +71,44 @@ export const POST = async (
     throw error
   }
 
-  await emitOrderAccessRecoveryCodeCreatedEvent(req.scope, {
-    orderId: String(order.id),
-    customerEmail: String(order.email),
-    code: recovery.token,
-    expiresAt:
-      recovery.record.expires_at instanceof Date
-        ? recovery.record.expires_at.toISOString()
-        : String(recovery.record.expires_at || ""),
-    locale: resolveRequestLocale(req),
-  })
+  try {
+    await emitOrderAccessRecoveryCodeCreatedEvent(req.scope, {
+      orderId: String(order.id),
+      customerEmail: String(order.email),
+      code: recovery.token,
+      expiresAt:
+        recovery.record.expires_at instanceof Date
+          ? recovery.record.expires_at.toISOString()
+          : String(recovery.record.expires_at || ""),
+      locale: resolveRequestLocale(req),
+    })
+  } catch (error) {
+    await guestOrderAccess.revokeOrderAccessToken(String(recovery.record.id))
+
+    try {
+      await emitAuditLog(req.scope, {
+        actorType: "system",
+        action: "order.recovery_notification_failed",
+        entityType: "order",
+        entityId: String(order.id),
+        riskLevel: "high",
+        ipAddress,
+        userAgent,
+        metadata: {
+          customer_email: normalizeEmail(order.email),
+          recovery_token_id: String(recovery.record.id),
+          error: error instanceof Error ? error.message : String(error),
+        },
+      })
+    } catch {
+      // Preserve the recovery notification failure for the caller.
+    }
+
+    throw new MedusaError(
+      MedusaError.Types.UNEXPECTED_STATE,
+      "Recovery code could not be sent. Please try again."
+    )
+  }
 
   await emitAuditLog(req.scope, {
     actorType: "guest",

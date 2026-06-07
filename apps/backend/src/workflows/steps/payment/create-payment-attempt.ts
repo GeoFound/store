@@ -11,7 +11,7 @@ import {
 } from "@medusajs/framework/workflows-sdk"
 import { handlePaymentAttemptClosed } from "../../../platform/attempt-lifecycle"
 import type { CreatePaymentAttemptInput } from "../../../platform/payment-providers"
-import { resolvePaymentRouterService } from "../../../platform/services"
+import { resolvePaymentRouterService } from "../../../platform-adapters/services"
 import { extractInventoryReservations } from "../../../utils/payment-attempt"
 import { releaseInventoryReservations } from "./inventory-reservation-cleanup"
 
@@ -89,7 +89,7 @@ export const createPaymentAttemptStep = createStep(
             container,
             extractInventoryReservations(attempt.response_payload).map(
               (reservation) => ({
-                handler_code: reservation.handler_code || "credential-inventory",
+                handler_code: requireReservationHandlerCode(reservation),
                 reservation_key: reservation.reservation_key,
                 item_ids: reservation.item_ids,
                 metadata: reservation.metadata,
@@ -149,4 +149,14 @@ function isCartCompleted(value: unknown) {
   }
 
   return Boolean(value)
+}
+
+function requireReservationHandlerCode(reservation: { handler_code?: unknown }) {
+  if (typeof reservation.handler_code === "string" && reservation.handler_code.trim()) {
+    return reservation.handler_code.trim()
+  }
+
+  throw new Error(
+    "Payment attempt inventory reservation is missing handler_code and cannot be safely released"
+  )
 }

@@ -34,8 +34,15 @@ class DigitalDeliveryModuleService extends MedusaService({
       templateDeliveryHandlerCode: policyPlan?.deliveryHandlerCode,
       deliveryId: input.deliveryId || null,
       deliveryPayload: input.deliveryPayload,
-      defaultHandlerCode: "manual",
     })
+
+    if (!handlerCode) {
+      throw new MedusaError(
+        MedusaError.Types.INVALID_DATA,
+        "Delivery handler code is required"
+      )
+    }
+
     const handler = getDeliveryHandler(handlerCode)
 
     if (!handler) {

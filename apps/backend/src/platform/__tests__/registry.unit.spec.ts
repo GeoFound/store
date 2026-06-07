@@ -1,14 +1,14 @@
 import {
   createPlatformRegistry,
 } from "../registry"
-import { discoverBuiltinPluginManifests } from "../discovery"
+import { discoverBuiltinPluginManifests } from "../../platform-adapters/discovery"
+import "../../platform-adapters/integrations"
 import {
-  getDeliveryHandlerOrFallback,
+  getDeliveryHandler,
   resolveProductFulfillmentPolicy,
 } from "../delivery"
 import {
   getPaymentProvider,
-  getPaymentProviderOrFallback,
   listPaymentProviders,
   registerPaymentProvider,
 } from "../payment-providers"
@@ -263,11 +263,11 @@ describe("platform registry", () => {
     ).toBeUndefined()
   })
 
-  it("registers built-ins and falls back to noop when requested", () => {
+  it("registers built-ins without guessing missing payment providers", () => {
     getPlatformRuntime()
 
     expect(getPaymentProvider("manual")?.code).toBe("manual")
-    expect(getPaymentProviderOrFallback("missing")?.code).toBe("noop")
+    expect(getPaymentProvider("missing")).toBeUndefined()
   })
 
   it("discovers builtin plugin manifests", () => {
@@ -320,7 +320,7 @@ describe("platform registry", () => {
     )
   })
 
-  it("resolves default fulfillment policy and delivery fallback", async () => {
+  it("resolves default fulfillment policy without guessing missing delivery handlers", async () => {
     expect(await resolveProductFulfillmentPolicy({
       productVariantId: "variant_1",
     })).toMatchObject({
@@ -329,7 +329,7 @@ describe("platform registry", () => {
       inventoryHandlerCode: "credential-inventory",
       inventoryMode: "reserve",
     })
-    expect(getDeliveryHandlerOrFallback("missing")?.code).toBe("noop")
+    expect(getDeliveryHandler("missing")).toBeUndefined()
   })
 
   it("routes no-inventory product types away from credential reservations", async () => {
@@ -349,7 +349,7 @@ describe("platform registry", () => {
 
     expect(getSupplierProvider("reloadly")?.code).toBe("reloadly")
     expect(getSupplierProvider("g2a")?.code).toBe("g2a")
-    expect(getDeliveryHandlerOrFallback("supplier-procurement")?.code).toBe(
+    expect(getDeliveryHandler("supplier-procurement")?.code).toBe(
       "supplier-procurement"
     )
     expect(await resolveProductFulfillmentPolicy({
@@ -370,7 +370,7 @@ describe("platform registry", () => {
     expect(getInventoryHandler("credential-inventory")?.code).toBe(
       "credential-inventory"
     )
-    expect(getDeliveryHandlerOrFallback("credential")?.code).toBe("credential")
+    expect(getDeliveryHandler("credential")?.code).toBe("credential")
     expect(getOrderAccessProvider("guest-order-access")?.code).toBe(
       "guest-order-access"
     )
@@ -440,7 +440,6 @@ describe("platform registry", () => {
 
     getPlatformRuntime().setPluginEnabled("plugin.alt", false)
     expect(getPaymentProvider("alt")).toBeUndefined()
-    expect(getPaymentProviderOrFallback("alt")?.code).toBe("noop")
   })
 
   it("emits payment attempt closed as a platform hook without default integrations", async () => {

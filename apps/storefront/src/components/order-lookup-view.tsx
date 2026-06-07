@@ -269,7 +269,7 @@ export function OrderLookupView() {
     <div className="space-y-6">
       <form
         onSubmit={handleSubmit}
-        className="theme-panel space-y-5 p-5"
+        className="theme-panel space-y-5 p-6 shadow-[var(--shadow-card)]"
       >
         <div>
           <label className="block text-sm font-medium" htmlFor="access-token">
@@ -280,7 +280,7 @@ export function OrderLookupView() {
             value={accessToken}
             onChange={(event) => setAccessToken(event.target.value)}
             required
-            className="theme-border mt-2 w-full border bg-[var(--surface)] px-3 py-3 font-mono text-sm outline-none focus:border-[var(--foreground)]"
+            className="theme-input mt-2 w-full px-3 py-3 font-mono text-sm"
             placeholder="ord_... or dlv_..."
           />
           <p className="mt-2 text-sm opacity-70">
@@ -291,7 +291,7 @@ export function OrderLookupView() {
         <button
           type="submit"
           disabled={loading}
-          className="theme-primary-action w-full px-4 py-3 text-sm font-semibold disabled:opacity-50"
+          className="theme-primary-action min-h-12 w-full px-4 text-sm font-semibold disabled:opacity-50"
         >
           {loading ? "Loading..." : "View order"}
         </button>
@@ -299,7 +299,7 @@ export function OrderLookupView() {
         {error ? <p className="text-sm text-[var(--danger)]">{error}</p> : null}
       </form>
 
-      <section className="theme-panel grid gap-6 p-5 lg:grid-cols-2">
+      <section className="theme-panel grid gap-6 p-6 shadow-[var(--shadow-card)] lg:grid-cols-2">
         <form onSubmit={handleRecover} className="space-y-4">
           <h2 className="text-base font-semibold">Recover order access</h2>
           <input
@@ -307,20 +307,20 @@ export function OrderLookupView() {
             value={recoveryEmail}
             onChange={(event) => setRecoveryEmail(event.target.value)}
             required
-            className="theme-border w-full border bg-[var(--surface)] px-3 py-3 text-sm outline-none focus:border-[var(--foreground)]"
+            className="theme-input w-full px-3 py-3 text-sm"
             placeholder="buyer@example.com"
           />
           <input
             value={recoveryOrderId}
             onChange={(event) => setRecoveryOrderId(event.target.value)}
             required
-            className="theme-border w-full border bg-[var(--surface)] px-3 py-3 font-mono text-sm outline-none focus:border-[var(--foreground)]"
+            className="theme-input w-full px-3 py-3 font-mono text-sm"
             placeholder="order_..."
           />
           <button
             type="submit"
             disabled={recovering}
-            className="theme-secondary-action w-full px-4 py-3 text-sm font-semibold disabled:opacity-50"
+            className="theme-secondary-action min-h-12 w-full px-4 text-sm font-semibold disabled:opacity-50"
           >
             {recovering ? "Sending..." : "Send recovery code"}
           </button>
@@ -332,20 +332,20 @@ export function OrderLookupView() {
             value={recoveryOrderId}
             onChange={(event) => setRecoveryOrderId(event.target.value)}
             required
-            className="theme-border w-full border bg-[var(--surface)] px-3 py-3 font-mono text-sm outline-none focus:border-[var(--foreground)]"
+            className="theme-input w-full px-3 py-3 font-mono text-sm"
             placeholder="order_..."
           />
           <input
             value={recoveryCode}
             onChange={(event) => setRecoveryCode(event.target.value)}
             required
-            className="theme-border w-full border bg-[var(--surface)] px-3 py-3 font-mono text-sm outline-none focus:border-[var(--foreground)]"
+            className="theme-input w-full px-3 py-3 font-mono text-sm"
             placeholder="123456"
           />
           <button
             type="submit"
             disabled={verifyingRecovery}
-            className="theme-accent-action w-full px-4 py-3 text-sm font-semibold disabled:opacity-50"
+            className="theme-primary-action min-h-12 w-full px-4 text-sm font-semibold disabled:opacity-50"
           >
             {verifyingRecovery ? "Verifying..." : "Restore access"}
           </button>
@@ -361,7 +361,7 @@ export function OrderLookupView() {
       ) : null}
 
       {lookup?.kind === "order" ? (
-        <section className="theme-panel space-y-5 p-5">
+        <section className="theme-panel space-y-5 p-6 shadow-[var(--shadow-card)]">
           <div className="theme-border border-b pb-4">
             <h2 className="text-lg font-semibold">Order</h2>
             <p className="mt-1 text-sm opacity-70">
@@ -377,7 +377,7 @@ export function OrderLookupView() {
           <div className="space-y-4">
             {lookup.data.deliveries.length ? (
               lookup.data.deliveries.map((item) => (
-                <article key={item.delivery.id} className="theme-panel p-4">
+                <article key={item.delivery.id} className="theme-panel p-4 shadow-none">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <h3 className="font-semibold">{item.delivery.id}</h3>
@@ -392,7 +392,7 @@ export function OrderLookupView() {
                         confirmingDeliveryId === item.delivery.id ||
                         item.delivery.delivery_status !== "delivered"
                       }
-                      className="theme-accent-action px-4 py-2 text-sm font-semibold disabled:opacity-50"
+                      className="theme-primary-action min-h-10 px-4 text-sm font-semibold disabled:opacity-50"
                     >
                       {confirmingDeliveryId === item.delivery.id
                         ? "Confirming..."
@@ -403,7 +403,7 @@ export function OrderLookupView() {
                             : "Confirm received"}
                     </button>
                   </div>
-                  <pre className="theme-primary-action mt-4 overflow-auto p-4 text-sm leading-6">
+                  <pre className="theme-code-block mt-4 overflow-auto p-4 text-sm leading-6">
                     {formatPayload(item.payload)}
                   </pre>
                 </article>
@@ -418,14 +418,14 @@ export function OrderLookupView() {
       ) : null}
 
       {lookup ? (
-        <section className="theme-panel p-5">
+        <section className="theme-panel p-6 shadow-[var(--shadow-card)]">
           <form onSubmit={handleAfterSaleSubmit} className="space-y-4">
             <h2 className="text-base font-semibold">After-sales request</h2>
             {lookup.kind === "order" && orderDeliveries.length ? (
                 <select
                 value={effectiveAfterSaleDeliveryId}
                 onChange={(event) => setAfterSaleDeliveryId(event.target.value)}
-                className="theme-border w-full border bg-[var(--surface)] px-3 py-3 text-sm outline-none focus:border-[var(--foreground)]"
+                className="theme-input w-full px-3 py-3 text-sm"
               >
                 {orderDeliveries.map((item) => (
                   <option key={item.delivery.id} value={item.delivery.id}>
@@ -447,7 +447,7 @@ export function OrderLookupView() {
                   type="email"
                   value={afterSaleEmail}
                   onChange={(event) => setAfterSaleEmail(event.target.value)}
-                  className="theme-border mt-2 w-full border bg-[var(--surface)] px-3 py-3 text-sm outline-none focus:border-[var(--foreground)]"
+                  className="theme-input mt-2 w-full px-3 py-3 text-sm"
                   placeholder="buyer@example.com"
                 />
               </div>
@@ -464,7 +464,7 @@ export function OrderLookupView() {
                   onChange={(event) =>
                     setAfterSaleReason(event.target.value as AfterSale["reason"])
                   }
-                  className="theme-border mt-2 w-full border bg-[var(--surface)] px-3 py-3 text-sm outline-none focus:border-[var(--foreground)]"
+                  className="theme-input mt-2 w-full px-3 py-3 text-sm"
                 >
                   <option value="not_working">Not working</option>
                   <option value="wrong_item">Wrong item</option>
@@ -486,7 +486,7 @@ export function OrderLookupView() {
                 required
                 value={afterSaleMessage}
                 onChange={(event) => setAfterSaleMessage(event.target.value)}
-                className="theme-border mt-2 min-h-28 w-full border bg-[var(--surface)] px-3 py-3 text-sm outline-none focus:border-[var(--foreground)]"
+                className="theme-input mt-2 min-h-28 w-full px-3 py-3 text-sm"
                 placeholder="Describe the issue."
               />
             </div>
@@ -496,7 +496,7 @@ export function OrderLookupView() {
                 submittingAfterSale ||
                 (lookup.kind === "order" && !effectiveAfterSaleDeliveryId)
               }
-              className="theme-primary-action w-full px-4 py-3 text-sm font-semibold disabled:opacity-50"
+              className="theme-primary-action min-h-12 w-full px-4 text-sm font-semibold disabled:opacity-50"
             >
               {submittingAfterSale ? "Submitting..." : "Submit request"}
             </button>
@@ -551,7 +551,7 @@ function DeliveryPanel(input: {
   onConfirm: () => void
 }) {
   return (
-    <section className="theme-panel p-5">
+    <section className="theme-panel p-6 shadow-[var(--shadow-card)]">
       <div className="theme-border flex flex-col gap-2 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold">Delivery</h2>
@@ -566,7 +566,7 @@ function DeliveryPanel(input: {
             input.confirming ||
             input.result.delivery.delivery_status !== "delivered"
           }
-          className="theme-accent-action px-4 py-2 text-sm font-semibold disabled:opacity-50"
+          className="theme-primary-action min-h-10 px-4 text-sm font-semibold disabled:opacity-50"
         >
           {input.confirming
             ? "Confirming..."
@@ -578,7 +578,7 @@ function DeliveryPanel(input: {
         </button>
       </div>
 
-      <pre className="theme-primary-action mt-4 overflow-auto p-4 text-sm leading-6">
+      <pre className="theme-code-block mt-4 overflow-auto p-4 text-sm leading-6">
         {formatPayload(input.result.payload)}
       </pre>
     </section>

@@ -7,14 +7,16 @@ import {
 } from "@medusajs/framework/http"
 import { MedusaError } from "@medusajs/framework/utils"
 import { z, ZodError, type ZodTypeAny } from "zod"
-import { ensurePlatformIntegrationsRegistered } from "../platform/integrations"
+import { ensurePlatformIntegrationsRegistered } from "../platform-adapters/integrations"
 import { isPlatformPluginEnabled } from "../platform/runtime"
 import { emitAuditLog } from "../utils/audit-log"
 import { localizedMessage } from "../utils/localized-response"
 import { getRequestAuditContext } from "../utils/request-audit"
 import {
   type RateLimitPolicy,
-  evaluateRateLimit,
+  assertRateLimitStoreIsSafeForRuntime,
+  evaluateRateLimitWithStore,
+  type RateLimitDecision,
   resolveRateLimitPolicyFromEnv,
 } from "../utils/security-rate-limit"
 import {
@@ -66,7 +68,7 @@ const claimOrderAccessBodySchema = z.object({
 })
 
 const createCartPaymentBodySchema = z.object({
-  payment_method: z.string().trim().optional(),
+  payment_method: z.string().trim().min(1),
   marketing: z
     .object({
       coupon_code: z.string().trim().max(64).optional(),
@@ -258,6 +260,10 @@ const securityHstsPreload = parseBooleanFlag(
   false
 )
 
+if (isSecurityGuardEnabled()) {
+  assertRateLimitStoreIsSafeForRuntime(process.env)
+}
+
 function validateAndTransformSimpleQuery(schema: ZodTypeAny) {
   return (req: MedusaRequest, _res: MedusaResponse, next: MedusaNextFunction) => {
     try {
@@ -408,7 +414,30 @@ function createRateLimitMiddleware(
       userAgent,
       ...customKeyParts,
     ])
-    const decision = evaluateRateLimit(policy, key)
+    let decision: RateLimitDecision
+
+    try {
+      decision = await evaluateRateLimitWithStore(policy, key)
+    } catch (error) {
+      await emitSecurityGuardAuditLog(req, {
+        action: options.action,
+        riskLevel: "high",
+        metadata: {
+          reason: "rate_limit_store_unavailable",
+          policy_id: policy.id,
+          request_path: requestPath,
+          request_method: requestMethod,
+          request_origin: requestOrigin || null,
+          error: error instanceof Error ? error.message : String(error),
+        },
+      })
+
+      res.status(503).json({
+        message: "Rate limit store is unavailable",
+        code: "rate_limit_store_unavailable",
+      })
+      return
+    }
 
     setRateLimitHeaders(res, decision)
 
@@ -522,7 +551,7 @@ function isHttpsRequest(req: MedusaRequest) {
   return normalizeString(requestWithProtocol.protocol) === "https"
 }
 
-function setRateLimitHeaders(res: MedusaResponse, decision: ReturnType<typeof evaluateRateLimit>) {
+function setRateLimitHeaders(res: MedusaResponse, decision: RateLimitDecision) {
   const resetAtMs = Date.parse(decision.resetAt)
   const resetAfterSeconds = Number.isFinite(resetAtMs)
     ? Math.max(0, Math.ceil((resetAtMs - Date.now()) / 1000))

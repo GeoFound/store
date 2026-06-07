@@ -163,6 +163,21 @@ class GuestOrderAccessModuleService extends MedusaService({
     return revoked
   }
 
+  async revokeOrderAccessToken(id: string) {
+    const token = await this.retrieveOrderAccessToken(id)
+
+    if (token.revoked_at) {
+      return this.sanitizeToken(token)
+    }
+
+    const updated = await this.updateOrderAccessTokens({
+      id,
+      revoked_at: new Date(),
+    })
+
+    return this.sanitizeToken(updated)
+  }
+
   async listTokensSafe(input?: {
     orderId?: string
     customerEmail?: string
@@ -308,19 +323,20 @@ class GuestOrderAccessModuleService extends MedusaService({
     orderId: string
     customerEmail: string
   }) {
-    const [latest] = await this.listOrderAccessTokens(
+    const recentTokens = await this.listOrderAccessTokens(
       {
         order_id: input.orderId,
         customer_email: input.customerEmail,
         purpose: "claim_order",
       },
       {
-        take: 1,
+        take: 10,
         order: {
           created_at: "DESC",
         },
       }
     )
+    const latest = recentTokens.find((token) => !token.revoked_at)
 
     const latestCreatedAt = latest?.created_at
 

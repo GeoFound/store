@@ -63,15 +63,20 @@ Optional analytics and observability:
 | `SECURITY_HSTS_MAX_AGE_SECONDS` | HSTS max-age for HTTPS requests | Set `31536000` in production HTTPS; keep `0` in local HTTP. |
 | `SECURITY_HSTS_INCLUDE_SUBDOMAINS` | Add `includeSubDomains` directive to HSTS | Default `true`. |
 | `SECURITY_HSTS_PRELOAD` | Add `preload` directive to HSTS | Default `false`; enable only after domain-wide HSTS readiness review. |
-| `SECURITY_RATE_LIMIT_MAX_KEYS` | In-memory cap for tracked rate-limit buckets | Default `50000`; adjust with traffic profile and memory budget. |
+| `SECURITY_RATE_LIMIT_STORE` | Rate-limit state backend | Supported values: `redis`, `memory`. Defaults to `redis` in production and `memory` elsewhere. Production refuses explicit `memory`. |
+| `SECURITY_RATE_LIMIT_REDIS_URL` | Redis URL for distributed rate limiting | Optional; defaults to `REDIS_URL`. Required when `SECURITY_RATE_LIMIT_STORE=redis`. |
+| `SECURITY_RATE_LIMIT_REDIS_PREFIX` | Redis key prefix for rate-limit buckets | Default `store:security:rate-limit:`. Use a site/app-specific prefix for shared Redis clusters. |
+| `SECURITY_RATE_LIMIT_REDIS_CONNECT_TIMEOUT_MS` | Redis connection timeout for rate limiting | Default `1000`. Requests fail closed when Redis cannot be reached. |
+| `SECURITY_RATE_LIMIT_REDIS_COMMAND_TIMEOUT_MS` | Redis command timeout for rate limiting | Default `1000`. Requests fail closed when Redis cannot answer. |
+| `SECURITY_RATE_LIMIT_MAX_KEYS` | In-memory cap for tracked rate-limit buckets | Default `50000`; applies only when `SECURITY_RATE_LIMIT_STORE=memory`. |
 | `SECURITY_LIMIT_RECOVER_REQUEST_*` | Per-policy rate-limit knobs for `/store/orders/recover` | Supports `_MAX_REQUESTS`, `_WINDOW_SECONDS`, `_BLOCK_SECONDS`. |
 | `SECURITY_LIMIT_RECOVER_VERIFY_*` | Per-policy rate-limit knobs for `/store/orders/recover/verify` | Supports `_MAX_REQUESTS`, `_WINDOW_SECONDS`, `_BLOCK_SECONDS`. |
 | `SECURITY_LIMIT_CLAIM_ORDER_ACCESS_*` | Per-policy rate-limit knobs for claim endpoint | Supports `_MAX_REQUESTS`, `_WINDOW_SECONDS`, `_BLOCK_SECONDS`. |
 | `SECURITY_LIMIT_CREATE_CART_PAYMENT_*` | Per-policy rate-limit knobs for cart payment creation | Supports `_MAX_REQUESTS`, `_WINDOW_SECONDS`, `_BLOCK_SECONDS`. |
 | `SECURITY_LIMIT_PAYMENT_WEBHOOK_*` | Per-policy rate-limit knobs for payment webhooks | Supports `_MAX_REQUESTS`, `_WINDOW_SECONDS`, `_BLOCK_SECONDS`. |
 | `SECURITY_LIMIT_ADMIN_MUTATION_*` | Per-policy rate-limit knobs for admin POST mutations | Supports `_MAX_REQUESTS`, `_WINDOW_SECONDS`, `_BLOCK_SECONDS`. |
-| `PLATFORM_ENABLED_PLUGINS` | Backend plugin allow-list (comma-separated IDs). | Merged with `NEXT_PUBLIC_PLATFORM_ENABLED_PLUGINS`; duplicates removed. |
-| `PLATFORM_DISABLED_PLUGINS` | Backend plugin deny-list (comma-separated IDs). | Merged with `NEXT_PUBLIC_PLATFORM_DISABLED_PLUGINS`; duplicates removed. |
+| `PLATFORM_ENABLED_PLUGINS` | Backend plugin allow-list (comma-separated IDs). | Backend-only; public storefront plugin env is intentionally ignored by backend runtime. |
+| `PLATFORM_DISABLED_PLUGINS` | Backend plugin deny-list (comma-separated IDs). | Backend-only; public storefront plugin env is intentionally ignored by backend runtime. |
 | `PLATFORM_ENABLED_CONTRACTS` | Capability contract allow-list (`capability:name1,name2;...`). | Applied before plugin registration for deterministic startup behavior. |
 | `PLATFORM_DISABLED_CONTRACTS` | Capability contract deny-list (`capability:name1,name2;...`). | Useful for fine-grained strategy/hook shutdown without disabling whole plugin. |
 | `SITE_ID` | Logical site identifier for profile-driven multi-site runtime. | Required for profile-driven runtime (`site-1`, `jp-cards`, etc). No default fallback. |

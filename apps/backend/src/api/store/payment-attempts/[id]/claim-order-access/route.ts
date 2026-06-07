@@ -3,7 +3,7 @@ import type { ILockingModule } from "@medusajs/framework/types"
 import { MedusaError, Modules } from "@medusajs/framework/utils"
 import { emitOrderAccessTokenIssuedEvent } from "../../../../../platform/events"
 import { getOrderAccessProvider } from "../../../../../platform/order-access"
-import { resolvePaymentRouterService } from "../../../../../platform/services"
+import { resolvePaymentRouterService } from "../../../../../platform-adapters/services"
 import {
   isPaymentAttemptFinalized,
   isClaimTemporarilyBlocked,

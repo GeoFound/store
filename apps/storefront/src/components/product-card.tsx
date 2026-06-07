@@ -18,9 +18,9 @@ export function ProductCard({ product }: ProductCardProps) {
       href={`/products/${product.handle}`}
       className="theme-card group block overflow-hidden"
     >
-      <div className="theme-muted-surface relative aspect-[4/3] overflow-hidden">
+      <div className="theme-muted-surface relative aspect-[4/3] overflow-hidden bg-gradient-to-b from-white to-[var(--surface-muted)]">
         {isSoldOut ? (
-          <div className="theme-status-danger absolute left-3 top-3 z-10 px-2 py-1 text-xs font-semibold uppercase tracking-[0.16em]">
+          <div className="theme-status-danger absolute left-3 top-3 z-10 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.14em]">
             Sold out
           </div>
         ) : null}
@@ -30,7 +30,7 @@ export function ProductCard({ product }: ProductCardProps) {
             alt={product.title}
             fill
             sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-            className="object-cover transition-transform duration-200 group-hover:scale-[1.02]"
+            className="object-contain p-6 transition-transform duration-200 group-hover:scale-[1.03]"
           />
         ) : (
           <div className="theme-accent-surface flex h-full items-center justify-center text-5xl font-semibold">
@@ -38,12 +38,12 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
         )}
       </div>
-      <div className="space-y-3 p-4">
+      <div className="space-y-4 p-5">
         <div>
-          <h3 className="line-clamp-2 text-base font-semibold">
+          <h3 className="line-clamp-2 text-base font-semibold leading-6">
             {product.title}
           </h3>
-          <p className="mt-1 text-sm opacity-70">
+          <p className="mt-1.5 text-sm leading-5 opacity-70">
             {template?.deliveryLabel || "Digital delivery after payment"}
           </p>
         </div>
@@ -51,7 +51,11 @@ export function ProductCard({ product }: ProductCardProps) {
           <span className="text-base font-semibold">
             {formatMoney(amount, currencyCode)}
           </span>
-          <span className={`text-sm ${isSoldOut ? "opacity-60" : "theme-accent-text"}`}>
+          <span
+            className={`text-sm font-semibold ${
+              isSoldOut ? "opacity-60" : "theme-accent-text"
+            }`}
+          >
             {isSoldOut ? "Unavailable" : template?.title || "View"}
           </span>
         </div>

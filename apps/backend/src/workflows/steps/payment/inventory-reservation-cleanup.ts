@@ -11,7 +11,7 @@ export async function releaseInventoryReservations(
   const handledKeys = new Set<string>()
 
   for (const reservation of reservations) {
-    const handlerCode = reservation.handler_code || "credential-inventory"
+    const handlerCode = requireReservationHandlerCode(reservation)
     const dedupeKey = `${handlerCode}:${reservation.reservation_key}`
 
     if (handledKeys.has(dedupeKey)) {
@@ -21,17 +21,32 @@ export async function releaseInventoryReservations(
     handledKeys.add(dedupeKey)
     const handler = getInventoryHandler(handlerCode)
 
-    if (!handler?.releaseReservation) {
-      continue
+    if (!handler) {
+      throw new Error(`Inventory handler ${handlerCode} is not registered`)
     }
 
-    try {
-      await handler.releaseReservation({
-        scope: container,
-        reservationKey: reservation.reservation_key,
-      })
-    } catch {
-      // Best-effort cleanup. The expiry job still acts as a final safeguard.
+    if (!handler.releaseReservation) {
+      throw new Error(
+        `Inventory handler ${handlerCode} cannot release reservations`
+      )
     }
+
+    await handler.releaseReservation({
+      scope: container,
+      reservationKey: reservation.reservation_key,
+    })
   }
+}
+
+function requireReservationHandlerCode(reservation: InventoryReservation) {
+  if (
+    typeof reservation.handler_code === "string" &&
+    reservation.handler_code.trim()
+  ) {
+    return reservation.handler_code.trim()
+  }
+
+  throw new Error(
+    "Inventory reservation is missing handler_code and cannot be safely released"
+  )
 }

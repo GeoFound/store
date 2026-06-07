@@ -110,6 +110,6 @@ NODE
 (
   cd "$REPO_ROOT/apps/backend"
   TS_NODE_PROJECT=tsconfig.json pnpm exec ts-node \
-    src/platform/validate-profile-config.ts \
+    src/platform-adapters/validate-profile-config.ts \
     --profile "$PROFILE_FILE"
 )

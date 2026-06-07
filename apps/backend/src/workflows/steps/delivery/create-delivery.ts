@@ -6,12 +6,12 @@ import {
   emitDeliveryCreatedEvent,
 } from "../../../platform/events"
 import { resolveDeliveryHandlerCode } from "../../../platform/delivery"
-import { ensurePlatformIntegrationsRegistered } from "../../../platform/integrations"
+import { ensurePlatformIntegrationsRegistered } from "../../../platform-adapters/integrations"
 import { resolveProductTemplate } from "../../../platform/product-templates"
 import {
   resolveDigitalDeliveryService,
   resolvePaymentRouterService,
-} from "../../../platform/services"
+} from "../../../platform-adapters/services"
 
 export type CreateDeliveryStepInput = {
   deliveryId?: string
@@ -104,7 +104,6 @@ export const createDeliveryStep = createStep(
         templateDeliveryHandlerCode: productTemplate?.deliveryHandlerCode,
         deliveryId: input.deliveryId || null,
         deliveryPayload: input.deliveryPayload,
-        defaultHandlerCode: "manual",
       }),
       deliveryPayload: input.deliveryPayload,
       deliveryStatus: input.deliveryStatus,

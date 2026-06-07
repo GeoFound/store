@@ -65,16 +65,3 @@ export function getOrderAccessProvider(
     context
   )
 }
-
-export function getOrderAccessProviderOrFallback(
-  code: string,
-  fallbackCode = "noop",
-  context?: PlatformResolutionContext
-) {
-  return getPlatformRuntime().resolveContractOrFallback<OrderAccessProvider>(
-    "order-access-provider",
-    code,
-    fallbackCode,
-    context
-  )
-}

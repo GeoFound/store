@@ -1,5 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
 import { resolveProductFulfillmentPolicy } from "../../../platform/delivery"
 import {
   getInventoryHandler,
@@ -31,6 +31,10 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const handlerToVariantIds = new Map<string, Set<string>>()
 
   for (const context of variantContexts) {
+    if (context.handlerCode === "noop") {
+      continue
+    }
+
     const variantIdSet = handlerToVariantIds.get(context.handlerCode) || new Set<string>()
     variantIdSet.add(context.variantId)
     handlerToVariantIds.set(context.handlerCode, variantIdSet)
@@ -41,8 +45,18 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
       async ([handlerCode, handlerVariantIds]) => {
         const handler = getInventoryHandler(handlerCode)
 
-        if (!handler?.listAvailability) {
-          return
+        if (!handler) {
+          throw new MedusaError(
+            MedusaError.Types.INVALID_DATA,
+            `Inventory handler ${handlerCode} is not registered`
+          )
+        }
+
+        if (!handler.listAvailability) {
+          throw new MedusaError(
+            MedusaError.Types.INVALID_DATA,
+            `Inventory handler ${handlerCode} cannot list availability`
+          )
         }
 
         const availability = await handler.listAvailability({
@@ -58,6 +72,18 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   )
 
   const availability = variantContexts.map((context) => {
+    if (context.handlerCode === "noop") {
+      return {
+        variant_id: context.variantId,
+        total_count: 0,
+        available_count: Number.MAX_SAFE_INTEGER,
+        reserved_count: 0,
+        sold_count: 0,
+        locked_count: 0,
+        is_in_stock: true,
+      }
+    }
+
     return (
       availabilityByVariantId.get(context.variantId) || {
         variant_id: context.variantId,
@@ -88,27 +114,20 @@ async function resolveVariantInventoryContexts(
     }) => Promise<{ data?: Array<Record<string, unknown>> }>
   }
 
-  let rows: Array<Record<string, unknown>> = []
-
-  try {
-    const result = await query.graph({
-      entity: "product_variant",
-      fields: [
-        "id",
-        "metadata",
-        "product.id",
-        "product.type.value",
-        "product.metadata",
-      ],
-      filters: {
-        id: variantIds,
-      },
-    })
-
-    rows = result.data || []
-  } catch {
-    // Fall through to conservative defaults when query graph data is unavailable.
-  }
+  const result = await query.graph({
+    entity: "product_variant",
+    fields: [
+      "id",
+      "metadata",
+      "product.id",
+      "product.type.value",
+      "product.metadata",
+    ],
+    filters: {
+      id: variantIds,
+    },
+  })
+  const rows = result.data || []
 
   const byId = new Map<string, Record<string, unknown>>(
     rows
@@ -118,6 +137,14 @@ async function resolveVariantInventoryContexts(
   return Promise.all(
     variantIds.map(async (variantId) => {
       const row = byId.get(variantId)
+
+      if (!row) {
+        throw new MedusaError(
+          MedusaError.Types.NOT_FOUND,
+          `Product variant ${variantId} was not found`
+        )
+      }
+
       const variantMetadata = normalizeRecord(row?.metadata)
       const product = normalizeRecord(row?.product)
       const productMetadata = normalizeRecord(product.metadata)
@@ -154,8 +181,14 @@ async function resolveVariantInventoryContexts(
         toOptionalString(metadata.inventoryHandlerCode) ||
         (plan?.inventoryMode === "none" ? "noop" : "") ||
         template?.inventoryHandlerCode ||
-        plan?.inventoryHandlerCode ||
-        "credential-inventory"
+        plan?.inventoryHandlerCode
+
+      if (!handlerCode) {
+        throw new MedusaError(
+          MedusaError.Types.INVALID_DATA,
+          `No inventory handler configured for variant ${variantId}`
+        )
+      }
 
       return {
         variantId,

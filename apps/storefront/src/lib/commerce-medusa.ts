@@ -55,8 +55,10 @@ async function medusaFetch<T>(
 }
 
 export async function listProducts(): Promise<Product[]> {
-  const regionId = await getDefaultRegionId()
-  const templateDefinitions = await safeListProductTemplates()
+  const [regionId, templateDefinitions] = await Promise.all([
+    getDefaultRegionId(),
+    listProductTemplates(),
+  ])
   const query = new URLSearchParams({
     limit: "48",
     region_id: regionId,
@@ -71,8 +73,10 @@ export async function listProducts(): Promise<Product[]> {
 }
 
 export async function retrieveProduct(handle: string): Promise<Product | null> {
-  const regionId = await getDefaultRegionId()
-  const templateDefinitions = await safeListProductTemplates()
+  const [regionId, templateDefinitions] = await Promise.all([
+    getDefaultRegionId(),
+    listProductTemplates(),
+  ])
   const query = new URLSearchParams({
     handle,
     region_id: regionId,
@@ -420,16 +424,12 @@ async function mapProductsWithAvailability(
   )
 }
 
-async function safeListProductTemplates() {
-  try {
-    const data = await medusaFetch<{
-      templates: ProductTemplateDefinition[]
-    }>("/store/product-templates")
+async function listProductTemplates() {
+  const data = await medusaFetch<{
+    templates: ProductTemplateDefinition[]
+  }>("/store/product-templates")
 
-    return data.templates || []
-  } catch {
-    return []
-  }
+  return data.templates || []
 }
 
 async function retrieveVariantAvailability(variantIds: string[]) {

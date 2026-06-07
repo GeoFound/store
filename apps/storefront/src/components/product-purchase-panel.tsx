@@ -71,21 +71,24 @@ export function ProductPurchasePanel({
 
   return (
     <>
-      <h1 className="mt-4 text-3xl font-semibold">
+      <h1 className="text-3xl font-semibold leading-tight">
         {productTitle}
       </h1>
       <p className="mt-3 text-2xl font-semibold">
         {formatMoney(amount, currencyCode)}
       </p>
+      <p className="mt-2 text-sm leading-6 opacity-70">
+        {template?.description || "Digital delivery is prepared after payment."}
+      </p>
 
       {variants.length > 1 ? (
-        <div className="mt-4">
+        <div className="mt-5">
           <label className="block text-sm font-medium opacity-80" htmlFor="variant">
             Option
           </label>
           <select
             id="variant"
-            className="theme-surface theme-border mt-2 w-full border px-3 py-3 text-sm outline-none focus:border-[var(--foreground)]"
+            className="theme-input mt-2 w-full px-3 py-3 text-sm"
             value={selectedVariant?.id || ""}
             onChange={(event) => setSelectedVariantId(event.target.value)}
           >
@@ -98,9 +101,9 @@ export function ProductPurchasePanel({
         </div>
       ) : null}
 
-      <div className="mt-3">
+      <div className="mt-4">
         <span
-          className={`inline-flex px-2 py-1 text-xs font-semibold uppercase tracking-[0.14em] ${
+          className={`inline-flex px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.14em] ${
             isSoldOut
               ? "theme-status-danger"
               : "theme-status-success"
@@ -110,7 +113,7 @@ export function ProductPurchasePanel({
         </span>
       </div>
 
-      <div className="theme-border mt-5 space-y-3 border-y py-5 text-sm opacity-80">
+      <div className="theme-border mt-6 space-y-3 border-y py-5 text-sm opacity-80">
         <div className="flex justify-between gap-4">
           <span>Delivery</span>
           <span className="font-medium text-[var(--foreground)]">
@@ -137,7 +140,7 @@ export function ProductPurchasePanel({
         ) : null}
       </div>
 
-      <div className="mt-5">
+      <div className="mt-6">
         <AddToCartButton
           variantId={selectedVariant?.id}
           disabled={isSoldOut}
@@ -149,6 +152,9 @@ export function ProductPurchasePanel({
             price_minor: amount,
           }}
         />
+      </div>
+      <div className="theme-status-success mt-4 rounded-[var(--radius)] px-4 py-3 text-sm leading-6">
+        This is a digital product. Nothing will be shipped.
       </div>
     </>
   )

@@ -1,4 +1,5 @@
-import type { BackendRuntimeContext } from "./backend-context"
+import "./integrations"
+import type { BackendRuntimeContext } from "../platform/backend-context"
 import { ANALYTICS_CORE_MODULE } from "../modules/analytics-core"
 import type AnalyticsCoreModuleService from "../modules/analytics-core/service"
 import { CREDENTIAL_INVENTORY_MODULE } from "../modules/credential-inventory"

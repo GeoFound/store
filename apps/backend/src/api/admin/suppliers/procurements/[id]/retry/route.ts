@@ -1,5 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { resolveSupplierProcurementService } from "../../../../../../platform/services"
+import { resolveSupplierProcurementService } from "../../../../../../platform-adapters/services"
 import { localizedError } from "../../../../../../utils/localized-response"
 
 export const POST = async (req: MedusaRequest, res: MedusaResponse) => {

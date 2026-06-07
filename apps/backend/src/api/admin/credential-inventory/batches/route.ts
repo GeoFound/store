@@ -1,7 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import type { CreateCredentialBatchInput } from "../../../../platform/credential-inventory"
+import type { CreateCredentialBatchInput } from "../../../../modules/credential-inventory/types"
 import { resolveProductTemplate } from "../../../../platform/product-templates"
-import { resolveCredentialInventoryService } from "../../../../platform/services"
+import { resolveCredentialInventoryService } from "../../../../platform-adapters/services"
 import { localizedError } from "../../../../utils/localized-response"
 
 type CreateBatchBody = {

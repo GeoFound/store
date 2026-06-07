@@ -30,13 +30,15 @@ const LEGACY_ORDER_ACCESS_TOKEN_KEY = "store_last_order_access_token"
 const PENDING_PAYMENT_ATTEMPT_ID_KEY = "store_pending_payment_attempt_id"
 const PENDING_PAYMENT_CLAIM_TOKEN_KEY = "store_pending_payment_claim_token"
 const PENDING_PAYMENT_INSTRUCTIONS_KEY = "store_pending_payment_instructions"
+const PENDING_PAYMENT_STORAGE_VERSION_KEY = "store_pending_payment_storage_version"
+const PENDING_PAYMENT_STORAGE_VERSION = "session-v1"
 
 export function CheckoutView() {
   const [cart, setCart] = useState<Cart | null>(null)
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
   const [email, setEmail] = useState("")
   const [paymentMethod, setPaymentMethod] =
-    useState<PaymentMethod["code"]>("manual")
+    useState<PaymentMethod["code"] | "">("")
   const [paymentAttempt, setPaymentAttempt] = useState<PaymentAttempt | null>(
     null
   )
@@ -67,15 +69,7 @@ export function CheckoutView() {
       const lastOrderAccessToken =
         window.sessionStorage.getItem(ORDER_ACCESS_TOKEN_SESSION_KEY) ||
         window.localStorage.getItem(LEGACY_ORDER_ACCESS_TOKEN_KEY)
-      const pendingAttemptId = window.localStorage.getItem(
-        PENDING_PAYMENT_ATTEMPT_ID_KEY
-      )
-      const pendingClaimToken = window.localStorage.getItem(
-        PENDING_PAYMENT_CLAIM_TOKEN_KEY
-      )
-      const storedInstructions = window.localStorage.getItem(
-        PENDING_PAYMENT_INSTRUCTIONS_KEY
-      )
+      const pendingPaymentState = readPendingPaymentState()
 
       if (lastOrderAccessToken) {
         setOrderAccessToken(lastOrderAccessToken)
@@ -100,30 +94,36 @@ export function CheckoutView() {
           const nextCart = await retrieveCart(cartId)
           setCart(nextCart)
           setEmail(nextCart.email || "")
-          setPaymentMethods(
-            await listPaymentMethods({
-              amount: nextCart.total,
-              currency: nextCart.currency_code,
-            })
+          const methods = await listPaymentMethods({
+            amount: nextCart.total,
+            currency: nextCart.currency_code,
+          })
+          setPaymentMethods(methods)
+          setPaymentMethod((current) =>
+            methods.some((method) => method.code === current)
+              ? current
+              : methods[0]?.code || ""
           )
         }
 
-        if (storedInstructions) {
+        if (pendingPaymentState.instructions) {
           setInstructions(
-            JSON.parse(storedInstructions) as ManualPaymentInstructions
+            JSON.parse(pendingPaymentState.instructions) as ManualPaymentInstructions
           )
         }
 
-        if (pendingAttemptId) {
-          const { attempt } = await retrievePaymentAttempt(pendingAttemptId)
+        if (pendingPaymentState.attemptId) {
+          const { attempt } = await retrievePaymentAttempt(
+            pendingPaymentState.attemptId
+          )
           setPaymentAttempt(attempt)
           setResolvedMarketing(
             normalizeResolvedMarketing(attempt.marketing_context)
           )
         }
 
-        if (pendingClaimToken) {
-          setClaimToken(pendingClaimToken)
+        if (pendingPaymentState.claimToken) {
+          setClaimToken(pendingPaymentState.claimToken)
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load cart.")
@@ -289,6 +289,11 @@ export function CheckoutView() {
       return
     }
 
+    if (!paymentMethod) {
+      setError("Choose a payment method before creating payment.")
+      return
+    }
+
     setSaving(true)
     setError("")
     setMessage("")
@@ -337,16 +342,25 @@ export function CheckoutView() {
   }
 
   if (loading) {
-    return <p className="text-sm opacity-70">Loading checkout...</p>
+    return (
+      <div className="theme-panel p-6 text-sm opacity-70">
+        Loading checkout...
+      </div>
+    )
   }
 
   if (!cart?.items?.length) {
     return (
-      <div className="theme-panel space-y-5 p-6">
-        <p className="opacity-75">Your cart is empty.</p>
+      <div className="theme-panel grid gap-5 p-8">
+        <div>
+          <h2 className="text-xl font-semibold">Your cart is empty</h2>
+          <p className="mt-2 text-sm leading-6 opacity-70">
+            Add products before starting guest checkout.
+          </p>
+        </div>
         <Link
           href="/products"
-          className="theme-primary-action inline-flex px-4 py-3 text-sm font-semibold"
+          className="theme-primary-action inline-flex min-h-12 w-fit items-center px-5 text-sm font-semibold"
         >
           Browse products
         </Link>
@@ -355,13 +369,18 @@ export function CheckoutView() {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
+    <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
       <form
         onSubmit={handleSubmit}
-        className="theme-panel space-y-6 p-5"
+        className="theme-panel space-y-7 p-6 shadow-[var(--shadow-card)]"
       >
         <section>
-          <h2 className="text-lg font-semibold">Guest details</h2>
+          <div className="flex items-center gap-3">
+            <span className="theme-accent-action flex h-8 w-8 items-center justify-center text-sm font-semibold">
+              1
+            </span>
+            <h2 className="text-lg font-semibold">Guest details</h2>
+          </div>
           <label className="mt-4 block text-sm font-medium" htmlFor="email">
             Email for order access
           </label>
@@ -371,7 +390,7 @@ export function CheckoutView() {
             required
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            className="theme-border mt-2 w-full border bg-[var(--surface)] px-3 py-3 outline-none focus:border-[var(--foreground)]"
+            className="theme-input mt-2 w-full px-3 py-3"
             placeholder="buyer@example.com"
           />
           <p className="mt-2 text-sm opacity-70">
@@ -381,12 +400,17 @@ export function CheckoutView() {
         </section>
 
         <section>
-          <h2 className="text-lg font-semibold">Payment method</h2>
+          <div className="flex items-center gap-3">
+            <span className="theme-accent-action flex h-8 w-8 items-center justify-center text-sm font-semibold">
+              2
+            </span>
+            <h2 className="text-lg font-semibold">Payment method</h2>
+          </div>
           <div className="mt-4 grid gap-3">
             {paymentMethods.map((method) => (
               <label
                 key={method.code}
-                className="theme-border flex cursor-pointer items-center justify-between border p-4"
+                className="theme-field-row flex cursor-pointer items-center justify-between gap-4 p-4"
               >
                 <span>
                   <span className="block font-medium">
@@ -405,6 +429,11 @@ export function CheckoutView() {
                 />
               </label>
             ))}
+            {!paymentMethods.length ? (
+              <p className="theme-muted-surface rounded-[var(--radius)] p-4 text-sm">
+                No payment methods are available for this cart.
+              </p>
+            ) : null}
           </div>
           <p className="mt-3 text-sm opacity-70">
             Choose an available payment method for this order.
@@ -412,7 +441,12 @@ export function CheckoutView() {
         </section>
 
         <section>
-          <h2 className="text-lg font-semibold">Marketing (optional)</h2>
+          <div className="flex items-center gap-3">
+            <span className="theme-accent-action flex h-8 w-8 items-center justify-center text-sm font-semibold">
+              3
+            </span>
+            <h2 className="text-lg font-semibold">Marketing (optional)</h2>
+          </div>
           <div className="mt-4 grid gap-4 md:grid-cols-2">
             <div>
               <label className="block text-sm font-medium" htmlFor="coupon_code">
@@ -422,7 +456,7 @@ export function CheckoutView() {
                 id="coupon_code"
                 value={couponCode}
                 onChange={(event) => setCouponCode(event.target.value)}
-                className="theme-border mt-2 w-full border bg-[var(--surface)] px-3 py-3 outline-none focus:border-[var(--foreground)]"
+                className="theme-input mt-2 w-full px-3 py-3"
                 placeholder="SAVE10"
               />
             </div>
@@ -434,7 +468,7 @@ export function CheckoutView() {
                 id="referral_code"
                 value={referralCode}
                 onChange={(event) => setReferralCode(event.target.value)}
-                className="theme-border mt-2 w-full border bg-[var(--surface)] px-3 py-3 outline-none focus:border-[var(--foreground)]"
+                className="theme-input mt-2 w-full px-3 py-3"
                 placeholder="CREATOR_A"
               />
             </div>
@@ -449,8 +483,8 @@ export function CheckoutView() {
 
         <button
           type="submit"
-          disabled={saving}
-          className="theme-primary-action w-full px-4 py-3 text-sm font-semibold disabled:opacity-50"
+          disabled={saving || !paymentMethod || !paymentMethods.length}
+          className="theme-primary-action min-h-12 w-full px-4 text-sm font-semibold disabled:opacity-50"
         >
           {saving ? "Creating..." : "Create payment"}
         </button>
@@ -459,14 +493,14 @@ export function CheckoutView() {
         {error ? <p className="text-sm text-[var(--danger)]">{error}</p> : null}
 
         {paymentAttempt && instructions ? (
-          <section className="theme-panel theme-status-success p-4">
+          <section className="theme-status-success rounded-[var(--radius)] p-4">
             <h2 className="text-base font-semibold">
               {instructions.title}
             </h2>
             <p className="mt-2 text-sm leading-6">
               {instructions.body}
             </p>
-            <div className="theme-panel mt-3 p-3 text-sm">
+            <div className="theme-panel mt-3 p-3 text-sm shadow-none">
               <span className="block opacity-70">Payment reference</span>
               <span className="mt-1 block font-mono font-semibold">
                 {instructions.reference}
@@ -483,7 +517,7 @@ export function CheckoutView() {
         ) : null}
 
         {resolvedMarketing ? (
-          <section className="theme-panel theme-muted-surface p-4">
+          <section className="theme-muted-surface rounded-[var(--radius)] p-4">
             <h2 className="text-base font-semibold">
               Applied marketing context
             </h2>
@@ -521,7 +555,7 @@ export function CheckoutView() {
             </p>
             <Link
               href="/orders"
-              className="theme-secondary-action mt-4 inline-flex px-4 py-3 text-sm font-semibold"
+              className="theme-secondary-action mt-4 inline-flex min-h-11 items-center px-4 text-sm font-semibold"
             >
               View order
             </Link>
@@ -529,11 +563,11 @@ export function CheckoutView() {
         ) : null}
       </form>
 
-      <aside className="theme-panel h-fit p-5">
-        <h2 className="text-base font-semibold">Order summary</h2>
+      <aside className="theme-panel h-fit p-6 shadow-[var(--shadow-card)] lg:sticky lg:top-24">
+        <h2 className="text-lg font-semibold">Order summary</h2>
         <div className="mt-4 space-y-3">
           {cart.items.map((item) => (
-            <div key={item.id} className="flex justify-between gap-4 text-sm">
+            <div key={item.id} className="flex justify-between gap-4 text-sm leading-6">
               <span>
                 {item.title} x {item.quantity}
               </span>
@@ -546,7 +580,7 @@ export function CheckoutView() {
             </div>
           ))}
         </div>
-        <div className="theme-border mt-5 flex items-center justify-between border-t pt-4">
+        <div className="theme-border mt-5 flex items-center justify-between border-t pt-5">
           <span>Total</span>
           <span className="font-semibold">
             {formatMoney(cart.total, cart.currency_code)}
@@ -562,21 +596,76 @@ function persistPendingPaymentState(
   claimToken: string,
   instructions: ManualPaymentInstructions | null
 ) {
-  window.localStorage.setItem(PENDING_PAYMENT_ATTEMPT_ID_KEY, attemptId)
-  window.localStorage.setItem(PENDING_PAYMENT_CLAIM_TOKEN_KEY, claimToken)
+  window.sessionStorage.setItem(
+    PENDING_PAYMENT_STORAGE_VERSION_KEY,
+    PENDING_PAYMENT_STORAGE_VERSION
+  )
+  window.sessionStorage.setItem(PENDING_PAYMENT_ATTEMPT_ID_KEY, attemptId)
+  window.sessionStorage.setItem(PENDING_PAYMENT_CLAIM_TOKEN_KEY, claimToken)
 
   if (instructions) {
-    window.localStorage.setItem(
+    window.sessionStorage.setItem(
       PENDING_PAYMENT_INSTRUCTIONS_KEY,
       JSON.stringify(instructions)
     )
   }
+
+  clearLegacyPendingPaymentState()
 }
 
 function clearPendingPaymentState() {
+  window.sessionStorage.removeItem(PENDING_PAYMENT_STORAGE_VERSION_KEY)
+  window.sessionStorage.removeItem(PENDING_PAYMENT_ATTEMPT_ID_KEY)
+  window.sessionStorage.removeItem(PENDING_PAYMENT_CLAIM_TOKEN_KEY)
+  window.sessionStorage.removeItem(PENDING_PAYMENT_INSTRUCTIONS_KEY)
+  clearLegacyPendingPaymentState()
+}
+
+function clearLegacyPendingPaymentState() {
   window.localStorage.removeItem(PENDING_PAYMENT_ATTEMPT_ID_KEY)
   window.localStorage.removeItem(PENDING_PAYMENT_CLAIM_TOKEN_KEY)
   window.localStorage.removeItem(PENDING_PAYMENT_INSTRUCTIONS_KEY)
+}
+
+function readPendingPaymentState() {
+  const attemptId =
+    window.sessionStorage.getItem(PENDING_PAYMENT_ATTEMPT_ID_KEY) ||
+    window.localStorage.getItem(PENDING_PAYMENT_ATTEMPT_ID_KEY) ||
+    ""
+  const claimToken =
+    window.sessionStorage.getItem(PENDING_PAYMENT_CLAIM_TOKEN_KEY) ||
+    window.localStorage.getItem(PENDING_PAYMENT_CLAIM_TOKEN_KEY) ||
+    ""
+  const instructions =
+    window.sessionStorage.getItem(PENDING_PAYMENT_INSTRUCTIONS_KEY) ||
+    window.localStorage.getItem(PENDING_PAYMENT_INSTRUCTIONS_KEY) ||
+    ""
+
+  if (
+    window.localStorage.getItem(PENDING_PAYMENT_ATTEMPT_ID_KEY) ||
+    window.localStorage.getItem(PENDING_PAYMENT_CLAIM_TOKEN_KEY) ||
+    window.localStorage.getItem(PENDING_PAYMENT_INSTRUCTIONS_KEY)
+  ) {
+    if (attemptId) {
+      window.sessionStorage.setItem(PENDING_PAYMENT_ATTEMPT_ID_KEY, attemptId)
+    }
+
+    if (claimToken) {
+      window.sessionStorage.setItem(PENDING_PAYMENT_CLAIM_TOKEN_KEY, claimToken)
+    }
+
+    if (instructions) {
+      window.sessionStorage.setItem(PENDING_PAYMENT_INSTRUCTIONS_KEY, instructions)
+    }
+
+    clearLegacyPendingPaymentState()
+  }
+
+  return {
+    attemptId,
+    claimToken,
+    instructions,
+  }
 }
 
 function normalizeResolvedMarketing(value: unknown): MarketingResolvedContext | null {

@@ -14,11 +14,6 @@ import {
   createPlatformRegistry,
   type PlatformRegistry,
 } from "./registry"
-import { registerDefaultPlatformCapabilities } from "./defaults"
-import {
-  ensurePlatformIntegrationsRegistered,
-  resetPlatformIntegrationsForTests,
-} from "./integrations"
 
 export type PlatformRuntimeOptions = {
   includeDefaults?: boolean
@@ -30,15 +25,30 @@ export type PlatformRuntimeOptions = {
   resolutionContext?: PlatformResolutionContext
 }
 
+export type PlatformRuntimeBootstrap = {
+  registerDefaultCapabilities?: (registry: PlatformRegistry) => PlatformRegistry
+  ensureIntegrationsRegistered?: () => void
+  resetIntegrationsForTests?: () => void
+}
+
 let runtimeRegistry: PlatformRegistry | null = null
 let runtimeHooks: PlatformHookRegistry | null = null
 let runtimeShouldRegisterDefaultIntegrations = true
+let runtimeBootstrap: PlatformRuntimeBootstrap = {}
+
+export function installPlatformRuntimeBootstrap(
+  bootstrap: PlatformRuntimeBootstrap
+) {
+  runtimeBootstrap = bootstrap
+}
 
 export function createPlatformRuntime(options?: PlatformRuntimeOptions) {
   const registry =
     options?.includeDefaults === false
       ? createPlatformRegistry()
-      : registerDefaultPlatformCapabilities(createPlatformRegistry())
+      : runtimeBootstrap.registerDefaultCapabilities
+        ? runtimeBootstrap.registerDefaultCapabilities(createPlatformRegistry())
+        : createPlatformRegistry()
 
   for (const pluginId of options?.disabledPlugins || []) {
     registry.setPluginEnabled(pluginId, false)
@@ -79,7 +89,7 @@ export function getPlatformRuntime() {
   }
 
   if (runtimeShouldRegisterDefaultIntegrations) {
-    ensurePlatformIntegrationsRegistered()
+    runtimeBootstrap.ensureIntegrationsRegistered?.()
   }
 
   return runtimeRegistry
@@ -90,7 +100,7 @@ export function configurePlatformRuntime(options?: PlatformRuntimeOptions) {
   runtimeShouldRegisterDefaultIntegrations = options?.includeDefaults !== false
 
   if (runtimeShouldRegisterDefaultIntegrations) {
-    ensurePlatformIntegrationsRegistered()
+    runtimeBootstrap.ensureIntegrationsRegistered?.()
   }
 
   return runtimeRegistry
@@ -168,13 +178,9 @@ export function parsePlatformRuntimeOptionsFromEnv(
   env: Record<string, string | undefined> = process.env
 ): PlatformRuntimeOptions {
   return {
-    enabledPlugins: mergeStringLists(
-      splitCommaList(env.PLATFORM_ENABLED_PLUGINS),
-      splitCommaList(env.NEXT_PUBLIC_PLATFORM_ENABLED_PLUGINS)
-    ),
+    enabledPlugins: mergeStringLists(splitCommaList(env.PLATFORM_ENABLED_PLUGINS)),
     disabledPlugins: mergeStringLists(
-      splitCommaList(env.PLATFORM_DISABLED_PLUGINS),
-      splitCommaList(env.NEXT_PUBLIC_PLATFORM_DISABLED_PLUGINS)
+      splitCommaList(env.PLATFORM_DISABLED_PLUGINS)
     ),
     enabledContracts: parseCapabilityContractMap(
       env.PLATFORM_ENABLED_CONTRACTS,
@@ -191,7 +197,7 @@ export function resetPlatformRuntimeForTests() {
   runtimeRegistry = null
   runtimeHooks = null
   runtimeShouldRegisterDefaultIntegrations = true
-  resetPlatformIntegrationsForTests()
+  runtimeBootstrap.resetIntegrationsForTests?.()
 }
 
 function splitCommaList(value?: string) {

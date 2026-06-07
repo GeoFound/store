@@ -1,7 +1,7 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import type { ILockingModule } from "@medusajs/framework/types"
 import { Modules } from "@medusajs/framework/utils"
-import { resolveCredentialInventoryService } from "../../../../../../platform/services"
+import { resolveCredentialInventoryService } from "../../../../../../platform-adapters/services"
 
 type SellBody = {
   order_id?: string

@@ -2,7 +2,7 @@ import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import {
   resolveDigitalDeliveryService,
   resolveGuestOrderAccessService,
-} from "../../../../../../../platform/services"
+} from "../../../../../../../platform-adapters/services"
 import { emitAuditLog } from "../../../../../../../utils/audit-log"
 import { getRequestAuditContext } from "../../../../../../../utils/request-audit"
 

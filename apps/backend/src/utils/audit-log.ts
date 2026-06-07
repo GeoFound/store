@@ -1,8 +1,8 @@
 import type { BackendRuntimeContext } from "../platform/backend-context"
 import { PLATFORM_HOOKS } from "../platform/hooks"
 import { emitPlatformHook } from "../platform/runtime"
-import { ensurePlatformIntegrationsRegistered } from "../platform/integrations"
-import type { WriteAuditLogInput } from "../platform/support-audit"
+import { ensurePlatformIntegrationsRegistered } from "../platform-adapters/integrations"
+import type { WriteAuditLogInput } from "../modules/support-audit/types"
 
 export async function emitAuditLog(
   scope: BackendRuntimeContext,

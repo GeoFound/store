@@ -20,7 +20,7 @@ function parseArgs(argv: string[]): CliArgs {
 
     if (arg === "-h" || arg === "--help") {
       process.stdout.write(
-        "usage: ts-node src/platform/validate-profile-config.ts --profile <profiles/sites/site/env/site.json>\n"
+        "usage: ts-node src/platform-adapters/validate-profile-config.ts --profile <profiles/sites/site/env/site.json>\n"
       )
       process.exit(0)
     }

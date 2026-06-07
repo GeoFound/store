@@ -96,19 +96,6 @@ export function getDeliveryHandler(
   )
 }
 
-export function getDeliveryHandlerOrFallback(
-  code: string,
-  fallbackCode = "noop",
-  context?: PlatformResolutionContext
-) {
-  return getPlatformRuntime().resolveContractOrFallback<DeliveryHandler>(
-    "delivery-handler",
-    code,
-    fallbackCode,
-    context
-  )
-}
-
 export function registerProductFulfillmentPolicy(
   policy: ProductFulfillmentPolicy,
   input: {
@@ -152,7 +139,7 @@ export function resolveDeliveryHandlerCode(input: {
   deliveryId?: string | null
   deliveryPayload?: Record<string, unknown> | string
   defaultHandlerCode?: string
-}): string {
+}): string | undefined {
   const explicitHandlerCode =
     toOptionalString(input.deliveryHandlerCode) ||
     toOptionalString(input.metadata?.delivery_handler_code) ||
@@ -171,11 +158,17 @@ export function resolveDeliveryHandlerCode(input: {
     return templateHandlerCode
   }
 
-  if (toOptionalString(input.deliveryId) || typeof input.deliveryPayload !== "undefined") {
-    return input.defaultHandlerCode || "manual"
+  const defaultHandlerCode = toOptionalString(input.defaultHandlerCode)
+
+  if (
+    defaultHandlerCode &&
+    (toOptionalString(input.deliveryId) ||
+      typeof input.deliveryPayload !== "undefined")
+  ) {
+    return defaultHandlerCode
   }
 
-  return input.defaultHandlerCode || "manual"
+  return defaultHandlerCode || undefined
 }
 
 function toOptionalString(value: unknown) {

@@ -3,12 +3,11 @@ import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/util
 import type { FulfillmentCartItem } from "../../../../../platform/inventory"
 import type { MarketingCheckoutContextInput } from "../../../../../platform/marketing"
 import type { PaymentMethodCode } from "../../../../../platform/payment-providers"
-import { resolvePaymentRouterService } from "../../../../../platform/services"
 import { CART_ORDER_QUERY_FIELDS } from "../../../../../utils/cart-order"
 import createCartPaymentAttemptWorkflow from "../../../../../workflows/create-cart-payment-attempt"
 
 type CreateCartPaymentBody = {
-  payment_method?: PaymentMethodCode
+  payment_method: PaymentMethodCode
   marketing?: MarketingCheckoutContextInput
   analytics?: {
     ga_client_id?: string
@@ -25,7 +24,7 @@ export const POST = async (
 ) => {
   const body = (req.validatedBody || req.body) as CreateCartPaymentBody
   const cartId = req.params.cart_id
-  const paymentMethod = body.payment_method || "manual"
+  const paymentMethod = body.payment_method
   const marketing = normalizeMarketingContext(body.marketing)
   const analytics = normalizeAnalyticsContext(body.analytics)
 
@@ -41,34 +40,6 @@ export const POST = async (
 
   if (!cart) {
     throw new MedusaError(MedusaError.Types.NOT_FOUND, "Cart was not found")
-  }
-
-  if (isCartCompleted(cart.completed_at)) {
-    throw new MedusaError(
-      MedusaError.Types.NOT_ALLOWED,
-      "Cart is already completed and cannot accept a new payment attempt"
-    )
-  }
-
-  const paymentRouter = resolvePaymentRouterService(req.scope)
-  const paidAttempts = await paymentRouter.listPaymentAttempts(
-    {
-      cart_id: cartId,
-      status: "paid",
-    },
-    {
-      take: 1,
-      order: {
-        created_at: "DESC",
-      },
-    }
-  )
-
-  if (paidAttempts.length) {
-    throw new MedusaError(
-      MedusaError.Types.NOT_ALLOWED,
-      "Payment is already confirmed for this cart"
-    )
   }
 
   const cartItems = (cart.items || []).filter(
@@ -258,16 +229,4 @@ function normalizeAnalyticsText(value: unknown, max: number) {
   const trimmed = value.trim()
 
   return trimmed ? trimmed.slice(0, max) : undefined
-}
-
-function isCartCompleted(value: unknown) {
-  if (value instanceof Date) {
-    return Number.isFinite(value.getTime())
-  }
-
-  if (typeof value === "string") {
-    return Boolean(value.trim())
-  }
-
-  return Boolean(value)
 }

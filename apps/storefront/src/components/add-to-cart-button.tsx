@@ -91,7 +91,7 @@ export function AddToCartButton({
         type="button"
         onClick={handleAdd}
         disabled={loading || !variantId || disabled}
-        className="theme-primary-action w-full px-4 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
+        className="theme-primary-action min-h-12 w-full px-4 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
       >
         {loading ? "Adding..." : disabled ? disabledLabel : "Add to cart"}
       </button>

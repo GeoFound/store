@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Image from "next/image"
 import Link from "next/link"
 import {
   deleteLineItem,
@@ -76,20 +77,27 @@ export function CartView() {
   }
 
   if (loading) {
-    return <p className="text-sm opacity-70">Loading cart...</p>
+    return (
+      <div className="theme-panel p-6 text-sm opacity-70">Loading cart...</div>
+    )
   }
 
   if (error) {
-    return <p className="text-sm text-[var(--danger)]">{error}</p>
+    return <div className="theme-panel p-6 text-sm text-[var(--danger)]">{error}</div>
   }
 
   if (!cart?.items?.length) {
     return (
-      <div className="theme-panel space-y-5 p-6">
-        <p className="opacity-75">Your cart is empty.</p>
+      <div className="theme-panel grid gap-5 p-8">
+        <div>
+          <h2 className="text-xl font-semibold">Your cart is empty</h2>
+          <p className="mt-2 text-sm leading-6 opacity-70">
+            Add a digital product, then come back here to review checkout.
+          </p>
+        </div>
         <Link
           href="/products"
-          className="theme-primary-action inline-flex px-4 py-3 text-sm font-semibold"
+          className="theme-primary-action inline-flex min-h-12 w-fit items-center px-5 text-sm font-semibold"
         >
           Browse products
         </Link>
@@ -98,13 +106,28 @@ export function CartView() {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
-      <div className="space-y-3">
+    <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+      <div className="space-y-4">
         {cart.items.map((item) => (
           <div
             key={item.id}
-            className="theme-panel grid gap-4 p-4 sm:grid-cols-[1fr_160px]"
+            className="theme-panel grid gap-4 p-4 sm:grid-cols-[96px_1fr_190px] sm:items-center"
           >
+            <div className="theme-muted-surface relative aspect-square overflow-hidden">
+              {item.thumbnail ? (
+                <Image
+                  src={item.thumbnail}
+                  alt={item.title}
+                  fill
+                  sizes="96px"
+                  className="object-contain p-2"
+                />
+              ) : (
+                <div className="theme-accent-surface flex h-full items-center justify-center text-2xl font-semibold">
+                  {item.title.slice(0, 1)}
+                </div>
+              )}
+            </div>
             <div>
               <h2 className="font-semibold">{item.title}</h2>
               <p className="mt-1 text-sm opacity-70">
@@ -115,7 +138,7 @@ export function CartView() {
               </p>
             </div>
             <div className="flex items-center justify-between gap-3 sm:justify-end">
-              <div className="theme-border flex h-10 items-center border">
+              <div className="theme-field-row flex h-10 items-center">
                 <button
                   type="button"
                   onClick={() => changeQuantity(item.id, item.quantity - 1)}
@@ -139,7 +162,7 @@ export function CartView() {
               <button
                 type="button"
                 onClick={() => changeQuantity(item.id, 0)}
-                className="text-sm text-[var(--danger)]"
+                className="text-sm font-semibold text-[var(--danger)]"
               >
                 Remove
               </button>
@@ -147,9 +170,9 @@ export function CartView() {
           </div>
         ))}
       </div>
-      <aside className="theme-panel h-fit p-5">
-        <h2 className="text-base font-semibold">Order summary</h2>
-        <div className="theme-border mt-5 flex items-center justify-between border-t pt-4">
+      <aside className="theme-panel h-fit p-6 shadow-[var(--shadow-card)] lg:sticky lg:top-24">
+        <h2 className="text-lg font-semibold">Order summary</h2>
+        <div className="theme-border mt-5 flex items-center justify-between border-t pt-5">
           <span>Total</span>
           <span className="font-semibold">
             {formatMoney(cart.total, cart.currency_code)}
@@ -157,7 +180,7 @@ export function CartView() {
         </div>
         <Link
           href="/checkout"
-          className="theme-primary-action mt-5 flex w-full items-center justify-center px-4 py-3 text-sm font-semibold"
+          className="theme-primary-action mt-5 flex min-h-12 w-full items-center justify-center px-4 text-sm font-semibold"
         >
           Continue to checkout
         </Link>

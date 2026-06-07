@@ -15,8 +15,10 @@ import SupplierProcurementOrder from "./models/supplier-procurement-order"
 import SupplierProductMapping from "./models/supplier-product-mapping"
 import type {
   CreateSupplierDeliveryInput,
+  ListDueSupplierProcurementsInput,
   ListSupplierMappingsInput,
   ListSupplierProcurementsInput,
+  SupplierProcurementStatus,
   SupplierProductMappingInput,
 } from "./types"
 
@@ -122,6 +124,51 @@ class SupplierProcurementModuleService extends MedusaService({
     )
   }
 
+  async listDueProcurementsForRetry(
+    input: ListDueSupplierProcurementsInput = {}
+  ) {
+    const now = input.now || new Date()
+    const statuses = input.statuses?.length
+      ? input.statuses
+      : (["pending", "failed", "needs_review"] satisfies SupplierProcurementStatus[])
+    const limit = normalizeLimit(input.limit, 50)
+    const due: SupplierProcurementOrderRecord[] = []
+    const seen = new Set<string>()
+
+    for (const status of statuses) {
+      const orders = await this.listSupplierProcurementOrders(
+        {
+          status,
+        },
+        {
+          take: limit,
+          order: {
+            next_retry_at: "ASC",
+            created_at: "ASC",
+          },
+        }
+      )
+
+      for (const order of orders) {
+        const id = toOptionalText(order.id)
+        const retryAt = normalizeDate(order.next_retry_at)
+
+        if (!id || seen.has(id) || !retryAt || retryAt.getTime() > now.getTime()) {
+          continue
+        }
+
+        seen.add(id)
+        due.push(order)
+
+        if (due.length >= limit) {
+          return due
+        }
+      }
+    }
+
+    return due
+  }
+
   async createSupplierDelivery(input: CreateSupplierDeliveryInput) {
     if (!input.scope) {
       throw new MedusaError(
@@ -191,6 +238,7 @@ class SupplierProcurementModuleService extends MedusaService({
   async retryProcurementOrder(input: {
     id: string
     scope: CreateSupplierDeliveryInput["scope"]
+    forceRetry?: boolean
   }) {
     if (!input.scope) {
       throw new MedusaError(
@@ -214,7 +262,7 @@ class SupplierProcurementModuleService extends MedusaService({
       order,
       provider,
       context,
-      forceRetry: true,
+      forceRetry: input.forceRetry ?? true,
     })
 
     const deliveryId = toOptionalText(

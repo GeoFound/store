@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import { PrivacyConsentBanner } from "@/components/privacy-consent-banner"
+import { SiteFooter } from "@/components/site-footer"
 import { ensureStorefrontExtensionsRegistered } from "@/extensions/defaults"
 import { renderStorefrontExtensions } from "@/extensions/registry"
 import { getSiteConfig } from "@/lib/site-config"
@@ -32,12 +33,13 @@ export default function RootLayout({
       className="h-full antialiased"
     >
       <body
-        className={`${theme.bodyClassName} flex min-h-full flex-col`}
+        className={`${theme.bodyClassName} theme-page flex min-h-full flex-col`}
         style={theme.variables}
         data-site-id={siteConfig.site.id}
         data-theme-id={theme.id}
       >
         {children}
+        <SiteFooter />
         <PrivacyConsentBanner siteName={siteConfig.site.name} />
         {renderStorefrontExtensions("layout.body.end", {}).map((entry) => (
           <div key={entry.key}>{entry.node}</div>

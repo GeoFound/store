@@ -1,7 +1,9 @@
 import {
   ensurePlatformObservabilityHooksRegistered,
   resetPlatformObservabilityForTests,
-} from "./observability"
+} from "../platform/observability"
+import { installPlatformRuntimeBootstrap } from "../platform/runtime"
+import { registerDefaultPlatformCapabilities } from "./defaults"
 import {
   ensureSupportAuditHooksRegistered,
   resetSupportAuditHooksForTests,
@@ -64,3 +66,9 @@ export function resetPlatformIntegrationsForTests() {
   resetNotificationResendHooksForTests()
   resetSupplierProductTemplatesForTests()
 }
+
+installPlatformRuntimeBootstrap({
+  registerDefaultCapabilities: registerDefaultPlatformCapabilities,
+  ensureIntegrationsRegistered: ensurePlatformIntegrationsRegistered,
+  resetIntegrationsForTests: resetPlatformIntegrationsForTests,
+})

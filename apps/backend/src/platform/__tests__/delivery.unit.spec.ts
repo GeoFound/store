@@ -30,11 +30,20 @@ describe("delivery handler resolution", () => {
     ).toBe("credential")
   })
 
-  it("falls back to manual for ad hoc payload-based deliveries", () => {
+  it("uses the caller-provided default for ad hoc payload-based deliveries", () => {
+    expect(
+      resolveDeliveryHandlerCode({
+        deliveryPayload: { download_url: "https://example.com/file" },
+        defaultHandlerCode: "manual",
+      })
+    ).toBe("manual")
+  })
+
+  it("does not silently guess a default delivery handler", () => {
     expect(
       resolveDeliveryHandlerCode({
         deliveryPayload: { download_url: "https://example.com/file" },
       })
-    ).toBe("manual")
+    ).toBeUndefined()
   })
 })

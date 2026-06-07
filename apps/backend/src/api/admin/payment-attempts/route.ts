@@ -1,5 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { resolvePaymentRouterService } from "../../../platform/services"
+import { resolvePaymentRouterService } from "../../../platform-adapters/services"
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const paymentRouter = resolvePaymentRouterService(req.scope)

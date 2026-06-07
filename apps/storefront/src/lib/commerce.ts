@@ -91,7 +91,28 @@ export type CommerceBackend = {
   }): Promise<{ after_sale: AfterSale }>
 }
 
-const commerceBackend: CommerceBackend = medusaCommerceBackend
+const COMMERCE_BACKEND_NAME =
+  process.env.NEXT_PUBLIC_COMMERCE_BACKEND?.trim() || "medusa"
+
+const commerceBackends: Record<string, CommerceBackend> = {
+  medusa: medusaCommerceBackend,
+}
+
+const commerceBackend = resolveCommerceBackend(COMMERCE_BACKEND_NAME)
+
+function resolveCommerceBackend(name: string): CommerceBackend {
+  const backend = commerceBackends[name]
+
+  if (!backend) {
+    throw new Error(
+      `Unsupported commerce backend "${name}". Expected one of: ${Object.keys(
+        commerceBackends
+      ).join(", ")}`
+    )
+  }
+
+  return backend
+}
 
 export const listProducts = commerceBackend.listProducts
 export const retrieveProduct = commerceBackend.retrieveProduct

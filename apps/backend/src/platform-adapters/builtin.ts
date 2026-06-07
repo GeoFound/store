@@ -12,7 +12,7 @@ import { SUPPORT_AUDIT_PLUGIN_MANIFEST } from "../modules/support-audit/plugin"
 import { SUPPLIER_G2A_PLUGIN_MANIFEST } from "../modules/supplier-g2a/plugin"
 import { SUPPLIER_PROCUREMENT_PLUGIN_MANIFEST } from "../modules/supplier-procurement/plugin"
 import { SUPPLIER_RELOADLY_PLUGIN_MANIFEST } from "../modules/supplier-reloadly/plugin"
-import type { PluginManifest } from "./contracts"
+import type { PluginManifest } from "../platform/contracts"
 
 export {
   ANALYTICS_CORE_PLUGIN_MANIFEST,

@@ -8,8 +8,8 @@ import {
 import {
   isPlatformPluginEnabled,
 } from "../platform/runtime"
-import { ensurePlatformIntegrationsRegistered } from "../platform/integrations"
-import { resolveAnalyticsCoreService } from "../platform/services"
+import { ensurePlatformIntegrationsRegistered } from "../platform-adapters/integrations"
+import { resolveAnalyticsCoreService } from "../platform-adapters/services"
 
 export default async function processAnalyticsDispatches(container: MedusaContainer) {
   ensurePlatformIntegrationsRegistered()

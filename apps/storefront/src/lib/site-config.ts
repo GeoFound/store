@@ -198,57 +198,37 @@ const BASE_SITE_CONFIG: SiteConfig = {
 export const getSiteConfig = cache(() => {
   const siteId = resolveSiteId()
   const siteEnv = resolveSiteEnv()
-  const fallbackConfig: SiteConfig = {
+  const baseConfig: SiteConfig = {
     ...BASE_SITE_CONFIG,
     site: {
       ...BASE_SITE_CONFIG.site,
       id: siteId,
     },
   }
+  const filePath = resolveSiteProfilePath(siteId, siteEnv)
 
-  const candidates: Array<[string, string]> = [[siteId, siteEnv]]
-  if (siteEnv !== "production") {
-    candidates.push([siteId, "production"])
-  }
-
-  const parseErrors: string[] = []
-
-  for (const [candidateSiteId, candidateSiteEnv] of candidates) {
-    const filePath = resolveSiteProfilePath(candidateSiteId, candidateSiteEnv)
-
-    if (!fs.existsSync(filePath)) {
-      continue
-    }
-
-    try {
-      const raw = fs.readFileSync(filePath, "utf8")
-      const parsed = JSON.parse(raw) as SiteConfigInput
-      return normalizeSiteConfig(parsed, fallbackConfig)
-    } catch (error) {
-      const message =
-        error instanceof Error ? error.message : "Unknown parsing error"
-      parseErrors.push(`${filePath}: ${message}`)
-    }
-  }
-
-  const expectedPaths = candidates
-    .map(([candidateSiteId, candidateSiteEnv]) =>
-      resolveSiteProfilePath(candidateSiteId, candidateSiteEnv)
-    )
-    .join("\n- ")
-
-  if (parseErrors.length) {
+  if (!fs.existsSync(filePath)) {
     throw new Error(
-      [
-        `Failed to parse site profile for SITE_ID=${siteId} SITE_ENV=${siteEnv}.`,
-        ...parseErrors.map((entry) => `- ${entry}`),
-      ].join("\n")
+      `Site profile not found for SITE_ID=${siteId} SITE_ENV=${siteEnv}. Expected:\n- ${filePath}`
     )
   }
 
-  throw new Error(
-    `Site profile not found for SITE_ID=${siteId} SITE_ENV=${siteEnv}. Expected one of:\n- ${expectedPaths}`
-  )
+  try {
+    const raw = fs.readFileSync(filePath, "utf8")
+    const parsed = JSON.parse(raw) as SiteConfigInput
+    validateSiteConfigInput(parsed, {
+      expectedSiteId: siteId,
+      filePath,
+    })
+    return normalizeSiteConfig(parsed, baseConfig)
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unknown parsing error"
+
+    throw new Error(
+      `Failed to load site profile for SITE_ID=${siteId} SITE_ENV=${siteEnv}: ${message}`
+    )
+  }
 })
 
 function resolveSiteProfilePath(siteId: string, siteEnv: string) {
@@ -562,6 +542,84 @@ function normalizeThemeDensity(
   fallback: SiteThemeConfig["density"]
 ) {
   return value === "compact" || value === "comfortable" ? value : fallback
+}
+
+function validateSiteConfigInput(
+  input: SiteConfigInput,
+  context: {
+    expectedSiteId: string
+    filePath: string
+  }
+) {
+  assertPlainObject(input, "Profile", context.filePath)
+  assertNonEmptyString(input.site?.id, "site.id", context.filePath)
+
+  if (input.site?.id !== context.expectedSiteId) {
+    throw new Error(
+      `site.id mismatch in ${context.filePath}: expected ${context.expectedSiteId}, got ${input.site?.id}`
+    )
+  }
+
+  assertNonEmptyString(input.site?.name, "site.name", context.filePath)
+  assertNonEmptyString(
+    input.site?.description,
+    "site.description",
+    context.filePath
+  )
+  assertNonEmptyString(
+    input.domains?.storefront,
+    "domains.storefront",
+    context.filePath
+  )
+  assertNonEmptyString(input.domains?.api, "domains.api", context.filePath)
+  assertPlainObject(input.theme, "theme", context.filePath)
+  assertPlainObject(input.content, "content", context.filePath)
+  assertPlainObject(input.platform, "platform", context.filePath)
+  assertNonEmptyString(
+    input.theme?.background,
+    "theme.background",
+    context.filePath
+  )
+  assertNonEmptyString(
+    input.theme?.foreground,
+    "theme.foreground",
+    context.filePath
+  )
+  assertNonEmptyString(input.theme?.accent, "theme.accent", context.filePath)
+
+  if (
+    typeof input.content?.home?.announcements !== "undefined" &&
+    !Array.isArray(input.content.home.announcements)
+  ) {
+    throw new Error(
+      `content.home.announcements must be an array in ${context.filePath}`
+    )
+  }
+
+  if (
+    typeof input.content?.categories?.links !== "undefined" &&
+    !Array.isArray(input.content.categories.links)
+  ) {
+    throw new Error(
+      `content.categories.links must be an array in ${context.filePath}`
+    )
+  }
+}
+
+function assertPlainObject(value: unknown, field: string, filePath: string) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error(`${field} must be an object in ${filePath}`)
+  }
+}
+
+function assertNonEmptyString(
+  value: unknown,
+  field: string,
+  filePath: string
+) {
+  if (!toOptionalString(value)) {
+    throw new Error(`${field} is required in ${filePath}`)
+  }
 }
 
 function toOptionalString(value: unknown) {

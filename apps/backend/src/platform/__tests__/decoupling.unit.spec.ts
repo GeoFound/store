@@ -9,7 +9,13 @@ describe("platform decoupling boundaries", () => {
     )
 
     for (const file of platformFiles) {
-      expect(fs.readFileSync(file, "utf8")).not.toContain("@medusajs/")
+      const source = fs.readFileSync(file, "utf8")
+
+      expect(source).not.toContain("@medusajs/")
+      expect(source).not.toContain("../modules/")
+      expect(source).not.toContain("../../modules/")
+      expect(source).not.toContain("../platform-adapters/")
+      expect(source).not.toContain("../../platform-adapters/")
     }
   })
 })

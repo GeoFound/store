@@ -28,12 +28,13 @@ Global plugin toggle:
 PLATFORM_DISABLED_PLUGINS=marketing-engine
 ```
 
-Backend runtime merges both:
+Backend runtime reads only backend plugin env:
 
-- `PLATFORM_ENABLED_PLUGINS` + `NEXT_PUBLIC_PLATFORM_ENABLED_PLUGINS`
-- `PLATFORM_DISABLED_PLUGINS` + `NEXT_PUBLIC_PLATFORM_DISABLED_PLUGINS`
+- `PLATFORM_ENABLED_PLUGINS`
+- `PLATFORM_DISABLED_PLUGINS`
 
-Duplicate IDs are deduplicated.
+Storefront-only `NEXT_PUBLIC_PLATFORM_*` toggles do not affect backend
+strategy resolution.
 
 Disable specific strategies:
 

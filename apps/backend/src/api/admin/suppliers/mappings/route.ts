@@ -1,6 +1,6 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { hasSupplierProvider } from "../../../../platform/supplier"
-import { resolveSupplierProcurementService } from "../../../../platform/services"
+import { resolveSupplierProcurementService } from "../../../../platform-adapters/services"
 import { localizedError } from "../../../../utils/localized-response"
 
 type UpsertMappingBody = {

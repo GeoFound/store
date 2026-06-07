@@ -3,7 +3,7 @@ import {
   resolveDigitalDeliveryService,
   resolveGuestOrderAccessService,
   resolveSupportAuditService,
-} from "../../../../../../../platform/services"
+} from "../../../../../../../platform-adapters/services"
 import { emitAuditLog } from "../../../../../../../utils/audit-log"
 import { localizedError } from "../../../../../../../utils/localized-response"
 import { getRequestAuditContext } from "../../../../../../../utils/request-audit"

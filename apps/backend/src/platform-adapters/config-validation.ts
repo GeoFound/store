@@ -1,12 +1,12 @@
-import type { PlatformCapabilityName } from "./contracts"
-import { PLATFORM_CAPABILITIES } from "./contracts"
+import type { PlatformCapabilityName } from "../platform/contracts"
+import { PLATFORM_CAPABILITIES } from "../platform/contracts"
 import {
   configurePlatformRuntime,
   getPlatformRuntime,
   resetPlatformRuntimeForTests,
-} from "./runtime"
+} from "../platform/runtime"
 import { ensurePlatformIntegrationsRegistered } from "./integrations"
-import { listProductTemplates } from "./product-templates"
+import { listProductTemplates } from "../platform/product-templates"
 
 export type PlatformProfileConfigInput = {
   enabledPlugins?: unknown

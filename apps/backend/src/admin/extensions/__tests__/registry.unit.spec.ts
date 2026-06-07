@@ -10,10 +10,35 @@ import {
   resetAdminExtensionsForTests,
 } from "../registry"
 
+const PLUGIN_ENV_KEYS = [
+  "PLATFORM_ENABLED_PLUGINS",
+  "PLATFORM_DISABLED_PLUGINS",
+  "NEXT_PUBLIC_PLATFORM_ENABLED_PLUGINS",
+  "NEXT_PUBLIC_PLATFORM_DISABLED_PLUGINS",
+] as const
+
+const originalPluginEnv = Object.fromEntries(
+  PLUGIN_ENV_KEYS.map((key) => [key, process.env[key]])
+)
+
 describe("admin extension registry", () => {
   beforeEach(() => {
     resetAdminExtensionsForTests()
     resetAdminExtensionDefaultsForTests()
+    for (const key of PLUGIN_ENV_KEYS) {
+      delete process.env[key]
+    }
+  })
+
+  afterAll(() => {
+    for (const key of PLUGIN_ENV_KEYS) {
+      const value = originalPluginEnv[key]
+      if (typeof value === "undefined") {
+        delete process.env[key]
+      } else {
+        process.env[key] = value
+      }
+    }
   })
 
   it("registers default plugin-owned extension slots once", () => {
@@ -116,5 +141,27 @@ describe("admin extension registry", () => {
         node: "new",
       },
     ])
+  })
+
+  it("filters admin extensions with backend plugin env only", () => {
+    process.env.NEXT_PUBLIC_PLATFORM_DISABLED_PLUGINS = "plugin-a"
+
+    registerAdminExtension({
+      name: "payments.backend-env-only",
+      pluginId: "plugin-a",
+      slot: "payments.after",
+      component: () => "visible" as ReactNode,
+    })
+
+    expect(renderAdminExtensions("payments.after", {})).toEqual([
+      {
+        key: "plugin-a:payments.backend-env-only",
+        node: "visible",
+      },
+    ])
+
+    process.env.PLATFORM_DISABLED_PLUGINS = "plugin-a"
+
+    expect(renderAdminExtensions("payments.after", {})).toEqual([])
   })
 })

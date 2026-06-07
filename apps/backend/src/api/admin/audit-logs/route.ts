@@ -1,5 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { resolveSupportAuditService } from "../../../platform/services"
+import { resolveSupportAuditService } from "../../../platform-adapters/services"
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const supportAudit = resolveSupportAuditService(req.scope)

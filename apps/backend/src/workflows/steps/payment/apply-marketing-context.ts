@@ -8,12 +8,12 @@ import { handlePaymentAttemptClosed } from "../../../platform/attempt-lifecycle"
 import { resolveMarketingContext } from "../../../platform/marketing"
 import {
   ensurePlatformIntegrationsRegistered,
-} from "../../../platform/integrations"
+} from "../../../platform-adapters/integrations"
 import { isPlatformPluginEnabled } from "../../../platform/runtime"
 import {
   resolveMarketingEngineService,
   resolvePaymentRouterService,
-} from "../../../platform/services"
+} from "../../../platform-adapters/services"
 
 export type ApplyMarketingContextStepInput = {
   attemptId: string

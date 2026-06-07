@@ -17,9 +17,9 @@ import {
 } from "../../../platform/events"
 import { getDeliveryHandler } from "../../../platform/delivery"
 import { getInventoryHandler } from "../../../platform/inventory"
-import { getOrderAccessProviderOrFallback } from "../../../platform/order-access"
-import { ensurePlatformIntegrationsRegistered } from "../../../platform/integrations"
-import { resolvePaymentRouterService } from "../../../platform/services"
+import { getOrderAccessProvider } from "../../../platform/order-access"
+import { ensurePlatformIntegrationsRegistered } from "../../../platform-adapters/integrations"
+import { resolvePaymentRouterService } from "../../../platform-adapters/services"
 
 export type FinalizePaymentAttemptStepInput =
   | {
@@ -119,8 +119,10 @@ export const finalizePaymentAttemptStep = createStep(
           for (const reservation of extractInventoryReservations(
             updatedAttempt.response_payload
           )) {
-            const handlerCode =
-              reservation.handler_code || "credential-inventory"
+            const handlerCode = requireConfiguredCode(
+              reservation.handler_code,
+              `Inventory reservation ${reservation.reservation_key} is missing handler_code`
+            )
             const handler = getInventoryHandler(handlerCode)
 
             if (!handler) {
@@ -138,10 +140,11 @@ export const finalizePaymentAttemptStep = createStep(
 
             for (const accountItemId of reservation.item_ids) {
               const deliveryMetadata = normalizeRecord(reservation.metadata)
-              const deliveryHandlerCode =
+              const deliveryHandlerCode = requireConfiguredCode(
                 toOptionalString(deliveryMetadata.delivery_handler_code) ||
-                toOptionalString(deliveryMetadata.deliveryHandlerCode) ||
-                "credential"
+                  toOptionalString(deliveryMetadata.deliveryHandlerCode),
+                `Inventory reservation ${reservation.reservation_key} is missing delivery handler metadata`
+              )
               const deliveryHandler = getDeliveryHandler(deliveryHandlerCode)
 
               if (!deliveryHandler) {
@@ -273,10 +276,15 @@ export const finalizePaymentAttemptStep = createStep(
             })
           }
 
-          const orderAccess = getOrderAccessProviderOrFallback(
-            "guest-order-access"
-          )
-          await orderAccess?.revokeActiveTokens({
+          const orderAccess = getOrderAccessProvider("guest-order-access")
+
+          if (!orderAccess) {
+            throw new Error(
+              "Order access provider guest-order-access is not registered"
+            )
+          }
+
+          await orderAccess.revokeActiveTokens({
             scope: container,
             orderId: order.id,
             purpose: "view_order",
@@ -336,6 +344,16 @@ function normalizeRecord(value: unknown) {
 
 function toOptionalString(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : ""
+}
+
+function requireConfiguredCode(value: unknown, message: string) {
+  const code = toOptionalString(value)
+
+  if (!code) {
+    throw new Error(message)
+  }
+
+  return code
 }
 
 function resolveInlineDeliveryPayload(metadata: Record<string, unknown>) {

@@ -1,5 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { resolvePaymentRouterService } from "../../../../platform/services"
+import { resolvePaymentRouterService } from "../../../../platform-adapters/services"
 import { localizedError } from "../../../../utils/localized-response"
 
 type UpdateChannelBody = {

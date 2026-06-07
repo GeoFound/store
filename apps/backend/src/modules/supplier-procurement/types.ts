@@ -39,4 +39,10 @@ export type ListSupplierProcurementsInput = {
   limit?: number
 }
 
+export type ListDueSupplierProcurementsInput = {
+  statuses?: SupplierProcurementStatus[]
+  limit?: number
+  now?: Date
+}
+
 export type CreateSupplierDeliveryInput = CreateDeliveryInput
