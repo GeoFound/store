@@ -1,0 +1,51 @@
+{
+  "version": "1.0.0",
+  "reportDirectory": ".ai-trace/evidence",
+  "defaultChecks": [
+    {
+      "id": "ai-doctor",
+      "command": ["pnpm", "ai:doctor"],
+      "required": true
+    },
+    {
+      "id": "git-status",
+      "command": ["git", "status", "--short"],
+      "required": true,
+      "allowOutput": true
+    }
+  ],
+  "fullChecks": [
+    {
+      "id": "ci",
+      "command": ["pnpm", "check:ci"],
+      "required": true
+    },
+    {
+      "id": "profile-validate-all",
+      "command": ["pnpm", "profile:validate:all"],
+      "required": true
+    }
+  ],
+  "productionChecks": [
+    {
+      "id": "deploy-health",
+      "command": ["pnpm", "deploy:health"],
+      "requiresRuntime": true
+    },
+    {
+      "id": "deploy-edge",
+      "command": ["pnpm", "deploy:edge"],
+      "requiresRuntime": true
+    },
+    {
+      "id": "deploy-regression",
+      "command": ["pnpm", "deploy:regression"],
+      "requiresRuntime": true
+    }
+  ],
+  "acceptanceRules": [
+    "A task is not complete just because prose was updated.",
+    "If a check cannot run, the evidence report must say why and what external action is needed.",
+    "Human approval is a decision input, not a substitute for runtime evidence."
+  ]
+}

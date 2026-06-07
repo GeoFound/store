@@ -46,10 +46,16 @@ pnpm dev:storefront
 ## Verification
 
 ```bash
+pnpm ai:context
+pnpm ai:doctor
 pnpm check:ci
 pnpm dev:check
 pnpm acceptance
 ```
+
+AI-first repository operation is encoded in `AGENTS.md` and `.ai/*.json`.
+Use `pnpm ai:evidence` for a machine-readable evidence report, and
+`pnpm ai:evidence:full` before production-risk changes.
 
 Live runtime verification with real local services:
 

@@ -1,0 +1,124 @@
+{
+  "version": "1.0.0",
+  "repository": {
+    "name": "single-store-digital-goods",
+    "role": "engineering-system",
+    "goal": "Build, verify, deploy, and continuously evolve the product with AI-first automation.",
+    "packageManager": "pnpm@10.32.1",
+    "node": ">=22"
+  },
+  "product": {
+    "name": "independent-digital-goods-store",
+    "role": "implemented-product",
+    "goal": "A production-grade single-store digital goods storefront with payment, inventory, delivery, recovery, audit, supplier procurement, marketing, analytics, and multi-site deployment support.",
+    "primarySpec": "docs/independent-store-spec.md"
+  },
+  "operatingModel": {
+    "humanRole": [
+      "business direction",
+      "risk acceptance",
+      "vendor/provider selection",
+      "legal/compliance text",
+      "domain, production credentials, and irreversible deployment decisions"
+    ],
+    "aiRole": [
+      "implementation",
+      "maintenance",
+      "refactoring",
+      "test and fixture creation",
+      "evidence generation",
+      "production-readiness checks",
+      "risk surfacing with concrete recommendations"
+    ],
+    "conversationPolicy": {
+      "humanDecisionsHappenInChat": true,
+      "askOnlyForDecisionOrExternalAction": true,
+      "whenAskingHuman": [
+        "state exact action needed",
+        "state why automation cannot complete it",
+        "state expected evidence after completion",
+        "offer 1 to 3 concrete options when it is a decision"
+      ]
+    }
+  },
+  "evidencePolicy": {
+    "priority": [
+      "real runtime result",
+      "automated test result",
+      "static validation result",
+      "source inspection",
+      "human statement"
+    ],
+    "humanReviewIsAcceptance": false,
+    "requiredForProduction": [
+      "pnpm check:ci",
+      "pnpm profile:validate:all",
+      "pnpm deploy:health",
+      "pnpm deploy:edge",
+      "pnpm deploy:regression",
+      "backup and rollback evidence"
+    ],
+    "failurePrinciple": "Anything that may be wrong should fail as early as practical."
+  },
+  "decisionGates": [
+    {
+      "id": "business-direction",
+      "requiresHuman": true,
+      "examples": ["new product line", "new market", "pricing model", "user promise change"]
+    },
+    {
+      "id": "production-risk",
+      "requiresHuman": true,
+      "examples": ["go-live", "rollback", "data migration with irreversible effects", "payment provider launch"]
+    },
+    {
+      "id": "external-secret-or-account",
+      "requiresHuman": true,
+      "examples": ["API keys", "domain DNS", "provider account approval", "legal documents"]
+    },
+    {
+      "id": "routine-engineering",
+      "requiresHuman": false,
+      "examples": ["tests", "refactors", "bug fixes", "automation", "docs for machine context"]
+    }
+  ],
+  "architectureBoundaries": {
+    "backendPlatformCore": {
+      "path": "apps/backend/src/platform",
+      "mustNotContain": ["@medusajs/", "../modules/", "../../modules/", "../platform-adapters/", "../../platform-adapters/"]
+    },
+    "backendAdapters": {
+      "path": "apps/backend/src/platform-adapters",
+      "role": "Medusa/module binding layer for built-ins and runtime bootstrap"
+    },
+    "storefrontCommercePort": {
+      "path": "apps/storefront/src/lib/commerce.ts",
+      "role": "backend-neutral commerce API for UI code"
+    }
+  },
+  "coldStart": {
+    "readFirst": [
+      ".ai/system.json",
+      ".ai/taskbook.json",
+      ".ai/evidence-policy.json",
+      "docs/architecture/decoupling-boundaries.md",
+      "docs/ops/production-runbook.md"
+    ],
+    "runFirst": ["pnpm ai:context", "pnpm ai:doctor"],
+    "runBeforeCommit": ["pnpm check:ci"],
+    "runBeforeProduction": ["pnpm ai:evidence:full"]
+  },
+  "automation": {
+    "requiredPackageScripts": [
+      "ai:context",
+      "ai:doctor",
+      "ai:evidence",
+      "ai:evidence:full",
+      "check:ci",
+      "profile:validate:all",
+      "deploy:health",
+      "deploy:edge",
+      "deploy:regression"
+    ]
+  }
+}
