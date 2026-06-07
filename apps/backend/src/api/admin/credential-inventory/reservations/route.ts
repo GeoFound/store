@@ -15,18 +15,20 @@ export const POST = async (
   req: MedusaRequest<ReserveBody>,
   res: MedusaResponse
 ) => {
-  if (!req.body.product_variant_id || !req.body.reservation_key) {
+  const body = (req.validatedBody || req.body) as ReserveBody
+
+  if (!body.product_variant_id || !body.reservation_key) {
     localizedError(req, res, 400, "credentialReservation.required")
     return
   }
 
   const items = await reserveCredentialsWithLock(req.scope, {
-    productVariantId: req.body.product_variant_id,
-    quantity: req.body.quantity || 1,
-    reservationKey: req.body.reservation_key,
-    cartId: req.body.cart_id,
-    orderId: req.body.order_id,
-    ttlSeconds: req.body.ttl_seconds,
+    productVariantId: body.product_variant_id,
+    quantity: body.quantity || 1,
+    reservationKey: body.reservation_key,
+    cartId: body.cart_id,
+    orderId: body.order_id,
+    ttlSeconds: body.ttl_seconds,
   })
 
   res.status(201).json({

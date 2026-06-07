@@ -1,9 +1,4 @@
-import crypto from "crypto"
 import { MedusaError, MedusaService } from "@medusajs/framework/utils"
-import {
-  decodeEncryptionKey,
-  resolveEncryptionKeyRing,
-} from "../../utils/runtime-secrets"
 import {
   getSupplierProvider,
   type SupplierMappingSnapshot,
@@ -19,13 +14,35 @@ import type {
   SupplierProcurementStatus,
   SupplierProductMappingInput,
 } from "./types"
+import {
+  buildDefaultSupplierDeliveryPayload,
+  normalizeCurrencyCode,
+  normalizeDate,
+  normalizeLimit,
+  normalizeOptionalNumber,
+  normalizeQuantity,
+  normalizeRecord,
+  redactSensitiveRecord,
+  requireText,
+  toNullableText,
+  toOptionalText,
+} from "./service-helpers"
+import {
+  decryptStoredFulfillmentPayload,
+  encryptFulfillmentPayload,
+} from "./fulfillment-payload-codec"
+import {
+  prepareSupplierDeliveryRecord,
+  type PreparedSupplierDeliveryRecord,
+} from "./delivery-record"
+import {
+  buildSafeSupplierRequestPayload,
+  resolveSupplierIdempotencyKey,
+} from "./request-payload"
 
 type SupplierProcurementOrderRecord = Record<string, any>
 type SupplierProductMappingRecord = Record<string, any>
-export type PreparedSupplierDeliveryRecord = {
-  procurement: SupplierProcurementOrderRecord
-  deliveryInput: CreateSupplierDeliveryInput
-}
+export type { PreparedSupplierDeliveryRecord }
 
 type ResolvedSupplierContext = {
   scope: NonNullable<CreateSupplierDeliveryInput["scope"]>
@@ -211,7 +228,7 @@ class SupplierProcurementModuleService extends MedusaService({
         currency: context.currency,
         cost_amount: null,
         cost_currency: null,
-        request_payload: this.buildSafeRequestPayload(context),
+        request_payload: buildSafeSupplierRequestPayload(context),
         response_payload: null,
         fulfillment_payload_encrypted: null,
         fulfillment_payload_version: 1,
@@ -231,7 +248,7 @@ class SupplierProcurementModuleService extends MedusaService({
       context,
     })
 
-    return this.prepareDeliveryRecord(input, procurement.order, {
+    return prepareSupplierDeliveryRecord(input, procurement.order, {
       deliveryPayload: procurement.deliveryPayload,
       deliveryStatus: procurement.deliveryStatus,
       message: procurement.message,
@@ -281,7 +298,7 @@ class SupplierProcurementModuleService extends MedusaService({
 
     return {
       procurement: procurement.order,
-      delivery: this.prepareDeliveryRecord(
+      delivery: prepareSupplierDeliveryRecord(
         {
           scope: input.scope,
           deliveryId,
@@ -317,7 +334,7 @@ class SupplierProcurementModuleService extends MedusaService({
       return {
         order,
         deliveryStatus: "delivered" as const,
-        deliveryPayload: this.decryptStoredFulfillmentPayload(order),
+        deliveryPayload: decryptStoredFulfillmentPayload(order),
         message: "Supplier procurement already fulfilled",
       }
     }
@@ -426,7 +443,7 @@ class SupplierProcurementModuleService extends MedusaService({
         cost_currency:
           normalizeCurrencyCode(result.costCurrency) || order.cost_currency || null,
         response_payload: redactSensitiveRecord(result.raw || {}),
-        fulfillment_payload_encrypted: this.encryptFulfillmentPayload(
+        fulfillment_payload_encrypted: encryptFulfillmentPayload(
           deliveryPayload
         ),
         fulfillment_payload_version: 1,
@@ -508,52 +525,6 @@ class SupplierProcurementModuleService extends MedusaService({
     })
   }
 
-  private prepareDeliveryRecord(
-    input: CreateSupplierDeliveryInput,
-    order: SupplierProcurementOrderRecord,
-    result: {
-      deliveryPayload?: Record<string, unknown> | string
-      deliveryStatus: "pending" | "delivered"
-      message?: string | null
-    }
-  ): PreparedSupplierDeliveryRecord {
-    if (!input.scope) {
-      throw new MedusaError(
-        MedusaError.Types.INVALID_DATA,
-        "Supplier delivery scope is required"
-      )
-    }
-
-    const orderMetadata = normalizeRecord(order.metadata_json)
-    const deliveryPayload =
-      result.deliveryPayload ||
-      ({
-        status: "pending",
-        message: result.message || "Supplier procurement is pending.",
-        supplier_procurement_order_id: order.id,
-        supplier_provider: order.provider_code,
-        supplier_provider_order_id: order.provider_order_id || null,
-      } satisfies Record<string, unknown>)
-    return {
-      procurement: order,
-      deliveryInput: {
-        ...input,
-        accountItemId: null,
-        deliveryHandlerCode: "supplier-procurement",
-        deliveryStatus: result.deliveryStatus,
-        deliveryPayload,
-        deliveredBy: input.deliveredBy || "system",
-        metadata: {
-          ...normalizeRecord(input.metadata),
-          ...orderMetadata,
-          supplier_procurement_order_id: order.id,
-          supplier_provider: order.provider_code,
-          supplier_provider_order_id: order.provider_order_id || null,
-        },
-      },
-    }
-  }
-
   private async resolveSupplierContext(
     input: CreateSupplierDeliveryInput
   ): Promise<ResolvedSupplierContext> {
@@ -597,7 +568,7 @@ class SupplierProcurementModuleService extends MedusaService({
 
     return {
       scope: input.scope!,
-      idempotencyKey: this.resolveIdempotencyKey(input, providerCode),
+      idempotencyKey: resolveSupplierIdempotencyKey(input, providerCode),
       providerCode,
       providerSku,
       productVariantId,
@@ -717,286 +688,6 @@ class SupplierProcurementModuleService extends MedusaService({
     return orders[0] || null
   }
 
-  private resolveIdempotencyKey(
-    input: CreateSupplierDeliveryInput,
-    providerCode: string
-  ) {
-    const metadata = normalizeRecord(input.metadata)
-    const explicit =
-      toOptionalText(metadata.supplier_idempotency_key) ||
-      toOptionalText(metadata.supplierIdempotencyKey)
-
-    if (explicit) {
-      return explicit
-    }
-
-    const fulfillmentKey =
-      toOptionalText(metadata.fulfillment_key) ||
-      toOptionalText(metadata.fulfillmentKey) ||
-      input.orderItemId ||
-      input.productVariantId ||
-      "item"
-
-    return [
-      "supplier",
-      providerCode,
-      input.paymentAttemptId || input.orderId || input.cartId || "manual",
-      fulfillmentKey,
-    ].join(":")
-  }
-
-  private buildSafeRequestPayload(
-    context: Awaited<ReturnType<SupplierProcurementModuleService["resolveSupplierContext"]>>
-  ) {
-    return {
-      provider_code: context.providerCode,
-      provider_sku: context.providerSku,
-      product_variant_id: context.productVariantId,
-      quantity: context.quantity,
-      customer_email: context.customerEmail,
-      currency: context.currency,
-      region_code: context.regionCode,
-      metadata: redactSensitiveRecord(context.metadata),
-    }
-  }
-
-  private encryptFulfillmentPayload(payload: Record<string, unknown> | string) {
-    const key = this.getEncryptionKey()
-    const iv = crypto.randomBytes(12)
-    const cipher = crypto.createCipheriv("aes-256-gcm", key, iv)
-    const plaintext =
-      typeof payload === "string" ? payload : JSON.stringify(payload)
-    const encrypted = Buffer.concat([
-      cipher.update(plaintext, "utf8"),
-      cipher.final(),
-    ])
-    const authTag = cipher.getAuthTag()
-
-    return JSON.stringify({
-      alg: "aes-256-gcm",
-      iv: iv.toString("base64"),
-      tag: authTag.toString("base64"),
-      data: encrypted.toString("base64"),
-    })
-  }
-
-  private decryptStoredFulfillmentPayload(order: SupplierProcurementOrderRecord) {
-    const blob = toOptionalText(order.fulfillment_payload_encrypted)
-
-    if (!blob) {
-      return buildDefaultSupplierDeliveryPayload(order, {
-        status: "fulfilled",
-      })
-    }
-
-    let parsed: {
-      alg?: string
-      iv?: string
-      tag?: string
-      data?: string
-    }
-
-    try {
-      parsed = JSON.parse(blob) as {
-        alg?: string
-        iv?: string
-        tag?: string
-        data?: string
-      }
-    } catch {
-      throw new MedusaError(
-        MedusaError.Types.INVALID_DATA,
-        "Supplier fulfillment payload is not valid JSON"
-      )
-    }
-
-    if (parsed.alg !== "aes-256-gcm" || !parsed.iv || !parsed.tag || !parsed.data) {
-      throw new MedusaError(
-        MedusaError.Types.INVALID_DATA,
-        "Supplier fulfillment payload is missing encryption fields"
-      )
-    }
-
-    for (const key of this.getDecryptionKeys()) {
-      try {
-        const decipher = crypto.createDecipheriv(
-          "aes-256-gcm",
-          key,
-          Buffer.from(parsed.iv, "base64")
-        )
-        decipher.setAuthTag(Buffer.from(parsed.tag, "base64"))
-
-        const decrypted = Buffer.concat([
-          decipher.update(Buffer.from(parsed.data, "base64")),
-          decipher.final(),
-        ]).toString("utf8")
-
-        try {
-          return JSON.parse(decrypted)
-        } catch {
-          return decrypted
-        }
-      } catch {
-        continue
-      }
-    }
-
-    throw new MedusaError(
-      MedusaError.Types.INVALID_DATA,
-      "Supplier fulfillment payload could not be decrypted"
-    )
-  }
-
-  private getEncryptionKey() {
-    return this.getDecryptionKeys()[0]
-  }
-
-  private getDecryptionKeys() {
-    try {
-      const keyValues = resolveEncryptionKeyRing("SUPPLIER_ENCRYPTION_KEY", {
-        fallbackName: "DELIVERY_ENCRYPTION_KEY",
-        previousNames: [
-          "SUPPLIER_ENCRYPTION_KEY_PREVIOUS",
-          "DELIVERY_ENCRYPTION_KEY_PREVIOUS",
-        ],
-      })
-
-      return keyValues.map((value) =>
-        decodeEncryptionKey(value, "SUPPLIER_ENCRYPTION_KEY")
-      )
-    } catch (error) {
-      throw new MedusaError(
-        MedusaError.Types.INVALID_DATA,
-        error instanceof Error
-          ? error.message
-          : "Supplier encryption key configuration is invalid"
-      )
-    }
-  }
 }
 
 export default SupplierProcurementModuleService
-
-function buildDefaultSupplierDeliveryPayload(
-  order: SupplierProcurementOrderRecord,
-  result: { status: string; providerOrderId?: string | null; message?: string | null }
-) {
-  return {
-    status: result.status,
-    message: result.message || "Supplier procurement completed.",
-    supplier_procurement_order_id: order.id,
-    supplier_provider: order.provider_code,
-    supplier_provider_order_id:
-      toNullableText(result.providerOrderId) || order.provider_order_id || null,
-  }
-}
-
-function normalizeLimit(value: unknown, fallback: number) {
-  if (typeof value !== "number" || !Number.isFinite(value)) {
-    return fallback
-  }
-
-  return Math.max(1, Math.min(Math.floor(value), 500))
-}
-
-function normalizeQuantity(value: unknown) {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return Math.max(1, Math.floor(value))
-  }
-
-  if (typeof value === "string" && value.trim()) {
-    const parsed = Number(value)
-    return Number.isFinite(parsed) ? Math.max(1, Math.floor(parsed)) : 0
-  }
-
-  return 0
-}
-
-function normalizeOptionalNumber(value: unknown) {
-  return typeof value === "number" && Number.isFinite(value) ? value : null
-}
-
-function normalizeDate(value: unknown) {
-  if (value instanceof Date) {
-    return value
-  }
-
-  if (typeof value === "string" && value.trim()) {
-    const parsed = new Date(value)
-    return Number.isFinite(parsed.getTime()) ? parsed : null
-  }
-
-  return null
-}
-
-function normalizeCurrencyCode(value: unknown) {
-  if (typeof value !== "string") {
-    return ""
-  }
-
-  const normalized = value.trim().toLowerCase()
-
-  return /^[a-z]{3}$/.test(normalized) ? normalized : ""
-}
-
-function normalizeRecord(value: unknown) {
-  return value && typeof value === "object"
-    ? (value as Record<string, unknown>)
-    : {}
-}
-
-function toOptionalText(value: unknown) {
-  return typeof value === "string" && value.trim() ? value.trim() : ""
-}
-
-function toNullableText(value: unknown) {
-  return toOptionalText(value) || null
-}
-
-function requireText(value: unknown, field: string) {
-  const normalized = toOptionalText(value)
-
-  if (!normalized) {
-    throw new MedusaError(
-      MedusaError.Types.INVALID_DATA,
-      `${field} is required`
-    )
-  }
-
-  return normalized
-}
-
-function redactSensitiveRecord(value: Record<string, unknown>) {
-  const redacted: Record<string, unknown> = {}
-
-  for (const [key, entry] of Object.entries(value)) {
-    if (isSensitiveKey(key)) {
-      redacted[key] = "[redacted]"
-      continue
-    }
-
-    if (entry && typeof entry === "object" && !Array.isArray(entry)) {
-      redacted[key] = redactSensitiveRecord(entry as Record<string, unknown>)
-      continue
-    }
-
-    if (Array.isArray(entry)) {
-      redacted[key] = entry.map((item) =>
-        item && typeof item === "object"
-          ? redactSensitiveRecord(item as Record<string, unknown>)
-          : item
-      )
-      continue
-    }
-
-    redacted[key] = entry
-  }
-
-  return redacted
-}
-
-function isSensitiveKey(key: string) {
-  return /secret|token|password|pin|code|key|credential|card_number|cardnumber/i.test(
-    key
-  )
-}

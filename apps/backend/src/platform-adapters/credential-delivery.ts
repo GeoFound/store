@@ -1,10 +1,10 @@
 import { MedusaError } from "@medusajs/framework/utils"
-import type { DeliveryHandler } from "../../platform/delivery"
-import { DIGITAL_DELIVERY_MODULE } from "../digital-delivery"
-import type DigitalDeliveryModuleService from "../digital-delivery/service"
-import { emitAuditLog } from "../../utils/audit-log"
-import { CREDENTIAL_INVENTORY_MODULE } from "."
-import type CredentialInventoryModuleService from "./service"
+import { CREDENTIAL_INVENTORY_MODULE } from "../platform/credential-inventory"
+import type { DeliveryHandler } from "../platform/delivery"
+import { DIGITAL_DELIVERY_MODULE } from "../modules/digital-delivery"
+import type DigitalDeliveryModuleService from "../modules/digital-delivery/service"
+import type CredentialInventoryModuleService from "../modules/credential-inventory/service"
+import { emitAuditLog } from "../utils/audit-log"
 
 export const credentialDeliveryHandler: DeliveryHandler = {
   code: "credential",
@@ -24,10 +24,10 @@ export const credentialDeliveryHandler: DeliveryHandler = {
       )
     }
 
-    const inventory: CredentialInventoryModuleService = input.scope.resolve(
+    const inventory = input.scope.resolve<CredentialInventoryModuleService>(
       CREDENTIAL_INVENTORY_MODULE
     )
-    const deliveryService: DigitalDeliveryModuleService = input.scope.resolve(
+    const deliveryService = input.scope.resolve<DigitalDeliveryModuleService>(
       DIGITAL_DELIVERY_MODULE
     )
 

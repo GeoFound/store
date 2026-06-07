@@ -47,11 +47,9 @@
         ],
         "bodyValidation": {
           "POST": {
-            "kind": "accepted-debt",
+            "kind": "middleware",
+            "matcher": "/admin/after-sales/:id",
             "owner": "support-audit",
-            "rationale": "Existing route reads req.body without validateAndTransformBody middleware. This is frozen so future body-reading endpoints must add schema validation instead of copying this pattern.",
-            "target": "Move body validation into apps/backend/src/api/middlewares.ts with a Zod schema and validateAndTransformBody.",
-            "expiresAt": "2026-08-07",
             "verification": [
               "pnpm ai:production",
               "pnpm check:ci"
@@ -151,11 +149,9 @@
         ],
         "bodyValidation": {
           "POST": {
-            "kind": "accepted-debt",
+            "kind": "middleware",
+            "matcher": "/admin/credential-inventory/batches",
             "owner": "credential-inventory",
-            "rationale": "Existing route reads req.body without validateAndTransformBody middleware. This is frozen so future body-reading endpoints must add schema validation instead of copying this pattern.",
-            "target": "Move body validation into apps/backend/src/api/middlewares.ts with a Zod schema and validateAndTransformBody.",
-            "expiresAt": "2026-08-07",
             "verification": [
               "pnpm ai:production",
               "pnpm check:ci"
@@ -203,11 +199,9 @@
         ],
         "bodyValidation": {
           "POST": {
-            "kind": "accepted-debt",
+            "kind": "middleware",
+            "matcher": "/admin/credential-inventory/reservations/:reservation_key/sell",
             "owner": "credential-inventory",
-            "rationale": "Existing route reads req.body without validateAndTransformBody middleware. This is frozen so future body-reading endpoints must add schema validation instead of copying this pattern.",
-            "target": "Move body validation into apps/backend/src/api/middlewares.ts with a Zod schema and validateAndTransformBody.",
-            "expiresAt": "2026-08-07",
             "verification": [
               "pnpm ai:production",
               "pnpm check:ci"
@@ -229,11 +223,9 @@
         ],
         "bodyValidation": {
           "POST": {
-            "kind": "accepted-debt",
+            "kind": "middleware",
+            "matcher": "/admin/credential-inventory/reservations",
             "owner": "credential-inventory",
-            "rationale": "Existing route reads req.body without validateAndTransformBody middleware. This is frozen so future body-reading endpoints must add schema validation instead of copying this pattern.",
-            "target": "Move body validation into apps/backend/src/api/middlewares.ts with a Zod schema and validateAndTransformBody.",
-            "expiresAt": "2026-08-07",
             "verification": [
               "pnpm ai:production",
               "pnpm check:ci"
@@ -269,11 +261,9 @@
         ],
         "bodyValidation": {
           "POST": {
-            "kind": "accepted-debt",
+            "kind": "middleware",
+            "matcher": "/admin/digital-delivery/deliveries",
             "owner": "digital-delivery",
-            "rationale": "Existing route reads req.body without validateAndTransformBody middleware. This is frozen so future body-reading endpoints must add schema validation instead of copying this pattern.",
-            "target": "Move body validation into apps/backend/src/api/middlewares.ts with a Zod schema and validateAndTransformBody.",
-            "expiresAt": "2026-08-07",
             "verification": [
               "pnpm ai:production",
               "pnpm check:ci"
@@ -421,11 +411,9 @@
         ],
         "bodyValidation": {
           "POST": {
-            "kind": "accepted-debt",
+            "kind": "middleware",
+            "matcher": "/admin/payment-attempts/:id/mark-paid",
             "owner": "payment-router",
-            "rationale": "Existing route reads req.body without validateAndTransformBody middleware. This is frozen so future body-reading endpoints must add schema validation instead of copying this pattern.",
-            "target": "Move body validation into apps/backend/src/api/middlewares.ts with a Zod schema and validateAndTransformBody.",
-            "expiresAt": "2026-08-07",
             "verification": [
               "pnpm ai:production",
               "pnpm check:ci"
@@ -460,11 +448,9 @@
         ],
         "bodyValidation": {
           "POST": {
-            "kind": "accepted-debt",
+            "kind": "middleware",
+            "matcher": "/admin/payment-channels/:id",
             "owner": "payment-router",
-            "rationale": "Existing route reads req.body without validateAndTransformBody middleware. This is frozen so future body-reading endpoints must add schema validation instead of copying this pattern.",
-            "target": "Move body validation into apps/backend/src/api/middlewares.ts with a Zod schema and validateAndTransformBody.",
-            "expiresAt": "2026-08-07",
             "verification": [
               "pnpm ai:production",
               "pnpm check:ci"
@@ -487,11 +473,9 @@
         ],
         "bodyValidation": {
           "POST": {
-            "kind": "accepted-debt",
+            "kind": "middleware",
+            "matcher": "/admin/payment-channels",
             "owner": "payment-router",
-            "rationale": "Existing route reads req.body without validateAndTransformBody middleware. This is frozen so future body-reading endpoints must add schema validation instead of copying this pattern.",
-            "target": "Move body validation into apps/backend/src/api/middlewares.ts with a Zod schema and validateAndTransformBody.",
-            "expiresAt": "2026-08-07",
             "verification": [
               "pnpm ai:production",
               "pnpm check:ci"
@@ -527,11 +511,9 @@
         ],
         "bodyValidation": {
           "POST": {
-            "kind": "accepted-debt",
+            "kind": "middleware",
+            "matcher": "/admin/suppliers/mappings",
             "owner": "supplier-procurement",
-            "rationale": "Existing route reads req.body without validateAndTransformBody middleware. This is frozen so future body-reading endpoints must add schema validation instead of copying this pattern.",
-            "target": "Move body validation into apps/backend/src/api/middlewares.ts with a Zod schema and validateAndTransformBody.",
-            "expiresAt": "2026-08-07",
             "verification": [
               "pnpm ai:production",
               "pnpm check:ci"
@@ -668,11 +650,9 @@
         ],
         "bodyValidation": {
           "POST": {
-            "kind": "accepted-debt",
+            "kind": "middleware",
+            "matcher": "/store/deliveries/:access_token/after-sales",
             "owner": "digital-delivery",
-            "rationale": "Existing route reads req.body without validateAndTransformBody middleware. This is frozen so future body-reading endpoints must add schema validation instead of copying this pattern.",
-            "target": "Move body validation into apps/backend/src/api/middlewares.ts with a Zod schema and validateAndTransformBody.",
-            "expiresAt": "2026-08-07",
             "verification": [
               "pnpm ai:production",
               "pnpm check:ci"
@@ -733,11 +713,9 @@
         ],
         "bodyValidation": {
           "POST": {
-            "kind": "accepted-debt",
+            "kind": "middleware",
+            "matcher": "/store/order-access/:access_token/deliveries/:delivery_id/after-sales",
             "owner": "support-audit",
-            "rationale": "Existing route reads req.body without validateAndTransformBody middleware. This is frozen so future body-reading endpoints must add schema validation instead of copying this pattern.",
-            "target": "Move body validation into apps/backend/src/api/middlewares.ts with a Zod schema and validateAndTransformBody.",
-            "expiresAt": "2026-08-07",
             "verification": [
               "pnpm ai:production",
               "pnpm check:ci"

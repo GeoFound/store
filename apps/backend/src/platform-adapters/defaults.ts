@@ -1,11 +1,11 @@
 import { manualPaymentProvider } from "../modules/payment-router/providers/manual"
 import { credentialInventoryHandler } from "../modules/credential-inventory/handler"
-import { credentialDeliveryHandler } from "../modules/credential-inventory/delivery-handler"
+import { credentialDeliveryHandler } from "./credential-delivery"
 import { manualDeliveryHandler } from "../modules/digital-delivery/handler"
 import { guestOrderAccessProvider } from "../modules/guest-order-access/provider"
 import { g2aSupplierProvider } from "../modules/supplier-g2a/provider"
 import { reloadlySupplierProvider } from "../modules/supplier-reloadly/provider"
-import { supplierProcurementDeliveryHandler } from "../modules/supplier-procurement/delivery-handler"
+import { supplierProcurementDeliveryHandler } from "./supplier-procurement"
 import { externalApiFulfillmentPolicy } from "../modules/supplier-procurement/product-policy"
 import type { PaymentProvider } from "../platform/payment-providers"
 import {

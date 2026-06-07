@@ -11,6 +11,7 @@ export const POST = async (
   req: MedusaRequest<SellBody>,
   res: MedusaResponse
 ) => {
+  const body = (req.validatedBody || req.body) as SellBody
   const locking: ILockingModule = req.scope.resolve(Modules.LOCKING)
   const inventory = resolveCredentialInventoryService(req.scope)
 
@@ -19,7 +20,7 @@ export const POST = async (
     async () =>
       inventory.markReservationSold({
         reservationKey: req.params.reservation_key,
-        orderId: req.body.order_id,
+        orderId: body.order_id,
       }),
     {
       timeout: 30,

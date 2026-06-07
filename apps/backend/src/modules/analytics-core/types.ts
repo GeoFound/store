@@ -1,6 +1,9 @@
-import type { BackendRuntimeContext } from "../../platform/backend-context"
+import type {
+  AnalyticsEventSource,
+  CaptureAnalyticsEventInput,
+} from "../../platform/analytics"
 
-export type AnalyticsEventSource = "backend_hook" | "storefront" | "system"
+export type { AnalyticsEventSource, CaptureAnalyticsEventInput }
 
 export type AnalyticsDispatchStatus =
   | "pending"
@@ -15,21 +18,6 @@ export type AnalyticsEventStatus =
   | "delivered"
   | "failed"
   | "partial"
-
-export type CaptureAnalyticsEventInput = {
-  scope?: BackendRuntimeContext
-  eventName: string
-  source?: AnalyticsEventSource
-  eventKey?: string | null
-  occurredAt?: string | Date | null
-  cartId?: string | null
-  orderId?: string | null
-  paymentAttemptId?: string | null
-  customerEmail?: string | null
-  payload?: Record<string, unknown> | null
-  metadata?: Record<string, unknown> | null
-  destinationCodes: string[]
-}
 
 export type ListDispatchesForDeliveryInput = {
   destinationCode: string

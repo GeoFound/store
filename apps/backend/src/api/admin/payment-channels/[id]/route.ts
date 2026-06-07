@@ -17,39 +17,40 @@ export const POST = async (
   req: MedusaRequest<UpdateChannelBody>,
   res: MedusaResponse
 ) => {
+  const body = (req.validatedBody || req.body) as UpdateChannelBody
   const paymentRouter = resolvePaymentRouterService(req.scope)
   const existing = await paymentRouter.retrievePaymentChannel(req.params.id)
   paymentRouter.assertProviderRegistered(existing.provider_code)
-  const currency = normalizeCurrencyCode(req.body.currency)
+  const currency = normalizeCurrencyCode(body.currency)
 
-  if (typeof req.body.currency !== "undefined" && req.body.currency !== null && !currency) {
+  if (typeof body.currency !== "undefined" && body.currency !== null && !currency) {
     localizedError(req, res, 400, "paymentChannel.currencyInvalid")
     return
   }
 
   const channel = await paymentRouter.updatePaymentChannels({
     id: req.params.id,
-    ...(typeof req.body.display_name === "string"
-      ? { display_name: req.body.display_name }
+    ...(typeof body.display_name === "string"
+      ? { display_name: body.display_name }
       : {}),
-    ...(typeof req.body.enabled === "boolean"
-      ? { enabled: req.body.enabled }
+    ...(typeof body.enabled === "boolean"
+      ? { enabled: body.enabled }
       : {}),
-    ...(typeof req.body.priority === "number"
-      ? { priority: req.body.priority }
+    ...(typeof body.priority === "number"
+      ? { priority: body.priority }
       : {}),
-    ...(typeof req.body.min_amount !== "undefined"
-      ? { min_amount: req.body.min_amount }
+    ...(typeof body.min_amount !== "undefined"
+      ? { min_amount: body.min_amount }
       : {}),
-    ...(typeof req.body.max_amount !== "undefined"
-      ? { max_amount: req.body.max_amount }
+    ...(typeof body.max_amount !== "undefined"
+      ? { max_amount: body.max_amount }
       : {}),
-    ...(typeof req.body.currency !== "undefined"
+    ...(typeof body.currency !== "undefined"
       ? { currency: currency || null }
       : {}),
-    ...(req.body.health_status ? { health_status: req.body.health_status } : {}),
-    ...(typeof req.body.config_json !== "undefined"
-      ? { config_json: req.body.config_json }
+    ...(body.health_status ? { health_status: body.health_status } : {}),
+    ...(typeof body.config_json !== "undefined"
+      ? { config_json: body.config_json }
       : {}),
   })
 

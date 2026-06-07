@@ -49,16 +49,18 @@ export const POST = async (
   req: MedusaRequest<CreateDeliveryBody>,
   res: MedusaResponse
 ) => {
+  const body = (req.validatedBody || req.body) as CreateDeliveryBody
+
   if (
-    !req.body.account_item_id &&
-    !req.body.delivery_payload &&
-    !req.body.delivery_id
+    !body.account_item_id &&
+    !body.delivery_payload &&
+    !body.delivery_id
   ) {
     localizedError(req, res, 400, "delivery.required")
     return
   }
 
-  if (req.body.delivery_id && !req.body.delivery_payload) {
+  if (body.delivery_id && !body.delivery_payload) {
     localizedError(req, res, 400, "delivery.payloadRequired")
     return
   }
@@ -66,19 +68,19 @@ export const POST = async (
   const { actorId, ipAddress, userAgent } = getRequestAuditContext(req)
   const workflowResult = await createManualDeliveryWorkflow(req.scope).run({
     input: {
-      deliveryId: req.body.delivery_id,
-      orderId: req.body.order_id,
-      cartId: req.body.cart_id,
-      paymentAttemptId: req.body.payment_attempt_id,
-      orderItemId: req.body.order_item_id,
-      accountItemId: req.body.account_item_id,
-      deliveryPayload: req.body.delivery_payload,
+      deliveryId: body.delivery_id,
+      orderId: body.order_id,
+      cartId: body.cart_id,
+      paymentAttemptId: body.payment_attempt_id,
+      orderItemId: body.order_item_id,
+      accountItemId: body.account_item_id,
+      deliveryPayload: body.delivery_payload,
       deliveryStatus:
-        req.body.delivery_status ||
-        (req.body.delivery_id ? "delivered" : undefined),
-      deliveredBy: req.body.delivered_by,
-      deliveryNote: req.body.delivery_note,
-      metadata: req.body.metadata,
+        body.delivery_status ||
+        (body.delivery_id ? "delivered" : undefined),
+      deliveredBy: body.delivered_by,
+      deliveryNote: body.delivery_note,
+      metadata: body.metadata,
     },
   })
 
@@ -97,9 +99,9 @@ export const POST = async (
     ipAddress,
     userAgent,
     metadata: {
-      account_item_id: req.body.account_item_id,
+      account_item_id: body.account_item_id,
       access_token_returned: Boolean(result.accessToken),
-      order_id: result.orderId || req.body.order_id || null,
+      order_id: result.orderId || body.order_id || null,
     },
   })
 

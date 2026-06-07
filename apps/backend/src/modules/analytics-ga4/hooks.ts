@@ -7,8 +7,8 @@ import { PLATFORM_HOOKS } from "../../platform/hooks"
 import { registerPlatformHook } from "../../platform/runtime"
 import {
   ANALYTICS_CORE_MODULE,
-} from "../analytics-core"
-import type AnalyticsCoreModuleService from "../analytics-core/service"
+  type AnalyticsCaptureService,
+} from "../../platform/analytics"
 import { ensureAnalyticsGa4DestinationRegistered } from "./destination"
 import { isGa4BackendEnabled } from "./config"
 import {
@@ -36,7 +36,7 @@ export function ensureAnalyticsGa4HooksRegistered() {
         return
       }
 
-      const analytics: AnalyticsCoreModuleService = event.scope.resolve(
+      const analytics = event.scope.resolve<AnalyticsCaptureService>(
         ANALYTICS_CORE_MODULE
       )
 
@@ -81,7 +81,7 @@ export function ensureAnalyticsGa4HooksRegistered() {
           ? "order_recovery_verified"
           : "order_access_claimed"
 
-      const analytics: AnalyticsCoreModuleService = event.scope.resolve(
+      const analytics = event.scope.resolve<AnalyticsCaptureService>(
         ANALYTICS_CORE_MODULE
       )
 
@@ -117,7 +117,7 @@ export function ensureAnalyticsGa4HooksRegistered() {
         return
       }
 
-      const analytics: AnalyticsCoreModuleService = event.scope.resolve(
+      const analytics = event.scope.resolve<AnalyticsCaptureService>(
         ANALYTICS_CORE_MODULE
       )
 

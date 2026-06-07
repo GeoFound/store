@@ -18,7 +18,9 @@ export const POST = async (
   req: MedusaRequest<CreateAfterSaleBody>,
   res: MedusaResponse
 ) => {
-  if (!req.body.message) {
+  const body = (req.validatedBody || req.body) as CreateAfterSaleBody
+
+  if (!body.message) {
     localizedError(req, res, 400, "common.messageRequired")
     return
   }
@@ -40,9 +42,9 @@ export const POST = async (
     paymentAttemptId: toOptionalString(result.delivery.payment_attempt_id),
     accountItemId: toOptionalString(result.delivery.account_item_id),
     customerEmail:
-      req.body.email || toOptionalString(token.customer_email) || undefined,
-    reason: req.body.reason,
-    message: req.body.message,
+      body.email || toOptionalString(token.customer_email) || undefined,
+    reason: body.reason,
+    message: body.message,
   })
 
   await emitAuditLog(req.scope, {
@@ -56,7 +58,7 @@ export const POST = async (
     metadata: {
       order_id: token.order_id,
       delivery_id: result.delivery.id,
-      reason: req.body.reason || "other",
+      reason: body.reason || "other",
     },
   })
 

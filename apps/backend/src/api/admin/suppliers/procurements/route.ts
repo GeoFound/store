@@ -1,6 +1,6 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { resolveSupplierProcurementService } from "../../../../platform-adapters/services"
-import type { SupplierProcurementStatus } from "../../../../modules/supplier-procurement/types"
+import type { SupplierProcurementStatus } from "../../../../platform/supplier-procurement"
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const query = (req.validatedQuery || req.query) as {

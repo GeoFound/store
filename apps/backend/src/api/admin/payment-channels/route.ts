@@ -41,45 +41,47 @@ export const POST = async (
   req: MedusaRequest<CreateChannelBody>,
   res: MedusaResponse
 ) => {
+  const body = (req.validatedBody || req.body) as CreateChannelBody
+
   if (
-    !req.body.code ||
-    !req.body.name ||
-    !req.body.display_name ||
-    !req.body.type ||
-    !req.body.provider_code
+    !body.code ||
+    !body.name ||
+    !body.display_name ||
+    !body.type ||
+    !body.provider_code
   ) {
     localizedError(req, res, 400, "paymentChannel.required")
     return
   }
 
   const paymentRouter = resolvePaymentRouterService(req.scope)
-  paymentRouter.assertProviderRegistered(req.body.provider_code)
-  const currency = normalizeCurrencyCode(req.body.currency)
-  const type = normalizeChannelType(req.body.type)
-  const healthStatus = normalizeHealthStatus(req.body.health_status)
+  paymentRouter.assertProviderRegistered(body.provider_code)
+  const currency = normalizeCurrencyCode(body.currency)
+  const type = normalizeChannelType(body.type)
+  const healthStatus = normalizeHealthStatus(body.health_status)
 
   if (!type || !healthStatus) {
     localizedError(req, res, 400, "paymentChannel.required")
     return
   }
 
-  if (typeof req.body.currency !== "undefined" && req.body.currency !== null && !currency) {
+  if (typeof body.currency !== "undefined" && body.currency !== null && !currency) {
     localizedError(req, res, 400, "paymentChannel.currencyInvalid")
     return
   }
 
   const channel = await paymentRouter.createPaymentChannels({
-    code: req.body.code,
-    name: req.body.name,
-    display_name: req.body.display_name,
+    code: body.code,
+    name: body.name,
+    display_name: body.display_name,
     type,
-    enabled: req.body.enabled ?? true,
-    priority: req.body.priority ?? 100,
-    min_amount: req.body.min_amount ?? null,
-    max_amount: req.body.max_amount ?? null,
+    enabled: body.enabled ?? true,
+    priority: body.priority ?? 100,
+    min_amount: body.min_amount ?? null,
+    max_amount: body.max_amount ?? null,
     currency: currency || null,
-    provider_code: req.body.provider_code,
-    config_json: req.body.config_json || null,
+    provider_code: body.provider_code,
+    config_json: body.config_json || null,
     health_status: healthStatus,
   })
 

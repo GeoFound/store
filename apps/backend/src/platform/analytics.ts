@@ -2,7 +2,31 @@ import type {
   PlatformResolutionContext,
   VersionedPluginContract,
 } from "./contracts"
+import type { BackendRuntimeContext } from "./backend-context"
 import { getPlatformRuntime } from "./runtime"
+
+export const ANALYTICS_CORE_MODULE = "analyticsCore"
+
+export type AnalyticsEventSource = "backend_hook" | "storefront" | "system"
+
+export type CaptureAnalyticsEventInput = {
+  scope?: BackendRuntimeContext
+  eventName: string
+  source?: AnalyticsEventSource
+  eventKey?: string | null
+  occurredAt?: string | Date | null
+  cartId?: string | null
+  orderId?: string | null
+  paymentAttemptId?: string | null
+  customerEmail?: string | null
+  payload?: Record<string, unknown> | null
+  metadata?: Record<string, unknown> | null
+  destinationCodes: string[]
+}
+
+export interface AnalyticsCaptureService {
+  captureEvent(input: CaptureAnalyticsEventInput): Promise<unknown> | unknown
+}
 
 export type AnalyticsDestinationSendInput = {
   event: Record<string, unknown>

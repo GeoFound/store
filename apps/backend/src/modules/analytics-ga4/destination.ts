@@ -1,7 +1,7 @@
 import {
   getAnalyticsDestination,
   registerAnalyticsDestination,
-} from "../analytics-core/destinations/registry"
+} from "../../platform/analytics"
 import { getGa4BackendConfig } from "./config"
 import {
   buildGa4MeasurementProtocolPayload,

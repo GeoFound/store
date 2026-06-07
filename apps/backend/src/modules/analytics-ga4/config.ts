@@ -1,4 +1,4 @@
-import { parseBoolean } from "../analytics-core/config"
+import { parseBoolean } from "../../platform/analytics"
 
 export function isGa4BackendEnabled(
   env: Record<string, string | undefined> = process.env

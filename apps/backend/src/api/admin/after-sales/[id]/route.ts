@@ -13,14 +13,15 @@ export const POST = async (
   req: MedusaRequest<UpdateAfterSaleBody>,
   res: MedusaResponse
 ) => {
+  const body = (req.validatedBody || req.body) as UpdateAfterSaleBody
   const supportAudit = resolveSupportAuditService(req.scope)
   const { actorId, ipAddress, userAgent } = getRequestAuditContext(req)
 
   const afterSale = await supportAudit.updateAfterSale({
     id: req.params.id,
-    status: req.body.status,
-    result: req.body.result,
-    adminNote: req.body.admin_note,
+    status: body.status,
+    result: body.result,
+    adminNote: body.admin_note,
     handledBy: actorId,
   })
 

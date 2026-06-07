@@ -11,6 +11,7 @@ export const POST = async (
   req: MedusaRequest<MarkPaidBody>,
   res: MedusaResponse
 ) => {
+  const body = (req.validatedBody || req.body) as MarkPaidBody
   const { actorId, ipAddress, userAgent } = getRequestAuditContext(req)
 
   const result = (
@@ -19,7 +20,7 @@ export const POST = async (
         attemptId: req.params.id,
         callbackPayload: {
           source: "admin_mark_paid",
-          note: req.body.note || null,
+          note: body.note || null,
         },
       },
     })
@@ -37,7 +38,7 @@ export const POST = async (
     userAgent,
     metadata: {
       provider_order_id: attempt.provider_order_id,
-      note: req.body.note || null,
+      note: body.note || null,
       order_id: result.order_id,
     },
   })

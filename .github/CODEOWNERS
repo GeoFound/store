@@ -1,19 +1,19 @@
 # Governance and product-critical surfaces.
-* @loong
+* @GeoFound
 
-.ai/ @loong
-scripts/ai/ @loong
-AGENTS.md @loong
-package.json @loong
-pnpm-lock.yaml @loong
+.ai/ @GeoFound
+scripts/ai/ @GeoFound
+AGENTS.md @GeoFound
+package.json @GeoFound
+pnpm-lock.yaml @GeoFound
 
-apps/backend/src/api/ @loong
-apps/backend/src/modules/ @loong
-apps/backend/src/platform/ @loong
-apps/backend/src/platform-adapters/ @loong
-apps/storefront/src/ @loong
+apps/backend/src/api/ @GeoFound
+apps/backend/src/modules/ @GeoFound
+apps/backend/src/platform/ @GeoFound
+apps/backend/src/platform-adapters/ @GeoFound
+apps/storefront/src/ @GeoFound
 
-profiles/ @loong
-ops/env/ @loong
-scripts/deploy/ @loong
-.github/workflows/ @loong
+profiles/ @GeoFound
+ops/env/ @GeoFound
+scripts/deploy/ @GeoFound
+.github/workflows/ @GeoFound

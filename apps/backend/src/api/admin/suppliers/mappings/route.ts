@@ -43,9 +43,10 @@ export const POST = async (
   req: MedusaRequest<UpsertMappingBody>,
   res: MedusaResponse
 ) => {
-  const productVariantId = toOptionalText(req.body.product_variant_id)
-  const providerCode = toOptionalText(req.body.provider_code)
-  const providerSku = toOptionalText(req.body.provider_sku)
+  const body = (req.validatedBody || req.body) as UpsertMappingBody
+  const productVariantId = toOptionalText(body.product_variant_id)
+  const providerCode = toOptionalText(body.provider_code)
+  const providerSku = toOptionalText(body.provider_sku)
 
   if (!productVariantId || !providerCode || !providerSku) {
     localizedError(req, res, 400, "supplier.mappingRequired")
@@ -64,15 +65,15 @@ export const POST = async (
     productVariantId,
     providerCode,
     providerSku,
-    providerProductId: req.body.provider_product_id,
-    providerVariantId: req.body.provider_variant_id,
-    regionCode: req.body.region_code,
-    currency: req.body.currency,
-    enabled: req.body.enabled,
-    priority: req.body.priority,
-    costPrice: req.body.cost_price,
-    listPrice: req.body.list_price,
-    metadata: req.body.metadata,
+    providerProductId: body.provider_product_id,
+    providerVariantId: body.provider_variant_id,
+    regionCode: body.region_code,
+    currency: body.currency,
+    enabled: body.enabled,
+    priority: body.priority,
+    costPrice: body.cost_price,
+    listPrice: body.list_price,
+    metadata: body.metadata,
   })
 
   res.status(201).json({

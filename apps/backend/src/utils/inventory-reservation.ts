@@ -1,15 +1,20 @@
 import type { MedusaContainer } from "@medusajs/framework/types"
 import type { ILockingModule } from "@medusajs/framework/types"
 import { Modules } from "@medusajs/framework/utils"
-import type { ReserveCredentialInput } from "../modules/credential-inventory/types"
-import { resolveCredentialInventoryService } from "../platform-adapters/services"
+import {
+  CREDENTIAL_INVENTORY_MODULE,
+  type CredentialReservationService,
+  type ReserveCredentialInput,
+} from "../platform/credential-inventory"
 
 export async function reserveCredentialsWithLock(
   container: MedusaContainer,
   input: ReserveCredentialInput
 ) {
   const locking: ILockingModule = container.resolve(Modules.LOCKING)
-  const inventory = resolveCredentialInventoryService(container)
+  const inventory = container.resolve<CredentialReservationService>(
+    CREDENTIAL_INVENTORY_MODULE
+  )
 
   return locking.execute(
     `credential-variant:${input.productVariantId}`,

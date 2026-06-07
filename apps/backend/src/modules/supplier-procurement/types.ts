@@ -1,12 +1,7 @@
 import type { CreateDeliveryInput } from "../../platform/delivery"
+import type { SupplierProcurementStatus } from "../../platform/supplier-procurement"
 
-export type SupplierProcurementStatus =
-  | "pending"
-  | "processing"
-  | "fulfilled"
-  | "failed"
-  | "cancelled"
-  | "needs_review"
+export type { SupplierProcurementStatus }
 
 export type SupplierProductMappingInput = {
   productVariantId: string

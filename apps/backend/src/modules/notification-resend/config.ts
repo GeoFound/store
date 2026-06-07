@@ -1,4 +1,4 @@
-import { parseBoolean } from "../analytics-core/config"
+import { parseBoolean } from "../../platform/analytics"
 
 export type ResendConfig = {
   enabled: boolean

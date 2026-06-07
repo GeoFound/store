@@ -41,6 +41,8 @@ describe("support audit hook subscriber", () => {
       }),
     } as unknown as MedusaContainer
 
+    ensureSupportAuditHooksRegistered()
+
     await emitAuditLog(container, {
       actorType: "admin",
       actorId: "user_1",
