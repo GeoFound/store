@@ -2,6 +2,11 @@ import fs from "node:fs"
 import path from "node:path"
 import { spawnSync } from "node:child_process"
 import { fileURLToPath } from "node:url"
+import { createArchitectureReport } from "./architecture.mjs"
+import { createConfigSurfaceReport } from "./config-surface.mjs"
+import { createDoctorReport } from "./doctor.mjs"
+import { createInventoryReport } from "./inventory.mjs"
+import { createStatusReport } from "./status.mjs"
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
 const args = new Set(process.argv.slice(2))
@@ -12,7 +17,13 @@ function readJson(relativePath) {
   return JSON.parse(fs.readFileSync(path.join(root, relativePath), "utf8"))
 }
 
-function runCheck(check) {
+async function runCheck(check) {
+  const inProcessResult = await runInProcessCheck(check)
+
+  if (inProcessResult) {
+    return inProcessResult
+  }
+
   const [command, ...commandArgs] = check.command
   const startedAt = new Date().toISOString()
   const result = spawnSync(command, commandArgs, {
@@ -38,6 +49,61 @@ function runCheck(check) {
   }
 }
 
+async function runInProcessCheck(check) {
+  const commandKey = check.command.join(" ")
+  const startedAt = new Date().toISOString()
+  let report = null
+
+  try {
+    if (commandKey === "pnpm ai:doctor") {
+      report = await createDoctorReport()
+    } else if (commandKey === "pnpm ai:architecture") {
+      report = await createArchitectureReport()
+    } else if (commandKey === "pnpm ai:config") {
+      report = createConfigSurfaceReport()
+    } else if (commandKey === "pnpm ai:inventory") {
+      report = createInventoryReport()
+    } else if (commandKey === "pnpm ai:status") {
+      report = await createStatusReport({ writeReport: true })
+    } else {
+      return null
+    }
+  } catch (error) {
+    const finishedAt = new Date().toISOString()
+
+    return {
+      id: check.id,
+      command: check.command,
+      required: check.required === true,
+      ok: false,
+      status: 1,
+      signal: null,
+      startedAt,
+      finishedAt,
+      stdout: "",
+      stderr: error instanceof Error ? error.message : String(error),
+      executionMode: "in-process",
+    }
+  }
+
+  const finishedAt = new Date().toISOString()
+  const stdout = JSON.stringify(report, null, 2)
+
+  return {
+    id: check.id,
+    command: check.command,
+    required: check.required === true,
+    ok: report.ok === true,
+    status: report.ok === true ? 0 : 1,
+    signal: null,
+    startedAt,
+    finishedAt,
+    stdout: check.allowOutput || report.ok !== true ? stdout : summarize(stdout),
+    stderr: "",
+    executionMode: "in-process",
+  }
+}
+
 function summarize(value) {
   if (!value) {
     return ""
@@ -56,7 +122,11 @@ const checks = [
   ...(policy.defaultChecks || []),
   ...(runFull ? policy.fullChecks || [] : []),
 ]
-const results = checks.map(runCheck)
+const results = []
+
+for (const check of checks) {
+  results.push(await runCheck(check))
+}
 const failedRequired = results.filter((result) => result.required && !result.ok)
 const report = {
   ok: failedRequired.length === 0,

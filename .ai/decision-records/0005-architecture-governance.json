@@ -1,0 +1,34 @@
+{
+  "id": "ADR-0005",
+  "status": "accepted",
+  "date": "2026-06-07",
+  "title": "Use a repository architecture check and maintainer skill for long-lived AI iteration",
+  "context": "The product now has enough backend modules, API routes, configuration profiles, and AI automation that periodic narrative-only full reviews are too fragile. AI needs a repeatable way to see coupling drift, route growth, and cold-start expectations before making changes.",
+  "decision": "Add a machine-readable architecture rule file, an executable ai:architecture report backed by dependency-cruiser and AST probes, an owner/verification inventory baseline, an executable ai:inventory report, and a repository maintainer skill under .ai/skills. ai:doctor and ai:evidence consume these checks so architecture debt, repository surface drift, config drift, and incomplete cold-start context become mandatory gates during routine work.",
+  "consequences": [
+    "Existing architecture debt is accepted only through .ai/architecture-baseline.json entries with owner, rationale, target, and non-expired expiresAt; unbaselined debt, expired entries, PR-added baseline fingerprints, and hotspot growth fail.",
+    "New modules, routes, workflows, jobs, storefront entrypoints, site profiles, and AI scripts fail until registered in .ai/inventory-baseline.json with owner and verification commands.",
+    "Backend modules must be represented in .ai/system-map.json; newly unmapped modules fail unless explicitly baselined with owner, verification, target, and expiry.",
+    "Runtime env reads are scanned with AST support for destructuring, constant computed keys, dynamic access helpers, and registered dynamic key patterns.",
+    "Future changes can remove baseline entries as debt is paid down.",
+    "AI cold start now includes both machine evidence and task-specific maintainer instructions."
+  ],
+  "evidence": [
+    "dependency-cruiser",
+    ".ai/architecture-rules.json",
+    ".ai/architecture-baseline.json",
+    ".ai/inventory-baseline.json",
+    ".ai/config-surface.json",
+    ".ai/skills/store-ai-maintainer/SKILL.md",
+    "scripts/ai/architecture.mjs",
+    "scripts/ai/config-surface.mjs",
+    "scripts/ai/inventory.mjs",
+    "scripts/ai/doctor.mjs",
+    "scripts/ai/evidence.mjs",
+    ".github/workflows/ci.yml",
+    "pnpm ai:architecture",
+    "pnpm ai:config",
+    "pnpm ai:inventory",
+    "pnpm ai:doctor"
+  ]
+}

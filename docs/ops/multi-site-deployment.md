@@ -23,6 +23,8 @@ Profile data drives:
 - Storefront brand/content/theme metadata.
 - Backend/storefront plugin toggles.
 - Site-level CORS defaults derived from domains.
+- Tenant deployment intent (`tenancy.mode`, `tenancy.data_plane`,
+  `tenancy.control_plane`).
 
 Storefront profiles can now tune the first-screen storefront without code
 changes:
@@ -151,6 +153,16 @@ pnpm profile:export-overrides -- --site-id site-1 --site-env production --target
 
 ## 7. Runtime Notes
 
+- Backend resolves a tenant context for every request before business handlers
+  run. `SITE_ID`, `SITE_ENV`, `TENANCY_MODE`, `TENANT_ALLOWED_HOSTS`, and
+  `TENANT_FAIL_ON_HOST_MISMATCH` are generated from the profile/env layer.
+- `TENANCY_MODE=dedicated` with `tenancy.data_plane=isolated` is the current
+  production-safe default.
+- `pooled` and `sharded` are modeled as future deployment modes, not a license
+  to share data tables before tenant-scoped persistence, jobs, locks, and
+  access-control tests exist.
+- Backend startup rejects `pooled` or `sharded` unless
+  `TENANT_SHARED_DATA_PLANE_READY=true`.
 - Storefront reads profile at runtime via `SITE_ID` and `SITE_ENV`.
 - `SITE_PROFILES_ROOT` can override the profile root; the default storefront
   release layout expects `../../profiles/sites` from `apps/storefront`.
@@ -161,3 +173,16 @@ pnpm profile:export-overrides -- --site-id site-1 --site-env production --target
 - If Cloudflare is used per site, set zone SSL/TLS mode to `Full (strict)`.
 
 This keeps each site independently deployable while preserving one shared engineering base.
+
+## 8. Multi-Site Evolution Rule
+
+The repository should evolve toward a shared control plane and selectable data
+planes:
+
+- `dedicated`: one site per runtime stack, DB, Redis, and secret set.
+- `pooled`: many sites on a backend pool after tenant isolation is proven.
+- `sharded`: many sites grouped by shard after tenant-scoped jobs and locks are
+  proven.
+
+Do not treat a shared backend as the goal. The goal is tenant-aware product code
+that can safely choose the right deployment shape per site.

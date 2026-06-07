@@ -67,6 +67,69 @@
       "verification": ["pnpm --dir apps/backend test:unit", "pnpm ai:doctor"]
     },
     {
+      "id": "analytics-core",
+      "kind": "backend-module",
+      "path": "apps/backend/src/modules/analytics-core",
+      "owns": ["analytics events", "dispatch queue", "destination registry contracts"],
+      "verification": ["pnpm --dir apps/backend test:unit", "pnpm ai:doctor"]
+    },
+    {
+      "id": "analytics-ga4",
+      "kind": "backend-module",
+      "path": "apps/backend/src/modules/analytics-ga4",
+      "owns": ["GA4 destination configuration", "GA4 analytics hooks"],
+      "verification": ["pnpm --dir apps/backend test:unit", "pnpm ai:doctor"]
+    },
+    {
+      "id": "analytics-hotjar",
+      "kind": "backend-module",
+      "path": "apps/backend/src/modules/analytics-hotjar",
+      "owns": ["Hotjar analytics configuration", "Hotjar storefront integration metadata"],
+      "verification": ["pnpm --dir apps/backend test:unit", "pnpm --dir apps/storefront test"]
+    },
+    {
+      "id": "marketing-engine",
+      "kind": "backend-module",
+      "path": "apps/backend/src/modules/marketing-engine",
+      "owns": ["campaigns", "offers", "coupons", "referral links", "marketing touchpoints"],
+      "verification": ["pnpm --dir apps/backend test:unit", "pnpm ai:doctor"]
+    },
+    {
+      "id": "notification-resend",
+      "kind": "backend-module",
+      "path": "apps/backend/src/modules/notification-resend",
+      "owns": ["Resend notification configuration", "notification dispatch hooks"],
+      "verification": ["pnpm --dir apps/backend test:unit", "pnpm ai:config"]
+    },
+    {
+      "id": "security-guard",
+      "kind": "backend-module",
+      "path": "apps/backend/src/modules/security-guard",
+      "owns": ["origin checks", "security headers", "rate limit policy"],
+      "verification": ["pnpm --dir apps/backend test:unit", "pnpm ai:config"]
+    },
+    {
+      "id": "supplier-g2a",
+      "kind": "backend-module",
+      "path": "apps/backend/src/modules/supplier-g2a",
+      "owns": ["G2A supplier authentication", "G2A catalog and order provider mapping"],
+      "verification": ["pnpm --dir apps/backend test:unit", "pnpm ai:config"]
+    },
+    {
+      "id": "supplier-reloadly",
+      "kind": "backend-module",
+      "path": "apps/backend/src/modules/supplier-reloadly",
+      "owns": ["Reloadly authentication", "Reloadly gift card and airtime provider mapping"],
+      "verification": ["pnpm --dir apps/backend test:unit", "pnpm ai:config"]
+    },
+    {
+      "id": "support-audit",
+      "kind": "backend-module",
+      "path": "apps/backend/src/modules/support-audit",
+      "owns": ["after-sales records", "audit log records", "support audit queries"],
+      "verification": ["pnpm --dir apps/backend test:unit", "pnpm ai:doctor"]
+    },
+    {
       "id": "storefront-commerce-port",
       "kind": "frontend-port",
       "path": "apps/storefront/src/lib/commerce.ts",
@@ -85,14 +148,35 @@
       "id": "profile-system",
       "kind": "configuration-system",
       "path": "profiles/sites",
-      "owns": ["site environment profiles", "domain mapping", "runtime profile validation"],
+      "owns": ["site environment profiles", "domain mapping", "runtime profile validation", "tenant deployment intent"],
       "verification": ["pnpm profile:validate:all"]
+    },
+    {
+      "id": "config-surface",
+      "kind": "configuration-system",
+      "path": ".ai/config-surface.json",
+      "owns": ["runtime configuration inventory", "configuration ownership", "production-required config declarations"],
+      "verification": ["pnpm ai:config", "pnpm ai:doctor"]
+    },
+    {
+      "id": "architecture-governance",
+      "kind": "automation-system",
+      "path": ".ai/architecture-rules.json",
+      "owns": ["module boundary drift detection", "route complexity budgets", "storefront commerce-port guardrails", "repository maintainer skill"],
+      "verification": ["pnpm ai:architecture", "pnpm ai:doctor"]
+    },
+    {
+      "id": "repository-inventory-governance",
+      "kind": "automation-system",
+      "path": ".ai/inventory-baseline.json",
+      "owns": ["repository surface inventory", "new module registration", "new route registration", "site profile registration", "AI script registration"],
+      "verification": ["pnpm ai:inventory", "pnpm ai:doctor"]
     },
     {
       "id": "ai-operating-system",
       "kind": "automation-system",
       "path": ".ai",
-      "owns": ["machine-readable context", "taskbook", "decision gates", "evidence policy", "review checklists"],
+      "owns": ["machine-readable context", "taskbook", "decision gates", "evidence policy", "review checklists", "repository AI skills"],
       "verification": ["pnpm ai:doctor", "pnpm ai:status", "pnpm ai:evidence"]
     }
   ],
@@ -114,7 +198,7 @@
     {
       "id": "ai-maintenance",
       "from": "ai-operating-system",
-      "through": ["backend-platform-core", "backend-platform-adapters", "profile-system"],
+      "through": ["backend-platform-core", "backend-platform-adapters", "profile-system", "config-surface", "architecture-governance", "repository-inventory-governance"],
       "to": "repository",
       "evidence": ["pnpm ai:evidence:full", ".github/workflows/ai-maintenance.yml"]
     }
@@ -131,6 +215,18 @@
     {
       "id": "production-needs-runtime-evidence",
       "enforcedBy": ["pnpm ai:evidence:full", ".ai/evidence-policy.json"]
+    },
+    {
+      "id": "runtime-config-must-be-registered",
+      "enforcedBy": ["pnpm ai:config", "scripts/ai/config-surface.mjs"]
+    },
+    {
+      "id": "architecture-health-must-be-machine-readable",
+      "enforcedBy": ["pnpm ai:architecture", ".ai/architecture-rules.json", ".ai/skills/store-ai-maintainer/SKILL.md"]
+    },
+    {
+      "id": "repository-surface-changes-must-be-registered",
+      "enforcedBy": ["pnpm ai:inventory", ".ai/inventory-baseline.json", "scripts/ai/inventory.mjs"]
     }
   ]
 }

@@ -12,7 +12,9 @@ type LocalizedMessageKey =
   | "common.messageRequired"
   | "credentialBatch.itemCredentialRequired"
   | "credentialBatch.itemsRequired"
+  | "credentialBatch.unsupportedVariant"
   | "credentialBatch.required"
+  | "credentialBatch.variantNotFound"
   | "credentialReservation.required"
   | "delivery.payloadRequired"
   | "delivery.required"
@@ -53,9 +55,17 @@ const messages: Record<LocalizedMessageKey, Record<SupportedLocale, string>> = {
     en: "items must include at least one credential",
     "zh-CN": "items 必须至少包含一条凭证",
   },
+  "credentialBatch.unsupportedVariant": {
+    en: "Product variant {{variantId}} uses inventory handler {{handlerCode}} and cannot receive credential inventory",
+    "zh-CN": "商品规格 {{variantId}} 使用库存 handler {{handlerCode}}，不能导入凭证库存",
+  },
   "credentialBatch.required": {
     en: "name and product_variant_id are required",
     "zh-CN": "必须提供 name 和 product_variant_id",
+  },
+  "credentialBatch.variantNotFound": {
+    en: "Product variant {{variantId}} was not found",
+    "zh-CN": "未找到商品规格 {{variantId}}",
   },
   "credentialReservation.required": {
     en: "product_variant_id and reservation_key are required",

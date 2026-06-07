@@ -8,6 +8,21 @@
       "required": true
     },
     {
+      "id": "ai-architecture",
+      "command": ["pnpm", "ai:architecture"],
+      "required": true
+    },
+    {
+      "id": "ai-config",
+      "command": ["pnpm", "ai:config"],
+      "required": true
+    },
+    {
+      "id": "ai-inventory",
+      "command": ["pnpm", "ai:inventory"],
+      "required": true
+    },
+    {
       "id": "ai-status",
       "command": ["pnpm", "ai:status"],
       "required": true

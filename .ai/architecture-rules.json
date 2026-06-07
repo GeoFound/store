@@ -1,0 +1,65 @@
+{
+  "version": "1.0.0",
+  "goals": [
+    "Keep product capabilities behind explicit platform ports.",
+    "Keep route handlers thin enough to remain replaceable.",
+    "Make independent module evolution visible before coupling becomes hard to unwind.",
+    "Keep storefront UI behind the commerce port."
+  ],
+  "backend": {
+    "modulesRoot": "apps/backend/src/modules",
+    "utilsRoot": "apps/backend/src/utils",
+    "apiRoot": "apps/backend/src/api",
+    "ignorePathSegments": ["/__tests__/", "/migrations/"],
+    "moduleWarnings": {
+      "importsPlatformAdapters": true,
+      "importsOtherModules": true,
+      "serviceMaxLines": 700,
+      "providerMaxLines": 400
+    },
+    "utilsWarnings": {
+      "importsPlatformAdapters": true,
+      "importsModules": true
+    },
+    "apiRouteBudgets": {
+      "maxLines": 220,
+      "maxLocalFunctions": 6,
+      "warnOnDirectQueryResolve": true,
+      "warnOnModuleImports": true
+    },
+    "hotspotFiles": [
+      {
+        "path": "apps/backend/src/api/middlewares.ts",
+        "maxLines": 650,
+        "reason": "Middleware should not keep absorbing schemas, security policy, tenant resolution, and route wiring forever."
+      }
+    ]
+  },
+  "storefront": {
+    "sourceRoot": "apps/storefront/src",
+    "commercePort": "apps/storefront/src/lib/commerce.ts",
+    "backendAdapter": "apps/storefront/src/lib/commerce-medusa.ts",
+    "allowedFetchFiles": [
+      "apps/storefront/src/lib/commerce-medusa.ts",
+      "apps/storefront/src/app/api/health/route.ts"
+    ]
+  },
+  "skill": {
+    "path": ".ai/skills/store-ai-maintainer/SKILL.md",
+    "required": true
+  },
+  "baseline": {
+    "path": ".ai/architecture-baseline.json",
+    "newWarnings": "issue",
+    "growth": "issue",
+    "staleEntries": "warning",
+    "metadata": "issue",
+    "expiredEntries": "issue",
+    "prGrowth": "issue when AI_BASELINE_COMPARE_REF is set"
+  },
+  "severityPolicy": {
+    "currentArchitectureDebt": "baseline-warning",
+    "newArchitectureDebt": "issue",
+    "missingGovernanceArtifact": "issue"
+  }
+}

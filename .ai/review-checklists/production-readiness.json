@@ -2,6 +2,10 @@
   "id": "production-readiness",
   "title": "Production readiness checklist",
   "scope": "go-live, deployment pipeline change, domain change, provider launch, or production-risk change",
+  "execution": {
+    "mode": "guidance",
+    "commandsAreRunBy": [".ai/evidence-policy.json", ".ai/taskbook.json", "package.json"]
+  },
   "items": [
     {
       "id": "full-evidence",

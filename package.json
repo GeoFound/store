@@ -17,6 +17,9 @@
     "dev:check:full": "bash scripts/dev-check.sh --full",
     "dev:check:live": "bash scripts/dev-check.sh --standard --live",
     "ai:context": "node scripts/ai/context.mjs",
+    "ai:architecture": "node scripts/ai/architecture.mjs",
+    "ai:config": "node scripts/ai/config-surface.mjs",
+    "ai:inventory": "node scripts/ai/inventory.mjs",
     "ai:doctor": "node scripts/ai/doctor.mjs",
     "ai:status": "node scripts/ai/status.mjs --write",
     "ai:evidence": "node scripts/ai/evidence.mjs --write",
@@ -39,11 +42,15 @@
     "lint": "pnpm -r lint",
     "typecheck": "pnpm --dir apps/backend exec tsc --noEmit && pnpm --dir apps/storefront exec tsc --noEmit",
     "test:unit": "pnpm --dir apps/backend test:unit",
-    "check:ci": "pnpm test:unit && pnpm --dir apps/storefront test && pnpm typecheck && pnpm --dir apps/storefront lint",
+    "check:ci": "pnpm ai:doctor && pnpm test:unit && pnpm --dir apps/storefront test && pnpm typecheck && pnpm --dir apps/storefront lint",
     "test": "pnpm --dir apps/backend test && pnpm --dir apps/storefront test"
   },
   "engines": {
     "node": ">=22"
   },
-  "packageManager": "pnpm@10.32.1"
+  "packageManager": "pnpm@10.32.1",
+  "devDependencies": {
+    "dependency-cruiser": "^17.4.3",
+    "typescript": "^6.0.3"
+  }
 }

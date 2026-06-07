@@ -2,10 +2,10 @@ import fs from "node:fs"
 import path from "node:path"
 import { spawnSync } from "node:child_process"
 import { fileURLToPath } from "node:url"
+import { createDoctorReport } from "./doctor.mjs"
+import { createInventoryReport } from "./inventory.mjs"
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
-const args = new Set(process.argv.slice(2))
-const writeReport = args.has("--write")
 
 function readJson(relativePath) {
   return JSON.parse(fs.readFileSync(path.join(root, relativePath), "utf8"))
@@ -60,77 +60,97 @@ function listEvidenceReports() {
     .sort((left, right) => right.modifiedAt.localeCompare(left.modifiedAt))
 }
 
-const system = readJson(".ai/system.json")
-const systemMap = readJson(".ai/system-map.json")
-const taskbook = readJson(".ai/taskbook.json")
-const doctor = run("node", ["scripts/ai/doctor.mjs"])
-const gitStatus = run("git", ["status", "--short"])
-const evidenceReports = listEvidenceReports()
-const latestFullEvidence = evidenceReports.find((report) => report.mode === "full")
-const dirtyFiles = gitStatus.stdout.split("\n").filter(Boolean)
-const nextActions = []
+export async function createStatusReport(options = {}) {
+  const system = readJson(".ai/system.json")
+  const systemMap = readJson(".ai/system-map.json")
+  const taskbook = readJson(".ai/taskbook.json")
+  const doctor = await createDoctorReport()
+  const inventory = createInventoryReport()
+  const gitStatus = run("git", ["status", "--short"])
+  const evidenceReports = listEvidenceReports()
+  const latestFullEvidence = evidenceReports.find((report) => report.mode === "full")
+  const dirtyFiles = gitStatus.stdout.split("\n").filter(Boolean)
+  const nextActions = []
 
-if (!doctor.ok) {
-  nextActions.push("Run pnpm ai:doctor and fix reported machine-governance issues.")
-}
+  if (!doctor.ok) {
+    nextActions.push("Run pnpm ai:doctor and fix reported machine-governance issues.")
+  }
 
-if (!latestFullEvidence) {
-  nextActions.push("Run pnpm ai:evidence:full to create a full evidence report.")
-} else if (latestFullEvidence.ok !== true) {
-  nextActions.push(`Inspect failed full evidence report: ${latestFullEvidence.path}`)
-}
+  if (!inventory.ok) {
+    nextActions.push("Run pnpm ai:inventory and register or remove changed repository surface.")
+  }
 
-if (dirtyFiles.length) {
-  nextActions.push("Review current git worktree before starting unrelated work.")
-}
+  if (!latestFullEvidence) {
+    nextActions.push("Run pnpm ai:evidence:full to create a full evidence report.")
+  } else if (latestFullEvidence.ok !== true) {
+    nextActions.push(`Inspect failed full evidence report: ${latestFullEvidence.path}`)
+  }
 
-const report = {
-  ok: doctor.ok,
-  generatedAt: new Date().toISOString(),
-  repository: system.repository,
-  product: system.product,
-  systemMap: {
-    nodeCount: systemMap.nodes?.length || 0,
-    flowCount: systemMap.flows?.length || 0,
-  },
-  taskbook: {
-    taskCount: taskbook.tasks?.length || 0,
-    taskIds: taskbook.tasks?.map((task) => task.id) || [],
-  },
-  doctor: {
+  if (dirtyFiles.length) {
+    nextActions.push("Review current git worktree before starting unrelated work.")
+  }
+
+  const report = {
     ok: doctor.ok,
-    status: doctor.status,
-  },
-  git: {
-    dirty: dirtyFiles.length > 0,
-    dirtyFiles,
-  },
-  evidence: {
-    latest: evidenceReports[0] || null,
-    latestFull: latestFullEvidence || null,
-    reportCount: evidenceReports.length,
-  },
-  workflows: {
-    aiMaintenance: fs.existsSync(
-      path.join(root, ".github/workflows/ai-maintenance.yml")
-    ),
-  },
-  nextActions,
+    generatedAt: new Date().toISOString(),
+    repository: system.repository,
+    product: system.product,
+    systemMap: {
+      nodeCount: systemMap.nodes?.length || 0,
+      flowCount: systemMap.flows?.length || 0,
+    },
+    taskbook: {
+      taskCount: taskbook.tasks?.length || 0,
+      taskIds: taskbook.tasks?.map((task) => task.id) || [],
+    },
+    doctor: {
+      ok: doctor.ok,
+      status: doctor.ok ? 0 : 1,
+      warningCount: doctor.warningCount,
+    },
+    inventory: {
+      ok: inventory.ok,
+      summary: inventory.summary,
+      systemMapCoverage: inventory.systemMapCoverage,
+    },
+    git: {
+      dirty: dirtyFiles.length > 0,
+      dirtyFiles,
+    },
+    evidence: {
+      latest: evidenceReports[0] || null,
+      latestFull: latestFullEvidence || null,
+      reportCount: evidenceReports.length,
+    },
+    workflows: {
+      aiMaintenance: fs.existsSync(
+        path.join(root, ".github/workflows/ai-maintenance.yml")
+      ),
+    },
+    nextActions,
+  }
+
+  if (options.writeReport) {
+    const reportDir = path.join(root, ".ai-trace/status")
+    fs.mkdirSync(reportDir, { recursive: true })
+    const reportPath = path.join(
+      reportDir,
+      `${new Date().toISOString().replace(/[:.]/g, "-")}.json`
+    )
+    fs.writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`)
+    report.reportPath = path.relative(root, reportPath)
+  }
+
+  return report
 }
 
-if (writeReport) {
-  const reportDir = path.join(root, ".ai-trace/status")
-  fs.mkdirSync(reportDir, { recursive: true })
-  const reportPath = path.join(
-    reportDir,
-    `${new Date().toISOString().replace(/[:.]/g, "-")}.json`
-  )
-  fs.writeFileSync(reportPath, `${JSON.stringify(report, null, 2)}\n`)
-  report.reportPath = path.relative(root, reportPath)
-}
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const args = new Set(process.argv.slice(2))
+  const report = await createStatusReport({ writeReport: args.has("--write") })
 
-console.log(JSON.stringify(report, null, 2))
+  console.log(JSON.stringify(report, null, 2))
 
-if (!report.ok) {
-  process.exit(1)
+  if (!report.ok) {
+    process.exit(1)
+  }
 }

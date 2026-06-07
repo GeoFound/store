@@ -42,6 +42,28 @@ type ProductTemplate = {
   inventoryHandlerCode?: string
 }
 
+type CatalogVariant = {
+  id: string
+  title: string | null
+  sku: string | null
+  product_id: string | null
+  product_title: string | null
+  product_handle: string | null
+  product_type: string | null
+  template_code: string
+  template_title: string
+  inventory_handler_code: string
+  delivery_handler_code: string | null
+  credential_inventory_supported: boolean
+  availability_supported: boolean
+  total_count: number | null
+  available_count: number | null
+  reserved_count: number | null
+  sold_count: number | null
+  locked_count: number | null
+  is_in_stock: boolean | null
+}
+
 type ImportItem = {
   account_identifier?: string
   display_label?: string
@@ -124,23 +146,55 @@ const CredentialsPage = () => {
   const [templateCode, setTemplateCode] = useState("credential")
   const [credentialsText, setCredentialsText] = useState(SAMPLE_IMPORT)
   const [templates, setTemplates] = useState<ProductTemplate[]>([])
+  const [catalogVariants, setCatalogVariants] = useState<CatalogVariant[]>([])
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  const selectedVariant =
+    catalogVariants.find((variant) => variant.id === productVariantId.trim()) ||
+    null
 
   useEffect(() => {
     refresh()
   }, [])
 
   async function refresh() {
-    const [itemsData, batchesData, templateData] = await Promise.all([
-      adminApi<{ items: AccountItem[] }>("/admin/credential-inventory/items"),
-      adminApi<{ batches: Batch[] }>("/admin/credential-inventory/batches"),
-      adminApi<{ templates: ProductTemplate[] }>("/admin/product-templates"),
-    ])
-    setItems(itemsData.items)
-    setBatches(batchesData.batches)
-    setTemplates(templateData.templates)
+    setError("")
+
+    try {
+      const [itemsData, batchesData, templateData, catalogData] =
+        await Promise.all([
+          adminApi<{ items: AccountItem[] }>("/admin/credential-inventory/items"),
+          adminApi<{ batches: Batch[] }>("/admin/credential-inventory/batches"),
+          adminApi<{ templates: ProductTemplate[] }>("/admin/product-templates"),
+          adminApi<{ variants: CatalogVariant[] }>("/admin/catalog/variants"),
+        ])
+      setItems(itemsData.items)
+      setBatches(batchesData.batches)
+      setTemplates(templateData.templates)
+      setCatalogVariants(catalogData.variants)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : t("credentials.loadFailed"))
+    }
+  }
+
+  function handleProductVariantIdChange(value: string) {
+    const normalizedValue = value.trim()
+    setProductVariantId(value)
+
+    const variant = catalogVariants.find((item) => item.id === normalizedValue)
+    if (variant?.template_code) {
+      setTemplateCode(variant.template_code)
+    }
+  }
+
+  function handleVariantSelect(variantId: string) {
+    setProductVariantId(variantId)
+
+    const variant = catalogVariants.find((item) => item.id === variantId)
+    if (variant?.template_code) {
+      setTemplateCode(variant.template_code)
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -150,14 +204,24 @@ const CredentialsPage = () => {
     setMessage("")
 
     try {
+      const normalizedProductVariantId = productVariantId.trim()
+
+      if (!normalizedProductVariantId) {
+        throw new Error(t("credentials.variantRequired"))
+      }
+
+      if (selectedVariant && !selectedVariant.credential_inventory_supported) {
+        throw new Error(t("credentials.unsupportedVariant"))
+      }
+
       const parsed = parseCredentialLines(credentialsText, t)
 
       await adminApi("/admin/credential-inventory/batches", {
         method: "POST",
         body: {
           name,
-          product_variant_id: productVariantId,
-          template_code: templateCode,
+          product_variant_id: normalizedProductVariantId,
+          template_code: templateCode.trim(),
           items: parsed,
         },
       })
@@ -178,18 +242,62 @@ const CredentialsPage = () => {
       >
         <form onSubmit={handleSubmit} className="grid gap-4">
           <div className="grid gap-4 md:grid-cols-2">
-            <Input value={name} onChange={(event) => setName(event.target.value)} />
+            <Input
+              aria-label={t("credentials.batchName")}
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder={t("credentials.batchName")}
+            />
+            <div className="grid gap-1">
+              <select
+                aria-label={t("credentials.productVariant")}
+                value={productVariantId}
+                onChange={(event) => handleVariantSelect(event.target.value)}
+                className="h-8 rounded-md border border-ui-border-base bg-ui-bg-field px-2 text-sm text-ui-fg-base outline-none transition-fg focus:border-ui-border-interactive"
+              >
+                <option value="">{t("credentials.selectProductVariant")}</option>
+                {catalogVariants.map((variant) => (
+                  <option
+                    key={variant.id}
+                    value={variant.id}
+                    disabled={!variant.credential_inventory_supported}
+                  >
+                    {variantOptionLabel(variant, t)}
+                  </option>
+                ))}
+              </select>
+              {catalogVariants.length ? null : (
+                <Text className="text-ui-fg-subtle">
+                  {t("credentials.noCatalogVariants")}
+                </Text>
+              )}
+            </div>
             <Input
               value={productVariantId}
-              onChange={(event) => setProductVariantId(event.target.value)}
+              aria-label={t("credentials.manualVariantId")}
+              onChange={(event) => handleProductVariantIdChange(event.target.value)}
               placeholder="variant_..."
             />
             <Input
               value={templateCode}
+              aria-label={t("credentials.templateCode")}
               onChange={(event) => setTemplateCode(event.target.value)}
               placeholder="template_code"
             />
           </div>
+          {selectedVariant ? (
+            <Text className="text-ui-fg-subtle">
+              {selectedVariantSummary(selectedVariant, t)}
+            </Text>
+          ) : productVariantId.trim() ? (
+            <Text className="text-ui-fg-subtle">
+              {t("credentials.manualVariantIdHelp")}
+            </Text>
+          ) : (
+            <Text className="text-ui-fg-subtle">
+              {t("credentials.selectProductVariantHelp")}
+            </Text>
+          )}
           {templates.length ? (
             <div className="grid gap-2 md:grid-cols-2">
               {templates.map((template) => (
@@ -301,6 +409,41 @@ const CredentialsPage = () => {
       </AdminSection>
     </div>
   )
+}
+
+function variantOptionLabel(variant: CatalogVariant, t: Translate) {
+  const productName =
+    variant.product_title || variant.product_handle || variant.product_id || "-"
+  const variantName = variant.title || variant.sku || variant.id
+  const sku = variant.sku ? ` / ${variant.sku}` : ""
+  const stock =
+    typeof variant.available_count === "number"
+      ? t("credentials.availableCount", { count: variant.available_count })
+      : t("credentials.stockUnknown")
+  const unsupported = variant.credential_inventory_supported
+    ? ""
+    : ` / ${t("credentials.notCredentialInventory")}`
+
+  return `${productName} / ${variantName}${sku} / ${variant.template_title} / ${stock}${unsupported}`
+}
+
+function selectedVariantSummary(variant: CatalogVariant, t: Translate) {
+  const deliveryHandler = variant.delivery_handler_code || "-"
+  const stock =
+    typeof variant.available_count === "number"
+      ? t("credentials.stockSummary", {
+          available: variant.available_count,
+          reserved: variant.reserved_count ?? 0,
+          sold: variant.sold_count ?? 0,
+          total: variant.total_count ?? 0,
+        })
+      : t("credentials.stockUnknown")
+
+  return t("credentials.selectedVariantSummary", {
+    inventoryHandler: variant.inventory_handler_code,
+    deliveryHandler,
+    stock,
+  })
 }
 
 export const config = defineRouteConfig({

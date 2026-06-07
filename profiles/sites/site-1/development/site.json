@@ -11,6 +11,11 @@
     "storefront": "example.com",
     "api": "api.example.com"
   },
+  "tenancy": {
+    "mode": "dedicated",
+    "data_plane": "isolated",
+    "control_plane": "profile"
+  },
   "theme": {
     "id": "atlas",
     "background": "#f6f8fb",

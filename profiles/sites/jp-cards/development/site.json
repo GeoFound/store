@@ -11,6 +11,11 @@
     "storefront": "jp.example.com",
     "api": "api.jp.example.com"
   },
+  "tenancy": {
+    "mode": "dedicated",
+    "data_plane": "isolated",
+    "control_plane": "profile"
+  },
   "theme": {
     "id": "shiro-cards",
     "background": "#faf7f2",

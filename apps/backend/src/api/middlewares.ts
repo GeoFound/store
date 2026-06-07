@@ -9,6 +9,11 @@ import { MedusaError } from "@medusajs/framework/utils"
 import { z, ZodError, type ZodTypeAny } from "zod"
 import { ensurePlatformIntegrationsRegistered } from "../platform-adapters/integrations"
 import { isPlatformPluginEnabled } from "../platform/runtime"
+import {
+  parseTenantRuntimeOptionsFromEnv,
+  resolveTenantContext,
+  type TenantContext,
+} from "../platform/tenant"
 import { emitAuditLog } from "../utils/audit-log"
 import { localizedMessage } from "../utils/localized-response"
 import { getRequestAuditContext } from "../utils/request-audit"
@@ -239,6 +244,7 @@ const adminMutationRateLimit = resolveRateLimitPolicyFromEnv(
 )
 
 const SECURITY_GUARD_PLUGIN_ID = "security-guard"
+const tenantRuntimeOptions = parseTenantRuntimeOptionsFromEnv(process.env)
 const securityAllowedOrigins = parseAllowedOriginsFromEnv(process.env)
 const securityHeadersEnabled = parseBooleanFlag(
   process.env.SECURITY_HEADERS_ENABLED,
@@ -404,8 +410,10 @@ function createRateLimitMiddleware(
     const requestIp = resolveRequestIp(req)
     const userAgent = getRequestAuditContext(req).userAgent
     const customKeyParts = options.keyParts?.(req) || []
+    const tenantContext = getTenantContext(req)
 
     const key = buildClientFingerprint([
+      tenantContext?.siteId || tenantRuntimeOptions.siteId,
       policy.id,
       requestPath,
       requestMethod,
@@ -470,6 +478,45 @@ function createRateLimitMiddleware(
       retry_after_seconds: decision.retryAfterSeconds,
     })
   }
+}
+
+function createTenantContextMiddleware() {
+  return (
+    req: MedusaRequest,
+    res: MedusaResponse,
+    next: MedusaNextFunction
+  ) => {
+    try {
+      const tenantContext = resolveTenantContext(
+        {
+          host: getHeaderValue(req, "x-forwarded-host") || getHeaderValue(req, "host"),
+          siteIdHeader: getHeaderValue(req, "x-site-id"),
+        },
+        tenantRuntimeOptions
+      )
+
+      setTenantContext(req, tenantContext)
+      res.setHeader("X-Site-Id", tenantContext.siteId)
+      next()
+    } catch (error) {
+      res.status(400).json({
+        message: error instanceof Error ? error.message : "Invalid tenant context",
+        code: "invalid_tenant_context",
+      })
+    }
+  }
+}
+
+export function getTenantContext(req: MedusaRequest) {
+  return (req as MedusaRequest & { tenantContext?: TenantContext }).tenantContext
+}
+
+function setTenantContext(req: MedusaRequest, tenantContext: TenantContext) {
+  const requestWithTenant = req as MedusaRequest & {
+    tenantContext?: TenantContext
+  }
+
+  requestWithTenant.tenantContext = tenantContext
 }
 
 async function emitSecurityGuardAuditLog(
@@ -670,6 +717,7 @@ export default defineMiddlewares({
           ensurePlatformIntegrationsRegistered()
           next()
         },
+        createTenantContextMiddleware(),
         createSecurityHeadersMiddleware(),
       ],
     },

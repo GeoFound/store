@@ -82,6 +82,19 @@ assert(isNonEmptyString(profile?.domains?.api), "domains.api is required")
 assert(profile?.theme && typeof profile.theme === "object", "theme object is required")
 assert(profile?.content && typeof profile.content === "object", "content object is required")
 assert(profile?.platform && typeof profile.platform === "object", "platform object is required")
+assert(profile?.tenancy && typeof profile.tenancy === "object", "tenancy object is required")
+assert(["dedicated", "pooled", "sharded"].includes(profile.tenancy.mode), "tenancy.mode must be one of: dedicated, pooled, sharded")
+assert(["isolated", "shared", "sharded"].includes(profile.tenancy.data_plane), "tenancy.data_plane must be one of: isolated, shared, sharded")
+assert(typeof profile.tenancy.control_plane === "string" && ["profile", "shared"].includes(profile.tenancy.control_plane), "tenancy.control_plane must be one of: profile, shared")
+if (profile.tenancy.mode === "dedicated") {
+  assert(profile.tenancy.data_plane === "isolated", "tenancy.mode=dedicated requires tenancy.data_plane=isolated")
+}
+if (profile.tenancy.mode === "pooled") {
+  assert(profile.tenancy.data_plane === "shared", "tenancy.mode=pooled requires tenancy.data_plane=shared")
+}
+if (profile.tenancy.mode === "sharded") {
+  assert(profile.tenancy.data_plane === "sharded", "tenancy.mode=sharded requires tenancy.data_plane=sharded")
+}
 assert(isNonEmptyString(profile.theme.background), "theme.background is required")
 assert(isNonEmptyString(profile.theme.foreground), "theme.foreground is required")
 assert(isNonEmptyString(profile.theme.accent), "theme.accent is required")

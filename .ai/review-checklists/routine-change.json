@@ -2,6 +2,10 @@
   "id": "routine-change",
   "title": "Routine AI implementation checklist",
   "scope": "bug fix, small feature, refactor, or test update",
+  "execution": {
+    "mode": "guidance",
+    "commandsAreRunBy": [".ai/evidence-policy.json", ".ai/taskbook.json", "package.json"]
+  },
   "items": [
     {
       "id": "worktree-known",
@@ -20,6 +24,12 @@
       "checkType": "command",
       "command": ["pnpm", "ai:doctor"],
       "evidenceRequired": "AI governance and boundary checks passed."
+    },
+    {
+      "id": "surface-and-debt-gates",
+      "checkType": "command",
+      "command": ["pnpm", "ai:evidence"],
+      "evidenceRequired": "Architecture baseline, inventory baseline, config surface, status, and git state were captured."
     }
   ],
   "humanGate": false

@@ -2,12 +2,28 @@
   "id": "architecture-boundaries",
   "title": "Architecture boundary checklist",
   "scope": "module boundary, platform adapter, provider, handler, or workflow changes",
+  "execution": {
+    "mode": "guidance",
+    "commandsAreRunBy": [".ai/evidence-policy.json", ".ai/taskbook.json", "package.json"]
+  },
   "items": [
     {
       "id": "platform-core-clean",
       "checkType": "command",
       "command": ["pnpm", "ai:doctor"],
       "evidenceRequired": "Platform core does not import backend framework or built-in modules."
+    },
+    {
+      "id": "architecture-health-reviewed",
+      "checkType": "command",
+      "command": ["pnpm", "ai:architecture"],
+      "evidenceRequired": "Architecture report has no unbaselined warning and no baselined hotspot growth."
+    },
+    {
+      "id": "repository-surface-registered",
+      "checkType": "command",
+      "command": ["pnpm", "ai:inventory"],
+      "evidenceRequired": "New modules, routes, workflows, jobs, storefront entrypoints, site profiles, and AI scripts are registered in the inventory baseline."
     },
     {
       "id": "capability-scope-limited",

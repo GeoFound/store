@@ -51,6 +51,7 @@ Optional analytics and observability:
 | `RELOADLY_CLIENT_SECRET` | Reloadly OAuth client secret | Required to use `supplier-provider:reloadly`; backend only. |
 | `RELOADLY_AUTH_URL` | Reloadly OAuth token URL | Default `https://auth.reloadly.com/oauth/token`. |
 | `RELOADLY_AUDIENCE` | Reloadly OAuth audience | Defaults to the gift-card API base URL. Override per Reloadly product/API family when needed. |
+| `RELOADLY_API_BASE_URL` | Legacy/default Reloadly API base URL fallback | Optional fallback used when product-family specific URLs are omitted. Prefer `RELOADLY_GIFTCARDS_BASE_URL` and `RELOADLY_AIRTIME_BASE_URL`. |
 | `RELOADLY_GIFTCARDS_BASE_URL` | Reloadly gift-card API base URL | Defaults to sandbox or production gift-card host based on `RELOADLY_ENV`. |
 | `RELOADLY_AIRTIME_BASE_URL` | Reloadly airtime/top-up API base URL | Defaults to sandbox or production top-up host based on `RELOADLY_ENV`. |
 | `RELOADLY_SENDER_NAME` | Sender name used in default gift-card order payloads | Default `Store`. |
@@ -79,8 +80,15 @@ Optional analytics and observability:
 | `PLATFORM_DISABLED_PLUGINS` | Backend plugin deny-list (comma-separated IDs). | Backend-only; public storefront plugin env is intentionally ignored by backend runtime. |
 | `PLATFORM_ENABLED_CONTRACTS` | Capability contract allow-list (`capability:name1,name2;...`). | Applied before plugin registration for deterministic startup behavior. |
 | `PLATFORM_DISABLED_CONTRACTS` | Capability contract deny-list (`capability:name1,name2;...`). | Useful for fine-grained strategy/hook shutdown without disabling whole plugin. |
+| `ORDER_ACCESS_PROVIDER_CODE` | Order access provider contract code. | Default `guest-order-access`; must resolve to an enabled `order-access-provider` contract. |
 | `SITE_ID` | Logical site identifier for profile-driven multi-site runtime. | Required for profile-driven runtime (`site-1`, `jp-cards`, etc). No default fallback. |
 | `SITE_ENV` | Site profile environment key (`production`, `staging`, etc). | Used with `SITE_ID` to resolve `profiles/sites/<site-id>/<site-env>/site.json`. |
+| `TENANCY_MODE` | Runtime deployment mode for the site (`dedicated`, `pooled`, or `sharded`). | Current production-safe default is `dedicated`. The code is tenant-aware before pooled/shared data-plane migration. |
+| `TENANT_ALLOWED_HOSTS` | Comma-separated storefront/API hosts allowed to resolve to this backend site. | Generated from the site profile during deploy. Unknown hosts fail request tenant resolution when `TENANT_FAIL_ON_HOST_MISMATCH=true`. |
+| `TENANT_FAIL_ON_HOST_MISMATCH` | Fail requests whose host is not allowed for the configured site. | Keep `true` in production. |
+| `TENANT_SHARED_DATA_PLANE_READY` | Explicit release-level guard for `pooled` or `sharded` modes. | Keep `false` until tenant-scoped persistence, jobs, locks, and access-control tests exist. Non-`dedicated` modes fail startup without this flag. |
+| `ORDER_RECOVERY_REQUEST_COOLDOWN_SECONDS` | Cooldown before the same order/email pair can request another recovery code. | Default `60`. |
+| `SUPPLIER_PROCUREMENT_RETRY_BATCH_SIZE` | Max due supplier procurements retried per cron run. | Default `25`, capped at `200`. |
 
 Plugin dependency enablement is evaluated at runtime: if a plugin's required dependency is disabled, the dependent plugin is treated as disabled automatically.
 
@@ -103,6 +111,7 @@ Required:
 | `NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY` | Medusa publishable API key. |
 | `NEXT_PUBLIC_MEDUSA_REGION_ID` | Optional fixed region id. |
 | `NEXT_PUBLIC_ALLOWED_IMAGE_HOSTS` | Comma-separated image hosts or URLs allowed by Next Image remote patterns. |
+| `NEXT_PUBLIC_COMMERCE_BACKEND` | Storefront commerce adapter id. | Default `medusa`; unsupported values fail early at runtime. |
 
 Optional analytics and plugin runtime:
 
@@ -115,6 +124,7 @@ Optional analytics and plugin runtime:
 | `NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT` | Require explicit consent before GA4/Hotjar scripts and analytics events. Default `true`. |
 | `NEXT_PUBLIC_PLATFORM_ENABLED_PLUGINS` | Storefront plugin allow-list (comma-separated IDs). |
 | `NEXT_PUBLIC_PLATFORM_DISABLED_PLUGINS` | Comma-separated plugin IDs to disable on storefront (for example `analytics-hotjar,analytics-ga4`). |
+| `NEXT_PUBLIC_SHOW_PLATFORM_DEMO_EXTENSIONS` | Enable demo storefront extension points for local/plugin testing. | Keep `false` outside controlled development. |
 | `SITE_PROFILES_ROOT` | Filesystem path to `profiles/sites`. Defaults to `../../profiles/sites` from the storefront app. |
 | `NEXT_PUBLIC_SITE_ID` | Public site identifier for profile-driven storefront rendering. |
 | `NEXT_PUBLIC_SITE_ENV` | Public site profile environment key (`production`, `staging`, etc). |

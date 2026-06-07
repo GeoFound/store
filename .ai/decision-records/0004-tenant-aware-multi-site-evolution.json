@@ -1,0 +1,35 @@
+{
+  "id": "0004-tenant-aware-multi-site-evolution",
+  "status": "accepted",
+  "decision": "Build the product as tenant-aware first, while keeping dedicated isolated data planes as the production-safe default. Future pooled or sharded backends must reuse the same tenant context and config surface instead of bypassing them.",
+  "rationale": [
+    "The product handles payments, guest order access, digital delivery payloads, credentials, supplier procurement, and recovery codes.",
+    "A shared backend without hard tenant context increases cross-site data leakage and misdelivery risk.",
+    "A shared control plane plus selectable data-plane modes lets the repository scale sites gradually without forcing a risky all-at-once shared database migration."
+  ],
+  "currentMode": {
+    "controlPlane": "profile",
+    "dataPlane": "isolated",
+    "deploymentMode": "dedicated"
+  },
+  "allowedEvolution": [
+    "dedicated: one site per backend/runtime/DB/Redis/secrets",
+    "pooled: multiple sites per backend pool after tenant isolation tests exist",
+    "sharded: multiple sites grouped by shard after tenant-scoped jobs, locks, and data filters exist"
+  ],
+  "nonNegotiableChecks": [
+    "SITE_ID and SITE_ENV are required for backend tenant context.",
+    "Request host or x-site-id mismatch fails before business handlers run.",
+    "Pooled or sharded runtime modes fail startup unless TENANT_SHARED_DATA_PLANE_READY=true after tenant-scoped persistence, jobs, locks, and access-control checks exist.",
+    "All runtime env keys read by code are registered in .ai/config-surface.json.",
+    "Public NEXT_PUBLIC_* config cannot control backend capabilities."
+  ],
+  "evidence": [
+    "apps/backend/src/platform/tenant.ts",
+    "apps/backend/src/api/middlewares.ts",
+    ".ai/config-surface.json",
+    "scripts/ai/config-surface.mjs",
+    "pnpm ai:config",
+    "pnpm profile:validate:all"
+  ]
+}

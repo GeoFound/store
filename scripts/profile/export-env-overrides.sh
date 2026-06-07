@@ -124,6 +124,15 @@ function toContractMapString(value) {
   return entries.join(";")
 }
 
+function normalizeHost(value) {
+  const origin = toOrigin(value)
+  if (!origin) {
+    return ""
+  }
+
+  return new URL(origin).host.replace(/:\d+$/, "").toLowerCase()
+}
+
 function printLine(key, value) {
   process.stdout.write(`${key}=${value}\n`)
 }
@@ -151,10 +160,22 @@ const enabledContracts = toContractMapString(
 const disabledContracts = toContractMapString(
   profile?.platform?.disabled_contracts || profile?.platform?.disabledContracts
 )
+const tenancyMode =
+  toNonEmptyString(profile?.tenancy?.mode) ||
+  "dedicated"
+const tenantAllowedHosts = Array.from(
+  new Set([
+    normalizeHost(profile?.domains?.storefront),
+    normalizeHost(profile?.domains?.api),
+  ].filter(Boolean))
+).join(",")
 
 if (target === "backend" || target === "all") {
   printLine("SITE_ID", resolvedSiteId)
   printLine("SITE_ENV", siteEnv)
+  printLine("TENANCY_MODE", tenancyMode)
+  printLine("TENANT_ALLOWED_HOSTS", tenantAllowedHosts)
+  printLine("TENANT_FAIL_ON_HOST_MISMATCH", "true")
   printLine("STORE_CORS", storefrontOrigin)
   printLine("ADMIN_CORS", apiOrigin)
   printLine("AUTH_CORS", `${storefrontOrigin},${apiOrigin}`)

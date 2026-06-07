@@ -1,6 +1,9 @@
 import fs from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
+import { createArchitectureReport } from "./architecture.mjs"
+import { createConfigSurfaceReport } from "./config-surface.mjs"
+import { createInventoryReport } from "./inventory.mjs"
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
 const issues = []
@@ -71,6 +74,10 @@ function assert(condition, issue) {
     issues.push(issue)
   }
 }
+
+export async function createDoctorReport() {
+issues.length = 0
+warnings.length = 0
 
 const system = readJson(".ai/system.json")
 const taskbook = readJson(".ai/taskbook.json")
@@ -258,6 +265,18 @@ for (const checklist of reviewChecklists) {
     path: checklist.path,
     message: "Review checklist must include items.",
   })
+  assert(data.execution?.mode === "guidance", {
+    id: "review-checklist.execution-mode-invalid",
+    path: checklist.path,
+    mode: data.execution?.mode,
+    message:
+      "Review checklists are guidance artifacts. Executed commands must be represented in .ai/evidence-policy.json, .ai/taskbook.json, or package scripts.",
+  })
+  assert(Array.isArray(data.execution?.commandsAreRunBy) && data.execution.commandsAreRunBy.length > 0, {
+    id: "review-checklist.execution-owner-missing",
+    path: checklist.path,
+    message: "Review checklist must declare where its commands are actually executed.",
+  })
 
   for (const item of data.items || []) {
     assert(Boolean(item.id), {
@@ -356,7 +375,68 @@ if (evidencePolicy) {
   }
 }
 
-const report = {
+const configSurfaceReport = createConfigSurfaceReport()
+assert(configSurfaceReport.ok, {
+  id: "config-surface.failed",
+  message: "Machine-readable config surface validation failed.",
+  issues: configSurfaceReport.issues,
+})
+
+for (const warning of configSurfaceReport.warnings || []) {
+  warnings.push({
+    id: `config-surface.${warning.id}`,
+    path: warning.path,
+    message: warning.message,
+    details: {
+      key: warning.key,
+    },
+  })
+}
+
+const architectureReport = await createArchitectureReport()
+assert(architectureReport.ok, {
+  id: "architecture.failed",
+  message: "Machine-readable architecture validation failed.",
+  issues: architectureReport.issues,
+})
+
+for (const warning of architectureReport.warnings || []) {
+  warnings.push({
+    id: `architecture.${warning.id}`,
+    path: warning.path,
+    message: warning.message,
+    details: {
+      import: warning.import,
+      lines: warning.lines,
+      maxLines: warning.maxLines,
+      localFunctions: warning.localFunctions,
+      maxLocalFunctions: warning.maxLocalFunctions,
+      fromModule: warning.fromModule,
+      toModule: warning.toModule,
+    },
+  })
+}
+
+const inventoryReport = createInventoryReport()
+assert(inventoryReport.ok, {
+  id: "inventory.failed",
+  message: "Machine-readable repository inventory validation failed.",
+  issues: inventoryReport.issues,
+})
+
+for (const warning of inventoryReport.warnings || []) {
+  warnings.push({
+    id: `inventory.${warning.id}`,
+    path: warning.path,
+    message: warning.message,
+    details: {
+      type: warning.type,
+      value: warning.value,
+    },
+  })
+}
+
+return {
   ok: issues.length === 0,
   generatedAt: new Date().toISOString(),
   issueCount: issues.length,
@@ -364,9 +444,14 @@ const report = {
   issues,
   warnings,
 }
+}
 
-console.log(JSON.stringify(report, null, 2))
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  const report = await createDoctorReport()
 
-if (issues.length) {
-  process.exit(1)
+  console.log(JSON.stringify(report, null, 2))
+
+  if (!report.ok) {
+    process.exit(1)
+  }
 }

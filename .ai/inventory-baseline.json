@@ -1,0 +1,858 @@
+{
+  "version": "1.0.0",
+  "createdAt": "2026-06-07",
+  "policy": {
+    "purpose": "Force repository and product surface changes to be explicit. New modules, routes, workflows, jobs, storefront entrypoints, site profiles, or AI scripts fail until this baseline is intentionally updated.",
+    "newEntity": "issue",
+    "removedEntity": "warning until baseline cleanup",
+    "metadataRequired": [
+      "owner",
+      "verification"
+    ]
+  },
+  "tracked": {
+    "backendModules": [
+      {
+        "name": "analytics-core",
+        "owner": "analytics-core",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/backend test:unit"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "name": "analytics-ga4",
+        "owner": "analytics-ga4",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/backend test:unit"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "name": "analytics-hotjar",
+        "owner": "analytics-hotjar",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/backend test:unit"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "name": "credential-inventory",
+        "owner": "credential-inventory",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/backend test:unit"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "name": "digital-delivery",
+        "owner": "digital-delivery",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/backend test:unit"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "name": "guest-order-access",
+        "owner": "guest-order-access",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/backend test:unit"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "name": "marketing-engine",
+        "owner": "marketing-engine",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/backend test:unit"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "name": "notification-resend",
+        "owner": "notification-resend",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/backend test:unit"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "name": "payment-router",
+        "owner": "payment-router",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/backend test:unit"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "name": "security-guard",
+        "owner": "security-guard",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/backend test:unit"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "name": "supplier-g2a",
+        "owner": "supplier-g2a",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/backend test:unit"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "name": "supplier-procurement",
+        "owner": "supplier-procurement",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/backend test:unit"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "name": "supplier-reloadly",
+        "owner": "supplier-reloadly",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/backend test:unit"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "name": "support-audit",
+        "owner": "support-audit",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/backend test:unit"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      }
+    ],
+    "backendApiRoutes": [
+      {
+        "path": "apps/backend/src/api/admin/after-sales/[id]/route.ts",
+        "owner": "admin-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/admin/after-sales/route.ts",
+        "owner": "admin-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/admin/analytics/dispatches/route.ts",
+        "owner": "admin-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/admin/analytics/events/route.ts",
+        "owner": "admin-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/admin/audit-logs/route.ts",
+        "owner": "admin-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/admin/catalog/variants/route.ts",
+        "owner": "admin-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/admin/credential-inventory/batches/route.ts",
+        "owner": "admin-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/admin/credential-inventory/items/route.ts",
+        "owner": "admin-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/admin/credential-inventory/reservations/[reservation_key]/release/route.ts",
+        "owner": "admin-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/admin/credential-inventory/reservations/[reservation_key]/sell/route.ts",
+        "owner": "admin-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/admin/credential-inventory/reservations/route.ts",
+        "owner": "admin-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/admin/custom/route.ts",
+        "owner": "admin-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/admin/digital-delivery/deliveries/route.ts",
+        "owner": "admin-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/admin/digital-delivery/pending/route.ts",
+        "owner": "admin-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/admin/marketing/campaigns/route.ts",
+        "owner": "admin-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/admin/marketing/coupons/route.ts",
+        "owner": "admin-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/admin/marketing/offers/route.ts",
+        "owner": "admin-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/admin/marketing/referral-links/route.ts",
+        "owner": "admin-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/admin/marketing/touchpoints/route.ts",
+        "owner": "admin-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/admin/payment-attempts/[id]/mark-paid/route.ts",
+        "owner": "admin-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/admin/payment-attempts/route.ts",
+        "owner": "admin-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/admin/payment-channels/[id]/route.ts",
+        "owner": "admin-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/admin/payment-channels/route.ts",
+        "owner": "admin-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/admin/product-templates/route.ts",
+        "owner": "admin-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/admin/suppliers/mappings/route.ts",
+        "owner": "admin-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/admin/suppliers/procurements/[id]/retry/route.ts",
+        "owner": "admin-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/admin/suppliers/procurements/route.ts",
+        "owner": "admin-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/admin/suppliers/providers/route.ts",
+        "owner": "admin-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/health/route.ts",
+        "owner": "runtime-health",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/hooks/payment/[provider_code]/route.ts",
+        "owner": "payment-router",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/hooks/payment/manual/route.ts",
+        "owner": "payment-router",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/store/carts/[cart_id]/payments/route.ts",
+        "owner": "store-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/store/custom/route.ts",
+        "owner": "store-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/store/deliveries/[access_token]/after-sales/route.ts",
+        "owner": "store-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/store/deliveries/[access_token]/confirm/route.ts",
+        "owner": "store-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/store/deliveries/[access_token]/route.ts",
+        "owner": "store-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/store/marketing/campaigns/route.ts",
+        "owner": "store-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/store/order-access/[access_token]/deliveries/[delivery_id]/after-sales/route.ts",
+        "owner": "store-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/store/order-access/[access_token]/deliveries/[delivery_id]/confirm/route.ts",
+        "owner": "store-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/store/order-access/[access_token]/route.ts",
+        "owner": "store-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/store/orders/recover/route.ts",
+        "owner": "store-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/store/orders/recover/verify/route.ts",
+        "owner": "store-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/store/payment-attempts/[id]/claim-order-access/route.ts",
+        "owner": "store-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/store/payment-attempts/[id]/route.ts",
+        "owner": "store-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/store/payment-methods/route.ts",
+        "owner": "store-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/store/product-availability/route.ts",
+        "owner": "store-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/store/product-templates/route.ts",
+        "owner": "store-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      }
+    ],
+    "backendWorkflows": [
+      {
+        "path": "apps/backend/src/workflows/create-cart-payment-attempt.ts",
+        "owner": "backend-workflows",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/backend test:unit"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/workflows/create-manual-delivery.ts",
+        "owner": "backend-workflows",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/backend test:unit"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/workflows/finalize-successful-payment-attempt.ts",
+        "owner": "backend-workflows",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/backend test:unit"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/workflows/steps/delivery/create-delivery.ts",
+        "owner": "digital-delivery",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/backend test:unit"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/workflows/steps/payment/apply-marketing-context.ts",
+        "owner": "payment-router",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/backend test:unit"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/workflows/steps/payment/create-payment-attempt.ts",
+        "owner": "payment-router",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/backend test:unit"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/workflows/steps/payment/finalize-payment-attempt.ts",
+        "owner": "payment-router",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/backend test:unit"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/workflows/steps/payment/inventory-reservation-cleanup.ts",
+        "owner": "payment-router",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/backend test:unit"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/workflows/steps/payment/reserve-cart-inventory.ts",
+        "owner": "payment-router",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/backend test:unit"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      }
+    ],
+    "backendJobs": [
+      {
+        "path": "apps/backend/src/jobs/process-analytics-dispatches.ts",
+        "owner": "backend-jobs",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/backend test:unit"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/jobs/process-supplier-procurements.ts",
+        "owner": "backend-jobs",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/backend test:unit"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/jobs/release-expired-credential-reservations.ts",
+        "owner": "backend-jobs",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/backend test:unit"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      }
+    ],
+    "storefrontEntrypoints": [
+      {
+        "path": "apps/storefront/src/app/api/health/route.ts",
+        "owner": "storefront-runtime",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/storefront test",
+          "pnpm --dir apps/storefront lint"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/storefront/src/app/cart/page.tsx",
+        "owner": "storefront-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/storefront test",
+          "pnpm --dir apps/storefront lint"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/storefront/src/app/checkout/page.tsx",
+        "owner": "storefront-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/storefront test",
+          "pnpm --dir apps/storefront lint"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/storefront/src/app/orders/page.tsx",
+        "owner": "storefront-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/storefront test",
+          "pnpm --dir apps/storefront lint"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/storefront/src/app/page.tsx",
+        "owner": "storefront-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/storefront test",
+          "pnpm --dir apps/storefront lint"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/storefront/src/app/products/[handle]/page.tsx",
+        "owner": "storefront-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/storefront test",
+          "pnpm --dir apps/storefront lint"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/storefront/src/app/products/page.tsx",
+        "owner": "storefront-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/storefront test",
+          "pnpm --dir apps/storefront lint"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      }
+    ],
+    "siteProfiles": [
+      {
+        "path": "profiles/sites/jp-cards/development",
+        "owner": "profile-system",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm profile:validate:all"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "profiles/sites/jp-cards/production",
+        "owner": "profile-system",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm profile:validate:all"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "profiles/sites/site-1/development",
+        "owner": "profile-system",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm profile:validate:all"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "profiles/sites/site-1/production",
+        "owner": "profile-system",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm profile:validate:all"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      }
+    ],
+    "aiScripts": [
+      {
+        "path": "scripts/ai/architecture.mjs",
+        "owner": "ai-operating-system",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:doctor"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "scripts/ai/config-surface.mjs",
+        "owner": "ai-operating-system",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:doctor"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "scripts/ai/context.mjs",
+        "owner": "ai-operating-system",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:doctor"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "scripts/ai/doctor.mjs",
+        "owner": "ai-operating-system",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:doctor"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "scripts/ai/evidence.mjs",
+        "owner": "ai-operating-system",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:doctor"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "scripts/ai/inventory.mjs",
+        "owner": "ai-operating-system",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:doctor"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "scripts/ai/status.mjs",
+        "owner": "ai-operating-system",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:doctor"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      }
+    ]
+  },
+  "systemMapCoverage": {
+    "acceptedUnmappedBackendModules": []
+  }
+}

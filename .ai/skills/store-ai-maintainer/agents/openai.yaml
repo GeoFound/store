@@ -1,0 +1,7 @@
+interface:
+  display_name: "Store AI Maintainer"
+  short_description: "Keep this store repo clean and evidence-driven"
+  default_prompt: "Use $store-ai-maintainer to review and maintain this store repository with machine evidence."
+
+policy:
+  allow_implicit_invocation: true
