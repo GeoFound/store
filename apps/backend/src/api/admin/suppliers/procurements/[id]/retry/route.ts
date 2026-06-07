@@ -1,5 +1,5 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { resolveSupplierProcurementService } from "../../../../../../platform-adapters/services"
+import { retrySupplierProcurementWithDelivery } from "../../../../../../platform-adapters/supplier-procurement"
 import { localizedError } from "../../../../../../utils/localized-response"
 
 export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
@@ -10,8 +10,7 @@ export const POST = async (req: MedusaRequest, res: MedusaResponse) => {
     return
   }
 
-  const procurement = resolveSupplierProcurementService(req.scope)
-  const result = await procurement.retryProcurementOrder({
+  const result = await retrySupplierProcurementWithDelivery({
     id,
     scope: req.scope,
   })

@@ -5,6 +5,7 @@ import {
   getInventoryHandler,
   type InventoryAvailability,
 } from "../../../platform/inventory"
+import { createInventoryHandlerScope } from "../../../platform-adapters/backend-context"
 import { resolveProductTemplate } from "../../../platform/product-templates"
 
 type VariantInventoryContext = {
@@ -27,6 +28,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   }
 
   const variantContexts = await resolveVariantInventoryContexts(req, variantIds)
+  const inventoryScope = createInventoryHandlerScope(req.scope)
   const availabilityByVariantId = new Map<string, InventoryAvailability>()
   const handlerToVariantIds = new Map<string, Set<string>>()
 
@@ -60,7 +62,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
         }
 
         const availability = await handler.listAvailability({
-          scope: req.scope,
+          scope: inventoryScope,
           variantIds: Array.from(handlerVariantIds),
         })
 

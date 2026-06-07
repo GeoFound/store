@@ -2,7 +2,11 @@ import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import type { ILockingModule } from "@medusajs/framework/types"
 import { MedusaError, Modules } from "@medusajs/framework/utils"
 import { emitOrderAccessTokenIssuedEvent } from "../../../../../platform/events"
-import { getOrderAccessProvider } from "../../../../../platform/order-access"
+import { createOrderAccessProviderScope } from "../../../../../platform-adapters/backend-context"
+import {
+  requireAttemptOrderAccessProviderCode,
+  resolveOrderAccessProviderOrThrow,
+} from "../../../../../platform-adapters/order-access"
 import { resolvePaymentRouterService } from "../../../../../platform-adapters/services"
 import {
   isPaymentAttemptFinalized,
@@ -24,17 +28,9 @@ export const POST = async (
 ) => {
   const body = (req.validatedBody || req.body) as ClaimOrderAccessBody
 
-  const orderAccess = getOrderAccessProvider("guest-order-access")
-
-  if (!orderAccess) {
-    throw new MedusaError(
-      MedusaError.Types.NOT_ALLOWED,
-      "Order access provider is not available"
-    )
-  }
-
   const paymentRouter = resolvePaymentRouterService(req.scope)
   const locking: ILockingModule = req.scope.resolve(Modules.LOCKING)
+  const orderAccessScope = createOrderAccessProviderScope(req.scope)
 
   const { ipAddress, userAgent } = getRequestAuditContext(req)
   const lockKey = `payment-attempt-claim:${req.params.id}`
@@ -55,6 +51,12 @@ export const POST = async (
       }
 
       const payload = normalizeAttemptPayload(attempt.response_payload)
+      const orderAccessProviderCode = requireAttemptOrderAccessProviderCode(
+        attempt.response_payload
+      )
+      const orderAccess = resolveOrderAccessProviderOrThrow(
+        orderAccessProviderCode
+      )
 
       if (
         !payload.order_access_claim_token_hash ||
@@ -91,7 +93,7 @@ export const POST = async (
         ) || ""
 
       const { token } = await orderAccess.issueToken({
-        scope: req.scope,
+        scope: orderAccessScope,
         orderId: attempt.order_id,
         customerEmail,
         purpose: "view_order",
@@ -104,7 +106,7 @@ export const POST = async (
         })
       } catch (error) {
         await orderAccess.revokeActiveTokens({
-          scope: req.scope,
+          scope: orderAccessScope,
           orderId: attempt.order_id,
           purpose: "view_order",
         })

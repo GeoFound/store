@@ -2,6 +2,7 @@ import type { MedusaContainer } from "@medusajs/framework/types"
 import { Modules } from "@medusajs/framework/utils"
 import { ensurePlatformIntegrationsRegistered } from "../platform-adapters/integrations"
 import { resolveSupplierProcurementService } from "../platform-adapters/services"
+import { retrySupplierProcurementWithDelivery } from "../platform-adapters/supplier-procurement"
 import { isPlatformPluginEnabled } from "../platform/runtime"
 
 export default async function processSupplierProcurements(
@@ -45,9 +46,9 @@ export default async function processSupplierProcurements(
         }
 
         try {
-          await procurement.retryProcurementOrder({
-            id: procurementId,
+          await retrySupplierProcurementWithDelivery({
             scope: container,
+            id: procurementId,
             forceRetry: false,
           })
           processed += 1

@@ -3,6 +3,7 @@ import type { ILockingModule } from "@medusajs/framework/types"
 import { MedusaError, Modules } from "@medusajs/framework/utils"
 import { emitOrderAccessRecoveryCodeCreatedEvent } from "../../../../platform/events"
 import { isPlatformPluginEnabled } from "../../../../platform/runtime"
+import { resolveConfiguredOrderAccessProviderCode } from "../../../../platform-adapters/order-access"
 import { resolveGuestOrderAccessService } from "../../../../platform-adapters/services"
 import { emitAuditLog } from "../../../../utils/audit-log"
 import {
@@ -22,8 +23,9 @@ export const POST = async (
   res: MedusaResponse
 ) => {
   const body = (req.validatedBody || req.body) as RecoverOrderBody
+  const orderAccessProviderCode = resolveConfiguredOrderAccessProviderCode()
 
-  if (!isPlatformPluginEnabled("guest-order-access")) {
+  if (!isPlatformPluginEnabled(orderAccessProviderCode)) {
     localizedError(req, res, 503, "orderAccess.guestUnavailable")
     return
   }

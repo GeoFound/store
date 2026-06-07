@@ -1,4 +1,3 @@
-import * as medusaCommerceBackend from "./commerce-medusa"
 import type {
   AfterSale,
   AnalyticsCheckoutContext,
@@ -94,45 +93,163 @@ export type CommerceBackend = {
 const COMMERCE_BACKEND_NAME =
   process.env.NEXT_PUBLIC_COMMERCE_BACKEND?.trim() || "medusa"
 
-const commerceBackends: Record<string, CommerceBackend> = {
-  medusa: medusaCommerceBackend,
+type CommerceBackendLoader = () => Promise<CommerceBackend>
+
+const commerceBackendLoaders: Record<string, CommerceBackendLoader> = {
+  medusa: async () => import("./commerce-medusa"),
 }
 
-const commerceBackend = resolveCommerceBackend(COMMERCE_BACKEND_NAME)
+let commerceBackendPromise: Promise<CommerceBackend> | null = null
 
-function resolveCommerceBackend(name: string): CommerceBackend {
-  const backend = commerceBackends[name]
+export function listCommerceBackendNames() {
+  return Object.keys(commerceBackendLoaders)
+}
 
-  if (!backend) {
+async function resolveCommerceBackend(name: string): Promise<CommerceBackend> {
+  const loader = commerceBackendLoaders[name]
+
+  if (!loader) {
     throw new Error(
       `Unsupported commerce backend "${name}". Expected one of: ${Object.keys(
-        commerceBackends
+        commerceBackendLoaders
       ).join(", ")}`
     )
   }
 
-  return backend
+  return loader()
 }
 
-export const listProducts = commerceBackend.listProducts
-export const retrieveProduct = commerceBackend.retrieveProduct
-export const listRegions = commerceBackend.listRegions
-export const getDefaultRegionId = commerceBackend.getDefaultRegionId
-export const createCart = commerceBackend.createCart
-export const retrieveCart = commerceBackend.retrieveCart
-export const addLineItem = commerceBackend.addLineItem
-export const updateLineItem = commerceBackend.updateLineItem
-export const deleteLineItem = commerceBackend.deleteLineItem
-export const updateCartEmail = commerceBackend.updateCartEmail
-export const listPaymentMethods = commerceBackend.listPaymentMethods
-export const createCartPayment = commerceBackend.createCartPayment
-export const retrievePaymentAttempt = commerceBackend.retrievePaymentAttempt
-export const claimOrderAccess = commerceBackend.claimOrderAccess
-export const retrieveDelivery = commerceBackend.retrieveDelivery
-export const confirmDelivery = commerceBackend.confirmDelivery
-export const retrieveOrder = commerceBackend.retrieveOrder
-export const confirmOrderDelivery = commerceBackend.confirmOrderDelivery
-export const createOrderAfterSale = commerceBackend.createOrderAfterSale
-export const recoverOrder = commerceBackend.recoverOrder
-export const verifyOrderRecovery = commerceBackend.verifyOrderRecovery
-export const createAfterSale = commerceBackend.createAfterSale
+async function getCommerceBackend() {
+  commerceBackendPromise ??= resolveCommerceBackend(COMMERCE_BACKEND_NAME)
+  return commerceBackendPromise
+}
+
+export async function listProducts() {
+  return (await getCommerceBackend()).listProducts()
+}
+
+export async function retrieveProduct(handle: string) {
+  return (await getCommerceBackend()).retrieveProduct(handle)
+}
+
+export async function listRegions() {
+  return (await getCommerceBackend()).listRegions()
+}
+
+export async function getDefaultRegionId() {
+  return (await getCommerceBackend()).getDefaultRegionId()
+}
+
+export async function createCart() {
+  return (await getCommerceBackend()).createCart()
+}
+
+export async function retrieveCart(cartId: string) {
+  return (await getCommerceBackend()).retrieveCart(cartId)
+}
+
+export async function addLineItem(input: {
+  cartId: string
+  variantId: string
+  quantity: number
+}) {
+  return (await getCommerceBackend()).addLineItem(input)
+}
+
+export async function updateLineItem(input: {
+  cartId: string
+  lineItemId: string
+  quantity: number
+}) {
+  return (await getCommerceBackend()).updateLineItem(input)
+}
+
+export async function deleteLineItem(input: {
+  cartId: string
+  lineItemId: string
+}) {
+  return (await getCommerceBackend()).deleteLineItem(input)
+}
+
+export async function updateCartEmail(input: {
+  cartId: string
+  email: string
+}) {
+  return (await getCommerceBackend()).updateCartEmail(input)
+}
+
+export async function listPaymentMethods(input?: {
+  amount?: number
+  currency?: string
+}) {
+  return (await getCommerceBackend()).listPaymentMethods(input)
+}
+
+export async function createCartPayment(input: {
+  cartId: string
+  paymentMethod: PaymentMethod["code"]
+  marketing?: MarketingCheckoutInput
+  analytics?: AnalyticsCheckoutContext
+}) {
+  return (await getCommerceBackend()).createCartPayment(input)
+}
+
+export async function retrievePaymentAttempt(id: string) {
+  return (await getCommerceBackend()).retrievePaymentAttempt(id)
+}
+
+export async function claimOrderAccess(input: {
+  attemptId: string
+  claimToken: string
+}) {
+  return (await getCommerceBackend()).claimOrderAccess(input)
+}
+
+export async function retrieveDelivery(accessToken: string) {
+  return (await getCommerceBackend()).retrieveDelivery(accessToken)
+}
+
+export async function confirmDelivery(accessToken: string) {
+  return (await getCommerceBackend()).confirmDelivery(accessToken)
+}
+
+export async function retrieveOrder(accessToken: string) {
+  return (await getCommerceBackend()).retrieveOrder(accessToken)
+}
+
+export async function confirmOrderDelivery(input: {
+  accessToken: string
+  deliveryId: string
+}) {
+  return (await getCommerceBackend()).confirmOrderDelivery(input)
+}
+
+export async function createOrderAfterSale(input: {
+  accessToken: string
+  deliveryId: string
+  email?: string
+  reason: AfterSale["reason"]
+  message: string
+}) {
+  return (await getCommerceBackend()).createOrderAfterSale(input)
+}
+
+export async function recoverOrder(input: { email: string; orderId: string }) {
+  return (await getCommerceBackend()).recoverOrder(input)
+}
+
+export async function verifyOrderRecovery(input: {
+  orderId: string
+  code: string
+}) {
+  return (await getCommerceBackend()).verifyOrderRecovery(input)
+}
+
+export async function createAfterSale(input: {
+  accessToken: string
+  email?: string
+  reason: AfterSale["reason"]
+  message: string
+}) {
+  return (await getCommerceBackend()).createAfterSale(input)
+}

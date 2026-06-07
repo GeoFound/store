@@ -3,6 +3,7 @@ import {
   resetPlatformObservabilityForTests,
 } from "../platform/observability"
 import { installPlatformRuntimeBootstrap } from "../platform/runtime"
+import { restrictPlatformHookInput } from "./backend-context"
 import { registerDefaultPlatformCapabilities } from "./defaults"
 import {
   ensureSupportAuditHooksRegistered,
@@ -71,4 +72,5 @@ installPlatformRuntimeBootstrap({
   registerDefaultCapabilities: registerDefaultPlatformCapabilities,
   ensureIntegrationsRegistered: ensurePlatformIntegrationsRegistered,
   resetIntegrationsForTests: resetPlatformIntegrationsForTests,
+  restrictHookInput: restrictPlatformHookInput,
 })

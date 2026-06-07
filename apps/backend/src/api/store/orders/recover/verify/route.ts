@@ -2,9 +2,12 @@ import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import type { ILockingModule } from "@medusajs/framework/types"
 import { Modules } from "@medusajs/framework/utils"
 import { emitOrderAccessTokenIssuedEvent } from "../../../../../platform/events"
-import { getOrderAccessProvider } from "../../../../../platform/order-access"
+import { createOrderAccessProviderScope } from "../../../../../platform-adapters/backend-context"
+import {
+  resolveConfiguredOrderAccessProviderCode,
+  resolveOrderAccessProviderOrThrow,
+} from "../../../../../platform-adapters/order-access"
 import { resolveGuestOrderAccessService } from "../../../../../platform-adapters/services"
-import { localizedError } from "../../../../../utils/localized-response"
 import { getRequestAuditContext } from "../../../../../utils/request-audit"
 import { retrieveStoreOrderDetail } from "../../../../../utils/store-order"
 
@@ -19,15 +22,12 @@ export const POST = async (
 ) => {
   const body = (req.validatedBody || req.body) as VerifyRecoveryBody
 
-  const orderAccess = getOrderAccessProvider("guest-order-access")
-
-  if (!orderAccess) {
-    localizedError(req, res, 503, "orderAccess.providerUnavailable")
-    return
-  }
+  const orderAccessProviderCode = resolveConfiguredOrderAccessProviderCode()
+  const orderAccess = resolveOrderAccessProviderOrThrow(orderAccessProviderCode)
 
   const guestOrderAccess = resolveGuestOrderAccessService(req.scope)
   const locking: ILockingModule = req.scope.resolve(Modules.LOCKING)
+  const orderAccessScope = createOrderAccessProviderScope(req.scope)
   const { ipAddress, userAgent } = getRequestAuditContext(req)
   const order = await retrieveStoreOrderDetail(req.scope, body.order_id || "", [
     "id",
@@ -45,7 +45,7 @@ export const POST = async (
       })
 
       const issued = await orderAccess.issueToken({
-        scope: req.scope,
+        scope: orderAccessScope,
         orderId: String(order.id),
         customerEmail: String(order.email),
         purpose: "view_order",

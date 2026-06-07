@@ -1,5 +1,6 @@
 import type { PlatformCapabilityName } from "../platform/contracts"
 import { PLATFORM_CAPABILITIES } from "../platform/contracts"
+import { resolveConfiguredOrderAccessProviderCode } from "./order-access"
 import {
   configurePlatformRuntime,
   getPlatformRuntime,
@@ -233,10 +234,11 @@ function validateRequiredPaymentProvider(issues: string[]) {
 
 function validateRequiredOrderAccessProvider(issues: string[]) {
   const runtime = getPlatformRuntime()
+  const providerCode = resolveConfiguredOrderAccessProviderCode()
 
-  if (!runtime.resolveContract("order-access-provider", "guest-order-access")) {
+  if (!runtime.resolveContract("order-access-provider", providerCode)) {
     issues.push(
-      "order-access-provider:guest-order-access must be enabled for guest checkout recovery"
+      `order-access-provider:${providerCode} must be enabled for guest checkout recovery`
     )
   }
 }

@@ -3,12 +3,14 @@ import {
   getInventoryHandler,
   type InventoryReservation,
 } from "../../../platform/inventory"
+import { createInventoryHandlerScope } from "../../../platform-adapters/backend-context"
 
 export async function releaseInventoryReservations(
   container: MedusaContainer,
   reservations: InventoryReservation[]
 ) {
   const handledKeys = new Set<string>()
+  const inventoryScope = createInventoryHandlerScope(container)
 
   for (const reservation of reservations) {
     const handlerCode = requireReservationHandlerCode(reservation)
@@ -32,7 +34,7 @@ export async function releaseInventoryReservations(
     }
 
     await handler.releaseReservation({
-      scope: container,
+      scope: inventoryScope,
       reservationKey: reservation.reservation_key,
     })
   }

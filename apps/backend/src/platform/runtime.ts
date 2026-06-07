@@ -29,6 +29,7 @@ export type PlatformRuntimeBootstrap = {
   registerDefaultCapabilities?: (registry: PlatformRegistry) => PlatformRegistry
   ensureIntegrationsRegistered?: () => void
   resetIntegrationsForTests?: () => void
+  restrictHookInput?: (hook: PlatformHookName, input: unknown) => unknown
 }
 
 let runtimeRegistry: PlatformRegistry | null = null
@@ -145,7 +146,9 @@ export async function emitPlatformHook<T>(
   input: T
 ) {
   getPlatformRuntime()
-  await getPlatformHookRuntime().emitHook(hook, input)
+  const restrictedInput =
+    (runtimeBootstrap.restrictHookInput?.(hook, input) as T | undefined) ?? input
+  await getPlatformHookRuntime().emitHook(hook, restrictedInput)
 }
 
 export function isPlatformPluginEnabled(pluginId: string) {

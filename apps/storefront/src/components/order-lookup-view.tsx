@@ -18,9 +18,11 @@ import type {
   OrderDeliveryLookupResult,
   OrderLookupResult,
 } from "@/lib/types"
-
-const ORDER_ACCESS_TOKEN_SESSION_KEY = "store_session_order_access_token"
-const LEGACY_ORDER_ACCESS_TOKEN_KEY = "store_last_order_access_token"
+import {
+  consumeOrderAccessTokenFromUrl,
+  persistOrderAccessToken,
+  readInitialOrderAccessToken,
+} from "./order-access-token-storage"
 
 type LookupState =
   | {
@@ -34,29 +36,7 @@ type LookupState =
 
 export function OrderLookupView() {
   const searchParams = useSearchParams()
-  const [accessToken, setAccessToken] = useState(() => {
-    if (typeof window === "undefined") {
-      return ""
-    }
-
-    const params = new URLSearchParams(window.location.search)
-    const queryToken = params.get("access_token") || ""
-    const sessionToken =
-      window.sessionStorage.getItem(ORDER_ACCESS_TOKEN_SESSION_KEY) || ""
-    const legacyToken =
-      window.localStorage.getItem(LEGACY_ORDER_ACCESS_TOKEN_KEY) || ""
-    const resolvedToken = queryToken || sessionToken || legacyToken
-
-    if (resolvedToken) {
-      window.sessionStorage.setItem(
-        ORDER_ACCESS_TOKEN_SESSION_KEY,
-        resolvedToken
-      )
-      window.localStorage.removeItem(LEGACY_ORDER_ACCESS_TOKEN_KEY)
-    }
-
-    return resolvedToken
-  })
+  const [accessToken, setAccessToken] = useState(readInitialOrderAccessToken)
   const [lookup, setLookup] = useState<LookupState | null>(null)
   const [loading, setLoading] = useState(false)
   const [confirmingDeliveryId, setConfirmingDeliveryId] = useState("")
@@ -86,27 +66,7 @@ export function OrderLookupView() {
     afterSaleDeliveryId || orderDeliveries[0]?.delivery.id || ""
 
   useEffect(() => {
-    const url = new URL(window.location.href)
-    const tokenInQuery = url.searchParams.get("access_token")
-
-    if (!tokenInQuery) {
-      return
-    }
-
-    const normalizedToken = tokenInQuery.trim()
-
-    if (normalizedToken) {
-      window.sessionStorage.setItem(
-        ORDER_ACCESS_TOKEN_SESSION_KEY,
-        normalizedToken
-      )
-      window.localStorage.removeItem(LEGACY_ORDER_ACCESS_TOKEN_KEY)
-    }
-
-    url.searchParams.delete("access_token")
-    const nextQuery = url.searchParams.toString()
-    const nextUrl = `${url.pathname}${nextQuery ? `?${nextQuery}` : ""}${url.hash}`
-    window.history.replaceState({}, "", nextUrl)
+    consumeOrderAccessTokenFromUrl()
   }, [searchParams])
 
   useEffect(() => {
@@ -158,11 +118,7 @@ export function OrderLookupView() {
         orderId: recoveryOrderId.trim(),
         code: recoveryCode.trim(),
       })
-      window.sessionStorage.setItem(
-        ORDER_ACCESS_TOKEN_SESSION_KEY,
-        verified.access_token
-      )
-      window.localStorage.removeItem(LEGACY_ORDER_ACCESS_TOKEN_KEY)
+      persistOrderAccessToken(verified.access_token)
       setAccessToken(verified.access_token)
       await loadLookup(verified.access_token)
       setMessage("Order access restored.")
@@ -532,8 +488,7 @@ export function OrderLookupView() {
           kind: "order",
           data: result,
         })
-        window.sessionStorage.setItem(ORDER_ACCESS_TOKEN_SESSION_KEY, token)
-        window.localStorage.removeItem(LEGACY_ORDER_ACCESS_TOKEN_KEY)
+        persistOrderAccessToken(token)
       }
       setAfterSale(null)
     } catch (err) {

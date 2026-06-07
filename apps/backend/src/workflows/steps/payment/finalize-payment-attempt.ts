@@ -17,9 +17,17 @@ import {
 } from "../../../platform/events"
 import { getDeliveryHandler } from "../../../platform/delivery"
 import { getInventoryHandler } from "../../../platform/inventory"
-import { getOrderAccessProvider } from "../../../platform/order-access"
 import { ensurePlatformIntegrationsRegistered } from "../../../platform-adapters/integrations"
 import { resolvePaymentRouterService } from "../../../platform-adapters/services"
+import {
+  createDeliveryHandlerScope,
+  createInventoryHandlerScope,
+  createOrderAccessProviderScope,
+} from "../../../platform-adapters/backend-context"
+import {
+  requireAttemptOrderAccessProviderCode,
+  resolveOrderAccessProviderOrThrow,
+} from "../../../platform-adapters/order-access"
 
 export type FinalizePaymentAttemptStepInput =
   | {
@@ -42,6 +50,9 @@ export const finalizePaymentAttemptStep = createStep(
 
     const paymentRouter = resolvePaymentRouterService(container)
     const locking = container.resolve(Modules.LOCKING)
+    const inventoryScope = createInventoryHandlerScope(container)
+    const deliveryScope = createDeliveryHandlerScope(container)
+    const orderAccessScope = createOrderAccessProviderScope(container)
 
     const currentAttempt =
       "attemptId" in input
@@ -130,7 +141,7 @@ export const finalizePaymentAttemptStep = createStep(
             }
 
             await handler.finalizeReservation({
-              scope: container,
+              scope: inventoryScope,
               reservation: {
                 ...reservation,
                 handler_code: handlerCode,
@@ -154,7 +165,7 @@ export const finalizePaymentAttemptStep = createStep(
               }
 
               const deliveryResult = await deliveryHandler.createDelivery({
-                scope: container,
+                scope: deliveryScope,
                 orderId: order.id,
                 cartId: updatedAttempt.cart_id || undefined,
                 paymentAttemptId: updatedAttempt.id,
@@ -237,7 +248,7 @@ export const finalizePaymentAttemptStep = createStep(
 
             const inlinePayload = resolveInlineDeliveryPayload(deliveryMetadata)
             const deliveryResult = await deliveryHandler.createDelivery({
-              scope: container,
+              scope: deliveryScope,
               orderId: order.id,
               cartId: updatedAttempt.cart_id || undefined,
               paymentAttemptId: updatedAttempt.id,
@@ -276,16 +287,14 @@ export const finalizePaymentAttemptStep = createStep(
             })
           }
 
-          const orderAccess = getOrderAccessProvider("guest-order-access")
-
-          if (!orderAccess) {
-            throw new Error(
-              "Order access provider guest-order-access is not registered"
-            )
-          }
+          const orderAccessProviderCode = requireAttemptOrderAccessProviderCode(
+            updatedAttempt.response_payload
+          )
+          const orderAccess =
+            resolveOrderAccessProviderOrThrow(orderAccessProviderCode)
 
           await orderAccess.revokeActiveTokens({
-            scope: container,
+            scope: orderAccessScope,
             orderId: order.id,
             purpose: "view_order",
           })

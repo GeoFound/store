@@ -7,6 +7,8 @@ import { MedusaError } from "@medusajs/framework/utils"
 import { resolveProductFulfillmentPolicy } from "../../../platform/delivery"
 import { emitPaymentAttemptReservedEvent } from "../../../platform/events"
 import { ensurePlatformIntegrationsRegistered } from "../../../platform-adapters/integrations"
+import { createInventoryHandlerScope } from "../../../platform-adapters/backend-context"
+import { resolveConfiguredOrderAccessProviderCode } from "../../../platform-adapters/order-access"
 import { handlePaymentAttemptClosed } from "../../../platform/attempt-lifecycle"
 import {
   getCartItemMetadata,
@@ -42,6 +44,8 @@ export const reserveCartInventoryStep = createStep(
     ensurePlatformIntegrationsRegistered()
 
     const paymentRouter = resolvePaymentRouterService(container)
+    const inventoryScope = createInventoryHandlerScope(container)
+    const orderAccessProviderCode = resolveConfiguredOrderAccessProviderCode()
     const reservations: InventoryReservation[] = []
     const fulfillmentItems: FulfillmentItemSummary[] = []
 
@@ -150,7 +154,7 @@ export const reserveCartInventoryStep = createStep(
         }
 
         const reserved = await handler.reserve({
-          scope: container,
+          scope: inventoryScope,
           cartId: input.cartId,
           attemptId: input.attemptId,
           item: rawItem,
@@ -204,7 +208,10 @@ export const reserveCartInventoryStep = createStep(
           inventory_reservations: reservations,
           fulfillment_items: fulfillmentItems,
         },
-        claimToken
+        claimToken,
+        {
+          orderAccessProviderCode,
+        }
       )
 
       const attempt = await paymentRouter.updatePaymentAttempts({

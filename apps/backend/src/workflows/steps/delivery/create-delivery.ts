@@ -7,6 +7,7 @@ import {
 } from "../../../platform/events"
 import { resolveDeliveryHandlerCode } from "../../../platform/delivery"
 import { ensurePlatformIntegrationsRegistered } from "../../../platform-adapters/integrations"
+import { createDeliveryHandlerScope } from "../../../platform-adapters/backend-context"
 import { resolveProductTemplate } from "../../../platform/product-templates"
 import {
   resolveDigitalDeliveryService,
@@ -41,6 +42,7 @@ export const createDeliveryStep = createStep(
 
     const deliveryService = resolveDigitalDeliveryService(container)
     const paymentRouter = resolvePaymentRouterService(container)
+    const deliveryScope = createDeliveryHandlerScope(container)
 
     const deliveryMetadata = {
       ...(input.metadata || {}),
@@ -74,7 +76,7 @@ export const createDeliveryStep = createStep(
     const orderId = input.orderId || paymentAttempt?.order_id || undefined
 
     const result = await deliveryService.createDelivery({
-      scope: container,
+      scope: deliveryScope,
       deliveryId: input.deliveryId,
       orderId,
       cartId: input.cartId,

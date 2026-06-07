@@ -27,6 +27,7 @@ export type PaymentAttemptResponsePayload = {
   instructions?: unknown
   inventory_reservations?: InventoryReservationSummary[]
   fulfillment_items?: FulfillmentItemSummary[]
+  order_access_provider_code?: string | null
   order_access_claim_token_hash?: string | null
   order_access_claim_token_hint?: string | null
   order_access_claimed_at?: string | null
@@ -94,12 +95,24 @@ export function extractFulfillmentItems(
 
 export function attachClaimToken(
   payload: unknown,
-  claimToken: string
+  claimToken: string,
+  input: {
+    orderAccessProviderCode: string
+  }
 ): PaymentAttemptResponsePayload {
   const normalized = normalizeAttemptPayload(payload)
+  const orderAccessProviderCode = normalizeText(input.orderAccessProviderCode)
+
+  if (!orderAccessProviderCode) {
+    throw new MedusaError(
+      MedusaError.Types.INVALID_DATA,
+      "orderAccessProviderCode is required"
+    )
+  }
 
   return {
     ...normalized,
+    order_access_provider_code: orderAccessProviderCode,
     order_access_claim_token_hash: hashToken(claimToken),
     order_access_claim_token_hint: createTokenHint(claimToken),
     order_access_claimed_at: null,
@@ -217,4 +230,8 @@ export function recordFailedClaimAttempt(
       ? new Date(now.getTime() + blockSeconds * 1000).toISOString()
       : normalized.order_access_claim_blocked_until || null,
   }
+}
+
+function normalizeText(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : ""
 }

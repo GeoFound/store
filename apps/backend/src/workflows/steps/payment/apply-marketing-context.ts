@@ -9,6 +9,7 @@ import { resolveMarketingContext } from "../../../platform/marketing"
 import {
   ensurePlatformIntegrationsRegistered,
 } from "../../../platform-adapters/integrations"
+import { createMarketingStrategyScope } from "../../../platform-adapters/backend-context"
 import { isPlatformPluginEnabled } from "../../../platform/runtime"
 import {
   resolveMarketingEngineService,
@@ -35,6 +36,7 @@ export const applyMarketingContextStep = createStep(
     ensurePlatformIntegrationsRegistered()
 
     const paymentRouter = resolvePaymentRouterService(container)
+    const marketingStrategyScope = createMarketingStrategyScope(container)
 
     if (!isPlatformPluginEnabled("marketing-engine")) {
       const attempt = await paymentRouter.retrievePaymentAttempt(input.attemptId)
@@ -50,7 +52,7 @@ export const applyMarketingContextStep = createStep(
     try {
       const normalizedContext = normalizeCheckoutContext(input.context)
       const resolved = await resolveMarketingContext({
-        scope: container,
+        scope: marketingStrategyScope,
         attemptId: input.attemptId,
         cartId: input.cartId,
         amount: input.amount,

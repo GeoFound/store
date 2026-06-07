@@ -81,8 +81,11 @@ describe("payment attempt payload utils", () => {
 
   it("stores and consumes claim tokens safely", () => {
     const claimToken = "claim_1234567890"
-    const payload = attachClaimToken({}, claimToken)
+    const payload = attachClaimToken({}, claimToken, {
+      orderAccessProviderCode: "guest-order-access",
+    })
 
+    expect(payload.order_access_provider_code).toBe("guest-order-access")
     expect(payload.order_access_claimed_at).toBeNull()
     expect(payload.order_access_claim_token_hint).toBe(claimToken.slice(-6))
     expect(() => assertClaimToken(payload, claimToken)).not.toThrow()

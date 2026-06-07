@@ -23,15 +23,15 @@ import type {
   PaymentAttempt,
   PaymentMethod,
 } from "@/lib/types"
+import {
+  clearPendingPaymentState,
+  persistPendingPaymentState,
+  readPendingPaymentState,
+} from "./checkout-pending-payment-storage"
 
 const CART_ID_KEY = "store_cart_id"
 const ORDER_ACCESS_TOKEN_SESSION_KEY = "store_session_order_access_token"
 const LEGACY_ORDER_ACCESS_TOKEN_KEY = "store_last_order_access_token"
-const PENDING_PAYMENT_ATTEMPT_ID_KEY = "store_pending_payment_attempt_id"
-const PENDING_PAYMENT_CLAIM_TOKEN_KEY = "store_pending_payment_claim_token"
-const PENDING_PAYMENT_INSTRUCTIONS_KEY = "store_pending_payment_instructions"
-const PENDING_PAYMENT_STORAGE_VERSION_KEY = "store_pending_payment_storage_version"
-const PENDING_PAYMENT_STORAGE_VERSION = "session-v1"
 
 export function CheckoutView() {
   const [cart, setCart] = useState<Cart | null>(null)
@@ -589,83 +589,6 @@ export function CheckoutView() {
       </aside>
     </div>
   )
-}
-
-function persistPendingPaymentState(
-  attemptId: string,
-  claimToken: string,
-  instructions: ManualPaymentInstructions | null
-) {
-  window.sessionStorage.setItem(
-    PENDING_PAYMENT_STORAGE_VERSION_KEY,
-    PENDING_PAYMENT_STORAGE_VERSION
-  )
-  window.sessionStorage.setItem(PENDING_PAYMENT_ATTEMPT_ID_KEY, attemptId)
-  window.sessionStorage.setItem(PENDING_PAYMENT_CLAIM_TOKEN_KEY, claimToken)
-
-  if (instructions) {
-    window.sessionStorage.setItem(
-      PENDING_PAYMENT_INSTRUCTIONS_KEY,
-      JSON.stringify(instructions)
-    )
-  }
-
-  clearLegacyPendingPaymentState()
-}
-
-function clearPendingPaymentState() {
-  window.sessionStorage.removeItem(PENDING_PAYMENT_STORAGE_VERSION_KEY)
-  window.sessionStorage.removeItem(PENDING_PAYMENT_ATTEMPT_ID_KEY)
-  window.sessionStorage.removeItem(PENDING_PAYMENT_CLAIM_TOKEN_KEY)
-  window.sessionStorage.removeItem(PENDING_PAYMENT_INSTRUCTIONS_KEY)
-  clearLegacyPendingPaymentState()
-}
-
-function clearLegacyPendingPaymentState() {
-  window.localStorage.removeItem(PENDING_PAYMENT_ATTEMPT_ID_KEY)
-  window.localStorage.removeItem(PENDING_PAYMENT_CLAIM_TOKEN_KEY)
-  window.localStorage.removeItem(PENDING_PAYMENT_INSTRUCTIONS_KEY)
-}
-
-function readPendingPaymentState() {
-  const attemptId =
-    window.sessionStorage.getItem(PENDING_PAYMENT_ATTEMPT_ID_KEY) ||
-    window.localStorage.getItem(PENDING_PAYMENT_ATTEMPT_ID_KEY) ||
-    ""
-  const claimToken =
-    window.sessionStorage.getItem(PENDING_PAYMENT_CLAIM_TOKEN_KEY) ||
-    window.localStorage.getItem(PENDING_PAYMENT_CLAIM_TOKEN_KEY) ||
-    ""
-  const instructions =
-    window.sessionStorage.getItem(PENDING_PAYMENT_INSTRUCTIONS_KEY) ||
-    window.localStorage.getItem(PENDING_PAYMENT_INSTRUCTIONS_KEY) ||
-    ""
-
-  if (
-    window.localStorage.getItem(PENDING_PAYMENT_ATTEMPT_ID_KEY) ||
-    window.localStorage.getItem(PENDING_PAYMENT_CLAIM_TOKEN_KEY) ||
-    window.localStorage.getItem(PENDING_PAYMENT_INSTRUCTIONS_KEY)
-  ) {
-    if (attemptId) {
-      window.sessionStorage.setItem(PENDING_PAYMENT_ATTEMPT_ID_KEY, attemptId)
-    }
-
-    if (claimToken) {
-      window.sessionStorage.setItem(PENDING_PAYMENT_CLAIM_TOKEN_KEY, claimToken)
-    }
-
-    if (instructions) {
-      window.sessionStorage.setItem(PENDING_PAYMENT_INSTRUCTIONS_KEY, instructions)
-    }
-
-    clearLegacyPendingPaymentState()
-  }
-
-  return {
-    attemptId,
-    claimToken,
-    instructions,
-  }
 }
 
 function normalizeResolvedMarketing(value: unknown): MarketingResolvedContext | null {

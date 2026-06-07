@@ -9,8 +9,6 @@ import {
   type SupplierMappingSnapshot,
   type SupplierProvider,
 } from "../../platform/supplier"
-import { DIGITAL_DELIVERY_MODULE } from "../digital-delivery"
-import type DigitalDeliveryModuleService from "../digital-delivery/service"
 import SupplierProcurementOrder from "./models/supplier-procurement-order"
 import SupplierProductMapping from "./models/supplier-product-mapping"
 import type {
@@ -24,6 +22,11 @@ import type {
 
 type SupplierProcurementOrderRecord = Record<string, any>
 type SupplierProductMappingRecord = Record<string, any>
+export type PreparedSupplierDeliveryRecord = {
+  procurement: SupplierProcurementOrderRecord
+  deliveryInput: CreateSupplierDeliveryInput
+}
+
 type ResolvedSupplierContext = {
   scope: NonNullable<CreateSupplierDeliveryInput["scope"]>
   idempotencyKey: string
@@ -228,7 +231,7 @@ class SupplierProcurementModuleService extends MedusaService({
       context,
     })
 
-    return this.createDeliveryRecord(input, procurement.order, {
+    return this.prepareDeliveryRecord(input, procurement.order, {
       deliveryPayload: procurement.deliveryPayload,
       deliveryStatus: procurement.deliveryStatus,
       message: procurement.message,
@@ -276,32 +279,29 @@ class SupplierProcurementModuleService extends MedusaService({
       }
     }
 
-    const result = await this.createDeliveryRecord(
-      {
-        scope: input.scope,
-        deliveryId,
-        orderId: toOptionalText(order.order_id) || undefined,
-        cartId: toOptionalText(order.cart_id) || undefined,
-        paymentAttemptId: toOptionalText(order.payment_attempt_id) || undefined,
-        orderItemId: toOptionalText(order.order_item_id) || undefined,
-        productVariantId: toOptionalText(order.product_variant_id) || undefined,
-        deliveryHandlerCode: "supplier-procurement",
-        deliveryStatus: "delivered",
-        deliveredBy: "system",
-        metadata: normalizeRecord(order.metadata_json),
-      },
-      procurement.order,
-      {
-        deliveryPayload: procurement.deliveryPayload,
-        deliveryStatus: procurement.deliveryStatus,
-        message: procurement.message,
-      }
-    )
-
     return {
       procurement: procurement.order,
-      delivery: result.delivery,
-      accessToken: result.accessToken,
+      delivery: this.prepareDeliveryRecord(
+        {
+          scope: input.scope,
+          deliveryId,
+          orderId: toOptionalText(order.order_id) || undefined,
+          cartId: toOptionalText(order.cart_id) || undefined,
+          paymentAttemptId: toOptionalText(order.payment_attempt_id) || undefined,
+          orderItemId: toOptionalText(order.order_item_id) || undefined,
+          productVariantId: toOptionalText(order.product_variant_id) || undefined,
+          deliveryHandlerCode: "supplier-procurement",
+          deliveryStatus: "delivered",
+          deliveredBy: "system",
+          metadata: normalizeRecord(order.metadata_json),
+        },
+        procurement.order,
+        {
+          deliveryPayload: procurement.deliveryPayload,
+          deliveryStatus: procurement.deliveryStatus,
+          message: procurement.message,
+        }
+      ),
     }
   }
 
@@ -486,7 +486,29 @@ class SupplierProcurementModuleService extends MedusaService({
     )
   }
 
-  private async createDeliveryRecord(
+  async rememberDeliveryRecord(input: {
+    procurementOrderId: string
+    deliveryId: string
+  }) {
+    const order = await this.retrieveSupplierProcurementOrder(
+      input.procurementOrderId
+    )
+    const orderMetadata = normalizeRecord(order.metadata_json)
+
+    if (orderMetadata.delivery_id === input.deliveryId) {
+      return order
+    }
+
+    return this.updateSupplierProcurementOrders({
+      id: input.procurementOrderId,
+      metadata_json: {
+        ...orderMetadata,
+        delivery_id: input.deliveryId,
+      },
+    })
+  }
+
+  private prepareDeliveryRecord(
     input: CreateSupplierDeliveryInput,
     order: SupplierProcurementOrderRecord,
     result: {
@@ -494,7 +516,7 @@ class SupplierProcurementModuleService extends MedusaService({
       deliveryStatus: "pending" | "delivered"
       message?: string | null
     }
-  ) {
+  ): PreparedSupplierDeliveryRecord {
     if (!input.scope) {
       throw new MedusaError(
         MedusaError.Types.INVALID_DATA,
@@ -502,9 +524,6 @@ class SupplierProcurementModuleService extends MedusaService({
       )
     }
 
-    const deliveryService: DigitalDeliveryModuleService = input.scope.resolve(
-      DIGITAL_DELIVERY_MODULE
-    )
     const orderMetadata = normalizeRecord(order.metadata_json)
     const deliveryPayload =
       result.deliveryPayload ||
@@ -515,34 +534,24 @@ class SupplierProcurementModuleService extends MedusaService({
         supplier_provider: order.provider_code,
         supplier_provider_order_id: order.provider_order_id || null,
       } satisfies Record<string, unknown>)
-    const deliveryResult = await deliveryService.createManualDelivery({
-      ...input,
-      accountItemId: null,
-      deliveryHandlerCode: "supplier-procurement",
-      deliveryStatus: result.deliveryStatus,
-      deliveryPayload,
-      deliveredBy: input.deliveredBy || "system",
-      metadata: {
-        ...normalizeRecord(input.metadata),
-        ...orderMetadata,
-        supplier_procurement_order_id: order.id,
-        supplier_provider: order.provider_code,
-        supplier_provider_order_id: order.provider_order_id || null,
-      },
-    })
-
-    const deliveryId = toOptionalText(deliveryResult.delivery.id)
-    if (deliveryId && orderMetadata.delivery_id !== deliveryId) {
-      await this.updateSupplierProcurementOrders({
-        id: order.id,
-        metadata_json: {
+    return {
+      procurement: order,
+      deliveryInput: {
+        ...input,
+        accountItemId: null,
+        deliveryHandlerCode: "supplier-procurement",
+        deliveryStatus: result.deliveryStatus,
+        deliveryPayload,
+        deliveredBy: input.deliveredBy || "system",
+        metadata: {
+          ...normalizeRecord(input.metadata),
           ...orderMetadata,
-          delivery_id: deliveryId,
+          supplier_procurement_order_id: order.id,
+          supplier_provider: order.provider_code,
+          supplier_provider_order_id: order.provider_order_id || null,
         },
-      })
+      },
     }
-
-    return deliveryResult
   }
 
   private async resolveSupplierContext(

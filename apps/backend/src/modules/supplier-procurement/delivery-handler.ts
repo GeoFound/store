@@ -1,5 +1,7 @@
 import { MedusaError } from "@medusajs/framework/utils"
 import type { DeliveryHandler } from "../../platform/delivery"
+import { createSupplierProviderScope } from "../../platform-adapters/backend-context"
+import { createPreparedSupplierDeliveryRecord } from "../../platform-adapters/supplier-procurement"
 import { SUPPLIER_PROCUREMENT_MODULE } from "."
 import type SupplierProcurementModuleService from "./service"
 
@@ -17,7 +19,11 @@ export const supplierProcurementDeliveryHandler: DeliveryHandler = {
     const procurement: SupplierProcurementModuleService = input.scope.resolve(
       SUPPLIER_PROCUREMENT_MODULE
     )
+    const prepared = await procurement.createSupplierDelivery({
+      ...input,
+      scope: createSupplierProviderScope(input.scope),
+    })
 
-    return procurement.createSupplierDelivery(input)
+    return createPreparedSupplierDeliveryRecord(input.scope, prepared)
   },
 }
