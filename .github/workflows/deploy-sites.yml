@@ -138,29 +138,36 @@ jobs:
             exit 1
           fi
 
-          storefront_public_url=$(PROFILE_FILE="$profile_file" node -e '
-const fs = require("node:fs");
-const raw = fs.readFileSync(process.env.PROFILE_FILE, "utf8");
-const profile = JSON.parse(raw);
-const rawValue = String(profile?.domains?.storefront || "").trim();
-if (!rawValue) process.exit(1);
-const normalized = /^https?:\/\//i.test(rawValue) ? rawValue : `https://${rawValue}`;
-const parsed = new URL(normalized);
-process.stdout.write(`https://${parsed.host}`);
-')
-          api_public_url=$(PROFILE_FILE="$profile_file" node -e '
-const fs = require("node:fs");
-const raw = fs.readFileSync(process.env.PROFILE_FILE, "utf8");
-const profile = JSON.parse(raw);
-const rawValue = String(profile?.domains?.api || "").trim();
-if (!rawValue) process.exit(1);
-const normalized = /^https?:\/\//i.test(rawValue) ? rawValue : `https://${rawValue}`;
-const parsed = new URL(normalized);
-process.stdout.write(`https://${parsed.host}`);
-')
+          PROFILE_FILE="$profile_file" node <<'NODE' >> "$GITHUB_OUTPUT"
+          const fs = require("node:fs")
 
-          echo "storefront_public_url=$storefront_public_url" >> "$GITHUB_OUTPUT"
-          echo "api_public_url=$api_public_url" >> "$GITHUB_OUTPUT"
+          const raw = fs.readFileSync(process.env.PROFILE_FILE, "utf8")
+          const profile = JSON.parse(raw)
+
+          function normalizePublicUrl(value, fieldName) {
+            const rawValue = String(value || "").trim()
+            if (!rawValue) {
+              throw new Error(`${fieldName} is required`)
+            }
+
+            const normalized = /^https?:\/\//i.test(rawValue)
+              ? rawValue
+              : `https://${rawValue}`
+            const parsed = new URL(normalized)
+
+            return `https://${parsed.host}`
+          }
+
+          console.log(
+            `storefront_public_url=${normalizePublicUrl(
+              profile?.domains?.storefront,
+              "domains.storefront"
+            )}`
+          )
+          console.log(
+            `api_public_url=${normalizePublicUrl(profile?.domains?.api, "domains.api")}`
+          )
+          NODE
 
       - name: Read target secrets
         id: secrets
