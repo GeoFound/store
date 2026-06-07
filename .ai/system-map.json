@@ -1,0 +1,136 @@
+{
+  "version": "1.0.0",
+  "nodes": [
+    {
+      "id": "product",
+      "kind": "product",
+      "name": "Independent digital goods store",
+      "goal": "Sell and fulfill digital goods with recoverable guest access, auditable delivery, and production-grade operations.",
+      "evidence": ["docs/independent-store-spec.md", ".ai/system.json"]
+    },
+    {
+      "id": "repository",
+      "kind": "engineering-system",
+      "name": "single-store-digital-goods",
+      "goal": "Build, verify, deploy, and evolve the product through AI-first automation.",
+      "evidence": ["package.json", "AGENTS.md", ".ai/system.json"]
+    },
+    {
+      "id": "backend-platform-core",
+      "kind": "boundary",
+      "path": "apps/backend/src/platform",
+      "owns": ["contracts", "events", "registry", "runtime APIs"],
+      "mustNotOwn": ["Medusa framework imports", "module implementation imports"],
+      "verification": ["pnpm ai:doctor", "pnpm --dir apps/backend test:unit"]
+    },
+    {
+      "id": "backend-platform-adapters",
+      "kind": "adapter-layer",
+      "path": "apps/backend/src/platform-adapters",
+      "owns": ["built-in module registration", "Medusa service token adapters", "capability scopes"],
+      "verification": ["pnpm ai:doctor", "pnpm --dir apps/backend test:unit"]
+    },
+    {
+      "id": "payment-router",
+      "kind": "backend-module",
+      "path": "apps/backend/src/modules/payment-router",
+      "owns": ["payment attempts", "payment channels", "provider parsing", "webhook finalization entrypoints"],
+      "verification": ["pnpm --dir apps/backend test:unit", "pnpm deploy:regression"]
+    },
+    {
+      "id": "credential-inventory",
+      "kind": "backend-module",
+      "path": "apps/backend/src/modules/credential-inventory",
+      "owns": ["encrypted credentials", "reservation", "release", "sold and delivered state"],
+      "verification": ["pnpm --dir apps/backend test:unit", "pnpm acceptance:live"]
+    },
+    {
+      "id": "digital-delivery",
+      "kind": "backend-module",
+      "path": "apps/backend/src/modules/digital-delivery",
+      "owns": ["delivery records", "delivery payload snapshots", "delivery access tokens"],
+      "verification": ["pnpm --dir apps/backend test:unit", "pnpm acceptance:live"]
+    },
+    {
+      "id": "guest-order-access",
+      "kind": "backend-module",
+      "path": "apps/backend/src/modules/guest-order-access",
+      "owns": ["guest order access tokens", "recovery codes", "token failure controls"],
+      "verification": ["pnpm --dir apps/backend test:unit", "pnpm smoke:recovery"]
+    },
+    {
+      "id": "supplier-procurement",
+      "kind": "backend-module",
+      "path": "apps/backend/src/modules/supplier-procurement",
+      "owns": ["supplier mappings", "procurement state", "retry scheduling", "prepared delivery payloads"],
+      "mustNotOwn": ["digital delivery record persistence"],
+      "verification": ["pnpm --dir apps/backend test:unit", "pnpm ai:doctor"]
+    },
+    {
+      "id": "storefront-commerce-port",
+      "kind": "frontend-port",
+      "path": "apps/storefront/src/lib/commerce.ts",
+      "owns": ["backend-neutral commerce API used by UI"],
+      "verification": ["pnpm --dir apps/storefront test", "pnpm --dir apps/storefront lint"]
+    },
+    {
+      "id": "storefront-ui",
+      "kind": "frontend-app",
+      "path": "apps/storefront/src",
+      "owns": ["catalog", "cart", "checkout", "order lookup", "guest recovery UX"],
+      "mustNotOwn": ["database access", "credential decryption", "payment webhook handling"],
+      "verification": ["pnpm --dir apps/storefront test", "pnpm --dir apps/storefront lint"]
+    },
+    {
+      "id": "profile-system",
+      "kind": "configuration-system",
+      "path": "profiles/sites",
+      "owns": ["site environment profiles", "domain mapping", "runtime profile validation"],
+      "verification": ["pnpm profile:validate:all"]
+    },
+    {
+      "id": "ai-operating-system",
+      "kind": "automation-system",
+      "path": ".ai",
+      "owns": ["machine-readable context", "taskbook", "decision gates", "evidence policy", "review checklists"],
+      "verification": ["pnpm ai:doctor", "pnpm ai:status", "pnpm ai:evidence"]
+    }
+  ],
+  "flows": [
+    {
+      "id": "purchase-to-delivery",
+      "from": "storefront-ui",
+      "through": ["payment-router", "credential-inventory", "digital-delivery", "guest-order-access"],
+      "to": "product",
+      "evidence": ["pnpm acceptance:live", "pnpm deploy:regression"]
+    },
+    {
+      "id": "supplier-backed-fulfillment",
+      "from": "storefront-ui",
+      "through": ["payment-router", "supplier-procurement", "digital-delivery"],
+      "to": "product",
+      "evidence": ["pnpm --dir apps/backend test:unit", "pnpm ai:doctor"]
+    },
+    {
+      "id": "ai-maintenance",
+      "from": "ai-operating-system",
+      "through": ["backend-platform-core", "backend-platform-adapters", "profile-system"],
+      "to": "repository",
+      "evidence": ["pnpm ai:evidence:full", ".github/workflows/ai-maintenance.yml"]
+    }
+  ],
+  "rules": [
+    {
+      "id": "platform-core-is-contract-only",
+      "enforcedBy": ["pnpm ai:doctor", "apps/backend/src/platform/__tests__/decoupling.unit.spec.ts"]
+    },
+    {
+      "id": "human-review-is-not-evidence",
+      "enforcedBy": ["pnpm ai:doctor", ".ai/evidence-policy.json"]
+    },
+    {
+      "id": "production-needs-runtime-evidence",
+      "enforcedBy": ["pnpm ai:evidence:full", ".ai/evidence-policy.json"]
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+name: AI Maintenance Evidence
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "42 4 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.32.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate AI status
+        run: pnpm ai:status
+
+      - name: Generate full evidence
+        run: pnpm ai:evidence:full
+
+      - name: Upload AI trace
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-trace
+          path: .ai-trace
+          if-no-files-found: error

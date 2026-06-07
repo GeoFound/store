@@ -1,0 +1,14 @@
+{
+  "id": "ADR-0001",
+  "status": "accepted",
+  "date": "2026-06-07",
+  "title": "Use a machine-readable AI operating system for long-lived repository work",
+  "context": "The repository is expected to be maintained and extended primarily by AI. Human input is reserved for decisions, credentials, external actions, and risk acceptance.",
+  "decision": "Store AI operating rules, taskbook, evidence policy, system map, review checklists, and decision records as machine-readable JSON with executable validation scripts.",
+  "consequences": [
+    "AI cold starts should begin with pnpm ai:context and pnpm ai:doctor.",
+    "Human document review is not an acceptance gate.",
+    "Automation can fail early when machine-readable governance drifts."
+  ],
+  "evidence": ["AGENTS.md", ".ai/system.json", "scripts/ai/doctor.mjs"]
+}

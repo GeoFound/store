@@ -8,6 +8,11 @@
       "required": true
     },
     {
+      "id": "ai-status",
+      "command": ["pnpm", "ai:status"],
+      "required": true
+    },
+    {
       "id": "git-status",
       "command": ["git", "status", "--short"],
       "required": true,

@@ -99,8 +99,11 @@
   "coldStart": {
     "readFirst": [
       ".ai/system.json",
+      ".ai/system-map.json",
       ".ai/taskbook.json",
       ".ai/evidence-policy.json",
+      ".ai/decision-records",
+      ".ai/review-checklists",
       "docs/architecture/decoupling-boundaries.md",
       "docs/ops/production-runbook.md"
     ],
@@ -112,6 +115,7 @@
     "requiredPackageScripts": [
       "ai:context",
       "ai:doctor",
+      "ai:status",
       "ai:evidence",
       "ai:evidence:full",
       "check:ci",

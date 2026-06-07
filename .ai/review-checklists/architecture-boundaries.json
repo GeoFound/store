@@ -1,0 +1,32 @@
+{
+  "id": "architecture-boundaries",
+  "title": "Architecture boundary checklist",
+  "scope": "module boundary, platform adapter, provider, handler, or workflow changes",
+  "items": [
+    {
+      "id": "platform-core-clean",
+      "checkType": "command",
+      "command": ["pnpm", "ai:doctor"],
+      "evidenceRequired": "Platform core does not import backend framework or built-in modules."
+    },
+    {
+      "id": "capability-scope-limited",
+      "checkType": "source-inspection",
+      "paths": ["apps/backend/src/platform-adapters/backend-context.ts"],
+      "evidenceRequired": "Handlers receive declared service-token scopes, not arbitrary containers."
+    },
+    {
+      "id": "adapter-owns-binding",
+      "checkType": "source-inspection",
+      "paths": ["apps/backend/src/platform-adapters"],
+      "evidenceRequired": "Backend-specific module/service bindings live in adapters."
+    },
+    {
+      "id": "backend-unit-coverage",
+      "checkType": "command",
+      "command": ["pnpm", "--dir", "apps/backend", "test:unit"],
+      "evidenceRequired": "Backend unit tests pass after boundary changes."
+    }
+  ],
+  "humanGate": false
+}

@@ -48,6 +48,7 @@ pnpm dev:storefront
 ```bash
 pnpm ai:context
 pnpm ai:doctor
+pnpm ai:status
 pnpm check:ci
 pnpm dev:check
 pnpm acceptance

@@ -1,0 +1,14 @@
+{
+  "id": "ADR-0002",
+  "status": "accepted",
+  "date": "2026-06-07",
+  "title": "Prefer objective evidence over narrative or human review",
+  "context": "The product needs production-grade reliability, and the human collaborator does not want a workflow where unknown risks are hidden behind manual review.",
+  "decision": "Acceptance must be backed by runtime checks, automated tests, static validation, source inspection, or explicit human decisions recorded in conversation. Human review alone is not objective evidence.",
+  "consequences": [
+    "Every AI maintenance task should produce or reference machine-readable evidence.",
+    "Production checks that require live services must be marked as runtime-required instead of silently passing.",
+    "If a check cannot run, the evidence report must explain what external action is needed."
+  ],
+  "evidence": [".ai/evidence-policy.json", "scripts/ai/evidence.mjs"]
+}

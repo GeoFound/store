@@ -1,0 +1,26 @@
+{
+  "id": "routine-change",
+  "title": "Routine AI implementation checklist",
+  "scope": "bug fix, small feature, refactor, or test update",
+  "items": [
+    {
+      "id": "worktree-known",
+      "checkType": "command",
+      "command": ["git", "status", "--short"],
+      "evidenceRequired": "Worktree state inspected before and after edits."
+    },
+    {
+      "id": "focused-tests",
+      "checkType": "command",
+      "command": ["pnpm", "check:ci"],
+      "evidenceRequired": "Relevant automated checks passed."
+    },
+    {
+      "id": "machine-context-current",
+      "checkType": "command",
+      "command": ["pnpm", "ai:doctor"],
+      "evidenceRequired": "AI governance and boundary checks passed."
+    }
+  ],
+  "humanGate": false
+}

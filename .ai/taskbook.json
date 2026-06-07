@@ -6,8 +6,8 @@
       "goal": "Build a current repository and product context bundle before making changes.",
       "owner": "ai",
       "trigger": "new AI session, context compaction, or uncertain repo state",
-      "commands": ["pnpm ai:context", "pnpm ai:doctor"],
-      "evidence": ["JSON context output", "doctor ok=true"]
+      "commands": ["pnpm ai:context", "pnpm ai:doctor", "pnpm ai:status"],
+      "evidence": ["JSON context output", "doctor ok=true", "status ok=true"]
     },
     {
       "id": "routine-implementation",
@@ -38,8 +38,8 @@
       "goal": "Keep long-lived repo health visible through objective checks.",
       "owner": "ai",
       "trigger": "periodic maintenance or user asks to maintain repository",
-      "commands": ["pnpm ai:evidence", "pnpm check:ci"],
-      "evidence": ["machine-readable evidence report", "issues listed with next action"]
+      "commands": ["pnpm ai:status", "pnpm ai:evidence", "pnpm check:ci"],
+      "evidence": ["machine-readable status report", "machine-readable evidence report", "issues listed with next action"]
     }
   ]
 }

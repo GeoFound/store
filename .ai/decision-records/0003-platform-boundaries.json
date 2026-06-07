@@ -1,0 +1,18 @@
+{
+  "id": "ADR-0003",
+  "status": "accepted",
+  "date": "2026-06-07",
+  "title": "Keep platform core as contracts and move backend bindings to adapters",
+  "context": "Platform contracts need to support independent evolution of inventory, delivery, supplier, payment, marketing, analytics, and order access capabilities.",
+  "decision": "The platform core must not import Medusa framework packages or built-in modules. Built-in registration, service tokens, and capability scopes live in platform-adapters.",
+  "consequences": [
+    "Replacing a module should not require editing platform core exports.",
+    "Capability handlers receive restricted backend scopes rather than the raw container.",
+    "Platform boundary drift is treated as a machine-checkable failure."
+  ],
+  "evidence": [
+    "apps/backend/src/platform/__tests__/decoupling.unit.spec.ts",
+    "apps/backend/src/platform-adapters/backend-context.ts",
+    "pnpm ai:doctor"
+  ]
+}

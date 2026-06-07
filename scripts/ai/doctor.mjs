@@ -25,6 +25,23 @@ function exists(relativePath) {
   return fs.existsSync(path.join(root, relativePath))
 }
 
+function readJsonFiles(relativeDir) {
+  const absoluteDir = path.join(root, relativeDir)
+
+  if (!fs.existsSync(absoluteDir)) {
+    return []
+  }
+
+  return fs.readdirSync(absoluteDir)
+    .filter((name) => name.endsWith(".json"))
+    .sort()
+    .map((name) => ({
+      path: path.join(relativeDir, name),
+      data: readJson(path.join(relativeDir, name)),
+    }))
+    .filter((entry) => entry.data)
+}
+
 function sourceFiles(relativeDir) {
   const absoluteDir = path.join(root, relativeDir)
 
@@ -58,6 +75,9 @@ function assert(condition, issue) {
 const system = readJson(".ai/system.json")
 const taskbook = readJson(".ai/taskbook.json")
 const evidencePolicy = readJson(".ai/evidence-policy.json")
+const systemMap = readJson(".ai/system-map.json")
+const decisionRecords = readJsonFiles(".ai/decision-records")
+const reviewChecklists = readJsonFiles(".ai/review-checklists")
 const packageJson = readJson("package.json")
 
 if (system) {
@@ -105,6 +125,188 @@ if (system) {
       }
     }
   }
+}
+
+if (systemMap) {
+  const nodeIds = new Set()
+
+  assert(Array.isArray(systemMap.nodes) && systemMap.nodes.length > 0, {
+    id: "system-map.nodes-empty",
+    message: "System map must contain nodes.",
+  })
+  assert(Array.isArray(systemMap.flows), {
+    id: "system-map.flows-invalid",
+    message: "System map flows must be an array.",
+  })
+
+  for (const node of systemMap.nodes || []) {
+    assert(Boolean(node.id), {
+      id: "system-map.node-id-missing",
+      message: "System map node is missing id.",
+    })
+    assert(!nodeIds.has(node.id), {
+      id: "system-map.node-id-duplicate",
+      node: node.id,
+      message: "System map node id must be unique.",
+    })
+    nodeIds.add(node.id)
+
+    if (node.path) {
+      assert(exists(node.path), {
+        id: "system-map.node-path-missing",
+        node: node.id,
+        path: node.path,
+        message: "System map node path does not exist.",
+      })
+    }
+
+    assert(Array.isArray(node.verification || node.evidence), {
+      id: "system-map.node-evidence-missing",
+      node: node.id,
+      message: "System map node must declare verification or evidence.",
+    })
+  }
+
+  for (const flow of systemMap.flows || []) {
+    assert(Boolean(flow.id), {
+      id: "system-map.flow-id-missing",
+      message: "System map flow is missing id.",
+    })
+    assert(nodeIds.has(flow.from), {
+      id: "system-map.flow-from-invalid",
+      flow: flow.id,
+      node: flow.from,
+      message: "System map flow references an unknown from node.",
+    })
+    assert(nodeIds.has(flow.to), {
+      id: "system-map.flow-to-invalid",
+      flow: flow.id,
+      node: flow.to,
+      message: "System map flow references an unknown to node.",
+    })
+    for (const nodeId of flow.through || []) {
+      assert(nodeIds.has(nodeId), {
+        id: "system-map.flow-through-invalid",
+        flow: flow.id,
+        node: nodeId,
+        message: "System map flow references an unknown through node.",
+      })
+    }
+  }
+}
+
+const decisionIds = new Set()
+assert(decisionRecords.length > 0, {
+  id: "decision-records.empty",
+  message: "At least one machine-readable decision record is required.",
+})
+for (const record of decisionRecords) {
+  const data = record.data
+
+  assert(Boolean(data.id), {
+    id: "decision-record.id-missing",
+    path: record.path,
+    message: "Decision record is missing id.",
+  })
+  assert(!decisionIds.has(data.id), {
+    id: "decision-record.id-duplicate",
+    path: record.path,
+    decisionId: data.id,
+    message: "Decision record id must be unique.",
+  })
+  decisionIds.add(data.id)
+  assert(["proposed", "accepted", "superseded", "rejected"].includes(data.status), {
+    id: "decision-record.status-invalid",
+    path: record.path,
+    status: data.status,
+    message: "Decision record status is invalid.",
+  })
+  assert(Boolean(data.decision), {
+    id: "decision-record.decision-missing",
+    path: record.path,
+    message: "Decision record must include a decision.",
+  })
+  assert(Array.isArray(data.evidence) && data.evidence.length > 0, {
+    id: "decision-record.evidence-missing",
+    path: record.path,
+    message: "Decision record must include evidence references.",
+  })
+}
+
+const checklistIds = new Set()
+assert(reviewChecklists.length > 0, {
+  id: "review-checklists.empty",
+  message: "At least one machine-readable review checklist is required.",
+})
+for (const checklist of reviewChecklists) {
+  const data = checklist.data
+
+  assert(Boolean(data.id), {
+    id: "review-checklist.id-missing",
+    path: checklist.path,
+    message: "Review checklist is missing id.",
+  })
+  assert(!checklistIds.has(data.id), {
+    id: "review-checklist.id-duplicate",
+    path: checklist.path,
+    checklistId: data.id,
+    message: "Review checklist id must be unique.",
+  })
+  checklistIds.add(data.id)
+  assert(Array.isArray(data.items) && data.items.length > 0, {
+    id: "review-checklist.items-missing",
+    path: checklist.path,
+    message: "Review checklist must include items.",
+  })
+
+  for (const item of data.items || []) {
+    assert(Boolean(item.id), {
+      id: "review-checklist.item-id-missing",
+      path: checklist.path,
+      message: "Review checklist item is missing id.",
+    })
+    assert(Boolean(item.checkType), {
+      id: "review-checklist.item-type-missing",
+      path: checklist.path,
+      item: item.id,
+      message: "Review checklist item is missing checkType.",
+    })
+    assert(Boolean(item.evidenceRequired), {
+      id: "review-checklist.item-evidence-missing",
+      path: checklist.path,
+      item: item.id,
+      message: "Review checklist item must describe required evidence.",
+    })
+
+    if (item.checkType === "command") {
+      assert(Array.isArray(item.command) && item.command.length > 0, {
+        id: "review-checklist.item-command-invalid",
+        path: checklist.path,
+        item: item.id,
+        message: "Command checklist item must use an argv command array.",
+      })
+    }
+  }
+}
+
+assert(exists(".github/workflows/ai-maintenance.yml"), {
+  id: "workflow.ai-maintenance-missing",
+  message: "AI maintenance workflow is required.",
+})
+if (exists(".github/workflows/ai-maintenance.yml")) {
+  const workflow = fs.readFileSync(
+    path.join(root, ".github/workflows/ai-maintenance.yml"),
+    "utf8"
+  )
+
+  assert(workflow.includes("schedule:"), {
+    id: "workflow.ai-maintenance-schedule-missing",
+    message: "AI maintenance workflow must run on a schedule.",
+  })
+  assert(workflow.includes("pnpm ai:evidence:full"), {
+    id: "workflow.ai-maintenance-evidence-missing",
+    message: "AI maintenance workflow must run pnpm ai:evidence:full.",
+  })
 }
 
 if (taskbook) {

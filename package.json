@@ -18,6 +18,7 @@
     "dev:check:live": "bash scripts/dev-check.sh --standard --live",
     "ai:context": "node scripts/ai/context.mjs",
     "ai:doctor": "node scripts/ai/doctor.mjs",
+    "ai:status": "node scripts/ai/status.mjs --write",
     "ai:evidence": "node scripts/ai/evidence.mjs --write",
     "ai:evidence:full": "node scripts/ai/evidence.mjs --full --write",
     "health": "scripts/health-check.sh",

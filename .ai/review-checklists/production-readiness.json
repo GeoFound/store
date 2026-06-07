@@ -1,0 +1,40 @@
+{
+  "id": "production-readiness",
+  "title": "Production readiness checklist",
+  "scope": "go-live, deployment pipeline change, domain change, provider launch, or production-risk change",
+  "items": [
+    {
+      "id": "full-evidence",
+      "checkType": "command",
+      "command": ["pnpm", "ai:evidence:full"],
+      "evidenceRequired": "Full machine-readable evidence report exists and is ok=true."
+    },
+    {
+      "id": "runtime-health",
+      "checkType": "command",
+      "command": ["pnpm", "deploy:health"],
+      "requiresRuntime": true,
+      "evidenceRequired": "Public or target runtime health gate passed."
+    },
+    {
+      "id": "edge-preflight",
+      "checkType": "command",
+      "command": ["pnpm", "deploy:edge"],
+      "requiresRuntime": true,
+      "evidenceRequired": "Domain, HTTPS, headers, and edge expectations passed."
+    },
+    {
+      "id": "regression-smoke",
+      "checkType": "command",
+      "command": ["pnpm", "deploy:regression"],
+      "requiresRuntime": true,
+      "evidenceRequired": "Webhook, claim, recovery, and delivery regression passed."
+    },
+    {
+      "id": "human-risk-decision",
+      "checkType": "conversation-decision",
+      "evidenceRequired": "Human explicitly approved go-live, rollback, irreversible data action, or provider launch in conversation."
+    }
+  ],
+  "humanGate": true
+}
