@@ -1,0 +1,29 @@
+{
+  "id": "ADR-0006",
+  "status": "accepted",
+  "date": "2026-06-07",
+  "title": "Use offline production readiness proxies before runtime go-live checks",
+  "context": "Runtime deploy checks require a real production environment, but the repository still needs PR-time evidence that API contracts, request body validation, schema migrations, and production config surfaces are not drifting silently.",
+  "decision": "Add .ai/production-readiness.json and pnpm ai:production as mandatory machine gates. The gate records backend API route methods, body-reading route/helper validation status, model schema fingerprints, migration files, schema snapshots, production env template coverage, and actual env placeholder checks for go-live runs.",
+  "consequences": [
+    "New or changed backend API methods fail until the public route contract snapshot is updated.",
+    "Routes or API helpers that read request bodies fail unless they have validateAndTransformBody middleware coverage or an expiring accepted debt entry.",
+    "PRs cannot add new accepted request-body validation debt against the base commit.",
+    "Model schema fingerprints are checked against registered migrations and snapshots; PRs changing fingerprints must add migration files.",
+    "Production env templates must include all required production config keys, while actual production env files are rejected if they contain empty, example, localhost, or replace-with placeholder values.",
+    "Runtime deploy health, edge, regression, backup, and rollback evidence are still required before go-live; this ADR only adds CI-safe offline proxies."
+  ],
+  "evidence": [
+    ".ai/production-readiness.json",
+    "scripts/ai/production-readiness.mjs",
+    ".ai/evidence-policy.json",
+    ".ai/system.json",
+    ".ai/system-map.json",
+    "scripts/ai/doctor.mjs",
+    "scripts/ai/evidence.mjs",
+    "package.json",
+    "pnpm ai:production",
+    "pnpm ai:doctor",
+    "pnpm check:ci"
+  ]
+}

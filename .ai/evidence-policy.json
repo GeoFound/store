@@ -23,6 +23,11 @@
       "required": true
     },
     {
+      "id": "ai-production",
+      "command": ["pnpm", "ai:production"],
+      "required": true
+    },
+    {
       "id": "ai-status",
       "command": ["pnpm", "ai:status"],
       "required": true

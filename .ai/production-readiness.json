@@ -1,0 +1,1200 @@
+{
+  "version": "1.0.0",
+  "createdAt": "2026-06-07",
+  "principles": [
+    "Public API contract changes must be visible in machine-readable route entries.",
+    "Routes that read request bodies must use validateAndTransformBody or carry expiring accepted debt.",
+    "Model schema changes must carry migration and snapshot evidence.",
+    "Production-required config must be present in templates; real go-live env files must not use placeholders."
+  ],
+  "routeContract": {
+    "sourceRoot": "apps/backend/src/api",
+    "bodyReadHelpers": [
+      {
+        "path": "apps/backend/src/api/hooks/payment/_handle-payment-webhook.ts",
+        "owner": "payment-router",
+        "callers": [
+          {
+            "matcher": "/hooks/payment/:provider_code",
+            "method": "POST",
+            "validation": "validateAndTransformBody"
+          },
+          {
+            "matcher": "/hooks/payment/manual",
+            "method": "POST",
+            "validation": "validateAndTransformBody"
+          }
+        ],
+        "rationale": "Helper reads request body for a route whose middleware preserves raw body and applies validateAndTransformBody before handler logic.",
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      }
+    ],
+    "routes": [
+      {
+        "path": "apps/backend/src/api/admin/after-sales/[id]/route.ts",
+        "route": "/admin/after-sales/:id",
+        "surface": "admin",
+        "owner": "support-audit",
+        "methods": [
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "accepted-debt",
+            "owner": "support-audit",
+            "rationale": "Existing route reads req.body without validateAndTransformBody middleware. This is frozen so future body-reading endpoints must add schema validation instead of copying this pattern.",
+            "target": "Move body validation into apps/backend/src/api/middlewares.ts with a Zod schema and validateAndTransformBody.",
+            "expiresAt": "2026-08-07",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
+        "path": "apps/backend/src/api/admin/after-sales/route.ts",
+        "route": "/admin/after-sales",
+        "surface": "admin",
+        "owner": "support-audit",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/admin/analytics/dispatches/route.ts",
+        "route": "/admin/analytics/dispatches",
+        "surface": "admin",
+        "owner": "analytics-core",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "middleware",
+            "matcher": "/admin/analytics/dispatches",
+            "owner": "analytics-core",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
+        "path": "apps/backend/src/api/admin/analytics/events/route.ts",
+        "route": "/admin/analytics/events",
+        "surface": "admin",
+        "owner": "analytics-core",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/admin/audit-logs/route.ts",
+        "route": "/admin/audit-logs",
+        "surface": "admin",
+        "owner": "support-audit",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/admin/catalog/variants/route.ts",
+        "route": "/admin/catalog/variants",
+        "surface": "admin",
+        "owner": "admin-api",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/admin/credential-inventory/batches/route.ts",
+        "route": "/admin/credential-inventory/batches",
+        "surface": "admin",
+        "owner": "credential-inventory",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "accepted-debt",
+            "owner": "credential-inventory",
+            "rationale": "Existing route reads req.body without validateAndTransformBody middleware. This is frozen so future body-reading endpoints must add schema validation instead of copying this pattern.",
+            "target": "Move body validation into apps/backend/src/api/middlewares.ts with a Zod schema and validateAndTransformBody.",
+            "expiresAt": "2026-08-07",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
+        "path": "apps/backend/src/api/admin/credential-inventory/items/route.ts",
+        "route": "/admin/credential-inventory/items",
+        "surface": "admin",
+        "owner": "credential-inventory",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/admin/credential-inventory/reservations/[reservation_key]/release/route.ts",
+        "route": "/admin/credential-inventory/reservations/:reservation_key/release",
+        "surface": "admin",
+        "owner": "credential-inventory",
+        "methods": [
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/admin/credential-inventory/reservations/[reservation_key]/sell/route.ts",
+        "route": "/admin/credential-inventory/reservations/:reservation_key/sell",
+        "surface": "admin",
+        "owner": "credential-inventory",
+        "methods": [
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "accepted-debt",
+            "owner": "credential-inventory",
+            "rationale": "Existing route reads req.body without validateAndTransformBody middleware. This is frozen so future body-reading endpoints must add schema validation instead of copying this pattern.",
+            "target": "Move body validation into apps/backend/src/api/middlewares.ts with a Zod schema and validateAndTransformBody.",
+            "expiresAt": "2026-08-07",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
+        "path": "apps/backend/src/api/admin/credential-inventory/reservations/route.ts",
+        "route": "/admin/credential-inventory/reservations",
+        "surface": "admin",
+        "owner": "credential-inventory",
+        "methods": [
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "accepted-debt",
+            "owner": "credential-inventory",
+            "rationale": "Existing route reads req.body without validateAndTransformBody middleware. This is frozen so future body-reading endpoints must add schema validation instead of copying this pattern.",
+            "target": "Move body validation into apps/backend/src/api/middlewares.ts with a Zod schema and validateAndTransformBody.",
+            "expiresAt": "2026-08-07",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
+        "path": "apps/backend/src/api/admin/custom/route.ts",
+        "route": "/admin/custom",
+        "surface": "admin",
+        "owner": "admin-api",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/admin/digital-delivery/deliveries/route.ts",
+        "route": "/admin/digital-delivery/deliveries",
+        "surface": "admin",
+        "owner": "digital-delivery",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "accepted-debt",
+            "owner": "digital-delivery",
+            "rationale": "Existing route reads req.body without validateAndTransformBody middleware. This is frozen so future body-reading endpoints must add schema validation instead of copying this pattern.",
+            "target": "Move body validation into apps/backend/src/api/middlewares.ts with a Zod schema and validateAndTransformBody.",
+            "expiresAt": "2026-08-07",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
+        "path": "apps/backend/src/api/admin/digital-delivery/pending/route.ts",
+        "route": "/admin/digital-delivery/pending",
+        "surface": "admin",
+        "owner": "digital-delivery",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/admin/marketing/campaigns/route.ts",
+        "route": "/admin/marketing/campaigns",
+        "surface": "admin",
+        "owner": "marketing-engine",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "middleware",
+            "matcher": "/admin/marketing/campaigns",
+            "owner": "marketing-engine",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
+        "path": "apps/backend/src/api/admin/marketing/coupons/route.ts",
+        "route": "/admin/marketing/coupons",
+        "surface": "admin",
+        "owner": "marketing-engine",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "middleware",
+            "matcher": "/admin/marketing/coupons",
+            "owner": "marketing-engine",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
+        "path": "apps/backend/src/api/admin/marketing/offers/route.ts",
+        "route": "/admin/marketing/offers",
+        "surface": "admin",
+        "owner": "marketing-engine",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "middleware",
+            "matcher": "/admin/marketing/offers",
+            "owner": "marketing-engine",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
+        "path": "apps/backend/src/api/admin/marketing/referral-links/route.ts",
+        "route": "/admin/marketing/referral-links",
+        "surface": "admin",
+        "owner": "marketing-engine",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "middleware",
+            "matcher": "/admin/marketing/referral-links",
+            "owner": "marketing-engine",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
+        "path": "apps/backend/src/api/admin/marketing/touchpoints/route.ts",
+        "route": "/admin/marketing/touchpoints",
+        "surface": "admin",
+        "owner": "marketing-engine",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/admin/payment-attempts/[id]/mark-paid/route.ts",
+        "route": "/admin/payment-attempts/:id/mark-paid",
+        "surface": "admin",
+        "owner": "payment-router",
+        "methods": [
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "accepted-debt",
+            "owner": "payment-router",
+            "rationale": "Existing route reads req.body without validateAndTransformBody middleware. This is frozen so future body-reading endpoints must add schema validation instead of copying this pattern.",
+            "target": "Move body validation into apps/backend/src/api/middlewares.ts with a Zod schema and validateAndTransformBody.",
+            "expiresAt": "2026-08-07",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
+        "path": "apps/backend/src/api/admin/payment-attempts/route.ts",
+        "route": "/admin/payment-attempts",
+        "surface": "admin",
+        "owner": "payment-router",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/admin/payment-channels/[id]/route.ts",
+        "route": "/admin/payment-channels/:id",
+        "surface": "admin",
+        "owner": "payment-router",
+        "methods": [
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "accepted-debt",
+            "owner": "payment-router",
+            "rationale": "Existing route reads req.body without validateAndTransformBody middleware. This is frozen so future body-reading endpoints must add schema validation instead of copying this pattern.",
+            "target": "Move body validation into apps/backend/src/api/middlewares.ts with a Zod schema and validateAndTransformBody.",
+            "expiresAt": "2026-08-07",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
+        "path": "apps/backend/src/api/admin/payment-channels/route.ts",
+        "route": "/admin/payment-channels",
+        "surface": "admin",
+        "owner": "payment-router",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "accepted-debt",
+            "owner": "payment-router",
+            "rationale": "Existing route reads req.body without validateAndTransformBody middleware. This is frozen so future body-reading endpoints must add schema validation instead of copying this pattern.",
+            "target": "Move body validation into apps/backend/src/api/middlewares.ts with a Zod schema and validateAndTransformBody.",
+            "expiresAt": "2026-08-07",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
+        "path": "apps/backend/src/api/admin/product-templates/route.ts",
+        "route": "/admin/product-templates",
+        "surface": "admin",
+        "owner": "admin-api",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/admin/suppliers/mappings/route.ts",
+        "route": "/admin/suppliers/mappings",
+        "surface": "admin",
+        "owner": "supplier-procurement",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "accepted-debt",
+            "owner": "supplier-procurement",
+            "rationale": "Existing route reads req.body without validateAndTransformBody middleware. This is frozen so future body-reading endpoints must add schema validation instead of copying this pattern.",
+            "target": "Move body validation into apps/backend/src/api/middlewares.ts with a Zod schema and validateAndTransformBody.",
+            "expiresAt": "2026-08-07",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
+        "path": "apps/backend/src/api/admin/suppliers/procurements/[id]/retry/route.ts",
+        "route": "/admin/suppliers/procurements/:id/retry",
+        "surface": "admin",
+        "owner": "supplier-procurement",
+        "methods": [
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/admin/suppliers/procurements/route.ts",
+        "route": "/admin/suppliers/procurements",
+        "surface": "admin",
+        "owner": "supplier-procurement",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/admin/suppliers/providers/route.ts",
+        "route": "/admin/suppliers/providers",
+        "surface": "admin",
+        "owner": "supplier-procurement",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/health/route.ts",
+        "route": "/health",
+        "surface": "health",
+        "owner": "runtime-health",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/hooks/payment/[provider_code]/route.ts",
+        "route": "/hooks/payment/:provider_code",
+        "surface": "webhook",
+        "owner": "payment-router",
+        "methods": [
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/hooks/payment/manual/route.ts",
+        "route": "/hooks/payment/manual",
+        "surface": "webhook",
+        "owner": "payment-router",
+        "methods": [
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/store/carts/[cart_id]/payments/route.ts",
+        "route": "/store/carts/:cart_id/payments",
+        "surface": "store",
+        "owner": "payment-router",
+        "methods": [
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "middleware",
+            "matcher": "/store/carts/:cart_id/payments",
+            "owner": "payment-router",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
+        "path": "apps/backend/src/api/store/custom/route.ts",
+        "route": "/store/custom",
+        "surface": "store",
+        "owner": "store-api",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/store/deliveries/[access_token]/after-sales/route.ts",
+        "route": "/store/deliveries/:access_token/after-sales",
+        "surface": "store",
+        "owner": "digital-delivery",
+        "methods": [
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "accepted-debt",
+            "owner": "digital-delivery",
+            "rationale": "Existing route reads req.body without validateAndTransformBody middleware. This is frozen so future body-reading endpoints must add schema validation instead of copying this pattern.",
+            "target": "Move body validation into apps/backend/src/api/middlewares.ts with a Zod schema and validateAndTransformBody.",
+            "expiresAt": "2026-08-07",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
+        "path": "apps/backend/src/api/store/deliveries/[access_token]/confirm/route.ts",
+        "route": "/store/deliveries/:access_token/confirm",
+        "surface": "store",
+        "owner": "digital-delivery",
+        "methods": [
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/store/deliveries/[access_token]/route.ts",
+        "route": "/store/deliveries/:access_token",
+        "surface": "store",
+        "owner": "digital-delivery",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/store/marketing/campaigns/route.ts",
+        "route": "/store/marketing/campaigns",
+        "surface": "store",
+        "owner": "marketing-engine",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/store/order-access/[access_token]/deliveries/[delivery_id]/after-sales/route.ts",
+        "route": "/store/order-access/:access_token/deliveries/:delivery_id/after-sales",
+        "surface": "store",
+        "owner": "support-audit",
+        "methods": [
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "accepted-debt",
+            "owner": "support-audit",
+            "rationale": "Existing route reads req.body without validateAndTransformBody middleware. This is frozen so future body-reading endpoints must add schema validation instead of copying this pattern.",
+            "target": "Move body validation into apps/backend/src/api/middlewares.ts with a Zod schema and validateAndTransformBody.",
+            "expiresAt": "2026-08-07",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
+        "path": "apps/backend/src/api/store/order-access/[access_token]/deliveries/[delivery_id]/confirm/route.ts",
+        "route": "/store/order-access/:access_token/deliveries/:delivery_id/confirm",
+        "surface": "store",
+        "owner": "guest-order-access",
+        "methods": [
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/store/order-access/[access_token]/route.ts",
+        "route": "/store/order-access/:access_token",
+        "surface": "store",
+        "owner": "guest-order-access",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/store/orders/recover/route.ts",
+        "route": "/store/orders/recover",
+        "surface": "store",
+        "owner": "guest-order-access",
+        "methods": [
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "middleware",
+            "matcher": "/store/orders/recover",
+            "owner": "guest-order-access",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
+        "path": "apps/backend/src/api/store/orders/recover/verify/route.ts",
+        "route": "/store/orders/recover/verify",
+        "surface": "store",
+        "owner": "guest-order-access",
+        "methods": [
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "middleware",
+            "matcher": "/store/orders/recover/verify",
+            "owner": "guest-order-access",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
+        "path": "apps/backend/src/api/store/payment-attempts/[id]/claim-order-access/route.ts",
+        "route": "/store/payment-attempts/:id/claim-order-access",
+        "surface": "store",
+        "owner": "payment-router",
+        "methods": [
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "middleware",
+            "matcher": "/store/payment-attempts/:id/claim-order-access",
+            "owner": "payment-router",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
+        "path": "apps/backend/src/api/store/payment-attempts/[id]/route.ts",
+        "route": "/store/payment-attempts/:id",
+        "surface": "store",
+        "owner": "payment-router",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/store/payment-methods/route.ts",
+        "route": "/store/payment-methods",
+        "surface": "store",
+        "owner": "payment-router",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/store/product-availability/route.ts",
+        "route": "/store/product-availability",
+        "surface": "store",
+        "owner": "store-api",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/store/product-templates/route.ts",
+        "route": "/store/product-templates",
+        "surface": "store",
+        "owner": "store-api",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      }
+    ]
+  },
+  "migrations": {
+    "moduleRoot": "apps/backend/src/modules",
+    "requireSnapshotForModelModules": true,
+    "modules": [
+      {
+        "module": "analytics-core",
+        "path": "apps/backend/src/modules/analytics-core",
+        "owner": "analytics-core",
+        "modelFiles": [
+          "apps/backend/src/modules/analytics-core/models/analytics-dispatch.ts",
+          "apps/backend/src/modules/analytics-core/models/analytics-event.ts"
+        ],
+        "modelTables": [
+          "analytics_dispatch",
+          "analytics_event"
+        ],
+        "migrationFiles": [
+          "apps/backend/src/modules/analytics-core/migrations/Migration20260511221000.ts"
+        ],
+        "snapshotFiles": [
+          "apps/backend/src/modules/analytics-core/migrations/.snapshot-store.json"
+        ],
+        "schemaFingerprint": "sha256:1c53f3837756745d74392d9f8b803b43c2836f068b5e126125d82e2b2a28cdf6",
+        "verification": [
+          "pnpm ai:production",
+          "pnpm --dir apps/backend test:unit"
+        ]
+      },
+      {
+        "module": "credential-inventory",
+        "path": "apps/backend/src/modules/credential-inventory",
+        "owner": "credential-inventory",
+        "modelFiles": [
+          "apps/backend/src/modules/credential-inventory/models/account-batch.ts",
+          "apps/backend/src/modules/credential-inventory/models/account-item.ts"
+        ],
+        "modelTables": [
+          "account_batch",
+          "account_item"
+        ],
+        "migrationFiles": [
+          "apps/backend/src/modules/credential-inventory/migrations/Migration20260508070421.ts",
+          "apps/backend/src/modules/credential-inventory/migrations/Migration20260511121000.ts"
+        ],
+        "snapshotFiles": [
+          "apps/backend/src/modules/credential-inventory/migrations/.snapshot-credential-inventory.json",
+          "apps/backend/src/modules/credential-inventory/migrations/.snapshot-store.json"
+        ],
+        "schemaFingerprint": "sha256:f5118b888e9118192a55c5cfe856ade94140ca79a6117f53584874e097053403",
+        "verification": [
+          "pnpm ai:production",
+          "pnpm --dir apps/backend test:unit"
+        ]
+      },
+      {
+        "module": "digital-delivery",
+        "path": "apps/backend/src/modules/digital-delivery",
+        "owner": "digital-delivery",
+        "modelFiles": [
+          "apps/backend/src/modules/digital-delivery/models/order-delivery.ts"
+        ],
+        "modelTables": [
+          "order_delivery"
+        ],
+        "migrationFiles": [
+          "apps/backend/src/modules/digital-delivery/migrations/Migration20260508071551.ts",
+          "apps/backend/src/modules/digital-delivery/migrations/Migration20260511122000.ts"
+        ],
+        "snapshotFiles": [
+          "apps/backend/src/modules/digital-delivery/migrations/.snapshot-digital-delivery.json",
+          "apps/backend/src/modules/digital-delivery/migrations/.snapshot-store.json"
+        ],
+        "schemaFingerprint": "sha256:f0d5a302c7a9a979c173bf9c0f7da7a5dd78a1ce465525fe2d29202c8b1de293",
+        "verification": [
+          "pnpm ai:production",
+          "pnpm --dir apps/backend test:unit"
+        ]
+      },
+      {
+        "module": "guest-order-access",
+        "path": "apps/backend/src/modules/guest-order-access",
+        "owner": "guest-order-access",
+        "modelFiles": [
+          "apps/backend/src/modules/guest-order-access/models/order-access-token.ts"
+        ],
+        "modelTables": [
+          "order_access_token"
+        ],
+        "migrationFiles": [
+          "apps/backend/src/modules/guest-order-access/migrations/Migration20260510120000.ts",
+          "apps/backend/src/modules/guest-order-access/migrations/Migration20260511123000.ts",
+          "apps/backend/src/modules/guest-order-access/migrations/Migration20260511170000.ts"
+        ],
+        "snapshotFiles": [
+          "apps/backend/src/modules/guest-order-access/migrations/.snapshot-store.json"
+        ],
+        "schemaFingerprint": "sha256:87535243f4264efac67440645055ff7aff7466a7ea177eb02e6b44fe296b7323",
+        "verification": [
+          "pnpm ai:production",
+          "pnpm --dir apps/backend test:unit"
+        ]
+      },
+      {
+        "module": "marketing-engine",
+        "path": "apps/backend/src/modules/marketing-engine",
+        "owner": "marketing-engine",
+        "modelFiles": [
+          "apps/backend/src/modules/marketing-engine/models/marketing-campaign.ts",
+          "apps/backend/src/modules/marketing-engine/models/marketing-coupon-redemption.ts",
+          "apps/backend/src/modules/marketing-engine/models/marketing-coupon.ts",
+          "apps/backend/src/modules/marketing-engine/models/marketing-offer.ts",
+          "apps/backend/src/modules/marketing-engine/models/marketing-referral-link.ts",
+          "apps/backend/src/modules/marketing-engine/models/marketing-referral-reward.ts",
+          "apps/backend/src/modules/marketing-engine/models/marketing-touchpoint.ts"
+        ],
+        "modelTables": [
+          "marketing_campaign",
+          "marketing_coupon",
+          "marketing_coupon_redemption",
+          "marketing_offer",
+          "marketing_referral_link",
+          "marketing_referral_reward",
+          "marketing_touchpoint"
+        ],
+        "migrationFiles": [
+          "apps/backend/src/modules/marketing-engine/migrations/Migration20260511200000.ts"
+        ],
+        "snapshotFiles": [
+          "apps/backend/src/modules/marketing-engine/migrations/.snapshot-store.json"
+        ],
+        "schemaFingerprint": "sha256:bcf4a6ac8739fa4051df5be52bb54accccd4c5ee700227ec3d98384da12a2b0f",
+        "verification": [
+          "pnpm ai:production",
+          "pnpm --dir apps/backend test:unit"
+        ]
+      },
+      {
+        "module": "payment-router",
+        "path": "apps/backend/src/modules/payment-router",
+        "owner": "payment-router",
+        "modelFiles": [
+          "apps/backend/src/modules/payment-router/models/payment-attempt.ts",
+          "apps/backend/src/modules/payment-router/models/payment-channel.ts"
+        ],
+        "modelTables": [
+          "payment_attempt",
+          "payment_channel"
+        ],
+        "migrationFiles": [
+          "apps/backend/src/modules/payment-router/migrations/Migration20260508042211.ts",
+          "apps/backend/src/modules/payment-router/migrations/Migration20260511120000.ts"
+        ],
+        "snapshotFiles": [
+          "apps/backend/src/modules/payment-router/migrations/.snapshot-payment-router.json",
+          "apps/backend/src/modules/payment-router/migrations/.snapshot-store.json"
+        ],
+        "schemaFingerprint": "sha256:d03f4f326c37bc51bdc73d9f53482e9f912c6ed0a97df2ab659c6e50a0516958",
+        "verification": [
+          "pnpm ai:production",
+          "pnpm --dir apps/backend test:unit"
+        ]
+      },
+      {
+        "module": "supplier-procurement",
+        "path": "apps/backend/src/modules/supplier-procurement",
+        "owner": "supplier-procurement",
+        "modelFiles": [
+          "apps/backend/src/modules/supplier-procurement/models/supplier-procurement-order.ts",
+          "apps/backend/src/modules/supplier-procurement/models/supplier-product-mapping.ts"
+        ],
+        "modelTables": [
+          "supplier_procurement_order",
+          "supplier_product_mapping"
+        ],
+        "migrationFiles": [
+          "apps/backend/src/modules/supplier-procurement/migrations/Migration20260519120000.ts"
+        ],
+        "snapshotFiles": [
+          "apps/backend/src/modules/supplier-procurement/migrations/.snapshot-store.json"
+        ],
+        "schemaFingerprint": "sha256:b403e924f28113229beb1e6ab694a95b2ef13c3d4d9b6a498310d7b221d43839",
+        "verification": [
+          "pnpm ai:production",
+          "pnpm --dir apps/backend test:unit"
+        ]
+      },
+      {
+        "module": "support-audit",
+        "path": "apps/backend/src/modules/support-audit",
+        "owner": "support-audit",
+        "modelFiles": [
+          "apps/backend/src/modules/support-audit/models/after-sale.ts",
+          "apps/backend/src/modules/support-audit/models/audit-log.ts"
+        ],
+        "modelTables": [
+          "after_sale",
+          "audit_log"
+        ],
+        "migrationFiles": [
+          "apps/backend/src/modules/support-audit/migrations/Migration20260508072620.ts",
+          "apps/backend/src/modules/support-audit/migrations/Migration20260511124000.ts"
+        ],
+        "snapshotFiles": [
+          "apps/backend/src/modules/support-audit/migrations/.snapshot-store.json",
+          "apps/backend/src/modules/support-audit/migrations/.snapshot-support-audit.json"
+        ],
+        "schemaFingerprint": "sha256:c3ea33009889f118e488cd9a8ca05dfae47b884eed5c92c5aafe1b6f4249f15f",
+        "verification": [
+          "pnpm ai:production",
+          "pnpm --dir apps/backend test:unit"
+        ]
+      }
+    ]
+  },
+  "productionConfig": {
+    "configSurface": ".ai/config-surface.json",
+    "placeholderPatterns": [
+      "replace-with",
+      "example\\.com",
+      "localhost",
+      "127\\.0\\.0\\.1",
+      "pk_your",
+      "your_",
+      "^$"
+    ],
+    "exampleFiles": [
+      {
+        "path": "ops/env/backend.production.env.example",
+        "scopes": [
+          "backend",
+          "shared"
+        ],
+        "owner": "config-surface",
+        "verification": [
+          "pnpm ai:production",
+          "pnpm ai:config"
+        ]
+      },
+      {
+        "path": "ops/env/storefront.production.env.example",
+        "scopes": [
+          "storefront",
+          "shared"
+        ],
+        "owner": "config-surface",
+        "verification": [
+          "pnpm ai:production",
+          "pnpm ai:config"
+        ]
+      },
+      {
+        "path": "ops/env/services.production.env.example",
+        "scopes": [],
+        "extraRequiredKeys": [
+          "POSTGRES_PASSWORD",
+          "REDIS_PASSWORD"
+        ],
+        "owner": "ops-runtime",
+        "verification": [
+          "pnpm ai:production"
+        ]
+      }
+    ],
+    "actualEnvFiles": [
+      {
+        "envVar": "AI_BACKEND_PRODUCTION_ENV_FILE",
+        "scopes": [
+          "backend",
+          "shared"
+        ],
+        "owner": "config-surface",
+        "verification": [
+          "pnpm ai:production"
+        ]
+      },
+      {
+        "envVar": "AI_STOREFRONT_PRODUCTION_ENV_FILE",
+        "scopes": [
+          "storefront",
+          "shared"
+        ],
+        "owner": "config-surface",
+        "verification": [
+          "pnpm ai:production"
+        ]
+      },
+      {
+        "envVar": "AI_SERVICES_PRODUCTION_ENV_FILE",
+        "scopes": [],
+        "extraRequiredKeys": [
+          "POSTGRES_PASSWORD",
+          "REDIS_PASSWORD"
+        ],
+        "owner": "ops-runtime",
+        "verification": [
+          "pnpm ai:production"
+        ]
+      }
+    ]
+  }
+}

@@ -51,6 +51,7 @@
     ],
     "humanReviewIsAcceptance": false,
     "requiredForProduction": [
+      "pnpm ai:production",
       "pnpm check:ci",
       "pnpm profile:validate:all",
       "pnpm deploy:health",
@@ -105,6 +106,7 @@
       ".ai/architecture-rules.json",
       ".ai/architecture-baseline.json",
       ".ai/config-surface.json",
+      ".ai/production-readiness.json",
       ".ai/inventory-baseline.json",
       ".ai/skills/store-ai-maintainer/SKILL.md",
       ".ai/decision-records",
@@ -112,7 +114,7 @@
       "docs/architecture/decoupling-boundaries.md",
       "docs/ops/production-runbook.md"
     ],
-    "runFirst": ["pnpm ai:context", "pnpm ai:doctor", "pnpm ai:architecture", "pnpm ai:inventory", "pnpm ai:config"],
+    "runFirst": ["pnpm ai:context", "pnpm ai:doctor", "pnpm ai:architecture", "pnpm ai:inventory", "pnpm ai:config", "pnpm ai:production"],
     "runBeforeCommit": ["pnpm check:ci"],
     "runBeforeProduction": ["pnpm ai:evidence:full"]
   },
@@ -122,6 +124,7 @@
       "ai:architecture",
       "ai:config",
       "ai:inventory",
+      "ai:production",
       "ai:doctor",
       "ai:status",
       "ai:evidence",

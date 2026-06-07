@@ -6,6 +6,7 @@ import { createArchitectureReport } from "./architecture.mjs"
 import { createConfigSurfaceReport } from "./config-surface.mjs"
 import { createDoctorReport } from "./doctor.mjs"
 import { createInventoryReport } from "./inventory.mjs"
+import { createProductionReadinessReport } from "./production-readiness.mjs"
 import { createStatusReport } from "./status.mjs"
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
@@ -63,6 +64,8 @@ async function runInProcessCheck(check) {
       report = createConfigSurfaceReport()
     } else if (commandKey === "pnpm ai:inventory") {
       report = createInventoryReport()
+    } else if (commandKey === "pnpm ai:production") {
+      report = createProductionReadinessReport()
     } else if (commandKey === "pnpm ai:status") {
       report = await createStatusReport({ writeReport: true })
     } else {

@@ -1,5 +1,5 @@
 {
-  "id": "0004-tenant-aware-multi-site-evolution",
+  "id": "ADR-0004",
   "status": "accepted",
   "decision": "Build the product as tenant-aware first, while keeping dedicated isolated data planes as the production-safe default. Future pooled or sharded backends must reuse the same tenant context and config surface instead of bypassing them.",
   "rationale": [

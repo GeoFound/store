@@ -4,6 +4,7 @@ import { spawnSync } from "node:child_process"
 import { fileURLToPath } from "node:url"
 import { createDoctorReport } from "./doctor.mjs"
 import { createInventoryReport } from "./inventory.mjs"
+import { createProductionReadinessReport } from "./production-readiness.mjs"
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
 
@@ -66,6 +67,7 @@ export async function createStatusReport(options = {}) {
   const taskbook = readJson(".ai/taskbook.json")
   const doctor = await createDoctorReport()
   const inventory = createInventoryReport()
+  const production = createProductionReadinessReport()
   const gitStatus = run("git", ["status", "--short"])
   const evidenceReports = listEvidenceReports()
   const latestFullEvidence = evidenceReports.find((report) => report.mode === "full")
@@ -78,6 +80,10 @@ export async function createStatusReport(options = {}) {
 
   if (!inventory.ok) {
     nextActions.push("Run pnpm ai:inventory and register or remove changed repository surface.")
+  }
+
+  if (!production.ok) {
+    nextActions.push("Run pnpm ai:production and fix production readiness issues.")
   }
 
   if (!latestFullEvidence) {
@@ -112,6 +118,11 @@ export async function createStatusReport(options = {}) {
       ok: inventory.ok,
       summary: inventory.summary,
       systemMapCoverage: inventory.systemMapCoverage,
+    },
+    productionReadiness: {
+      ok: production.ok,
+      summary: production.summary,
+      warningCount: production.warningCount,
     },
     git: {
       dirty: dirtyFiles.length > 0,

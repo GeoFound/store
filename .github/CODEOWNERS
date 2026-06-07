@@ -1,0 +1,19 @@
+# Governance and product-critical surfaces.
+* @loong
+
+.ai/ @loong
+scripts/ai/ @loong
+AGENTS.md @loong
+package.json @loong
+pnpm-lock.yaml @loong
+
+apps/backend/src/api/ @loong
+apps/backend/src/modules/ @loong
+apps/backend/src/platform/ @loong
+apps/backend/src/platform-adapters/ @loong
+apps/storefront/src/ @loong
+
+profiles/ @loong
+ops/env/ @loong
+scripts/deploy/ @loong
+.github/workflows/ @loong

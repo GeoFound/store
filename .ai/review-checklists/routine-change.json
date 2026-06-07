@@ -29,7 +29,7 @@
       "id": "surface-and-debt-gates",
       "checkType": "command",
       "command": ["pnpm", "ai:evidence"],
-      "evidenceRequired": "Architecture baseline, inventory baseline, config surface, status, and git state were captured."
+      "evidenceRequired": "Architecture baseline, inventory baseline, config surface, production readiness, status, and git state were captured."
     }
   ],
   "humanGate": false

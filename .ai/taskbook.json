@@ -6,8 +6,8 @@
       "goal": "Build a current repository and product context bundle before making changes.",
       "owner": "ai",
       "trigger": "new AI session, context compaction, or uncertain repo state",
-      "commands": ["pnpm ai:context", "pnpm ai:doctor", "pnpm ai:architecture", "pnpm ai:inventory", "pnpm ai:config", "pnpm ai:status"],
-      "evidence": ["JSON context output", "doctor ok=true", "architecture report has no unbaselined debt", "inventory has no unregistered surface changes", "config surface ok=true", "status ok=true"]
+      "commands": ["pnpm ai:context", "pnpm ai:doctor", "pnpm ai:architecture", "pnpm ai:inventory", "pnpm ai:config", "pnpm ai:production", "pnpm ai:status"],
+      "evidence": ["JSON context output", "doctor ok=true", "architecture report has no unbaselined debt", "inventory has no unregistered surface changes", "config surface ok=true", "production readiness ok=true", "status ok=true"]
     },
     {
       "id": "routine-implementation",
@@ -30,24 +30,24 @@
       "goal": "Prove the repository can support production deployment for the selected site profile.",
       "owner": "ai-with-human-decision",
       "trigger": "before go-live, provider change, domain change, or deploy pipeline change",
-      "commands": ["pnpm ai:evidence:full"],
-      "evidence": ["CI passed", "profile validation passed", "health gate passed", "edge preflight passed", "regression smoke passed"]
+      "commands": ["pnpm ai:production", "pnpm ai:evidence:full"],
+      "evidence": ["production readiness ok=true", "API contract snapshot passed", "schema migration baseline passed", "production config template coverage passed", "CI passed", "profile validation passed", "health gate passed", "edge preflight passed", "regression smoke passed"]
     },
     {
       "id": "multi-site-evolution",
       "goal": "Evolve a site from dedicated toward pooled or sharded runtime without weakening tenant isolation.",
       "owner": "ai-with-human-decision",
       "trigger": "new site, shared backend proposal, data-plane migration, or tenant boundary refactor",
-      "commands": ["pnpm ai:inventory", "pnpm ai:config", "pnpm profile:validate:all", "pnpm check:ci"],
-      "evidence": ["site/profile surface registered", "tenant profile modes valid", "runtime config surface clean", "tenant isolation tests passed", "human approval for shared data-plane risk"]
+      "commands": ["pnpm ai:inventory", "pnpm ai:config", "pnpm ai:production", "pnpm profile:validate:all", "pnpm check:ci"],
+      "evidence": ["site/profile surface registered", "tenant profile modes valid", "runtime config surface clean", "production route/config/schema surface clean", "tenant isolation tests passed", "human approval for shared data-plane risk"]
     },
     {
       "id": "runtime-maintenance",
       "goal": "Keep long-lived repo health visible through objective checks.",
       "owner": "ai",
       "trigger": "periodic maintenance or user asks to maintain repository",
-      "commands": ["pnpm ai:status", "pnpm ai:architecture", "pnpm ai:inventory", "pnpm ai:evidence", "pnpm check:ci"],
-      "evidence": ["machine-readable status report", "machine-readable architecture report", "machine-readable inventory report", "machine-readable evidence report", "issues listed with next action"]
+      "commands": ["pnpm ai:status", "pnpm ai:architecture", "pnpm ai:inventory", "pnpm ai:production", "pnpm ai:evidence", "pnpm check:ci"],
+      "evidence": ["machine-readable status report", "machine-readable architecture report", "machine-readable inventory report", "machine-readable production readiness report", "machine-readable evidence report", "issues listed with next action"]
     }
   ]
 }

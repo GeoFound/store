@@ -842,6 +842,16 @@
         "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
       },
       {
+        "path": "scripts/ai/production-readiness.mjs",
+        "owner": "ai-operating-system",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:production",
+          "pnpm ai:doctor"
+        ],
+        "rationale": "Production readiness gate tracks API contract, body validation debt, schema migration baselines, and production config coverage."
+      },
+      {
         "path": "scripts/ai/status.mjs",
         "owner": "ai-operating-system",
         "verification": [

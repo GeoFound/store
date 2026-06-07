@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url"
 import { createArchitectureReport } from "./architecture.mjs"
 import { createConfigSurfaceReport } from "./config-surface.mjs"
 import { createInventoryReport } from "./inventory.mjs"
+import { createProductionReadinessReport } from "./production-readiness.mjs"
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
 const issues = []
@@ -238,6 +239,12 @@ for (const record of decisionRecords) {
     path: record.path,
     message: "Decision record must include evidence references.",
   })
+  assert(/^ADR-\d{4}$/.test(data.id), {
+    id: "decision-record.id-format-invalid",
+    path: record.path,
+    decisionId: data.id,
+    message: "Decision record id must use ADR-0000 format.",
+  })
 }
 
 const checklistIds = new Set()
@@ -326,6 +333,38 @@ if (exists(".github/workflows/ai-maintenance.yml")) {
     id: "workflow.ai-maintenance-evidence-missing",
     message: "AI maintenance workflow must run pnpm ai:evidence:full.",
   })
+}
+
+assert(exists(".github/CODEOWNERS"), {
+  id: "github.codeowners-missing",
+  message: "CODEOWNERS is required so governance-critical files have explicit review ownership.",
+})
+if (exists(".github/CODEOWNERS")) {
+  const codeowners = fs.readFileSync(path.join(root, ".github/CODEOWNERS"), "utf8")
+
+  for (const requiredPattern of [".ai/", "scripts/ai/", "apps/backend/src/api/", "apps/backend/src/modules/", "ops/env/"]) {
+    assert(codeowners.includes(requiredPattern), {
+      id: "github.codeowners-pattern-missing",
+      pattern: requiredPattern,
+      message: "CODEOWNERS must cover governance-critical product and repository surfaces.",
+    })
+  }
+}
+
+assert(exists(".github/pull_request_template.md"), {
+  id: "github.pr-template-missing",
+  message: "Pull request template is required so AI/human changes declare machine evidence and production risk.",
+})
+if (exists(".github/pull_request_template.md")) {
+  const template = fs.readFileSync(path.join(root, ".github/pull_request_template.md"), "utf8")
+
+  for (const requiredText of ["pnpm ai:doctor", "pnpm ai:production", "Production risk"]) {
+    assert(template.includes(requiredText), {
+      id: "github.pr-template-evidence-missing",
+      text: requiredText,
+      message: "Pull request template must name required governance and production evidence.",
+    })
+  }
 }
 
 if (taskbook) {
@@ -432,6 +471,26 @@ for (const warning of inventoryReport.warnings || []) {
     details: {
       type: warning.type,
       value: warning.value,
+    },
+  })
+}
+
+const productionReport = createProductionReadinessReport()
+assert(productionReport.ok, {
+  id: "production-readiness.failed",
+  message: "Machine-readable production readiness validation failed.",
+  issues: productionReport.issues,
+})
+
+for (const warning of productionReport.warnings || []) {
+  warnings.push({
+    id: `production-readiness.${warning.id}`,
+    path: warning.path,
+    message: warning.message,
+    details: {
+      method: warning.method,
+      owner: warning.owner,
+      expiresAt: warning.expiresAt,
     },
   })
 }

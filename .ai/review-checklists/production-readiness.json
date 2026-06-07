@@ -8,6 +8,12 @@
   },
   "items": [
     {
+      "id": "offline-production-readiness",
+      "checkType": "command",
+      "command": ["pnpm", "ai:production"],
+      "evidenceRequired": "API contract, body validation, schema migration, and production config offline readiness passed."
+    },
+    {
       "id": "full-evidence",
       "checkType": "command",
       "command": ["pnpm", "ai:evidence:full"],
