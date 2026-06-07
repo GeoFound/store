@@ -3,7 +3,6 @@
 import { FormEvent, useEffect, useState } from "react"
 import Link from "next/link"
 import {
-  claimOrderAccess,
   createCartPayment,
   listPaymentMethods,
   retrieveCart,
@@ -24,14 +23,13 @@ import type {
   PaymentMethod,
 } from "@/lib/types"
 import {
-  clearPendingPaymentState,
   persistPendingPaymentState,
   readPendingPaymentState,
 } from "./checkout-pending-payment-storage"
+import { readInitialOrderAccessToken } from "./order-access-token-storage"
+import { useCheckoutPaymentClaim } from "./use-checkout-payment-claim"
 
 const CART_ID_KEY = "store_cart_id"
-const ORDER_ACCESS_TOKEN_SESSION_KEY = "store_session_order_access_token"
-const LEGACY_ORDER_ACCESS_TOKEN_KEY = "store_last_order_access_token"
 
 export function CheckoutView() {
   const [cart, setCart] = useState<Cart | null>(null)
@@ -66,18 +64,11 @@ export function CheckoutView() {
   useEffect(() => {
     async function loadCheckoutState() {
       const cartId = window.localStorage.getItem(CART_ID_KEY)
-      const lastOrderAccessToken =
-        window.sessionStorage.getItem(ORDER_ACCESS_TOKEN_SESSION_KEY) ||
-        window.localStorage.getItem(LEGACY_ORDER_ACCESS_TOKEN_KEY)
+      const lastOrderAccessToken = readInitialOrderAccessToken()
       const pendingPaymentState = readPendingPaymentState()
 
       if (lastOrderAccessToken) {
         setOrderAccessToken(lastOrderAccessToken)
-        window.sessionStorage.setItem(
-          ORDER_ACCESS_TOKEN_SESSION_KEY,
-          lastOrderAccessToken
-        )
-        window.localStorage.removeItem(LEGACY_ORDER_ACCESS_TOKEN_KEY)
       }
 
       try {
@@ -158,129 +149,18 @@ export function CheckoutView() {
     )
   }, [cart?.currency_code, cart?.id, cart?.items, cart?.total])
 
-  useEffect(() => {
-    if (!paymentAttempt?.id || !claimToken || orderAccessToken) {
-      return
-    }
-
-    let active = true
-    let timeout: number | undefined
-
-    const pollAttempt = async () => {
-      try {
-        const { attempt } = await retrievePaymentAttempt(paymentAttempt.id)
-
-        if (!active) {
-          return
-        }
-
-        setPaymentAttempt(attempt)
-        setResolvedMarketing(normalizeResolvedMarketing(attempt.marketing_context))
-
-        if (attempt.status === "paid") {
-          if (!attempt.payment_finalized_at) {
-            if (attempt.payment_finalization_status === "failed") {
-              setError(
-                attempt.payment_finalization_error ||
-                  "Payment was confirmed, but order fulfillment needs support review."
-              )
-              return
-            }
-
-            setMessage("Payment confirmed. Preparing order access...")
-            timeout = window.setTimeout(() => {
-              void pollAttempt()
-            }, 4000)
-            return
-          }
-
-          if (attempt.order_access_claimed_at) {
-            clearPendingPaymentState()
-            setMessage(
-              "Payment confirmed. Order access was already claimed in another session."
-            )
-            return
-          }
-
-          setClaiming(true)
-          const claimed = await claimOrderAccess({
-            attemptId: attempt.id,
-            claimToken,
-          })
-
-          if (!active) {
-            return
-          }
-
-          setOrderAccessToken(claimed.access_token)
-          window.sessionStorage.setItem(
-            ORDER_ACCESS_TOKEN_SESSION_KEY,
-            claimed.access_token
-          )
-          window.localStorage.removeItem(LEGACY_ORDER_ACCESS_TOKEN_KEY)
-          emitStoreAnalyticsEvent(
-            "purchase",
-            {
-              transaction_id: claimed.order_id,
-              payment_attempt_id: attempt.id,
-              currency: attempt.currency || "USD",
-              value: minorToDecimal(
-                Number(attempt.amount || 0),
-                attempt.currency || "USD"
-              ),
-              items: cart?.items?.map((item) => ({
-                item_id: item.variant_id || item.id,
-                item_name: item.title || "Digital product",
-                quantity: item.quantity || 1,
-              })) || [{ item_id: "unknown_variant", item_name: "Digital product", quantity: 1 }],
-            },
-            {
-              dedupeKey: `purchase:${attempt.id}:${claimed.order_id}`,
-            }
-          )
-          clearPendingPaymentState()
-          setMessage("Payment confirmed. Your order is ready.")
-          return
-        }
-
-        if (attempt.status === "failed" || attempt.status === "expired") {
-          clearPendingPaymentState()
-          setError(
-            attempt.status === "expired"
-              ? "This payment attempt expired. Create a new payment attempt."
-              : "This payment attempt failed. Create a new payment attempt."
-          )
-          return
-        }
-
-        timeout = window.setTimeout(() => {
-          void pollAttempt()
-        }, 4000)
-      } catch (err) {
-        if (!active) {
-          return
-        }
-
-        timeout = window.setTimeout(() => {
-          void pollAttempt()
-        }, 6000)
-        setError(err instanceof Error ? err.message : "Failed to refresh payment.")
-      } finally {
-        if (active) {
-          setClaiming(false)
-        }
-      }
-    }
-
-    void pollAttempt()
-
-    return () => {
-      active = false
-      if (timeout) {
-        window.clearTimeout(timeout)
-      }
-    }
-  }, [cart?.items, claimToken, orderAccessToken, paymentAttempt?.id])
+  useCheckoutPaymentClaim({
+    cartItems: cart?.items,
+    claimToken,
+    orderAccessToken,
+    paymentAttempt,
+    setClaiming,
+    setError,
+    setMessage,
+    setOrderAccessToken,
+    setPaymentAttempt,
+    setResolvedMarketing,
+  })
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
