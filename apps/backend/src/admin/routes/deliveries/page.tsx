@@ -249,7 +249,8 @@ const DeliveriesPage = () => {
 }
 
 export const config = defineRouteConfig({
-  label: "Deliveries / 交付",
+  label: "adminRoutes.deliveries",
+  translationNs: "translation",
   rank: 21,
 })
 

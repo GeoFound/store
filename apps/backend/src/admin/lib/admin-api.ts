@@ -63,12 +63,24 @@ function resolveAdminLocale() {
     return "en"
   }
 
-  return (
+  const rawLocale =
+    window.localStorage.getItem("lng") ||
     window.localStorage.getItem("i18nextLng") ||
     document.documentElement.lang ||
     window.navigator.language ||
     "en"
-  )
+
+  return normalizeRequestLocale(rawLocale)
+}
+
+function normalizeRequestLocale(value: string) {
+  const normalized = value.trim().toLowerCase()
+
+  if (normalized === "zh" || normalized === "zhcn" || normalized.startsWith("zh-")) {
+    return "zh-CN"
+  }
+
+  return "en"
 }
 
 function fallbackRequestError(status: number) {

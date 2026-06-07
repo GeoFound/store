@@ -8,6 +8,9 @@ export default {
   zh: {
     translation: zhCN,
   },
+  zhCN: {
+    translation: zhCN,
+  },
   "zh-CN": {
     translation: zhCN,
   },

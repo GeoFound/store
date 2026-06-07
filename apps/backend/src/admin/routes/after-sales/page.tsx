@@ -181,7 +181,8 @@ const AfterSalesPage = () => {
 }
 
 export const config = defineRouteConfig({
-  label: "After-sales / 售后",
+  label: "adminRoutes.afterSales",
+  translationNs: "translation",
   rank: 22,
 })
 

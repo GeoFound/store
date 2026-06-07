@@ -47,6 +47,212 @@
       "missingEnv": "missing env"
     }
   },
+  "language": {
+    "chinese": "Chinese",
+    "english": "English",
+    "label": "Admin language"
+  },
+  "adminRoutes": {
+    "afterSales": "After-sales",
+    "analytics": "Analytics",
+    "auditLogs": "Audit Logs",
+    "controlPanel": "Control Panel",
+    "credentials": "Credentials",
+    "deliveries": "Deliveries",
+    "marketing": "Marketing",
+    "payments": "Payments",
+    "productPublishing": "Product Publishing",
+    "suppliers": "Suppliers"
+  },
+  "adminNav": {
+    "items": {
+      "afterSales": "After-sales",
+      "analytics": "Analytics",
+      "auditLogs": "Audit Logs",
+      "controlPanel": "Control Panel",
+      "createProduct": "Create product",
+      "credentials": "Credentials",
+      "deliveries": "Deliveries",
+      "marketing": "Marketing",
+      "payments": "Payments",
+      "productPublishing": "Publishing",
+      "productTemplates": "Product templates",
+      "suppliers": "Suppliers"
+    },
+    "sections": {
+      "catalog": "Catalog",
+      "customers": "Customers",
+      "growth": "Growth",
+      "inventory": "Inventory",
+      "orders": "Orders & Delivery",
+      "overview": "Overview",
+      "paymentsSuppliers": "Payments & Suppliers",
+      "riskSystem": "Risk & System"
+    }
+  },
+  "controlPanel": {
+    "badge": "Operations",
+    "createProduct": "Create product",
+    "description": "A practical operations desk for payment review, fulfillment, credential stock, risk events, and the next action an operator should take.",
+    "empty": "No records found.",
+    "open": "Open",
+    "partialLoadFailed": "Some dashboard data failed to load. The available sections are still shown.",
+    "primaryAction": "Publishing readiness",
+    "refreshing": "Refreshing...",
+    "secondaryAction": "Review payments",
+    "title": "Control Panel",
+    "attention": {
+      "afterSalesReview": "After-sales review",
+      "auditReview": "High-risk audit event",
+      "catalogReview": "Publishing review",
+      "description": "These queues should be checked before routine catalog or marketing work.",
+      "emptyAfterSales": "No open after-sales requests in the latest results.",
+      "emptyAudit": "No high-risk audit events in the latest results.",
+      "emptyCatalog": "No catalog items need stock or fulfillment review.",
+      "emptyDelivery": "No pending deliveries in the latest results.",
+      "emptyPayment": "No payment attempts need review in the latest results.",
+      "emptySupplier": "No supplier procurements need review.",
+      "paymentReview": "Payment review",
+      "pendingDelivery": "Pending delivery",
+      "supplierReview": "Supplier review",
+      "title": "Needs Attention"
+    },
+    "links": {
+      "afterSales": {
+        "body": "Handle customer requests, notes, replacements, and support outcomes.",
+        "command": "Support",
+        "title": "After-sales"
+      },
+      "audit": {
+        "body": "Inspect sensitive operations, high-risk actions, and access events.",
+        "command": "Audit",
+        "title": "Audit Logs"
+      },
+      "credentials": {
+        "body": "Import encrypted credentials and inspect available, reserved, and sold stock.",
+        "command": "Stock",
+        "title": "Credentials"
+      },
+      "deliveries": {
+        "body": "Create manual deliveries, review pending fulfillment, and inspect delivery records.",
+        "command": "Fulfill",
+        "title": "Deliveries"
+      },
+      "payments": {
+        "body": "Review payment channels, payment attempts, and manual confirmation actions.",
+        "command": "Review",
+        "title": "Payments"
+      },
+      "orders": {
+        "body": "Open Medusa orders for customer, payment, refund, and order history work.",
+        "command": "Orders",
+        "title": "Orders"
+      },
+      "productPublishing": {
+        "body": "Check whether products have templates, fulfillment handlers, and stock or supplier paths.",
+        "command": "Publish",
+        "title": "Product Publishing"
+      },
+      "products": {
+        "body": "Use Medusa product management for creation, editing, variants, categories, and sales channels.",
+        "command": "Catalog",
+        "title": "Products"
+      },
+      "suppliers": {
+        "body": "Check supplier configuration, variant mappings, and procurement retries.",
+        "command": "Supply",
+        "title": "Suppliers"
+      }
+    },
+    "metrics": {
+      "catalog": {
+        "body": "need action",
+        "detail": "{{count}} variants checked.",
+        "label": "Catalog"
+      },
+      "channels": {
+        "body": "enabled",
+        "detail": "{{unhealthy}} enabled channels need health review.",
+        "label": "Payment channels"
+      },
+      "credentials": {
+        "body": "available",
+        "detail": "{{reserved}} credentials are reserved.",
+        "label": "Credential stock"
+      },
+      "paymentAttention": {
+        "body": "need review",
+        "detail": "{{count}} recent payment attempts checked.",
+        "label": "Payments"
+      },
+      "pendingDeliveries": {
+        "body": "waiting",
+        "detail": "Sold or queued items not yet fulfilled.",
+        "label": "Deliveries"
+      },
+      "risk": {
+        "body": "high risk",
+        "detail": "From the latest audit log results.",
+        "label": "Audit"
+      },
+      "suppliers": {
+        "body": "need review",
+        "detail": "{{count}} recent procurements checked.",
+        "label": "Suppliers"
+      },
+      "support": {
+        "body": "open",
+        "detail": "{{risk}} high-risk audit events; {{unhealthy}}/{{channels}} enabled channels need health review.",
+        "label": "After-sales"
+      }
+    },
+    "recentAudit": {
+      "description": "Recent sensitive operations and access events.",
+      "title": "Recent Audit"
+    },
+    "recentPayments": {
+      "description": "Latest payment attempts, status, provider, and amount.",
+      "title": "Recent Payments"
+    },
+    "workflow": {
+      "description": "The shortest path to the work operators perform most often.",
+      "title": "Common Workflows"
+    }
+  },
+  "productPublishing": {
+    "actions": {
+      "createProduct": "Create product",
+      "credentials": "Open credentials",
+      "mapping": "Mapping",
+      "openProduct": "Product",
+      "products": "All products",
+      "refreshing": "Refreshing...",
+      "stock": "Stock",
+      "suppliers": "Open suppliers"
+    },
+    "delivery": "Delivery",
+    "description": "Prepare products for sale by checking their template, fulfillment handler, inventory backing, and next operational action.",
+    "emptyVariants": "No product variants found. Create a product first, then return here to verify publishing readiness.",
+    "fulfillment": "Fulfillment",
+    "handlers": "Handlers",
+    "inventory": "Inventory",
+    "loadFailed": "Failed to load publishing data.",
+    "metrics": {
+      "external": "External/manual",
+      "needsStock": "Need stock",
+      "ready": "Ready",
+      "total": "Variants"
+    },
+    "notInventoryBacked": "Not inventory-backed",
+    "readiness": "Publishing Readiness",
+    "readinessDescription": "Each variant should have a fulfillment path before it is treated as sellable.",
+    "stock": "Stock",
+    "stockSummary": "{{available}} available / {{reserved}} reserved / {{sold}} sold / {{total}} total",
+    "template": "Template",
+    "templates": "Product Templates",
+    "templatesDescription": "Templates connect product types to inventory and delivery handlers.",
+    "title": "Product Publishing"
+  },
   "status": {
     "active": "Active",
     "archived": "Archived",
@@ -78,10 +284,15 @@
     "rejected": "Rejected",
     "released": "Released",
     "replaced": "Replaced",
+    "ready": "Ready",
     "reserved": "Reserved",
     "resolved": "Resolved",
     "revoked": "Revoked",
-    "sold": "Sold"
+    "sold": "Sold",
+    "needs_stock": "Needs stock",
+    "external": "External",
+    "manual": "Manual",
+    "unknown": "Unknown"
   },
   "adminExtensions": {
     "deliveryPolicyBody": "This admin surface now sits on top of the delivery handler registry, so new delivery implementations can mount here without rewriting the delivery page flow.",

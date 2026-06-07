@@ -406,7 +406,8 @@ const MarketingPage = () => {
 }
 
 export const config = defineRouteConfig({
-  label: "Marketing / 营销",
+  label: "adminRoutes.marketing",
+  translationNs: "translation",
   rank: 26,
 })
 

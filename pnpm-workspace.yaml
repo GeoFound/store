@@ -1,2 +1,4 @@
 packages:
   - "apps/*"
+patchedDependencies:
+  '@medusajs/dashboard@2.14.2': patches/@medusajs__dashboard@2.14.2.patch

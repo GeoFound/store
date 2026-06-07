@@ -270,7 +270,8 @@ const PaymentsPage = () => {
 }
 
 export const config = defineRouteConfig({
-  label: "Payments / 支付",
+  label: "adminRoutes.payments",
+  translationNs: "translation",
   rank: 24,
 })
 

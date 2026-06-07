@@ -178,7 +178,8 @@ const AnalyticsPage = () => {
 }
 
 export const config = defineRouteConfig({
-  label: "Analytics / 分析",
+  label: "adminRoutes.analytics",
+  translationNs: "translation",
   rank: 27,
 })
 

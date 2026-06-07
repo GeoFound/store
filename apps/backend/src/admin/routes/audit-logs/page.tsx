@@ -145,7 +145,8 @@ const AuditLogsPage = () => {
 }
 
 export const config = defineRouteConfig({
-  label: "Audit Logs / 审计日志",
+  label: "adminRoutes.auditLogs",
+  translationNs: "translation",
   rank: 23,
 })
 

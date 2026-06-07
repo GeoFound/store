@@ -447,7 +447,8 @@ function selectedVariantSummary(variant: CatalogVariant, t: Translate) {
 }
 
 export const config = defineRouteConfig({
-  label: "Credentials / 凭证",
+  label: "adminRoutes.credentials",
+  translationNs: "translation",
   rank: 20,
 })
 

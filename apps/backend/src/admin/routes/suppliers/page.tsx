@@ -337,7 +337,8 @@ const SuppliersPage = () => {
 }
 
 export const config = defineRouteConfig({
-  label: "Suppliers / 供应商",
+  label: "adminRoutes.suppliers",
+  translationNs: "translation",
   rank: 22,
 })
 

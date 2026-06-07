@@ -47,6 +47,212 @@
       "missingEnv": "缺少环境变量"
     }
   },
+  "language": {
+    "chinese": "中文",
+    "english": "英文",
+    "label": "后台语言"
+  },
+  "adminRoutes": {
+    "afterSales": "售后",
+    "analytics": "分析",
+    "auditLogs": "审计日志",
+    "controlPanel": "控制台",
+    "credentials": "凭证",
+    "deliveries": "交付",
+    "marketing": "营销",
+    "payments": "支付",
+    "productPublishing": "商品发布",
+    "suppliers": "供应商"
+  },
+  "adminNav": {
+    "items": {
+      "afterSales": "售后",
+      "analytics": "分析",
+      "auditLogs": "审计日志",
+      "controlPanel": "控制台",
+      "createProduct": "创建商品",
+      "credentials": "凭证",
+      "deliveries": "交付",
+      "marketing": "营销",
+      "payments": "支付",
+      "productPublishing": "发布检查",
+      "productTemplates": "商品模板",
+      "suppliers": "供应商"
+    },
+    "sections": {
+      "catalog": "商品与目录",
+      "customers": "客户",
+      "growth": "增长",
+      "inventory": "凭证与库存",
+      "orders": "订单与交付",
+      "overview": "总览",
+      "paymentsSuppliers": "支付与供应商",
+      "riskSystem": "风控与系统"
+    }
+  },
+  "controlPanel": {
+    "badge": "运营",
+    "createProduct": "创建商品",
+    "description": "用于日常运营的工作台，集中查看支付复核、履约交付、凭证库存、风险事件，以及运营人员下一步应该处理的事项。",
+    "empty": "暂无记录。",
+    "open": "打开",
+    "partialLoadFailed": "部分控制台数据加载失败；已加载的区块仍会显示。",
+    "primaryAction": "发布检查",
+    "refreshing": "刷新中...",
+    "secondaryAction": "查看支付",
+    "title": "控制台",
+    "attention": {
+      "afterSalesReview": "售后复核",
+      "auditReview": "高风险审计事件",
+      "catalogReview": "发布复核",
+      "description": "这些队列应该先于普通商品或营销配置处理。",
+      "emptyAfterSales": "最近结果里没有待处理售后请求。",
+      "emptyAudit": "最近结果里没有高风险审计事件。",
+      "emptyCatalog": "没有需要补库存或履约复核的商品。",
+      "emptyDelivery": "最近结果里没有待交付项目。",
+      "emptyPayment": "最近结果里没有需要复核的支付尝试。",
+      "emptySupplier": "没有需要复核的供应商采购。",
+      "paymentReview": "支付复核",
+      "pendingDelivery": "待交付",
+      "supplierReview": "供应商复核",
+      "title": "需要处理"
+    },
+    "links": {
+      "afterSales": {
+        "body": "处理客户请求、备注、补发和售后结果。",
+        "command": "支持",
+        "title": "售后"
+      },
+      "audit": {
+        "body": "查看敏感操作、高风险动作和访问事件。",
+        "command": "审计",
+        "title": "审计日志"
+      },
+      "credentials": {
+        "body": "导入加密凭证，并查看可售、预占和已售库存。",
+        "command": "库存",
+        "title": "凭证"
+      },
+      "deliveries": {
+        "body": "创建人工交付、查看待履约项目和交付记录。",
+        "command": "履约",
+        "title": "交付"
+      },
+      "payments": {
+        "body": "查看支付通道、支付尝试和人工确认操作。",
+        "command": "复核",
+        "title": "支付"
+      },
+      "orders": {
+        "body": "打开 Medusa 订单，用于客户、支付、退款和订单历史处理。",
+        "command": "订单",
+        "title": "订单"
+      },
+      "productPublishing": {
+        "body": "检查商品是否具备模板、履约 handler、库存或供应商路径。",
+        "command": "发布",
+        "title": "商品发布"
+      },
+      "products": {
+        "body": "使用 Medusa 商品管理创建、编辑商品、规格、分类和销售渠道。",
+        "command": "目录",
+        "title": "商品"
+      },
+      "suppliers": {
+        "body": "检查供应商配置、规格映射和采购重试。",
+        "command": "供应",
+        "title": "供应商"
+      }
+    },
+    "metrics": {
+      "catalog": {
+        "body": "需处理",
+        "detail": "已检查 {{count}} 个规格。",
+        "label": "商品"
+      },
+      "channels": {
+        "body": "已启用",
+        "detail": "{{unhealthy}} 个已启用通道需要健康检查。",
+        "label": "支付通道"
+      },
+      "credentials": {
+        "body": "可售",
+        "detail": "{{reserved}} 条凭证已预占。",
+        "label": "凭证库存"
+      },
+      "paymentAttention": {
+        "body": "需复核",
+        "detail": "已检查最近 {{count}} 条支付尝试。",
+        "label": "支付"
+      },
+      "pendingDeliveries": {
+        "body": "待处理",
+        "detail": "已售出或已排队但尚未履约的项目。",
+        "label": "交付"
+      },
+      "risk": {
+        "body": "高风险",
+        "detail": "来自最近的审计日志结果。",
+        "label": "审计"
+      },
+      "suppliers": {
+        "body": "需复核",
+        "detail": "已检查最近 {{count}} 条采购。",
+        "label": "供应商"
+      },
+      "support": {
+        "body": "待处理",
+        "detail": "{{risk}} 个高风险审计事件；{{channels}} 个已启用通道里 {{unhealthy}} 个需要健康检查。",
+        "label": "售后"
+      }
+    },
+    "recentAudit": {
+      "description": "最近的敏感操作和访问事件。",
+      "title": "最近审计"
+    },
+    "recentPayments": {
+      "description": "最近的支付尝试、状态、通道和金额。",
+      "title": "最近支付"
+    },
+    "workflow": {
+      "description": "运营人员最常处理事项的最短路径。",
+      "title": "常用工作流"
+    }
+  },
+  "productPublishing": {
+    "actions": {
+      "createProduct": "创建商品",
+      "credentials": "打开凭证",
+      "mapping": "映射",
+      "openProduct": "商品",
+      "products": "全部商品",
+      "refreshing": "刷新中...",
+      "stock": "补库存",
+      "suppliers": "打开供应商"
+    },
+    "delivery": "交付",
+    "description": "通过商品模板、履约 handler、库存来源和下一步操作判断商品是否已经具备可售条件。",
+    "emptyVariants": "没有找到商品规格。请先创建商品，再回到这里检查发布状态。",
+    "fulfillment": "履约",
+    "handlers": "处理器",
+    "inventory": "库存",
+    "loadFailed": "加载商品发布数据失败。",
+    "metrics": {
+      "external": "外部/人工",
+      "needsStock": "需补库存",
+      "ready": "可发布",
+      "total": "规格"
+    },
+    "notInventoryBacked": "非库存型",
+    "readiness": "发布检查",
+    "readinessDescription": "每个商品规格都应该有明确的履约路径，才能被视为可售。",
+    "stock": "库存",
+    "stockSummary": "可售 {{available}} / 预占 {{reserved}} / 已售 {{sold}} / 总数 {{total}}",
+    "template": "模板",
+    "templates": "商品模板",
+    "templatesDescription": "模板把商品类型连接到库存和交付 handler。",
+    "title": "商品发布"
+  },
   "status": {
     "active": "启用",
     "archived": "已归档",
@@ -78,10 +284,15 @@
     "rejected": "已拒绝",
     "released": "已释放",
     "replaced": "已补发",
+    "ready": "可发布",
     "reserved": "已预占",
     "resolved": "已解决",
     "revoked": "已撤销",
-    "sold": "已售"
+    "sold": "已售",
+    "needs_stock": "需要补库存",
+    "external": "外部履约",
+    "manual": "人工履约",
+    "unknown": "未知"
   },
   "adminExtensions": {
     "deliveryPolicyBody": "这个后台页面已经基于交付 handler 注册表运行，新的交付实现可以挂载进来，不需要重写交付页面流程。",
