@@ -1,7 +1,14 @@
 import { NextResponse } from "next/server"
 import { startGoogleCustomerLogin } from "@/lib/account-server"
+import { checkAccountAuthRateLimit } from "@/lib/server-abuse-guard"
 
 export async function POST(request: Request) {
+  const rateLimitResponse = checkAccountAuthRateLimit(request, "account-google-start")
+
+  if (rateLimitResponse) {
+    return rateLimitResponse
+  }
+
   try {
     const callbackUrl = new URL("/api/account/google/callback", request.url)
     const result = await startGoogleCustomerLogin(callbackUrl.toString())

@@ -3,13 +3,33 @@ import {
   loginCustomerAccount,
   setCustomerAuthCookie,
 } from "@/lib/account-server"
+import {
+  checkAccountAuthRateLimit,
+  verifyAccountTurnstile,
+} from "@/lib/server-abuse-guard"
 
 export async function POST(request: Request) {
+  const rateLimitResponse = checkAccountAuthRateLimit(request, "account-login")
+
+  if (rateLimitResponse) {
+    return rateLimitResponse
+  }
+
   try {
     const body = (await request.json()) as {
       email?: string
       password?: string
+      turnstile_token?: string
     }
+    const turnstileError = await verifyAccountTurnstile({
+      request,
+      token: body.turnstile_token,
+    })
+
+    if (turnstileError) {
+      return NextResponse.json({ message: turnstileError }, { status: 403 })
+    }
+
     const token = await loginCustomerAccount({
       email: String(body.email || "").trim().toLowerCase(),
       password: String(body.password || ""),

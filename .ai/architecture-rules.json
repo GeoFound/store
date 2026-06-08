@@ -41,6 +41,7 @@
     "backendAdapter": "apps/storefront/src/lib/commerce-medusa.ts",
     "allowedFetchFiles": [
       "apps/storefront/src/lib/commerce-medusa.ts",
+      "apps/storefront/src/lib/server-abuse-guard.ts",
       "apps/storefront/src/app/api/health/route.ts"
     ]
   },
