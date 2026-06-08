@@ -28,9 +28,12 @@ const googleAuthValues = [
   process.env.GOOGLE_CLIENT_SECRET,
   process.env.GOOGLE_CALLBACK_URL,
 ]
-const hasGoogleAuthConfig = googleAuthValues.every(Boolean)
+const hasGoogleClientCredentials = Boolean(
+  process.env.GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_SECRET
+)
+const hasGoogleAuthConfig = hasGoogleClientCredentials && googleAuthValues.every(Boolean)
 
-if (googleAuthValues.some(Boolean) && !hasGoogleAuthConfig) {
+if (hasGoogleClientCredentials && !hasGoogleAuthConfig) {
   throw new Error(
     "GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_CALLBACK_URL must be configured together."
   )
