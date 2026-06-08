@@ -12,12 +12,19 @@ not deploy anything, and must not be used as `production_real_tenant` evidence.
 ```bash
 pnpm graph:export-fixture
 pnpm graph:adapter:test
+GRAPH_DRY_RUN_ENDPOINT=http://127.0.0.1:4017/integrations/store_digital_goods/source-events:dry-run pnpm graph:dry-run:http
 ```
 
 Generated fixtures:
 
 - `test/fixtures/integrations/store_digital_goods/source-events-valid.json`
 - `test/fixtures/integrations/store_digital_goods/source-events-negative.json`
+
+`graph:dry-run:http` expects a local or staging Graph dry-run receiver to be
+running. It posts the valid fixture, the negative fixture, and a missing-header
+request to Graph's `/integrations/store_digital_goods/source-events:dry-run`
+endpoint. The command must keep `production_write_enabled=false` for the valid
+batch and verifies that Graph persists zero events in dry-run mode.
 
 The valid fixture is generated from:
 
