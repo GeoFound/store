@@ -1,5 +1,7 @@
 import "./integrations"
 import type { BackendRuntimeContext } from "../platform/backend-context"
+import { AI_CORE_MODULE } from "../modules/ai-core"
+import type AiCoreModuleService from "../modules/ai-core/service"
 import { ANALYTICS_CORE_MODULE } from "../modules/analytics-core"
 import type AnalyticsCoreModuleService from "../modules/analytics-core/service"
 import { CREDENTIAL_INVENTORY_MODULE } from "../modules/credential-inventory"
@@ -19,6 +21,10 @@ import type SupplierProcurementModuleService from "../modules/supplier-procureme
 
 export function resolveAnalyticsCoreService(scope: BackendRuntimeContext) {
   return scope.resolve(ANALYTICS_CORE_MODULE) as AnalyticsCoreModuleService
+}
+
+export function resolveAiCoreService(scope: BackendRuntimeContext) {
+  return scope.resolve(AI_CORE_MODULE) as AiCoreModuleService
 }
 
 export function resolveCredentialInventoryService(scope: BackendRuntimeContext) {

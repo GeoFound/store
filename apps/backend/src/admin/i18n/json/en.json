@@ -54,6 +54,7 @@
   },
   "adminRoutes": {
     "afterSales": "After-sales",
+    "ai": "AI",
     "analytics": "Analytics",
     "auditLogs": "Audit Logs",
     "controlPanel": "Control Panel",
@@ -67,6 +68,7 @@
   "adminNav": {
     "items": {
       "afterSales": "After-sales",
+      "ai": "AI",
       "analytics": "Analytics",
       "auditLogs": "Audit Logs",
       "controlPanel": "Control Panel",
@@ -83,11 +85,72 @@
       "catalog": "Catalog",
       "customers": "Customers",
       "growth": "Growth",
+      "intelligence": "Intelligence",
       "inventory": "Inventory",
       "orders": "Orders & Delivery",
       "overview": "Overview",
       "paymentsSuppliers": "Payments & Suppliers",
       "riskSystem": "Risk & System"
+    }
+  },
+  "ai": {
+    "description": "Provider-neutral AI readiness for future article, analysis, support, and operations plugins.",
+    "loadFailed": "Failed to load AI data.",
+    "refreshing": "Refreshing...",
+    "title": "AI",
+    "empty": {
+      "defaultProvider": "No default provider",
+      "plugins": "No AI task plugins are registered yet.",
+      "providers": "No AI providers are configured.",
+      "runs": "No AI task runs found."
+    },
+    "fields": {
+      "endpoint": "Endpoint",
+      "model": "Model",
+      "plugin": "Plugin",
+      "provider": "Provider",
+      "protocol": "Protocol",
+      "review": "Review",
+      "secretRef": "Secret ref",
+      "task": "Task",
+      "taskType": "Task type"
+    },
+    "metrics": {
+      "attention": "Needs attention",
+      "configuredProviders": "{{count}} configured",
+      "providerIssues": "Provider config issues",
+      "providers": "Providers",
+      "review": "Review queue",
+      "reviewRuns": "AI runs requiring review",
+      "runtime": "Runtime"
+    },
+    "plugins": {
+      "description": "Concrete AI features register here as task plugins after their workflow is defined.",
+      "title": "AI Task Plugins"
+    },
+    "policy": {
+      "admission": "Admission Criteria",
+      "description": "The same policy is stored in .ai so future modules can be checked against explicit backend-control-panel rules.",
+      "surface": "Required Surface",
+      "title": "Control Panel Admission Standard"
+    },
+    "providers": {
+      "description": "Providers are configured by deployment-owned endpoint, protocol, model, and secret references.",
+      "title": "Provider Configs"
+    },
+    "review": {
+      "optional": "Optional",
+      "required": "Required"
+    },
+    "runs": {
+      "description": "Future AI plugins will write queued, failed, and review-required work here.",
+      "title": "Task Runs"
+    },
+    "secret": {
+      "configured": "environment value exists",
+      "missing": "environment value missing",
+      "missingRef": "missing reference",
+      "notRequired": "not required"
     }
   },
   "controlPanel": {
@@ -136,6 +199,11 @@
         "command": "Replay",
         "title": "Analytics"
       },
+      "ai": {
+        "body": "Check AI provider readiness, task plugins, review queue, and admin-surface standards.",
+        "command": "AI",
+        "title": "AI"
+      },
       "credentials": {
         "body": "Import encrypted credentials and inspect available, reserved, and sold stock.",
         "command": "Stock",
@@ -178,6 +246,11 @@
       }
     },
     "metrics": {
+      "ai": {
+        "body": "providers",
+        "detail": "{{attention}} provider configs need attention; {{review}} runs require review.",
+        "label": "AI"
+      },
       "analytics": {
         "body": "need replay",
         "detail": "{{count}} recent dispatch records checked.",
@@ -235,6 +308,11 @@
         "detail": "{{events}} recent events; {{failed}} dispatches need replay.",
         "empty": "No analytics events in the latest results.",
         "label": "Analytics delivery"
+      },
+      "ai": {
+        "detail": "{{configured}} configured providers; {{attention}} need attention.",
+        "empty": "No AI provider is configured.",
+        "label": "AI readiness"
       },
       "description": "A compact health view across the systems operators otherwise need to inspect one by one.",
       "inventory": {
@@ -324,15 +402,19 @@
     "healthy": "Healthy",
     "high": "High",
     "in_stock": "In stock",
+    "invalid": "Invalid",
     "issued": "Issued",
     "low": "Low",
     "medium": "Medium",
+    "missing_key_ref": "Missing key ref",
+    "missing_secret": "Missing secret",
     "open": "Open",
     "paid": "Paid",
     "partial": "Partial",
     "paused": "Paused",
     "pending": "Pending",
     "processing": "Processing",
+    "requires_review": "Requires review",
     "refunded": "Refunded",
     "rejected": "Rejected",
     "released": "Released",

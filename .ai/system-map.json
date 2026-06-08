@@ -67,6 +67,14 @@
       "verification": ["pnpm --dir apps/backend test:unit", "pnpm ai:doctor"]
     },
     {
+      "id": "ai-core",
+      "kind": "backend-module",
+      "path": "apps/backend/src/modules/ai-core",
+      "owns": ["provider-agnostic AI configuration", "AI task plugin contracts", "AI admin readiness surface"],
+      "mustNotOwn": ["provider-specific SDK implementations", "plaintext AI provider secrets", "article generation business workflow persistence"],
+      "verification": ["pnpm --dir apps/backend test:unit", "pnpm ai:config", "pnpm ai:inventory"]
+    },
+    {
       "id": "analytics-core",
       "kind": "backend-module",
       "path": "apps/backend/src/modules/analytics-core",
@@ -180,6 +188,13 @@
       "verification": ["pnpm ai:inventory", "pnpm ai:doctor"]
     },
     {
+      "id": "admin-control-panel-policy",
+      "kind": "governance-policy",
+      "path": ".ai/admin-control-panel-policy.json",
+      "owns": ["backend control panel admission criteria", "required human-usable admin surface expectations"],
+      "verification": ["pnpm --dir apps/backend test:unit", "pnpm ai:doctor"]
+    },
+    {
       "id": "ai-operating-system",
       "kind": "automation-system",
       "path": ".ai",
@@ -226,6 +241,10 @@
     {
       "id": "runtime-config-must-be-registered",
       "enforcedBy": ["pnpm ai:config", "scripts/ai/config-surface.mjs"]
+    },
+    {
+      "id": "admin-control-panel-admission-must-be-explicit",
+      "enforcedBy": [".ai/admin-control-panel-policy.json", "apps/backend/src/platform/__tests__/admin-control-panel-policy.unit.spec.ts"]
     },
     {
       "id": "production-readiness-must-have-offline-proxies",

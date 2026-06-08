@@ -7,6 +7,7 @@ import {
 } from "./localization"
 
 type LocalizedMessageKey =
+  | "ai.disabled"
   | "analytics.disabled"
   | "analytics.dispatchIdRequired"
   | "common.messageRequired"
@@ -35,6 +36,10 @@ type LocalizedMessageKey =
   | "template.unknown"
 
 const messages: Record<LocalizedMessageKey, Record<SupportedLocale, string>> = {
+  "ai.disabled": {
+    en: "AI core plugin is disabled",
+    "zh-CN": "AI 核心插件已停用",
+  },
   "analytics.disabled": {
     en: "Analytics core plugin is disabled",
     "zh-CN": "分析核心插件已停用",

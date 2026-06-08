@@ -117,5 +117,8 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/analytics-core",
     },
+    {
+      resolve: "./src/modules/ai-core",
+    },
   ],
 })

@@ -44,6 +44,9 @@ Optional analytics and observability:
 | `RESEND_FROM_EMAIL` | Sender identity used by Resend (`no-reply@example.com` or `Store <no-reply@example.com>`) | Required when `RESEND_ENABLED=true`; domain must be verified in Resend. |
 | `RESEND_REPLY_TO_EMAIL` | Optional reply-to address for support workflows | Recommended for recovery/support emails. |
 | `RESEND_API_BASE_URL` | Resend API base URL | Default `https://api.resend.com`; override only for controlled proxies. |
+| `AI_ENABLED` | Enable provider-neutral AI task execution surfaces | Default `false`. Keep disabled until provider credentials and review workflows are ready. |
+| `AI_DEFAULT_PROVIDER` | Default AI provider code selected from `AI_PROVIDER_CONFIGS_JSON` | Optional. Use the provider code, not a vendor-specific env key. |
+| `AI_PROVIDER_CONFIGS_JSON` | JSON array of AI provider configs with `code`, `protocol`, `base_url`, `api_key_env`, and `default_model` fields | Keep backend-only. Do not put plaintext keys here; reference deployment-owned key env names such as `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, or `ANTHROPIC_API_KEY`. |
 | `SUPPLIER_ENCRYPTION_KEY` | Primary AES-256-GCM key for supplier fulfillment snapshots | Must decode to 32 bytes. Defaults to `DELIVERY_ENCRYPTION_KEY` when omitted. Keep separate in production when supplier payloads include redeemable secrets. |
 | `SUPPLIER_ENCRYPTION_KEY_PREVIOUS` | Optional previous supplier keys for key rotation (comma-separated) | Each key must decode to 32 bytes. |
 | `RELOADLY_ENV` | Reloadly environment selector (`sandbox` or `production`) | Default `sandbox`. |

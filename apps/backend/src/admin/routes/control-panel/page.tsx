@@ -134,10 +134,40 @@ type AnalyticsDispatch = {
   created_at?: string | null
 }
 
+type AIProviderConfig = {
+  code: string
+  label: string
+  status: string
+  enabled: boolean
+}
+
+type AITaskRun = {
+  id: string
+  task_type: string
+  plugin_code: string
+  provider_code: string | null
+  status: string
+  created_at: string | null
+}
+
+type AISnapshot = {
+  providers: AIProviderConfig[]
+  task_runs: AITaskRun[]
+  summary: {
+    provider_count: number
+    configured_provider_count: number
+    attention_provider_count: number
+    review_run_count: number
+  }
+}
+
 type ControlPanelState = {
   afterSales: AfterSale[]
   analyticsDispatches: AnalyticsDispatch[]
   analyticsEvents: AnalyticsEvent[]
+  aiProviders: AIProviderConfig[]
+  aiTaskRuns: AITaskRun[]
+  aiSummary: AISnapshot["summary"]
   auditLogs: AuditLog[]
   batches: CredentialBatch[]
   channels: PaymentChannel[]
@@ -155,6 +185,14 @@ const EMPTY_STATE: ControlPanelState = {
   afterSales: [],
   analyticsDispatches: [],
   analyticsEvents: [],
+  aiProviders: [],
+  aiTaskRuns: [],
+  aiSummary: {
+    provider_count: 0,
+    configured_provider_count: 0,
+    attention_provider_count: 0,
+    review_run_count: 0,
+  },
   auditLogs: [],
   batches: [],
   channels: [],
@@ -173,6 +211,12 @@ const CHANNEL_READY_STATUSES = new Set(["configured", "healthy", "active"])
 const SUPPLIER_ATTENTION_STATUSES = new Set(["failed", "needs_review"])
 const AFTER_SALES_OPEN_STATUSES = new Set(["open", "processing"])
 const ANALYTICS_ATTENTION_STATUSES = new Set(["failed", "dead"])
+const AI_ATTENTION_STATUSES = new Set([
+  "invalid",
+  "missing_key_ref",
+  "missing_secret",
+])
+const AI_REVIEW_STATUSES = new Set(["requires_review"])
 
 const workflowLinks = [
   {
@@ -228,6 +272,12 @@ const workflowLinks = [
     commandKey: "controlPanel.links.analytics.command",
     titleKey: "controlPanel.links.analytics.title",
     to: "/analytics",
+  },
+  {
+    bodyKey: "controlPanel.links.ai.body",
+    commandKey: "controlPanel.links.ai.command",
+    titleKey: "controlPanel.links.ai.title",
+    to: "/ai",
   },
   {
     bodyKey: "controlPanel.links.afterSales.body",
@@ -304,6 +354,12 @@ const ControlPanelPage = () => {
     const analyticsAttention = dashboard.analyticsDispatches.filter((dispatch) =>
       ANALYTICS_ATTENTION_STATUSES.has(dispatch.status)
     ).length
+    const aiAttention = dashboard.aiProviders.filter((provider) =>
+      AI_ATTENTION_STATUSES.has(provider.status)
+    ).length
+    const aiReviewRuns = dashboard.aiTaskRuns.filter((run) =>
+      AI_REVIEW_STATUSES.has(run.status)
+    ).length
 
     return [
       {
@@ -378,6 +434,16 @@ const ControlPanelPage = () => {
         value: analyticsAttention,
       },
       {
+        body: t("controlPanel.metrics.ai.body"),
+        detail: t("controlPanel.metrics.ai.detail", {
+          attention: aiAttention,
+          review: aiReviewRuns,
+        }),
+        label: t("controlPanel.metrics.ai.label"),
+        to: "/ai",
+        value: dashboard.aiSummary.configured_provider_count,
+      },
+      {
         body: t("controlPanel.metrics.risk.body"),
         detail: t("controlPanel.metrics.risk.detail"),
         label: t("controlPanel.metrics.risk.label"),
@@ -413,6 +479,9 @@ const ControlPanelPage = () => {
     )
     const failedDispatches = dashboard.analyticsDispatches.filter((dispatch) =>
       ANALYTICS_ATTENTION_STATUSES.has(dispatch.status)
+    )
+    const aiProvidersNeedingAttention = dashboard.aiProviders.filter((provider) =>
+      AI_ATTENTION_STATUSES.has(provider.status)
     )
 
     return [
@@ -473,6 +542,21 @@ const ControlPanelPage = () => {
           ? t("controlPanel.signals.needsReplay")
           : t("controlPanel.signals.ready"),
         to: "/analytics",
+      },
+      {
+        body:
+          aiProvidersNeedingAttention[0]?.label ||
+          dashboard.aiProviders[0]?.label ||
+          t("controlPanel.signals.ai.empty"),
+        detail: t("controlPanel.signals.ai.detail", {
+          configured: dashboard.aiSummary.configured_provider_count,
+          attention: dashboard.aiSummary.attention_provider_count,
+        }),
+        label: t("controlPanel.signals.ai.label"),
+        status: aiProvidersNeedingAttention.length
+          ? t("controlPanel.signals.needsReview")
+          : t("controlPanel.signals.ready"),
+        to: "/ai",
       },
     ]
   }, [dashboard, t])
@@ -618,6 +702,7 @@ const ControlPanelPage = () => {
       adminApi<{ dispatches: AnalyticsDispatch[] }>(
         "/admin/analytics/dispatches?limit=25"
       ),
+      adminApi<AISnapshot>("/admin/ai/providers"),
     ])
 
     const [
@@ -635,7 +720,19 @@ const ControlPanelPage = () => {
       marketingTouchpoints,
       analyticsEvents,
       analyticsDispatches,
+      aiSnapshot,
     ] = results
+
+    const aiData = fulfilledValue(aiSnapshot, {
+      providers: [],
+      task_runs: [],
+      summary: {
+        provider_count: 0,
+        configured_provider_count: 0,
+        attention_provider_count: 0,
+        review_run_count: 0,
+      },
+    })
 
     setDashboard({
       afterSales: fulfilledValue(afterSales, { after_sales: [] }).after_sales,
@@ -643,6 +740,9 @@ const ControlPanelPage = () => {
         dispatches: [],
       }).dispatches,
       analyticsEvents: fulfilledValue(analyticsEvents, { events: [] }).events,
+      aiProviders: aiData.providers,
+      aiSummary: aiData.summary,
+      aiTaskRuns: aiData.task_runs,
       auditLogs: fulfilledValue(auditLogs, { audit_logs: [] }).audit_logs,
       batches: fulfilledValue(batches, { batches: [] }).batches,
       catalogVariants: fulfilledValue(catalogVariants, { variants: [] })
@@ -729,7 +829,7 @@ const ControlPanelPage = () => {
           title={t("controlPanel.signals.title")}
           description={t("controlPanel.signals.description")}
         />
-        <div className="grid divide-y md:grid-cols-2 md:divide-x md:divide-y-0 xl:grid-cols-4">
+        <div className="grid divide-y md:grid-cols-2 md:divide-x md:divide-y-0 xl:grid-cols-5">
           {operatorSignals.map((signal) => (
             <Link
               key={signal.label}

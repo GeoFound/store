@@ -30,11 +30,20 @@
         "owner": "config-surface",
         "rationale": "Generic secret helper reads caller-provided registered key names and fallback names; concrete runtime keys remain registered in entries.",
         "verification": ["pnpm ai:config", "pnpm check:ci"]
+      },
+      {
+        "path": "apps/backend/src/modules/ai-core/config.ts",
+        "owner": "ai-core",
+        "rationale": "AI provider configs reference arbitrary deployment-owned secret env names through api_key_env; the module only checks presence and never returns secret values.",
+        "verification": ["pnpm ai:config", "pnpm --dir apps/backend test:unit"]
       }
     ]
   },
   "entries": {
     "ADMIN_CORS": { "scope": "backend", "visibility": "public-origin", "owner": "security", "requiredInProduction": true },
+    "AI_DEFAULT_PROVIDER": { "scope": "backend", "visibility": "internal", "owner": "ai-core", "requiredInProduction": false },
+    "AI_ENABLED": { "scope": "backend", "visibility": "internal", "owner": "ai-core", "requiredInProduction": false },
+    "AI_PROVIDER_CONFIGS_JSON": { "scope": "backend", "visibility": "secret", "owner": "ai-core", "requiredInProduction": false },
     "ANALYTICS_DISPATCH_BATCH_SIZE": { "scope": "backend", "visibility": "internal", "owner": "analytics-core", "requiredInProduction": false },
     "ANALYTICS_ENABLED": { "scope": "backend", "visibility": "internal", "owner": "analytics-core", "requiredInProduction": false },
     "ANALYTICS_MAX_RETRY_ATTEMPTS": { "scope": "backend", "visibility": "internal", "owner": "analytics-core", "requiredInProduction": false },

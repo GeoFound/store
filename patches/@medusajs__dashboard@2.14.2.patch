@@ -64,7 +64,7 @@ index ed9a8e0153971d23cc29f2aae5e610c2c1c4964e..336f2acf9b6d5040d5907e6f27dee731
            /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(UtilitySection, {})
          ] }),
          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { className: "bg-ui-bg-subtle sticky bottom-0", children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(UserSection, {}) })
-@@ -107788,152 +107813,227 @@ var init_main_layout = __esm({
+@@ -107788,152 +107813,237 @@ var init_main_layout = __esm({
          ] })
        ] }) });
      };
@@ -85,7 +85,8 @@ index ed9a8e0153971d23cc29f2aae5e610c2c1c4964e..336f2acf9b6d5040d5907e6f27dee731
 +        "/after-sales",
 +        "/audit-logs",
 +        "/marketing",
-+        "/analytics"
++        "/analytics",
++        "/ai"
 +      ];
 +      const customRoute = (to, fallback) => {
 +        const item = extensionItems.find((entry) => entry.to === to);
@@ -115,6 +116,16 @@ index ed9a8e0153971d23cc29f2aae5e610c2c1c4964e..336f2acf9b6d5040d5907e6f27dee731
 +              to: "/control-panel"
 +            })
            ]
++        },
++        {
++          label: t5("adminNav.sections.intelligence"),
++          items: [
++            customRoute("/ai", {
++              icon: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(import_icons10.SquaresPlus, {}),
++              label: t5("adminNav.items.ai"),
++              to: "/ai"
++            })
++          ]
          },
          {
 -          icon: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(import_icons10.Tag, {}),
@@ -406,7 +417,7 @@ index ed9a8e0153971d23cc29f2aae5e610c2c1c4964e..336f2acf9b6d5040d5907e6f27dee731
        ] });
      };
      UtilitySection = () => {
-@@ -110171,7 +110271,7 @@ var init_home = __esm({
+@@ -110171,7 +110281,7 @@ var init_home = __esm({
      Home = () => {
        const navigate = (0, import_react_router_dom13.useNavigate)();
        (0, import_react28.useEffect)(() => {
@@ -431,7 +442,7 @@ index 939abb4e15c5b88acf6f0a14695e2c3aaeadb893..8d45c2264390e10a3ecc4147526e5f8c
        /* @__PURE__ */ jsx13(UtilitySection, {})
      ] }),
      /* @__PURE__ */ jsx13("div", { className: "bg-ui-bg-subtle sticky bottom-0", children: /* @__PURE__ */ jsx13(UserSection, {}) })
-@@ -102755,152 +102752,227 @@ var Header = () => {
+@@ -102755,152 +102752,237 @@ var Header = () => {
      ] })
    ] }) });
  };
@@ -452,7 +463,8 @@ index 939abb4e15c5b88acf6f0a14695e2c3aaeadb893..8d45c2264390e10a3ecc4147526e5f8c
 +    "/after-sales",
 +    "/audit-logs",
 +    "/marketing",
-+    "/analytics"
++    "/analytics",
++    "/ai"
 +  ];
 +  const customRoute = (to, fallback) => {
 +    const item = extensionItems.find((entry) => entry.to === to);
@@ -482,6 +494,16 @@ index 939abb4e15c5b88acf6f0a14695e2c3aaeadb893..8d45c2264390e10a3ecc4147526e5f8c
 +          to: "/control-panel"
 +        })
        ]
++    },
++    {
++      label: t2("adminNav.sections.intelligence"),
++      items: [
++        customRoute("/ai", {
++          icon: /* @__PURE__ */ jsx13(SquaresPlus, {}),
++          label: t2("adminNav.items.ai"),
++          to: "/ai"
++        })
++      ]
      },
      {
 -      icon: /* @__PURE__ */ jsx13(Tag, {}),
@@ -866,7 +888,7 @@ index c554883a355b95afb80139346ac38859029b155d..3a20315bcfad58747cdaa4fd9014e91a
            </div>
            <UtilitySection />
          </div>
-@@ -176,186 +172,283 @@ const Header = () => {
+@@ -176,186 +172,293 @@ const Header = () => {
    )
  }
  
@@ -887,6 +909,7 @@ index c554883a355b95afb80139346ac38859029b155d..3a20315bcfad58747cdaa4fd9014e91a
 +  "/audit-logs",
 +  "/marketing",
 +  "/analytics",
++  "/ai",
 +]
 +
 +const Searchbar = () => {
@@ -954,6 +977,16 @@ index c554883a355b95afb80139346ac38859029b155d..3a20315bcfad58747cdaa4fd9014e91a
 +          to: "/control-panel",
 +        }),
        ],
++    },
++    {
++      label: t("adminNav.sections.intelligence"),
++      items: [
++        customRoute("/ai", {
++          icon: <SquaresPlus />,
++          label: t("adminNav.items.ai"),
++          to: "/ai",
++        }),
++      ],
      },
      {
 -      icon: <Tag />,

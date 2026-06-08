@@ -71,6 +71,45 @@
         ]
       },
       {
+        "path": "apps/backend/src/api/admin/ai/control-panel-policy/route.ts",
+        "route": "/admin/ai/control-panel-policy",
+        "surface": "admin",
+        "owner": "ai-core",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/admin/ai/providers/route.ts",
+        "route": "/admin/ai/providers",
+        "surface": "admin",
+        "owner": "ai-core",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/admin/ai/runs/route.ts",
+        "route": "/admin/ai/runs",
+        "surface": "admin",
+        "owner": "ai-core",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
         "path": "apps/backend/src/api/admin/analytics/dispatches/route.ts",
         "route": "/admin/analytics/dispatches",
         "surface": "admin",

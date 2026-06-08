@@ -13,6 +13,15 @@
   "tracked": {
     "backendModules": [
       {
+        "name": "ai-core",
+        "owner": "ai-core",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/backend test:unit"
+        ],
+        "rationale": "Provider-agnostic AI platform core and admin visibility surface; additions must declare owner and verification before CI can pass."
+      },
+      {
         "name": "analytics-core",
         "owner": "analytics-core",
         "verification": [
@@ -157,6 +166,33 @@
           "pnpm check:ci"
         ],
         "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/admin/ai/control-panel-policy/route.ts",
+        "owner": "ai-core",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "AI admin control panel policy endpoint registered for governance and operator visibility."
+      },
+      {
+        "path": "apps/backend/src/api/admin/ai/providers/route.ts",
+        "owner": "ai-core",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "Provider-agnostic AI provider readiness endpoint registered for backend control panel visibility."
+      },
+      {
+        "path": "apps/backend/src/api/admin/ai/runs/route.ts",
+        "owner": "ai-core",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm check:ci"
+        ],
+        "rationale": "AI task run queue endpoint registered for future AI plugins and backend control panel visibility."
       },
       {
         "path": "apps/backend/src/api/admin/analytics/dispatches/route.ts",

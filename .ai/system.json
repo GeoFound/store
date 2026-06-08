@@ -106,6 +106,7 @@
       ".ai/architecture-rules.json",
       ".ai/architecture-baseline.json",
       ".ai/config-surface.json",
+      ".ai/admin-control-panel-policy.json",
       ".ai/production-readiness.json",
       ".ai/inventory-baseline.json",
       ".ai/skills/store-ai-maintainer/SKILL.md",

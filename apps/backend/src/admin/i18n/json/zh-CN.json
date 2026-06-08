@@ -54,6 +54,7 @@
   },
   "adminRoutes": {
     "afterSales": "售后",
+    "ai": "AI",
     "analytics": "分析",
     "auditLogs": "审计日志",
     "controlPanel": "控制台",
@@ -67,6 +68,7 @@
   "adminNav": {
     "items": {
       "afterSales": "售后",
+      "ai": "AI",
       "analytics": "分析",
       "auditLogs": "审计日志",
       "controlPanel": "控制台",
@@ -83,11 +85,72 @@
       "catalog": "商品与目录",
       "customers": "客户",
       "growth": "增长",
+      "intelligence": "智能",
       "inventory": "凭证与库存",
       "orders": "订单与交付",
       "overview": "总览",
       "paymentsSuppliers": "支付与供应商",
       "riskSystem": "风控与系统"
+    }
+  },
+  "ai": {
+    "description": "面向未来文章、分析、客服和运营插件的厂商中立 AI 就绪状态。",
+    "loadFailed": "加载 AI 数据失败。",
+    "refreshing": "刷新中...",
+    "title": "AI",
+    "empty": {
+      "defaultProvider": "未设置默认 provider",
+      "plugins": "尚未注册 AI 任务插件。",
+      "providers": "尚未配置 AI provider。",
+      "runs": "暂无 AI 任务运行记录。"
+    },
+    "fields": {
+      "endpoint": "端点",
+      "model": "模型",
+      "plugin": "插件",
+      "provider": "Provider",
+      "protocol": "协议",
+      "review": "审核",
+      "secretRef": "密钥引用",
+      "task": "任务",
+      "taskType": "任务类型"
+    },
+    "metrics": {
+      "attention": "需处理",
+      "configuredProviders": "{{count}} 个已配置",
+      "providerIssues": "Provider 配置问题",
+      "providers": "Providers",
+      "review": "审核队列",
+      "reviewRuns": "需要审核的 AI 运行",
+      "runtime": "运行状态"
+    },
+    "plugins": {
+      "description": "具体 AI 功能会在工作流明确后以任务插件注册到这里。",
+      "title": "AI 任务插件"
+    },
+    "policy": {
+      "admission": "准入条件",
+      "description": "同一套规则也存放在 .ai 中，后续模块是否必须接入后台控制面板会按明确标准判断。",
+      "surface": "必要后台表面",
+      "title": "控制面板准入标准"
+    },
+    "providers": {
+      "description": "Provider 由部署侧配置端点、协议、模型和密钥引用；后台不会展示密钥值。",
+      "title": "Provider 配置"
+    },
+    "review": {
+      "optional": "可选",
+      "required": "必需"
+    },
+    "runs": {
+      "description": "未来 AI 插件会把排队、失败和需要人工审核的工作写到这里。",
+      "title": "任务运行"
+    },
+    "secret": {
+      "configured": "环境变量已存在",
+      "missing": "环境变量缺失",
+      "missingRef": "缺少引用",
+      "notRequired": "不需要"
     }
   },
   "controlPanel": {
@@ -136,6 +199,11 @@
         "command": "重放",
         "title": "分析"
       },
+      "ai": {
+        "body": "检查 AI provider 就绪状态、任务插件、审核队列和后台准入标准。",
+        "command": "AI",
+        "title": "AI"
+      },
       "credentials": {
         "body": "导入加密凭证，并查看可售、预占和已售库存。",
         "command": "库存",
@@ -178,6 +246,11 @@
       }
     },
     "metrics": {
+      "ai": {
+        "body": "providers",
+        "detail": "{{attention}} 个 provider 配置需要处理；{{review}} 个运行需要审核。",
+        "label": "AI"
+      },
       "analytics": {
         "body": "需重放",
         "detail": "已检查最近 {{count}} 条投递记录。",
@@ -235,6 +308,11 @@
         "detail": "{{events}} 条最近事件；{{failed}} 条投递需要重放。",
         "empty": "最近结果里没有分析事件。",
         "label": "分析投递"
+      },
+      "ai": {
+        "detail": "{{configured}} 个 provider 已配置；{{attention}} 个需要处理。",
+        "empty": "尚未配置 AI provider。",
+        "label": "AI 就绪状态"
       },
       "description": "把运营人员原本需要逐页检查的系统状态压缩成一组健康信号。",
       "inventory": {
@@ -324,15 +402,19 @@
     "healthy": "健康",
     "high": "高",
     "in_stock": "有库存",
+    "invalid": "无效",
     "issued": "已发放",
     "low": "低",
     "medium": "中",
+    "missing_key_ref": "缺少密钥引用",
+    "missing_secret": "缺少密钥",
     "open": "待处理",
     "paid": "已支付",
     "partial": "部分完成",
     "paused": "已暂停",
     "pending": "待处理",
     "processing": "处理中",
+    "requires_review": "需要审核",
     "refunded": "已退款",
     "rejected": "已拒绝",
     "released": "已释放",

@@ -23,6 +23,7 @@ describe("Medusa Dashboard shell patch", () => {
     expect(patch).toContain('+      label: t("adminNav.sections.inventory"),')
     expect(patch).toContain('+      label: t("adminNav.sections.paymentsSuppliers"),')
     expect(patch).toContain('+      label: t("adminNav.sections.growth"),')
+    expect(patch).toContain('+      label: t("adminNav.sections.intelligence"),')
     expect(patch).toContain('+      label: t("adminNav.sections.customers"),')
     expect(patch).toContain('+      label: t("adminNav.sections.riskSystem"),')
   })
@@ -46,6 +47,7 @@ describe("Medusa Dashboard shell patch", () => {
     expect(patch).toContain('to: "/credentials"')
     expect(patch).toContain('to: "/deliveries"')
     expect(patch).toContain('to: "/payments"')
+    expect(patch).toContain('to: "/ai"')
   })
 
   it("patches the distributed dashboard runtime files", () => {
@@ -56,6 +58,8 @@ describe("Medusa Dashboard shell patch", () => {
     expect(patch).toContain("+var OperationalRouteSection = () => {")
     expect(patch).toContain('+          label: t5("adminNav.sections.catalog"),')
     expect(patch).toContain('+      label: t2("adminNav.sections.catalog"),')
+    expect(patch).toContain('+          label: t5("adminNav.sections.intelligence"),')
+    expect(patch).toContain('+      label: t2("adminNav.sections.intelligence"),')
     expect(patch).toContain("-    CoreRouteSection = () => {")
     expect(patch).toContain("-var CoreRouteSection = () => {")
     expect(patch).toContain('+        navigate("/control-panel", { replace: true });')
