@@ -16,6 +16,42 @@
     "data_plane": "isolated",
     "control_plane": "profile"
   },
+  "lifecycle": {
+    "site_launch_contract_version": "1.0.0",
+    "environment": "production",
+    "data_policy": {
+      "real_user_data_allowed": false,
+      "production_real_tenant_evidence_allowed": false,
+      "graph_mode": "dry_run",
+      "graph_production_write_enabled": false,
+      "analytics_export_mode": "dry_run",
+      "payment_mode": "manual_or_test",
+      "supplier_auto_procurement_enabled": false
+    },
+    "controls": {
+      "staging_required": true,
+      "cloudflare_required": true,
+      "runtime_health_required": true,
+      "edge_preflight_required": true,
+      "regression_required": true,
+      "backup_required": true,
+      "restore_test_required": true,
+      "rollback_required": true,
+      "human_gate_required": true
+    },
+    "evidence": {
+      "required_static_commands": ["pnpm check:ci", "pnpm profile:validate:all", "pnpm site:validate:all"],
+      "required_runtime_commands": ["pnpm deploy:health", "pnpm deploy:edge", "pnpm deploy:regression", "pnpm deploy:vps-doctor"],
+      "last_runtime_health_ref": null,
+      "last_edge_preflight_ref": null,
+      "last_regression_ref": null,
+      "last_backup_ref": null,
+      "last_restore_test_ref": null,
+      "last_rollback_ref": null,
+      "last_staging_evidence_ref": null,
+      "human_gate_ref": null
+    }
+  },
   "theme": {
     "id": "atlas",
     "background": "#f6f8fb",

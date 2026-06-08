@@ -108,12 +108,14 @@
       ".ai/config-surface.json",
       ".ai/admin-control-panel-policy.json",
       ".ai/production-readiness.json",
+      ".ai/site-lifecycle-policy.json",
       ".ai/inventory-baseline.json",
       ".ai/skills/store-ai-maintainer/SKILL.md",
       ".ai/decision-records",
       ".ai/review-checklists",
       "docs/architecture/decoupling-boundaries.md",
-      "docs/ops/production-runbook.md"
+      "docs/ops/production-runbook.md",
+      "docs/ops/site-lifecycle.md"
     ],
     "runFirst": ["pnpm ai:context", "pnpm ai:doctor", "pnpm ai:architecture", "pnpm ai:inventory", "pnpm ai:config", "pnpm ai:production"],
     "runBeforeCommit": ["pnpm check:ci"],
@@ -132,6 +134,11 @@
       "ai:evidence:full",
       "check:ci",
       "profile:validate:all",
+      "site:validate",
+      "site:validate:all",
+      "site:evidence",
+      "site:evidence:all",
+      "site:gate",
       "deploy:health",
       "deploy:edge",
       "deploy:regression"

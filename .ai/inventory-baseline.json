@@ -104,6 +104,16 @@
         "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
       },
       {
+        "name": "ops-control",
+        "owner": "ops-control",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:production",
+          "pnpm --dir apps/backend test:unit"
+        ],
+        "rationale": "Read-only backend operations control surface for security posture, VPS evidence, Cloudflare readiness, backups, and AI-assisted maintenance review."
+      },
+      {
         "name": "payment-router",
         "owner": "payment-router",
         "verification": [
@@ -331,6 +341,36 @@
           "pnpm check:ci"
         ],
         "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/admin/ops-control/dashboard/route.ts",
+        "owner": "ops-control",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "rationale": "Operations control panel dashboard endpoint for redacted security, maintenance, Cloudflare, backup, and AI ops readiness."
+      },
+      {
+        "path": "apps/backend/src/api/admin/ops-control/maintenance/route.ts",
+        "owner": "ops-control",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "rationale": "Operations control panel maintenance endpoint for VPS posture, backup evidence, and AI operations flags."
+      },
+      {
+        "path": "apps/backend/src/api/admin/ops-control/security/route.ts",
+        "owner": "ops-control",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "rationale": "Operations control panel security endpoint for security-guard, Cloudflare, account abuse guard, and edge protection settings."
       },
       {
         "path": "apps/backend/src/api/admin/marketing/campaigns/route.ts",
@@ -950,16 +990,28 @@
         "owner": "profile-system",
         "verification": [
           "pnpm ai:inventory",
-          "pnpm profile:validate:all"
+          "pnpm profile:validate:all",
+          "pnpm site:validate:all"
         ],
         "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "profiles/sites/jp-cards/staging",
+        "owner": "profile-system",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm profile:validate:all",
+          "pnpm site:validate:all"
+        ],
+        "rationale": "Staging profile is required by the site lifecycle contract before production promotion."
       },
       {
         "path": "profiles/sites/jp-cards/production",
         "owner": "profile-system",
         "verification": [
           "pnpm ai:inventory",
-          "pnpm profile:validate:all"
+          "pnpm profile:validate:all",
+          "pnpm site:validate:all"
         ],
         "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
       },
@@ -968,16 +1020,28 @@
         "owner": "profile-system",
         "verification": [
           "pnpm ai:inventory",
-          "pnpm profile:validate:all"
+          "pnpm profile:validate:all",
+          "pnpm site:validate:all"
         ],
         "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "profiles/sites/site-1/staging",
+        "owner": "profile-system",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm profile:validate:all",
+          "pnpm site:validate:all"
+        ],
+        "rationale": "Staging profile is required by the site lifecycle contract before production promotion."
       },
       {
         "path": "profiles/sites/site-1/production",
         "owner": "profile-system",
         "verification": [
           "pnpm ai:inventory",
-          "pnpm profile:validate:all"
+          "pnpm profile:validate:all",
+          "pnpm site:validate:all"
         ],
         "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
       }

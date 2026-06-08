@@ -16,4 +16,5 @@ apps/storefront/src/ @GeoFound
 profiles/ @GeoFound
 ops/env/ @GeoFound
 scripts/deploy/ @GeoFound
+scripts/site/ @GeoFound
 .github/workflows/ @GeoFound

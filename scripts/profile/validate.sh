@@ -126,3 +126,8 @@ NODE
     src/platform-adapters/validate-profile-config.ts \
     --profile "$PROFILE_FILE"
 )
+
+node "$REPO_ROOT/scripts/site/lifecycle.mjs" validate \
+  --site-id "$SITE_ID" \
+  --site-env "$SITE_ENV" \
+  --profile-root "$PROFILE_ROOT" >/dev/null

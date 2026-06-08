@@ -30,16 +30,16 @@
       "goal": "Prove the repository can support production deployment for the selected site profile.",
       "owner": "ai-with-human-decision",
       "trigger": "before go-live, provider change, domain change, or deploy pipeline change",
-      "commands": ["pnpm ai:production", "pnpm ai:evidence:full"],
-      "evidence": ["production readiness ok=true", "API contract snapshot passed", "schema migration baseline passed", "production config template coverage passed", "CI passed", "profile validation passed", "health gate passed", "edge preflight passed", "regression smoke passed"]
+      "commands": ["pnpm ai:production", "pnpm site:validate:all", "pnpm site:evidence -- --site-id <id> --site-env staging", "pnpm site:gate -- --site-id <id> --site-env production", "pnpm ai:evidence:full"],
+      "evidence": ["production readiness ok=true", "site lifecycle contract valid", "staging evidence report written", "production gate ready_for_promotion=true", "API contract snapshot passed", "schema migration baseline passed", "production config template coverage passed", "CI passed", "profile validation passed", "health gate passed", "edge preflight passed", "regression smoke passed"]
     },
     {
       "id": "multi-site-evolution",
       "goal": "Evolve a site from dedicated toward pooled or sharded runtime without weakening tenant isolation.",
       "owner": "ai-with-human-decision",
       "trigger": "new site, shared backend proposal, data-plane migration, or tenant boundary refactor",
-      "commands": ["pnpm ai:inventory", "pnpm ai:config", "pnpm ai:production", "pnpm profile:validate:all", "pnpm check:ci"],
-      "evidence": ["site/profile surface registered", "tenant profile modes valid", "runtime config surface clean", "production route/config/schema surface clean", "tenant isolation tests passed", "human approval for shared data-plane risk"]
+      "commands": ["pnpm ai:inventory", "pnpm ai:config", "pnpm ai:production", "pnpm profile:validate:all", "pnpm site:validate:all", "pnpm check:ci"],
+      "evidence": ["site/profile surface registered", "development/staging/production lifecycle profiles present", "tenant profile modes valid", "runtime config surface clean", "production route/config/schema surface clean", "tenant isolation tests passed", "human approval for shared data-plane risk"]
     },
     {
       "id": "runtime-maintenance",

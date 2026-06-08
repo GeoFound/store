@@ -49,6 +49,11 @@
       "id": "profile-validate-all",
       "command": ["pnpm", "profile:validate:all"],
       "required": true
+    },
+    {
+      "id": "site-validate-all",
+      "command": ["pnpm", "site:validate:all"],
+      "required": true
     }
   ],
   "productionChecks": [

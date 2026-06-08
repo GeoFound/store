@@ -1,15 +1,15 @@
 {
   "site": {
     "id": "jp-cards",
-    "name": "Shiro Keys",
-    "description": "Digital cards and account stock for Japan market",
+    "name": "Shiro Keys Staging",
+    "description": "Staging environment for Japan-market digital cards and account stock",
     "locale": "ja-JP",
     "currency": "jpy",
     "timezone": "Asia/Tokyo"
   },
   "domains": {
-    "storefront": "jp.example.com",
-    "api": "api.jp.example.com"
+    "storefront": "staging.jp.example.com",
+    "api": "api.staging.jp.example.com"
   },
   "tenancy": {
     "mode": "dedicated",
@@ -18,30 +18,30 @@
   },
   "lifecycle": {
     "site_launch_contract_version": "1.0.0",
-    "environment": "development",
+    "environment": "staging",
     "data_policy": {
       "real_user_data_allowed": false,
       "production_real_tenant_evidence_allowed": false,
       "graph_mode": "dry_run",
       "graph_production_write_enabled": false,
-      "analytics_export_mode": "fixture_only",
+      "analytics_export_mode": "dry_run",
       "payment_mode": "test",
       "supplier_auto_procurement_enabled": false
     },
     "controls": {
-      "staging_required": false,
-      "cloudflare_required": false,
-      "runtime_health_required": false,
-      "edge_preflight_required": false,
-      "regression_required": false,
-      "backup_required": false,
-      "restore_test_required": false,
-      "rollback_required": false,
+      "staging_required": true,
+      "cloudflare_required": true,
+      "runtime_health_required": true,
+      "edge_preflight_required": true,
+      "regression_required": true,
+      "backup_required": true,
+      "restore_test_required": true,
+      "rollback_required": true,
       "human_gate_required": false
     },
     "evidence": {
-      "required_static_commands": ["pnpm profile:validate -- --site-id jp-cards --site-env development"],
-      "required_runtime_commands": [],
+      "required_static_commands": ["pnpm check:ci", "pnpm profile:validate:all", "pnpm site:validate:all"],
+      "required_runtime_commands": ["pnpm deploy:health", "pnpm deploy:edge", "pnpm deploy:regression", "pnpm deploy:vps-doctor"],
       "last_runtime_health_ref": null,
       "last_edge_preflight_ref": null,
       "last_regression_ref": null,
@@ -74,46 +74,41 @@
       "cart": "カート"
     },
     "home": {
-      "headline": "即時受取できるデジタル商品ストア",
-      "description": "ゲスト購入に対応。決済完了後、注文アクセスリンクから納品内容を確認できます。",
+      "headline": "ステージング用デジタル商品ストア",
+      "description": "本番前にチェックアウト、納品、復旧、Cloudflare、バックアップを検証する環境です。",
       "browse_cta": "商品を見る",
       "orders_cta": "注文を確認",
-      "products_heading": "販売中の商品",
-      "products_description": "本サイト向けのデジタル在庫を提供しています。",
+      "products_heading": "検証用商品",
+      "products_description": "本番ユーザーや本番 graph 書き込みを使わずに検証します。",
       "hero_pattern": "linear-gradient(140deg,#be123c 0%,#be123c 42%,#0f766e 42%,#0f766e 70%,#111827 70%)",
       "featured_limit": 6,
       "announcements": [
         {
-          "title": "ゲスト購入に対応",
-          "body": "購入後は注文アクセスリンクから納品内容を確認できます。",
+          "title": "Staging only",
+          "body": "この環境は本番ユーザーデータと graph production writes を禁止します。",
           "tone": "info"
         }
       ]
     },
     "categories": {
-      "heading": "カテゴリから探す",
-      "description": "このサイトで優先して販売するデジタル商品カテゴリです。",
+      "heading": "検証カテゴリ",
+      "description": "ステージングで使うデジタル商品カテゴリです。",
       "links": [
         {
           "label": "ギフトカード",
           "href": "/products?category=gift-cards",
-          "description": "即時または確認後に受け取れるデジタルカード。"
+          "description": "テスト決済と納品検証用。"
         },
         {
           "label": "アカウント在庫",
           "href": "/products?category=accounts",
-          "description": "安全な注文ページで受け取るアカウント商品。"
-        },
-        {
-          "label": "コード",
-          "href": "/products?category=codes",
-          "description": "ライセンス、交換コード、アクセスキー。"
+          "description": "安全な注文アクセス検証用。"
         }
       ]
     },
     "catalog": {
-      "title": "商品",
-      "description": "カテゴリで絞り込み、ゲスト購入で注文できます。",
+      "title": "ステージング商品",
+      "description": "本番前のチェックアウトと納品検証に使用します。",
       "all_products_label": "すべて",
       "sort_label": "並び替え",
       "sort_default_label": "標準",

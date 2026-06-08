@@ -1,0 +1,22 @@
+{
+  "id": "ADR-0007",
+  "status": "accepted",
+  "date": "2026-06-08",
+  "title": "Use site lifecycle gates for every site promotion",
+  "context": "The store is becoming a reusable digital goods platform with multiple site profiles, Cloudflare/VPS deployment paths, graph dry-run integration, and future production tenants. A prose-only go-live checklist is too easy to bypass and cannot distinguish local dry-run evidence from real production evidence.",
+  "decision": "Every site must maintain development, staging, and production profiles that implement the site lifecycle contract. Staging and production promotion are blocked until machine evidence records runtime health, edge preflight, regression, backup, restore-test, and rollback proof. Production also requires a staging evidence reference and a human gate reference. Real user data, production_real_tenant evidence, graph production writes, and supplier auto procurement remain disabled by default until those controls are explicitly evidenced.",
+  "consequences": [
+    "Adding a new site now requires a staging profile before profile validation can pass.",
+    "Production readiness is represented by machine-readable evidence reports, not by human review alone.",
+    "Local and staging graph adapters can be tested without allowing production graph writes.",
+    "A real deployment must still run external runtime checks and write their evidence refs into the selected production profile."
+  ],
+  "evidence": [
+    ".ai/site-lifecycle-policy.json",
+    "scripts/site/lifecycle.mjs",
+    "scripts/profile/validate.sh",
+    "profiles/sites",
+    "pnpm site:validate:all",
+    "pnpm site:evidence:all"
+  ]
+}

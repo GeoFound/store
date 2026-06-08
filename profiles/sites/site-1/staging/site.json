@@ -1,0 +1,141 @@
+{
+  "site": {
+    "id": "site-1",
+    "name": "Atlas AI Staging",
+    "description": "Staging environment for AI insights and digital products",
+    "locale": "en-US",
+    "currency": "usd",
+    "timezone": "America/Los_Angeles"
+  },
+  "domains": {
+    "storefront": "staging.example.com",
+    "api": "api.staging.example.com"
+  },
+  "tenancy": {
+    "mode": "dedicated",
+    "data_plane": "isolated",
+    "control_plane": "profile"
+  },
+  "lifecycle": {
+    "site_launch_contract_version": "1.0.0",
+    "environment": "staging",
+    "data_policy": {
+      "real_user_data_allowed": false,
+      "production_real_tenant_evidence_allowed": false,
+      "graph_mode": "dry_run",
+      "graph_production_write_enabled": false,
+      "analytics_export_mode": "dry_run",
+      "payment_mode": "test",
+      "supplier_auto_procurement_enabled": false
+    },
+    "controls": {
+      "staging_required": true,
+      "cloudflare_required": true,
+      "runtime_health_required": true,
+      "edge_preflight_required": true,
+      "regression_required": true,
+      "backup_required": true,
+      "restore_test_required": true,
+      "rollback_required": true,
+      "human_gate_required": false
+    },
+    "evidence": {
+      "required_static_commands": ["pnpm check:ci", "pnpm profile:validate:all", "pnpm site:validate:all"],
+      "required_runtime_commands": ["pnpm deploy:health", "pnpm deploy:edge", "pnpm deploy:regression", "pnpm deploy:vps-doctor"],
+      "last_runtime_health_ref": null,
+      "last_edge_preflight_ref": null,
+      "last_regression_ref": null,
+      "last_backup_ref": null,
+      "last_restore_test_ref": null,
+      "last_rollback_ref": null,
+      "last_staging_evidence_ref": null,
+      "human_gate_ref": null
+    }
+  },
+  "theme": {
+    "id": "atlas",
+    "background": "#f6f8fb",
+    "foreground": "#111827",
+    "accent": "#00796b",
+    "accent_secondary": "#f59e0b",
+    "surface": "#ffffff",
+    "surface_muted": "#f1f5f9",
+    "border": "#dbe3ea",
+    "success": "#047857",
+    "danger": "#b91c1c",
+    "warning": "#b45309",
+    "radius": "8px",
+    "density": "comfortable"
+  },
+  "content": {
+    "navigation": {
+      "insights": "Insights",
+      "products": "AI Products",
+      "orders": "Orders",
+      "cart": "Cart"
+    },
+    "home": {
+      "headline": "Staging AI digital goods store",
+      "description": "Production-like checkout, delivery, recovery, Cloudflare, backup, and rollback validation without real user data.",
+      "browse_cta": "Browse test products",
+      "orders_cta": "Check an order",
+      "products_heading": "Staging products",
+      "products_description": "Use this site to verify the launch contract before production promotion.",
+      "insights_heading": "Staging insights",
+      "insights_description": "Validate content rendering and discovery before production.",
+      "insights_cta": "Read staging insights",
+      "hero_pattern": "linear-gradient(135deg,#0f766e 0%,#0f766e 45%,#f97316 45%,#f97316 68%,#1c1917 68%)",
+      "featured_limit": 6,
+      "announcements": [
+        {
+          "title": "Staging only",
+          "body": "This environment blocks real user data and graph production writes.",
+          "tone": "info"
+        }
+      ]
+    },
+    "categories": {
+      "heading": "Staging categories",
+      "description": "Digital product groups used for launch validation.",
+      "links": [
+        {
+          "label": "AI playbooks",
+          "href": "/products?category=shirts",
+          "description": "Checkout and delivery validation products."
+        },
+        {
+          "label": "Prompt systems",
+          "href": "/products?category=sweatshirts",
+          "description": "Catalog and product detail validation products."
+        }
+      ]
+    },
+    "catalog": {
+      "title": "Staging Products",
+      "description": "Use test products to validate checkout, delivery, and recovery before launch.",
+      "all_products_label": "All products",
+      "sort_label": "Sort",
+      "sort_default_label": "Default",
+      "sort_price_asc_label": "Price low to high",
+      "sort_price_desc_label": "Price high to low",
+      "sort_newest_label": "Newest"
+    },
+    "insights": {
+      "title": "Staging Insights",
+      "description": "Production-like content rendering checks for AI articles and guides.",
+      "empty_title": "No staging insights published yet.",
+      "empty_description": "Create staging content entries from the backend content panel.",
+      "read_more_label": "Read article",
+      "back_label": "Back to insights",
+      "related_products_label": "Related AI products",
+      "published_label": "Published",
+      "seed_entries": []
+    }
+  },
+  "platform": {
+    "enabled_plugins": [],
+    "disabled_plugins": [],
+    "enabled_contracts": {},
+    "disabled_contracts": {}
+  }
+}

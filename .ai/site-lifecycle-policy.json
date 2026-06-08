@@ -1,0 +1,73 @@
+{
+  "version": "1.0.0",
+  "profileRoot": "profiles/sites",
+  "evidenceDirectory": ".ai-trace/sites",
+  "requiredProfilesPerSite": ["development", "staging", "production"],
+  "allowedGraphModes": ["disabled", "dry_run", "staging_write", "production_write"],
+  "environmentPolicies": {
+    "development": {
+      "realUserDataAllowed": false,
+      "productionRealTenantEvidenceAllowed": false,
+      "graphProductionWriteEnabled": false,
+      "humanGateRequired": false,
+      "runtimeEvidenceRequired": false
+    },
+    "staging": {
+      "realUserDataAllowed": false,
+      "productionRealTenantEvidenceAllowed": false,
+      "graphProductionWriteEnabled": false,
+      "humanGateRequired": false,
+      "runtimeEvidenceRequired": true
+    },
+    "production": {
+      "productionRealTenantEvidenceAllowedRequiresHumanGate": true,
+      "graphProductionWriteRequiresHumanGate": true,
+      "humanGateRequired": true,
+      "runtimeEvidenceRequired": true,
+      "stagingEvidenceRequired": true
+    }
+  },
+  "requiredControls": [
+    "staging_required",
+    "cloudflare_required",
+    "runtime_health_required",
+    "edge_preflight_required",
+    "regression_required",
+    "backup_required",
+    "restore_test_required",
+    "rollback_required",
+    "human_gate_required"
+  ],
+  "promotionEvidenceFields": [
+    "last_runtime_health_ref",
+    "last_edge_preflight_ref",
+    "last_regression_ref",
+    "last_backup_ref",
+    "last_restore_test_ref",
+    "last_rollback_ref"
+  ],
+  "productionOnlyEvidenceFields": [
+    "last_staging_evidence_ref",
+    "human_gate_ref"
+  ],
+  "requiredStaticCommands": [
+    "pnpm ai:doctor",
+    "pnpm ai:production",
+    "pnpm check:ci",
+    "pnpm profile:validate:all",
+    "pnpm site:validate:all"
+  ],
+  "requiredRuntimeCommands": [
+    "pnpm deploy:health",
+    "pnpm deploy:edge",
+    "pnpm deploy:regression",
+    "pnpm deploy:vps-doctor"
+  ],
+  "acceptanceRules": [
+    "Every site must have development, staging, and production profiles.",
+    "Staging must be production-like but must not allow real user data or graph production writes.",
+    "Production promotion requires runtime evidence and an explicit human gate.",
+    "Graph production writes and production_real_tenant evidence remain closed until graph staging/production receiving, PII review, consent review, trace coverage, idempotency coverage, and human approval are recorded.",
+    "Human approval is a gate input, not a replacement for runtime evidence."
+  ]
+}

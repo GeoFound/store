@@ -16,6 +16,13 @@
       "evidence": ["package.json", "AGENTS.md", ".ai/system.json"]
     },
     {
+      "id": "production-deployment",
+      "kind": "runtime-target",
+      "path": "scripts/deploy",
+      "owns": ["VPS deployment execution", "Cloudflare edge preflight", "runtime health gates", "rollback execution"],
+      "verification": ["pnpm deploy:health", "pnpm deploy:edge", "pnpm deploy:regression", "pnpm deploy:vps-doctor", "pnpm site:gate"]
+    },
+    {
       "id": "backend-platform-core",
       "kind": "boundary",
       "path": "apps/backend/src/platform",
@@ -73,6 +80,14 @@
       "owns": ["provider-agnostic AI configuration", "AI task plugin contracts", "AI admin readiness surface"],
       "mustNotOwn": ["provider-specific SDK implementations", "plaintext AI provider secrets", "article generation business workflow persistence"],
       "verification": ["pnpm --dir apps/backend test:unit", "pnpm ai:config", "pnpm ai:inventory"]
+    },
+    {
+      "id": "ops-control",
+      "kind": "backend-module",
+      "path": "apps/backend/src/modules/ops-control",
+      "owns": ["operations control panel snapshots", "VPS posture evidence summary", "Cloudflare readiness summary", "backup and restore readiness summary", "AI operations review task registration"],
+      "mustNotOwn": ["plaintext infrastructure secrets", "unapproved host command execution", "security middleware enforcement", "AI provider invocation"],
+      "verification": ["pnpm --dir apps/backend test:unit", "pnpm ai:config", "pnpm ai:inventory", "pnpm ai:production"]
     },
     {
       "id": "content-core",
@@ -164,8 +179,15 @@
       "id": "profile-system",
       "kind": "configuration-system",
       "path": "profiles/sites",
-      "owns": ["site environment profiles", "domain mapping", "runtime profile validation", "tenant deployment intent"],
-      "verification": ["pnpm profile:validate:all"]
+      "owns": ["site environment profiles", "domain mapping", "runtime profile validation", "tenant deployment intent", "site lifecycle contract inputs"],
+      "verification": ["pnpm profile:validate:all", "pnpm site:validate:all"]
+    },
+    {
+      "id": "site-lifecycle-governance",
+      "kind": "automation-system",
+      "path": ".ai/site-lifecycle-policy.json",
+      "owns": ["site launch contract", "staging and production promotion gates", "per-site lifecycle evidence reports", "graph production-write guardrails"],
+      "verification": ["pnpm site:validate:all", "pnpm site:evidence:all", "pnpm ai:evidence:full"]
     },
     {
       "id": "config-surface",
@@ -235,9 +257,16 @@
     {
       "id": "ai-maintenance",
       "from": "ai-operating-system",
-      "through": ["backend-platform-core", "backend-platform-adapters", "profile-system", "config-surface", "production-readiness-governance", "architecture-governance", "repository-inventory-governance"],
+      "through": ["backend-platform-core", "backend-platform-adapters", "profile-system", "site-lifecycle-governance", "config-surface", "ops-control", "production-readiness-governance", "architecture-governance", "repository-inventory-governance"],
       "to": "repository",
       "evidence": ["pnpm ai:evidence:full", ".github/workflows/ai-maintenance.yml"]
+    },
+    {
+      "id": "site-launch-lifecycle",
+      "from": "profile-system",
+      "through": ["site-lifecycle-governance", "production-readiness-governance", "config-surface"],
+      "to": "production-deployment",
+      "evidence": ["pnpm site:validate:all", "pnpm site:evidence -- --site-id <id> --site-env staging", "pnpm site:gate -- --site-id <id> --site-env production"]
     }
   ],
   "rules": [
@@ -264,6 +293,10 @@
     {
       "id": "production-readiness-must-have-offline-proxies",
       "enforcedBy": ["pnpm ai:production", ".ai/production-readiness.json", "scripts/ai/production-readiness.mjs"]
+    },
+    {
+      "id": "site-production-promotion-must-have-lifecycle-evidence",
+      "enforcedBy": ["pnpm site:gate", ".ai/site-lifecycle-policy.json", "scripts/site/lifecycle.mjs"]
     },
     {
       "id": "architecture-health-must-be-machine-readable",
