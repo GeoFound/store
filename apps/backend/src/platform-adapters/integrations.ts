@@ -22,6 +22,11 @@ import {
   resetAnalyticsGa4HooksForTests,
 } from "../modules/analytics-ga4/hooks"
 import { resetAnalyticsGa4DestinationForTests } from "../modules/analytics-ga4/destination"
+import {
+  ensureGraphDryRunHooksRegistered,
+  resetGraphDryRunHooksForTests,
+} from "../modules/analytics-core/graph-dry-run-hooks"
+import { resetGraphDryRunDestinationForTests } from "../modules/analytics-core/graph-dry-run-destination"
 import { resetNotificationHooksForTests } from "../utils/notification"
 import {
   ensureNotificationResendHooksRegistered,
@@ -51,6 +56,7 @@ export function ensurePlatformIntegrationsRegistered() {
     ensureGuestOrderAccessHooksRegistered()
     ensureMarketingHooksRegistered()
     ensureAnalyticsGa4HooksRegistered()
+    ensureGraphDryRunHooksRegistered()
     ensureNotificationResendHooksRegistered()
     ensureSupplierProductTemplatesRegistered()
     ensureOpsControlAITasksRegistered()
@@ -68,6 +74,8 @@ export function resetPlatformIntegrationsForTests() {
   resetMarketingHooksForTests()
   resetAnalyticsGa4HooksForTests()
   resetAnalyticsGa4DestinationForTests()
+  resetGraphDryRunHooksForTests()
+  resetGraphDryRunDestinationForTests()
   resetNotificationHooksForTests()
   resetNotificationResendHooksForTests()
   resetSupplierProductTemplatesForTests()

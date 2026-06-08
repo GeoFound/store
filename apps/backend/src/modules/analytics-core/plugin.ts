@@ -3,7 +3,7 @@ import type { PluginManifest } from "../../platform/contracts"
 export const ANALYTICS_CORE_PLUGIN_MANIFEST: PluginManifest = {
   id: "analytics-core",
   version: "1.0.0",
-  capabilities: [],
+  capabilities: ["analytics-destination", "hook-subscriber"],
   enabledByDefault: true,
   migrationsOwner: "analytics-core",
   title: "Analytics Core",

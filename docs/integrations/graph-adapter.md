@@ -13,6 +13,7 @@ not deploy anything, and must not be used as `production_real_tenant` evidence.
 pnpm graph:export-fixture
 pnpm graph:adapter:test
 GRAPH_DRY_RUN_ENDPOINT=http://127.0.0.1:4017/integrations/store_digital_goods/source-events:dry-run pnpm graph:dry-run:http
+GRAPH_DRY_RUN_ENDPOINT=http://127.0.0.1:4017/integrations/store_digital_goods/source-events:dry-run pnpm graph:runtime-dry-run:http
 ```
 
 Generated fixtures:
@@ -29,6 +30,36 @@ batch and verifies that Graph persists zero events in dry-run mode.
 The valid fixture is generated from:
 
 - `test/fixtures/integrations/store_digital_goods/analytics-events-valid.json`
+
+## Runtime Dry Run
+
+The backend also registers a `graph_dry_run` analytics destination. It is off by
+default and only captures runtime dispatches when both env values are present:
+
+```bash
+GRAPH_DRY_RUN_ENABLED=true
+GRAPH_DRY_RUN_ENDPOINT=https://graph-staging.example.com/integrations/store_digital_goods/source-events:dry-run
+```
+
+Optional runtime fields:
+
+- `GRAPH_DRY_RUN_TENANT_ID` defaults to `tenant-store-local`
+- `GRAPH_DRY_RUN_MANIFEST_ID` defaults to `store-digital-goods-source-mapping-v1`
+- `GRAPH_DRY_RUN_DEFAULT_COUNTRY` defaults to `ZZ`
+- `GRAPH_DRY_RUN_DEFAULT_LANGUAGE` defaults to `und`
+- `GRAPH_DRY_RUN_DEFAULT_CHANNEL` defaults to `backend`
+- `GRAPH_DRY_RUN_DEFAULT_PLATFORM` defaults to `web`
+
+When enabled, backend hooks capture `purchase` and `order_access_claimed` events
+for the `graph_dry_run` destination. The scheduled analytics dispatch job then
+POSTs one event per dry-run request with `dry_run=true`,
+`production_write_enabled=false`, `human_gate_approved=false`, and Graph-required
+`Trace-Id` / `Idempotency-Key` headers. This remains staging evidence only; it
+does not write to graph production storage.
+
+`graph:runtime-dry-run:http` exercises that runtime destination directly against
+a local or staging Graph dry-run receiver. It uses one `purchase`
+`analytics_event` fixture and verifies `persisted_event_count=0`.
 
 ## Current Scope
 
