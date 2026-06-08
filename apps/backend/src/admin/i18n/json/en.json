@@ -103,10 +103,13 @@
     "title": "Control Panel",
     "attention": {
       "afterSalesReview": "After-sales review",
+      "analyticsReview": "Analytics replay",
       "auditReview": "High-risk audit event",
       "catalogReview": "Publishing review",
+      "catalogMeta": "Stock and fulfillment readiness",
       "description": "These queues should be checked before routine catalog or marketing work.",
       "emptyAfterSales": "No open after-sales requests in the latest results.",
+      "emptyAnalytics": "No analytics dispatches need replay.",
       "emptyAudit": "No high-risk audit events in the latest results.",
       "emptyCatalog": "No catalog items need stock or fulfillment review.",
       "emptyDelivery": "No pending deliveries in the latest results.",
@@ -128,6 +131,11 @@
         "command": "Audit",
         "title": "Audit Logs"
       },
+      "analytics": {
+        "body": "Review canonical events, dispatch failures, and replay analytics delivery.",
+        "command": "Replay",
+        "title": "Analytics"
+      },
       "credentials": {
         "body": "Import encrypted credentials and inspect available, reserved, and sold stock.",
         "command": "Stock",
@@ -137,6 +145,11 @@
         "body": "Create manual deliveries, review pending fulfillment, and inspect delivery records.",
         "command": "Fulfill",
         "title": "Deliveries"
+      },
+      "marketing": {
+        "body": "Create campaigns, coupons, referral links, and inspect recent attribution touchpoints.",
+        "command": "Grow",
+        "title": "Marketing"
       },
       "payments": {
         "body": "Review payment channels, payment attempts, and manual confirmation actions.",
@@ -165,6 +178,11 @@
       }
     },
     "metrics": {
+      "analytics": {
+        "body": "need replay",
+        "detail": "{{count}} recent dispatch records checked.",
+        "label": "Analytics"
+      },
       "catalog": {
         "body": "need action",
         "detail": "{{count}} variants checked.",
@@ -179,6 +197,11 @@
         "body": "available",
         "detail": "{{reserved}} credentials are reserved.",
         "label": "Credential stock"
+      },
+      "marketing": {
+        "body": "active",
+        "detail": "{{coupons}} active coupons; {{referrals}} active referral links.",
+        "label": "Marketing"
       },
       "paymentAttention": {
         "body": "need review",
@@ -205,6 +228,36 @@
         "detail": "{{risk}} high-risk audit events; {{unhealthy}}/{{channels}} enabled channels need health review.",
         "label": "After-sales"
       }
+    },
+    "signals": {
+      "active": "Active",
+      "analytics": {
+        "detail": "{{events}} recent events; {{failed}} dispatches need replay.",
+        "empty": "No analytics events in the latest results.",
+        "label": "Analytics delivery"
+      },
+      "description": "A compact health view across the systems operators otherwise need to inspect one by one.",
+      "inventory": {
+        "detail": "{{available}} credentials available; {{lowStock}} batches need restock.",
+        "empty": "Credential stock is available.",
+        "label": "Credential stock"
+      },
+      "marketing": {
+        "detail": "{{campaigns}} active campaigns; {{touchpoints}} recent touchpoints.",
+        "empty": "No active campaign or recent touchpoint.",
+        "label": "Growth activity"
+      },
+      "needsReplay": "Needs replay",
+      "needsReview": "Needs review",
+      "needsStock": "Needs stock",
+      "payments": {
+        "detail": "{{enabled}} enabled channels; {{unhealthy}} need health review.",
+        "empty": "Enabled channels are healthy.",
+        "label": "Payment routing"
+      },
+      "quiet": "Quiet",
+      "ready": "Ready",
+      "title": "System Signals"
     },
     "recentAudit": {
       "description": "Recent sensitive operations and access events.",

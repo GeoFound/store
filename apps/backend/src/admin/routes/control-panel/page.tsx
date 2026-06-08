@@ -85,12 +85,67 @@ type AfterSale = {
   created_at?: string | null
 }
 
+type MarketingCampaign = {
+  id: string
+  code: string
+  name: string
+  status: string
+  created_at?: string | null
+}
+
+type MarketingCoupon = {
+  id: string
+  code: string
+  status: string
+  redeemed_count: number
+  created_at?: string | null
+}
+
+type MarketingReferralLink = {
+  id: string
+  code: string
+  status: string
+  used_count: number
+  created_at?: string | null
+}
+
+type MarketingTouchpoint = {
+  id: string
+  event_name: string
+  coupon_code?: string | null
+  referral_code?: string | null
+  created_at?: string | null
+}
+
+type AnalyticsEvent = {
+  id: string
+  event_name: string
+  status: string
+  source: string
+  created_at?: string | null
+}
+
+type AnalyticsDispatch = {
+  id: string
+  destination_code: string
+  status: string
+  attempt_count: number
+  error_message?: string | null
+  created_at?: string | null
+}
+
 type ControlPanelState = {
   afterSales: AfterSale[]
+  analyticsDispatches: AnalyticsDispatch[]
+  analyticsEvents: AnalyticsEvent[]
   auditLogs: AuditLog[]
   batches: CredentialBatch[]
   channels: PaymentChannel[]
   catalogVariants: CatalogVariant[]
+  marketingCampaigns: MarketingCampaign[]
+  marketingCoupons: MarketingCoupon[]
+  marketingReferralLinks: MarketingReferralLink[]
+  marketingTouchpoints: MarketingTouchpoint[]
   paymentAttempts: PaymentAttempt[]
   pendingDeliveries: PendingDeliveryItem[]
   supplierProcurements: SupplierProcurement[]
@@ -98,14 +153,26 @@ type ControlPanelState = {
 
 const EMPTY_STATE: ControlPanelState = {
   afterSales: [],
+  analyticsDispatches: [],
+  analyticsEvents: [],
   auditLogs: [],
   batches: [],
   channels: [],
   catalogVariants: [],
+  marketingCampaigns: [],
+  marketingCoupons: [],
+  marketingReferralLinks: [],
+  marketingTouchpoints: [],
   paymentAttempts: [],
   pendingDeliveries: [],
   supplierProcurements: [],
 }
+
+const PAYMENT_DONE_STATUSES = new Set(["paid", "refunded"])
+const CHANNEL_READY_STATUSES = new Set(["configured", "healthy", "active"])
+const SUPPLIER_ATTENTION_STATUSES = new Set(["failed", "needs_review"])
+const AFTER_SALES_OPEN_STATUSES = new Set(["open", "processing"])
+const ANALYTICS_ATTENTION_STATUSES = new Set(["failed", "dead"])
 
 const workflowLinks = [
   {
@@ -151,6 +218,18 @@ const workflowLinks = [
     to: "/suppliers",
   },
   {
+    bodyKey: "controlPanel.links.marketing.body",
+    commandKey: "controlPanel.links.marketing.command",
+    titleKey: "controlPanel.links.marketing.title",
+    to: "/marketing",
+  },
+  {
+    bodyKey: "controlPanel.links.analytics.body",
+    commandKey: "controlPanel.links.analytics.command",
+    titleKey: "controlPanel.links.analytics.title",
+    to: "/analytics",
+  },
+  {
     bodyKey: "controlPanel.links.afterSales.body",
     commandKey: "controlPanel.links.afterSales.command",
     titleKey: "controlPanel.links.afterSales.title",
@@ -183,12 +262,10 @@ const ControlPanelPage = () => {
         return false
       }
 
-      return !["configured", "healthy", "active"].includes(
-        channel.health_status
-      )
+      return !CHANNEL_READY_STATUSES.has(channel.health_status)
     }).length
     const paymentAttentionCount = dashboard.paymentAttempts.filter(
-      (attempt) => !["paid", "refunded"].includes(attempt.status)
+      (attempt) => !PAYMENT_DONE_STATUSES.has(attempt.status)
     ).length
     const pendingDeliveryCount = dashboard.pendingDeliveries.length
     const availableCredentials = sumBy(
@@ -210,10 +287,22 @@ const ControlPanelPage = () => {
       return !variant.delivery_handler_code
     }).length
     const supplierAttention = dashboard.supplierProcurements.filter((item) =>
-      ["failed", "needs_review"].includes(item.status)
+      SUPPLIER_ATTENTION_STATUSES.has(item.status)
     ).length
     const openAfterSales = dashboard.afterSales.filter((item) =>
-      ["open", "processing"].includes(item.status)
+      AFTER_SALES_OPEN_STATUSES.has(item.status)
+    ).length
+    const activeCampaigns = dashboard.marketingCampaigns.filter(
+      (campaign) => campaign.status === "active"
+    ).length
+    const activeCoupons = dashboard.marketingCoupons.filter(
+      (coupon) => coupon.status === "active"
+    ).length
+    const activeReferralLinks = dashboard.marketingReferralLinks.filter(
+      (link) => link.status === "active"
+    ).length
+    const analyticsAttention = dashboard.analyticsDispatches.filter((dispatch) =>
+      ANALYTICS_ATTENTION_STATUSES.has(dispatch.status)
     ).length
 
     return [
@@ -243,6 +332,15 @@ const ControlPanelPage = () => {
         value: paymentAttentionCount,
       },
       {
+        body: t("controlPanel.metrics.channels.body"),
+        detail: t("controlPanel.metrics.channels.detail", {
+          unhealthy: unhealthyChannels,
+        }),
+        label: t("controlPanel.metrics.channels.label"),
+        to: "/payments",
+        value: enabledChannels,
+      },
+      {
         body: t("controlPanel.metrics.credentials.body"),
         detail: t("controlPanel.metrics.credentials.detail", {
           reserved: reservedCredentials,
@@ -261,6 +359,32 @@ const ControlPanelPage = () => {
         value: supplierAttention,
       },
       {
+        body: t("controlPanel.metrics.marketing.body"),
+        detail: t("controlPanel.metrics.marketing.detail", {
+          coupons: activeCoupons,
+          referrals: activeReferralLinks,
+        }),
+        label: t("controlPanel.metrics.marketing.label"),
+        to: "/marketing",
+        value: activeCampaigns,
+      },
+      {
+        body: t("controlPanel.metrics.analytics.body"),
+        detail: t("controlPanel.metrics.analytics.detail", {
+          count: dashboard.analyticsDispatches.length,
+        }),
+        label: t("controlPanel.metrics.analytics.label"),
+        to: "/analytics",
+        value: analyticsAttention,
+      },
+      {
+        body: t("controlPanel.metrics.risk.body"),
+        detail: t("controlPanel.metrics.risk.detail"),
+        label: t("controlPanel.metrics.risk.label"),
+        to: "/audit-logs",
+        value: highRiskEvents,
+      },
+      {
         body: t("controlPanel.metrics.support.body"),
         detail: t("controlPanel.metrics.support.detail", {
           risk: highRiskEvents,
@@ -270,6 +394,85 @@ const ControlPanelPage = () => {
         label: t("controlPanel.metrics.support.label"),
         to: "/after-sales",
         value: openAfterSales,
+      },
+    ]
+  }, [dashboard, t])
+
+  const operatorSignals = useMemo(() => {
+    const enabledChannels = dashboard.channels.filter(
+      (channel) => channel.enabled
+    )
+    const unhealthyChannels = enabledChannels.filter(
+      (channel) => !CHANNEL_READY_STATUSES.has(channel.health_status)
+    )
+    const lowStockBatches = dashboard.batches.filter(
+      (batch) => batch.available_count <= 0
+    )
+    const activeCampaigns = dashboard.marketingCampaigns.filter(
+      (campaign) => campaign.status === "active"
+    )
+    const failedDispatches = dashboard.analyticsDispatches.filter((dispatch) =>
+      ANALYTICS_ATTENTION_STATUSES.has(dispatch.status)
+    )
+
+    return [
+      {
+        body:
+          unhealthyChannels[0]?.display_name ||
+          t("controlPanel.signals.payments.empty"),
+        detail: t("controlPanel.signals.payments.detail", {
+          enabled: enabledChannels.length,
+          unhealthy: unhealthyChannels.length,
+        }),
+        label: t("controlPanel.signals.payments.label"),
+        status: unhealthyChannels.length
+          ? t("controlPanel.signals.needsReview")
+          : t("controlPanel.signals.ready"),
+        to: "/payments",
+      },
+      {
+        body:
+          lowStockBatches[0]?.name ||
+          t("controlPanel.signals.inventory.empty"),
+        detail: t("controlPanel.signals.inventory.detail", {
+          available: sumBy(dashboard.batches, (batch) => batch.available_count),
+          lowStock: lowStockBatches.length,
+        }),
+        label: t("controlPanel.signals.inventory.label"),
+        status: lowStockBatches.length
+          ? t("controlPanel.signals.needsStock")
+          : t("controlPanel.signals.ready"),
+        to: "/credentials",
+      },
+      {
+        body:
+          dashboard.marketingTouchpoints[0]?.event_name ||
+          activeCampaigns[0]?.name ||
+          t("controlPanel.signals.marketing.empty"),
+        detail: t("controlPanel.signals.marketing.detail", {
+          campaigns: activeCampaigns.length,
+          touchpoints: dashboard.marketingTouchpoints.length,
+        }),
+        label: t("controlPanel.signals.marketing.label"),
+        status: activeCampaigns.length
+          ? t("controlPanel.signals.active")
+          : t("controlPanel.signals.quiet"),
+        to: "/marketing",
+      },
+      {
+        body:
+          failedDispatches[0]?.error_message ||
+          dashboard.analyticsEvents[0]?.event_name ||
+          t("controlPanel.signals.analytics.empty"),
+        detail: t("controlPanel.signals.analytics.detail", {
+          events: dashboard.analyticsEvents.length,
+          failed: failedDispatches.length,
+        }),
+        label: t("controlPanel.signals.analytics.label"),
+        status: failedDispatches.length
+          ? t("controlPanel.signals.needsReplay")
+          : t("controlPanel.signals.ready"),
+        to: "/analytics",
       },
     ]
   }, [dashboard, t])
@@ -289,6 +492,7 @@ const ControlPanelPage = () => {
             (variant.available_count || 0) <= 0
         ).length,
         label: t("controlPanel.attention.catalogReview"),
+        meta: t("controlPanel.attention.catalogMeta"),
         to: "/product-publishing",
       },
       {
@@ -297,40 +501,74 @@ const ControlPanelPage = () => {
           t("controlPanel.attention.emptyDelivery"),
         count: dashboard.pendingDeliveries.length,
         label: t("controlPanel.attention.pendingDelivery"),
+        meta: formatDate(dashboard.pendingDeliveries[0]?.created_at),
         to: "/deliveries",
       },
       {
         body:
           dashboard.paymentAttempts.find(
-            (attempt) => !["paid", "refunded"].includes(attempt.status)
+            (attempt) => !PAYMENT_DONE_STATUSES.has(attempt.status)
           )?.id || t("controlPanel.attention.emptyPayment"),
         count: dashboard.paymentAttempts.filter(
-          (attempt) => !["paid", "refunded"].includes(attempt.status)
+          (attempt) => !PAYMENT_DONE_STATUSES.has(attempt.status)
         ).length,
         label: t("controlPanel.attention.paymentReview"),
+        meta:
+          translatedStatus(
+            t,
+            dashboard.paymentAttempts.find(
+              (attempt) => !PAYMENT_DONE_STATUSES.has(attempt.status)
+            )?.status
+          ) || "-",
         to: "/payments",
       },
       {
         body:
           dashboard.supplierProcurements.find((item) =>
-            ["failed", "needs_review"].includes(item.status)
+            SUPPLIER_ATTENTION_STATUSES.has(item.status)
           )?.id || t("controlPanel.attention.emptySupplier"),
         count: dashboard.supplierProcurements.filter((item) =>
-          ["failed", "needs_review"].includes(item.status)
+          SUPPLIER_ATTENTION_STATUSES.has(item.status)
         ).length,
         label: t("controlPanel.attention.supplierReview"),
+        meta: formatDate(
+          dashboard.supplierProcurements.find((item) =>
+            SUPPLIER_ATTENTION_STATUSES.has(item.status)
+          )?.created_at
+        ),
         to: "/suppliers",
       },
       {
         body:
           dashboard.afterSales.find((item) =>
-            ["open", "processing"].includes(item.status)
+            AFTER_SALES_OPEN_STATUSES.has(item.status)
           )?.reason || t("controlPanel.attention.emptyAfterSales"),
         count: dashboard.afterSales.filter((item) =>
-          ["open", "processing"].includes(item.status)
+          AFTER_SALES_OPEN_STATUSES.has(item.status)
         ).length,
         label: t("controlPanel.attention.afterSalesReview"),
+        meta: formatDate(
+          dashboard.afterSales.find((item) =>
+            AFTER_SALES_OPEN_STATUSES.has(item.status)
+          )?.created_at
+        ),
         to: "/after-sales",
+      },
+      {
+        body:
+          dashboard.analyticsDispatches.find((dispatch) =>
+            ANALYTICS_ATTENTION_STATUSES.has(dispatch.status)
+          )?.destination_code || t("controlPanel.attention.emptyAnalytics"),
+        count: dashboard.analyticsDispatches.filter((dispatch) =>
+          ANALYTICS_ATTENTION_STATUSES.has(dispatch.status)
+        ).length,
+        label: t("controlPanel.attention.analyticsReview"),
+        meta: formatDate(
+          dashboard.analyticsDispatches.find((dispatch) =>
+            ANALYTICS_ATTENTION_STATUSES.has(dispatch.status)
+          )?.created_at
+        ),
+        to: "/analytics",
       },
       {
         body:
@@ -339,6 +577,10 @@ const ControlPanelPage = () => {
         count: dashboard.auditLogs.filter((log) => log.risk_level === "high")
           .length,
         label: t("controlPanel.attention.auditReview"),
+        meta: formatDate(
+          dashboard.auditLogs.find((log) => log.risk_level === "high")
+            ?.created_at
+        ),
         to: "/audit-logs",
       },
     ],
@@ -360,6 +602,22 @@ const ControlPanelPage = () => {
         "/admin/suppliers/procurements?limit=25"
       ),
       adminApi<{ after_sales: AfterSale[] }>("/admin/after-sales"),
+      adminApi<{ campaigns: MarketingCampaign[] }>(
+        "/admin/marketing/campaigns?limit=25"
+      ),
+      adminApi<{ coupons: MarketingCoupon[] }>(
+        "/admin/marketing/coupons?limit=25"
+      ),
+      adminApi<{ referral_links: MarketingReferralLink[] }>(
+        "/admin/marketing/referral-links?limit=25"
+      ),
+      adminApi<{ touchpoints: MarketingTouchpoint[] }>(
+        "/admin/marketing/touchpoints?limit=25"
+      ),
+      adminApi<{ events: AnalyticsEvent[] }>("/admin/analytics/events?limit=25"),
+      adminApi<{ dispatches: AnalyticsDispatch[] }>(
+        "/admin/analytics/dispatches?limit=25"
+      ),
     ])
 
     const [
@@ -371,15 +629,36 @@ const ControlPanelPage = () => {
       catalogVariants,
       supplierProcurements,
       afterSales,
+      marketingCampaigns,
+      marketingCoupons,
+      marketingReferralLinks,
+      marketingTouchpoints,
+      analyticsEvents,
+      analyticsDispatches,
     ] = results
 
     setDashboard({
       afterSales: fulfilledValue(afterSales, { after_sales: [] }).after_sales,
+      analyticsDispatches: fulfilledValue(analyticsDispatches, {
+        dispatches: [],
+      }).dispatches,
+      analyticsEvents: fulfilledValue(analyticsEvents, { events: [] }).events,
       auditLogs: fulfilledValue(auditLogs, { audit_logs: [] }).audit_logs,
       batches: fulfilledValue(batches, { batches: [] }).batches,
       catalogVariants: fulfilledValue(catalogVariants, { variants: [] })
         .variants,
       channels: fulfilledValue(channels, { channels: [] }).channels,
+      marketingCampaigns: fulfilledValue(marketingCampaigns, {
+        campaigns: [],
+      }).campaigns,
+      marketingCoupons: fulfilledValue(marketingCoupons, { coupons: [] })
+        .coupons,
+      marketingReferralLinks: fulfilledValue(marketingReferralLinks, {
+        referral_links: [],
+      }).referral_links,
+      marketingTouchpoints: fulfilledValue(marketingTouchpoints, {
+        touchpoints: [],
+      }).touchpoints,
       paymentAttempts: fulfilledValue(paymentAttempts, { attempts: [] })
         .attempts,
       pendingDeliveries: fulfilledValue(pendingDeliveries, { items: [] }).items,
@@ -428,7 +707,7 @@ const ControlPanelPage = () => {
         </div>
       </Container>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         {metrics.map((metric) => (
           <Container key={metric.label} className="p-0">
             <Link to={metric.to} className="block px-5 py-4">
@@ -444,6 +723,33 @@ const ControlPanelPage = () => {
           </Container>
         ))}
       </div>
+
+      <Container className="divide-y p-0">
+        <SectionHeader
+          title={t("controlPanel.signals.title")}
+          description={t("controlPanel.signals.description")}
+        />
+        <div className="grid divide-y md:grid-cols-2 md:divide-x md:divide-y-0 xl:grid-cols-4">
+          {operatorSignals.map((signal) => (
+            <Link
+              key={signal.label}
+              to={signal.to}
+              className="block min-w-0 px-6 py-4 transition-fg hover:bg-ui-bg-subtle"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <Text className="text-ui-fg-subtle">{signal.label}</Text>
+                  <Heading level="h3" className="mt-2 truncate">
+                    {signal.body}
+                  </Heading>
+                </div>
+                <Badge>{signal.status}</Badge>
+              </div>
+              <Text className="mt-2 text-ui-fg-subtle">{signal.detail}</Text>
+            </Link>
+          ))}
+        </div>
+      </Container>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
         <Container className="divide-y p-0">
@@ -464,6 +770,7 @@ const ControlPanelPage = () => {
                   <Text className="mt-1 truncate text-ui-fg-subtle">
                     {item.body}
                   </Text>
+                  <Text className="mt-1 text-ui-fg-subtle">{item.meta}</Text>
                 </div>
                 <Text className="text-ui-fg-interactive">
                   {t("controlPanel.open")}

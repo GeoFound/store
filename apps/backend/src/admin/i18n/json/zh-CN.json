@@ -103,10 +103,13 @@
     "title": "控制台",
     "attention": {
       "afterSalesReview": "售后复核",
+      "analyticsReview": "分析重放",
       "auditReview": "高风险审计事件",
       "catalogReview": "发布复核",
+      "catalogMeta": "库存和履约就绪状态",
       "description": "这些队列应该先于普通商品或营销配置处理。",
       "emptyAfterSales": "最近结果里没有待处理售后请求。",
+      "emptyAnalytics": "没有需要重放的分析投递。",
       "emptyAudit": "最近结果里没有高风险审计事件。",
       "emptyCatalog": "没有需要补库存或履约复核的商品。",
       "emptyDelivery": "最近结果里没有待交付项目。",
@@ -128,6 +131,11 @@
         "command": "审计",
         "title": "审计日志"
       },
+      "analytics": {
+        "body": "查看标准事件、投递失败和分析重放队列。",
+        "command": "重放",
+        "title": "分析"
+      },
       "credentials": {
         "body": "导入加密凭证，并查看可售、预占和已售库存。",
         "command": "库存",
@@ -137,6 +145,11 @@
         "body": "创建人工交付、查看待履约项目和交付记录。",
         "command": "履约",
         "title": "交付"
+      },
+      "marketing": {
+        "body": "创建活动、优惠券、推荐链接，并查看最近归因触点。",
+        "command": "增长",
+        "title": "营销"
       },
       "payments": {
         "body": "查看支付通道、支付尝试和人工确认操作。",
@@ -165,6 +178,11 @@
       }
     },
     "metrics": {
+      "analytics": {
+        "body": "需重放",
+        "detail": "已检查最近 {{count}} 条投递记录。",
+        "label": "分析"
+      },
       "catalog": {
         "body": "需处理",
         "detail": "已检查 {{count}} 个规格。",
@@ -179,6 +197,11 @@
         "body": "可售",
         "detail": "{{reserved}} 条凭证已预占。",
         "label": "凭证库存"
+      },
+      "marketing": {
+        "body": "启用中",
+        "detail": "{{coupons}} 个启用优惠券；{{referrals}} 个启用推荐链接。",
+        "label": "营销"
       },
       "paymentAttention": {
         "body": "需复核",
@@ -205,6 +228,36 @@
         "detail": "{{risk}} 个高风险审计事件；{{channels}} 个已启用通道里 {{unhealthy}} 个需要健康检查。",
         "label": "售后"
       }
+    },
+    "signals": {
+      "active": "活跃",
+      "analytics": {
+        "detail": "{{events}} 条最近事件；{{failed}} 条投递需要重放。",
+        "empty": "最近结果里没有分析事件。",
+        "label": "分析投递"
+      },
+      "description": "把运营人员原本需要逐页检查的系统状态压缩成一组健康信号。",
+      "inventory": {
+        "detail": "{{available}} 条凭证可售；{{lowStock}} 个批次需要补货。",
+        "empty": "凭证库存可用。",
+        "label": "凭证库存"
+      },
+      "marketing": {
+        "detail": "{{campaigns}} 个启用活动；{{touchpoints}} 条最近触点。",
+        "empty": "没有启用活动或最近触点。",
+        "label": "增长活动"
+      },
+      "needsReplay": "需重放",
+      "needsReview": "需复核",
+      "needsStock": "需补货",
+      "payments": {
+        "detail": "{{enabled}} 个通道已启用；{{unhealthy}} 个需要健康检查。",
+        "empty": "已启用通道健康。",
+        "label": "支付路由"
+      },
+      "quiet": "安静",
+      "ready": "就绪",
+      "title": "系统信号"
     },
     "recentAudit": {
       "description": "最近的敏感操作和访问事件。",
