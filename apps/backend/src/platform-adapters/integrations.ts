@@ -31,6 +31,10 @@ import {
   ensureSupplierProductTemplatesRegistered,
   resetSupplierProductTemplatesForTests,
 } from "../modules/supplier-procurement/templates"
+import {
+  ensureOpsControlAITasksRegistered,
+  resetOpsControlAITasksForTests,
+} from "../modules/ops-control/ai-task"
 
 let integrationsRegistered = false
 
@@ -49,6 +53,7 @@ export function ensurePlatformIntegrationsRegistered() {
     ensureAnalyticsGa4HooksRegistered()
     ensureNotificationResendHooksRegistered()
     ensureSupplierProductTemplatesRegistered()
+    ensureOpsControlAITasksRegistered()
   } catch (error) {
     integrationsRegistered = false
     throw error
@@ -66,6 +71,7 @@ export function resetPlatformIntegrationsForTests() {
   resetNotificationHooksForTests()
   resetNotificationResendHooksForTests()
   resetSupplierProductTemplatesForTests()
+  resetOpsControlAITasksForTests()
 }
 
 installPlatformRuntimeBootstrap({

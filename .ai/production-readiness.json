@@ -486,6 +486,45 @@
         ]
       },
       {
+        "path": "apps/backend/src/api/admin/ops-control/dashboard/route.ts",
+        "route": "/admin/ops-control/dashboard",
+        "surface": "admin",
+        "owner": "admin-api",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/admin/ops-control/maintenance/route.ts",
+        "route": "/admin/ops-control/maintenance",
+        "surface": "admin",
+        "owner": "admin-api",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/admin/ops-control/security/route.ts",
+        "route": "/admin/ops-control/security",
+        "surface": "admin",
+        "owner": "admin-api",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
         "path": "apps/backend/src/api/admin/payment-attempts/[id]/mark-paid/route.ts",
         "route": "/admin/payment-attempts/:id/mark-paid",
         "surface": "admin",

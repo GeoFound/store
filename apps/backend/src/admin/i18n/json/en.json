@@ -62,6 +62,7 @@
     "credentials": "Credentials",
     "deliveries": "Deliveries",
     "marketing": "Marketing",
+    "ops": "Operations",
     "payments": "Payments",
     "productPublishing": "Product Publishing",
     "suppliers": "Suppliers"
@@ -78,6 +79,7 @@
       "credentials": "Credentials",
       "deliveries": "Deliveries",
       "marketing": "Marketing",
+      "ops": "Operations",
       "payments": "Payments",
       "productPublishing": "Publishing",
       "productTemplates": "Product templates",
@@ -232,6 +234,11 @@
         "body": "Review payment channels, payment attempts, and manual confirmation actions.",
         "command": "Review",
         "title": "Payments"
+      },
+      "ops": {
+        "body": "Review VPS posture, Cloudflare, backups, security controls, and AI operations evidence.",
+        "command": "Operate",
+        "title": "Operations"
       },
       "orders": {
         "body": "Open Medusa orders for customer, payment, refund, and order history work.",
@@ -452,6 +459,50 @@
     "templatesDescription": "Templates connect product types to inventory and delivery handlers.",
     "title": "Product Publishing"
   },
+  "ops": {
+    "actions": {
+      "description": "High-risk actions are listed for operator planning and require separate confirmation plus evidence.",
+      "noHumanGate": "No human gate required",
+      "requiresHuman": "Requires human confirmation",
+      "title": "Operator Actions"
+    },
+    "description": "Read-only production operations posture for VPS, Cloudflare, backups, security controls, and AI-assisted maintenance.",
+    "empty": {
+      "findings": "No operations findings.",
+      "generatedAt": "Not generated yet"
+    },
+    "fields": {
+      "action": "Recommended action",
+      "current": "Current",
+      "finding": "Finding",
+      "owner": "Owner",
+      "recommended": "Recommended",
+      "sectionStatus": "Section status",
+      "severity": "Severity"
+    },
+    "findings": {
+      "description": "Machine-readable findings generated from runtime settings; secret values are never shown.",
+      "humanGate": "Human confirmation required",
+      "title": "Findings"
+    },
+    "loadFailed": "Failed to load operations data.",
+    "metrics": {
+      "critical": "Critical",
+      "criticalDetail": "Immediate production risks",
+      "humanGate": "Human gates",
+      "humanGateDetail": "Actions requiring explicit approval",
+      "status": "Status",
+      "warnings": "Warnings",
+      "warningDetail": "Items to verify before go-live"
+    },
+    "refreshing": "Refreshing...",
+    "sections": {
+      "aiOps": "AI Ops",
+      "maintenance": "Maintenance",
+      "security": "Security"
+    },
+    "title": "Operations"
+  },
   "status": {
     "active": "Active",
     "archived": "Archived",
@@ -471,12 +522,15 @@
     "fulfilled": "Fulfilled",
     "healthy": "Healthy",
     "high": "High",
+    "critical": "Critical",
+    "info": "Info",
     "guide": "Guide",
     "in_stock": "In stock",
     "invalid": "Invalid",
     "issued": "Issued",
     "low": "Low",
     "medium": "Medium",
+    "ok": "OK",
     "missing_key_ref": "Missing key ref",
     "missing_secret": "Missing secret",
     "open": "Open",
@@ -488,6 +542,7 @@
     "requires_review": "Requires review",
     "refunded": "Refunded",
     "rejected": "Rejected",
+    "warning": "Warning",
     "released": "Released",
     "replaced": "Replaced",
     "ready": "Ready",

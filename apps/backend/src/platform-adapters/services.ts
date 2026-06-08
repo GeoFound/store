@@ -14,6 +14,8 @@ import { GUEST_ORDER_ACCESS_MODULE } from "../modules/guest-order-access"
 import type GuestOrderAccessModuleService from "../modules/guest-order-access/service"
 import { MARKETING_ENGINE_MODULE } from "../modules/marketing-engine"
 import type MarketingEngineModuleService from "../modules/marketing-engine/service"
+import { OPS_CONTROL_MODULE } from "../modules/ops-control"
+import type OpsControlModuleService from "../modules/ops-control/service"
 import { PAYMENT_ROUTER_MODULE } from "../modules/payment-router"
 import type PaymentRouterModuleService from "../modules/payment-router/service"
 import { SUPPORT_AUDIT_MODULE } from "../modules/support-audit"
@@ -49,6 +51,10 @@ export function resolveGuestOrderAccessService(scope: BackendRuntimeContext) {
 
 export function resolveMarketingEngineService(scope: BackendRuntimeContext) {
   return scope.resolve(MARKETING_ENGINE_MODULE) as MarketingEngineModuleService
+}
+
+export function resolveOpsControlService(scope: BackendRuntimeContext) {
+  return scope.resolve(OPS_CONTROL_MODULE) as OpsControlModuleService
 }
 
 export function resolvePaymentRouterService(scope: BackendRuntimeContext) {

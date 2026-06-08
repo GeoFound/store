@@ -257,6 +257,12 @@ const workflowLinks = [
     to: "/payments",
   },
   {
+    bodyKey: "controlPanel.links.ops.body",
+    commandKey: "controlPanel.links.ops.command",
+    titleKey: "controlPanel.links.ops.title",
+    to: "/ops",
+  },
+  {
     bodyKey: "controlPanel.links.deliveries.body",
     commandKey: "controlPanel.links.deliveries.command",
     titleKey: "controlPanel.links.deliveries.title",

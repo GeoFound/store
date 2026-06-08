@@ -87,6 +87,14 @@ Optional analytics and observability:
 | `SECURITY_LIMIT_CREATE_CART_PAYMENT_*` | Per-policy rate-limit knobs for cart payment creation | Supports `_MAX_REQUESTS`, `_WINDOW_SECONDS`, `_BLOCK_SECONDS`. |
 | `SECURITY_LIMIT_PAYMENT_WEBHOOK_*` | Per-policy rate-limit knobs for payment webhooks | Supports `_MAX_REQUESTS`, `_WINDOW_SECONDS`, `_BLOCK_SECONDS`. |
 | `SECURITY_LIMIT_ADMIN_MUTATION_*` | Per-policy rate-limit knobs for admin POST mutations | Supports `_MAX_REQUESTS`, `_WINDOW_SECONDS`, `_BLOCK_SECONDS`. |
+| `EXPECT_CLOUDFLARE` | Mark production as fronted by Cloudflare for ops-control and deploy edge checks | Set `true` when DNS is proxied through Cloudflare. |
+| `REQUIRE_CLOUDFLARE_SSL_MODE` | Required Cloudflare SSL mode | Use `strict` in production. |
+| `CLOUDFLARE_ZONE_ID` | Cloudflare zone id used for optional SSL mode verification | Non-secret. |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare token with zone settings read access | Secret; never expose in UI responses. |
+| `CLOUDFLARE_WAF_MANAGED_RULES_ENABLED` | Operator-attested Cloudflare managed WAF state | Set `true` only after verifying the zone. |
+| `CLOUDFLARE_ACCESS_ADMIN_ENABLED` | Operator-attested Cloudflare Access or equivalent admin edge protection | Set `true` only after admin/API protection is active. |
+| `STOREFRONT_PUBLIC_URL` / `API_PUBLIC_URL` | Public URLs shown in ops-control and used by deploy edge checks | Use HTTPS production origins. |
+| `OPS_*` | Operator-attested VPS posture and AI operations flags | These feed `/admin/ops-control/*`; set only after machine evidence such as `pnpm deploy:vps-doctor`. |
 | `PLATFORM_ENABLED_PLUGINS` | Backend plugin allow-list (comma-separated IDs). | Backend-only; public storefront plugin env is intentionally ignored by backend runtime. |
 | `PLATFORM_DISABLED_PLUGINS` | Backend plugin deny-list (comma-separated IDs). | Backend-only; public storefront plugin env is intentionally ignored by backend runtime. |
 | `PLATFORM_ENABLED_CONTRACTS` | Capability contract allow-list (`capability:name1,name2;...`). | Applied before plugin registration for deterministic startup behavior. |
@@ -139,6 +147,9 @@ Optional analytics and plugin runtime:
 | `SITE_PROFILES_ROOT` | Filesystem path to `profiles/sites`. Defaults to `../../profiles/sites` from the storefront app. |
 | `NEXT_PUBLIC_SITE_ID` | Public site identifier for profile-driven storefront rendering. |
 | `NEXT_PUBLIC_SITE_ENV` | Public site profile environment key (`production`, `staging`, etc). |
+| `ACCOUNT_AUTH_RATE_LIMIT_*` | Storefront BFF login/register/Google-start rate-limit knobs | Defaults to 20 requests per 600 seconds with a 900-second block. |
+| `ACCOUNT_AUTH_TURNSTILE_ENABLED` | Require Cloudflare Turnstile verification for login/register BFF routes | Default `false`; enable only after the storefront submits `turnstile_token`. |
+| `TURNSTILE_SECRET_KEY` | Server-side Turnstile secret used by storefront BFF routes | Secret; keep out of public `NEXT_PUBLIC_*` env. |
 
 Do not place payment provider secrets or encryption keys in storefront env.
 

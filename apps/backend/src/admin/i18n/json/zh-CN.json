@@ -62,6 +62,7 @@
     "credentials": "凭证",
     "deliveries": "交付",
     "marketing": "营销",
+    "ops": "运维",
     "payments": "支付",
     "productPublishing": "商品发布",
     "suppliers": "供应商"
@@ -78,6 +79,7 @@
       "credentials": "凭证",
       "deliveries": "交付",
       "marketing": "营销",
+      "ops": "运维",
       "payments": "支付",
       "productPublishing": "发布检查",
       "productTemplates": "商品模板",
@@ -232,6 +234,11 @@
         "body": "查看支付通道、支付尝试和人工确认操作。",
         "command": "复核",
         "title": "支付"
+      },
+      "ops": {
+        "body": "查看 VPS 状态、Cloudflare、备份、安全控制和 AI 运维证据。",
+        "command": "运维",
+        "title": "运维"
       },
       "orders": {
         "body": "打开 Medusa 订单，用于客户、支付、退款和订单历史处理。",
@@ -452,6 +459,50 @@
     "templatesDescription": "模板把商品类型连接到库存和交付 handler。",
     "title": "商品发布"
   },
+  "ops": {
+    "actions": {
+      "description": "高风险动作只用于运营规划，实际执行必须单独确认并保留证据。",
+      "noHumanGate": "无需人工门禁",
+      "requiresHuman": "需要人工确认",
+      "title": "运营动作"
+    },
+    "description": "只读生产运维态势，覆盖 VPS、Cloudflare、备份、安全控制和 AI 辅助维护。",
+    "empty": {
+      "findings": "暂无运维发现。",
+      "generatedAt": "尚未生成"
+    },
+    "fields": {
+      "action": "建议动作",
+      "current": "当前",
+      "finding": "发现",
+      "owner": "负责人",
+      "recommended": "建议值",
+      "sectionStatus": "区块状态",
+      "severity": "严重性"
+    },
+    "findings": {
+      "description": "由运行时设置生成的机器可读发现；不会显示密钥明文。",
+      "humanGate": "需要人工确认",
+      "title": "风险发现"
+    },
+    "loadFailed": "加载运维数据失败。",
+    "metrics": {
+      "critical": "严重",
+      "criticalDetail": "需要立即处理的生产风险",
+      "humanGate": "人工门禁",
+      "humanGateDetail": "需要明确批准的动作",
+      "status": "状态",
+      "warnings": "提醒",
+      "warningDetail": "上线前需要验证的项目"
+    },
+    "refreshing": "刷新中...",
+    "sections": {
+      "aiOps": "AI 运维",
+      "maintenance": "维护",
+      "security": "安全"
+    },
+    "title": "运维"
+  },
   "status": {
     "active": "启用",
     "archived": "已归档",
@@ -471,12 +522,15 @@
     "fulfilled": "已履约",
     "healthy": "健康",
     "high": "高",
+    "critical": "严重",
+    "info": "信息",
     "guide": "指南",
     "in_stock": "有库存",
     "invalid": "无效",
     "issued": "已发放",
     "low": "低",
     "medium": "中",
+    "ok": "正常",
     "missing_key_ref": "缺少密钥引用",
     "missing_secret": "缺少密钥",
     "open": "待处理",
@@ -488,6 +542,7 @@
     "requires_review": "需要审核",
     "refunded": "已退款",
     "rejected": "已拒绝",
+    "warning": "提醒",
     "released": "已释放",
     "replaced": "已补发",
     "ready": "可发布",

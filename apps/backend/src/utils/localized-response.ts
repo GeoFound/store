@@ -28,6 +28,7 @@ type LocalizedMessageKey =
   | "orderAccess.orderNotFound"
   | "orderAccess.providerUnavailable"
   | "orderAccess.recoveryCooldown"
+  | "ops.disabled"
   | "paymentChannel.currencyInvalid"
   | "paymentChannel.required"
   | "security.originNotAllowed"
@@ -121,6 +122,10 @@ const messages: Record<LocalizedMessageKey, Record<SupportedLocale, string>> = {
   "orderAccess.recoveryCooldown": {
     en: "Recovery code was recently issued. Please wait before requesting another code.",
     "zh-CN": "恢复验证码刚刚签发，请稍后再请求新的验证码。",
+  },
+  "ops.disabled": {
+    en: "Operations control plugin is disabled",
+    "zh-CN": "运维控制插件已停用",
   },
   "paymentChannel.currencyInvalid": {
     en: "currency must be a valid 3-letter code",
