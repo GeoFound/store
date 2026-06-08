@@ -3,6 +3,12 @@ import { getSiteConfig } from "@/lib/site-config"
 
 export function SiteHeader() {
   const siteConfig = getSiteConfig()
+  const initials = siteConfig.site.name
+    .split(/\s+/)
+    .map((part) => part.slice(0, 1))
+    .join("")
+    .slice(0, 2)
+    .toUpperCase()
 
   return (
     <header className="theme-overlay-surface theme-border sticky top-0 z-40 border-b backdrop-blur-xl">
@@ -13,11 +19,14 @@ export function SiteHeader() {
           aria-label={`${siteConfig.site.name} home`}
         >
           <span className="theme-accent-action flex h-9 w-9 items-center justify-center text-sm">
-            AD
+            {initials || "AI"}
           </span>
           <span>{siteConfig.site.name}</span>
         </Link>
         <nav className="flex items-center gap-2 text-sm sm:gap-5">
+          <Link href="/insights" className="px-2 py-2 opacity-75 hover:opacity-100">
+            {siteConfig.content.navigation.insights}
+          </Link>
           <Link href="/products" className="px-2 py-2 opacity-75 hover:opacity-100">
             {siteConfig.content.navigation.products}
           </Link>

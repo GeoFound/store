@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "createdAt": "2026-06-07",
+  "createdAt": "2026-06-08",
   "principles": [
     "Public API contract changes must be visible in machine-readable route entries.",
     "Routes that read request bodies must use validateAndTransformBody or carry expiring accepted debt.",
@@ -74,7 +74,7 @@
         "path": "apps/backend/src/api/admin/ai/control-panel-policy/route.ts",
         "route": "/admin/ai/control-panel-policy",
         "surface": "admin",
-        "owner": "ai-core",
+        "owner": "admin-api",
         "methods": [
           "GET"
         ],
@@ -87,7 +87,7 @@
         "path": "apps/backend/src/api/admin/ai/providers/route.ts",
         "route": "/admin/ai/providers",
         "surface": "admin",
-        "owner": "ai-core",
+        "owner": "admin-api",
         "methods": [
           "GET"
         ],
@@ -100,7 +100,7 @@
         "path": "apps/backend/src/api/admin/ai/runs/route.ts",
         "route": "/admin/ai/runs",
         "surface": "admin",
-        "owner": "ai-core",
+        "owner": "admin-api",
         "methods": [
           "GET"
         ],
@@ -172,6 +172,55 @@
           "pnpm ai:production",
           "pnpm check:ci"
         ]
+      },
+      {
+        "path": "apps/backend/src/api/admin/content/entries/[id]/route.ts",
+        "route": "/admin/content/entries/:id",
+        "surface": "admin",
+        "owner": "content-core",
+        "methods": [
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "middleware",
+            "matcher": "/admin/content/entries/:id",
+            "owner": "content-core",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
+        "path": "apps/backend/src/api/admin/content/entries/route.ts",
+        "route": "/admin/content/entries",
+        "surface": "admin",
+        "owner": "content-core",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "middleware",
+            "matcher": "/admin/content/entries",
+            "owner": "content-core",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
       },
       {
         "path": "apps/backend/src/api/admin/credential-inventory/batches/route.ts",
@@ -663,6 +712,32 @@
         }
       },
       {
+        "path": "apps/backend/src/api/store/content/entries/[slug]/route.ts",
+        "route": "/store/content/entries/:slug",
+        "surface": "store",
+        "owner": "content-core",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/store/content/entries/route.ts",
+        "route": "/store/content/entries",
+        "surface": "store",
+        "owner": "content-core",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
         "path": "apps/backend/src/api/store/custom/route.ts",
         "route": "/store/custom",
         "surface": "store",
@@ -937,6 +1012,28 @@
           "apps/backend/src/modules/analytics-core/migrations/.snapshot-store.json"
         ],
         "schemaFingerprint": "sha256:1c53f3837756745d74392d9f8b803b43c2836f068b5e126125d82e2b2a28cdf6",
+        "verification": [
+          "pnpm ai:production",
+          "pnpm --dir apps/backend test:unit"
+        ]
+      },
+      {
+        "module": "content-core",
+        "path": "apps/backend/src/modules/content-core",
+        "owner": "content-core",
+        "modelFiles": [
+          "apps/backend/src/modules/content-core/models/content-entry.ts"
+        ],
+        "modelTables": [
+          "content_entry"
+        ],
+        "migrationFiles": [
+          "apps/backend/src/modules/content-core/migrations/Migration20260608054644.ts"
+        ],
+        "snapshotFiles": [
+          "apps/backend/src/modules/content-core/migrations/.snapshot-content-core.json"
+        ],
+        "schemaFingerprint": "sha256:90a016daae8ca3ffb2fb4c2395421698252acd99d9e143bc322c5cd69d28a6e7",
         "verification": [
           "pnpm ai:production",
           "pnpm --dir apps/backend test:unit"

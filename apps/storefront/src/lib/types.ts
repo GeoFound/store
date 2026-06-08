@@ -50,8 +50,29 @@ export type Product = {
   } | null
   template?: ProductTemplate
   isSoldOut?: boolean
+  display?: {
+    hideVariantSelector?: boolean
+  }
   variants?: ProductVariant[]
   categories?: ProductCategory[]
+}
+
+export type ContentEntry = {
+  id: string
+  site_id: string
+  slug: string
+  title: string
+  excerpt: string
+  body: string
+  content_type: string
+  status: string
+  author_name: string | null
+  topic: string | null
+  tags_json: string[] | null
+  related_product_handles_json: string[] | null
+  ai_assisted: boolean
+  published_at: string | null
+  created_at: string | null
 }
 
 export type Region = {

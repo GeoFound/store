@@ -11,6 +11,8 @@ type LocalizedMessageKey =
   | "analytics.disabled"
   | "analytics.dispatchIdRequired"
   | "common.messageRequired"
+  | "content.disabled"
+  | "content.entryRequired"
   | "credentialBatch.itemCredentialRequired"
   | "credentialBatch.itemsRequired"
   | "credentialBatch.unsupportedVariant"
@@ -51,6 +53,14 @@ const messages: Record<LocalizedMessageKey, Record<SupportedLocale, string>> = {
   "common.messageRequired": {
     en: "message is required",
     "zh-CN": "必须提供 message",
+  },
+  "content.disabled": {
+    en: "Content core plugin is disabled",
+    "zh-CN": "内容核心插件已停用",
+  },
+  "content.entryRequired": {
+    en: "slug and title are required",
+    "zh-CN": "必须提供 slug 和 title",
   },
   "credentialBatch.itemCredentialRequired": {
     en: "Each item requires credential",

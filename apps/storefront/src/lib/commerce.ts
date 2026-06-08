@@ -2,6 +2,7 @@ import type {
   AfterSale,
   AnalyticsCheckoutContext,
   Cart,
+  ContentEntry,
   DeliveryLookupResult,
   ManualPaymentInstructions,
   MarketingCheckoutInput,
@@ -16,6 +17,14 @@ import type {
 export type CommerceBackend = {
   listProducts(): Promise<Product[]>
   retrieveProduct(handle: string): Promise<Product | null>
+  listContentEntries(input: {
+    siteId: string
+    limit?: number
+  }): Promise<ContentEntry[]>
+  retrieveContentEntry(input: {
+    siteId: string
+    slug: string
+  }): Promise<ContentEntry | null>
   listRegions(): Promise<Region[]>
   getDefaultRegionId(): Promise<string>
   createCart(): Promise<Cart>
@@ -130,6 +139,20 @@ export async function listProducts() {
 
 export async function retrieveProduct(handle: string) {
   return (await getCommerceBackend()).retrieveProduct(handle)
+}
+
+export async function listPublishedContentEntries(input: {
+  siteId: string
+  limit?: number
+}) {
+  return (await getCommerceBackend()).listContentEntries(input)
+}
+
+export async function retrievePublishedContentEntry(input: {
+  siteId: string
+  slug: string
+}) {
+  return (await getCommerceBackend()).retrieveContentEntry(input)
 }
 
 export async function listRegions() {

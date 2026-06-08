@@ -123,6 +123,57 @@ export const createMarketingReferralLinkBodySchema = z.object({
   metadata: nullableRecordSchema,
 })
 
+const contentTypeSchema = z.enum([
+  "article",
+  "guide",
+  "report",
+  "review",
+  "resource",
+  "case_study",
+])
+const contentStatusSchema = z.enum(["draft", "review", "published", "archived"])
+const contentStringListSchema = z
+  .union([z.string(), z.array(z.string().trim().min(1))])
+  .nullable()
+  .optional()
+
+export const contentEntriesQuerySchema = z.object({
+  site_id: optionalTextSchema,
+  status: contentStatusSchema.optional(),
+  content_type: contentTypeSchema.optional(),
+  topic: optionalTextSchema,
+  tag: optionalTextSchema,
+  limit: limitSchema,
+})
+
+export const createContentEntryBodySchema = z.object({
+  site_id: optionalTextSchema,
+  slug: z.string().trim().min(2).max(140),
+  title: z.string().trim().min(1).max(240),
+  excerpt: z.string().trim().max(1000).nullable().optional(),
+  body: z.string().trim().max(100000).nullable().optional(),
+  content_type: contentTypeSchema.optional(),
+  status: contentStatusSchema.optional(),
+  author_name: z.string().trim().max(120).nullable().optional(),
+  cover_image_url: z.string().trim().max(2000).nullable().optional(),
+  topic: z.string().trim().max(120).nullable().optional(),
+  tags: contentStringListSchema,
+  seo: nullableRecordSchema,
+  source_refs: z.union([z.array(z.unknown()), z.record(z.string(), z.unknown())]).nullable().optional(),
+  related_product_handles: contentStringListSchema,
+  ai_assisted: z.boolean().optional(),
+  published_at: z.string().datetime().nullable().optional(),
+  metadata: nullableRecordSchema,
+})
+
+export const updateContentEntryBodySchema = createContentEntryBodySchema
+  .partial()
+  .omit({ slug: true, title: true })
+  .extend({
+    slug: z.string().trim().min(2).max(140).optional(),
+    title: z.string().trim().min(1).max(240).optional(),
+  })
+
 export const analyticsEventsQuerySchema = z.object({
   event_name: optionalTextSchema,
   source: z.enum(["backend_hook", "storefront", "system"]).optional(),

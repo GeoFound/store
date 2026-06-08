@@ -30,8 +30,34 @@ export type SiteCategoryLinkConfig = {
   description?: string
 }
 
+export type SiteInsightEntryConfig = {
+  slug: string
+  title: string
+  excerpt: string
+  body: string
+  contentType: string
+  topic?: string
+  tags: string[]
+  authorName?: string
+  publishedAt?: string
+  relatedProductHandles: string[]
+}
+
+export type SiteProductDisplayConfig = {
+  handle: string
+  title?: string
+  description?: string
+  deliveryLabel?: string
+  fulfillmentTitle?: string
+  fulfillmentDescription?: string
+  thumbnail?: string
+  hideThumbnail: boolean
+  hideVariantSelector: boolean
+}
+
 export type SiteContentConfig = {
   navigation: {
+    insights: string
     products: string
     orders: string
     cart: string
@@ -43,6 +69,9 @@ export type SiteContentConfig = {
     ordersCta: string
     productsHeading: string
     productsDescription: string
+    insightsHeading: string
+    insightsDescription: string
+    insightsCta: string
     heroPattern: string
     featuredLimit: number
     announcements: SiteAnnouncementConfig[]
@@ -61,6 +90,18 @@ export type SiteContentConfig = {
     sortPriceAscLabel: string
     sortPriceDescLabel: string
     sortNewestLabel: string
+    productDisplay: SiteProductDisplayConfig[]
+  }
+  insights: {
+    title: string
+    description: string
+    emptyTitle: string
+    emptyDescription: string
+    readMoreLabel: string
+    backLabel: string
+    relatedProductsLabel: string
+    publishedLabel: string
+    seedEntries: SiteInsightEntryConfig[]
   }
 }
 
@@ -99,6 +140,9 @@ type SiteConfigInput = Partial<SiteConfig> & {
       orders_cta?: string
       products_heading?: string
       products_description?: string
+      insights_heading?: string
+      insights_description?: string
+      insights_cta?: string
       hero_pattern?: string
       featured_limit?: unknown
       announcements?: unknown
@@ -113,6 +157,16 @@ type SiteConfigInput = Partial<SiteConfig> & {
       sort_price_asc_label?: string
       sort_price_desc_label?: string
       sort_newest_label?: string
+      product_display?: unknown
+    }
+    insights?: Partial<SiteContentConfig["insights"]> & {
+      empty_title?: string
+      empty_description?: string
+      read_more_label?: string
+      back_label?: string
+      related_products_label?: string
+      published_label?: string
+      seed_entries?: unknown
     }
   }
   platform?: {
@@ -153,6 +207,7 @@ const BASE_SITE_CONFIG: SiteConfig = {
   },
   content: {
     navigation: {
+      insights: "Insights",
       products: "Products",
       orders: "Orders",
       cart: "Cart",
@@ -165,6 +220,9 @@ const BASE_SITE_CONFIG: SiteConfig = {
       ordersCta: "Find an order",
       productsHeading: "Available products",
       productsDescription: "Managed by Medusa, sold through this storefront.",
+      insightsHeading: "Latest insights",
+      insightsDescription: "Editorial content published through content-core.",
+      insightsCta: "View all insights",
       heroPattern:
         "linear-gradient(135deg,#0f766e 0%,#0f766e 45%,#f97316 45%,#f97316 68%,#1c1917 68%)",
       featuredLimit: 6,
@@ -185,6 +243,19 @@ const BASE_SITE_CONFIG: SiteConfig = {
       sortPriceAscLabel: "Price low to high",
       sortPriceDescLabel: "Price high to low",
       sortNewestLabel: "Newest",
+      productDisplay: [],
+    },
+    insights: {
+      title: "Insights",
+      description: "Articles, guides, and resources from this site.",
+      emptyTitle: "No insights published yet.",
+      emptyDescription:
+        "Create and publish content entries from the backend content panel.",
+      readMoreLabel: "Read more",
+      backLabel: "Back to insights",
+      relatedProductsLabel: "Related products",
+      publishedLabel: "Published",
+      seedEntries: [],
     },
   },
   platform: {
@@ -313,6 +384,9 @@ function normalizeSiteConfig(
     },
     content: {
       navigation: {
+        insights:
+          toOptionalString(input?.content?.navigation?.insights) ||
+          fallback.content.navigation.insights,
         products:
           toOptionalString(input?.content?.navigation?.products) ||
           fallback.content.navigation.products,
@@ -346,6 +420,18 @@ function normalizeSiteConfig(
           toOptionalString(input?.content?.home?.productsDescription) ||
           toOptionalString(input?.content?.home?.products_description) ||
           fallback.content.home.productsDescription,
+        insightsHeading:
+          toOptionalString(input?.content?.home?.insightsHeading) ||
+          toOptionalString(input?.content?.home?.insights_heading) ||
+          fallback.content.home.insightsHeading,
+        insightsDescription:
+          toOptionalString(input?.content?.home?.insightsDescription) ||
+          toOptionalString(input?.content?.home?.insights_description) ||
+          fallback.content.home.insightsDescription,
+        insightsCta:
+          toOptionalString(input?.content?.home?.insightsCta) ||
+          toOptionalString(input?.content?.home?.insights_cta) ||
+          fallback.content.home.insightsCta,
         heroPattern:
           toOptionalString(input?.content?.home?.heroPattern) ||
           toOptionalString(input?.content?.home?.hero_pattern) ||
@@ -401,6 +487,48 @@ function normalizeSiteConfig(
           toOptionalString(input?.content?.catalog?.sortNewestLabel) ||
           toOptionalString(input?.content?.catalog?.sort_newest_label) ||
           fallback.content.catalog.sortNewestLabel,
+        productDisplay:
+          toProductDisplayArray(
+            input?.content?.catalog?.productDisplay ||
+              input?.content?.catalog?.product_display
+          ) ?? fallback.content.catalog.productDisplay,
+      },
+      insights: {
+        title:
+          toOptionalString(input?.content?.insights?.title) ||
+          fallback.content.insights.title,
+        description:
+          toOptionalString(input?.content?.insights?.description) ||
+          fallback.content.insights.description,
+        emptyTitle:
+          toOptionalString(input?.content?.insights?.emptyTitle) ||
+          toOptionalString(input?.content?.insights?.empty_title) ||
+          fallback.content.insights.emptyTitle,
+        emptyDescription:
+          toOptionalString(input?.content?.insights?.emptyDescription) ||
+          toOptionalString(input?.content?.insights?.empty_description) ||
+          fallback.content.insights.emptyDescription,
+        readMoreLabel:
+          toOptionalString(input?.content?.insights?.readMoreLabel) ||
+          toOptionalString(input?.content?.insights?.read_more_label) ||
+          fallback.content.insights.readMoreLabel,
+        backLabel:
+          toOptionalString(input?.content?.insights?.backLabel) ||
+          toOptionalString(input?.content?.insights?.back_label) ||
+          fallback.content.insights.backLabel,
+        relatedProductsLabel:
+          toOptionalString(input?.content?.insights?.relatedProductsLabel) ||
+          toOptionalString(input?.content?.insights?.related_products_label) ||
+          fallback.content.insights.relatedProductsLabel,
+        publishedLabel:
+          toOptionalString(input?.content?.insights?.publishedLabel) ||
+          toOptionalString(input?.content?.insights?.published_label) ||
+          fallback.content.insights.publishedLabel,
+        seedEntries:
+          toInsightEntryArray(
+            input?.content?.insights?.seedEntries ||
+              input?.content?.insights?.seed_entries
+          ) ?? fallback.content.insights.seedEntries,
       },
     },
     platform: {
@@ -454,6 +582,53 @@ function toStringArrayMap(value: unknown) {
   }, {})
 
   return normalized
+}
+
+function toProductDisplayArray(value: unknown) {
+  if (!Array.isArray(value)) {
+    return undefined
+  }
+
+  const entries = value
+    .map((item): SiteProductDisplayConfig | null => {
+      if (!item || typeof item !== "object") {
+        return null
+      }
+
+      const source = item as Record<string, unknown>
+      const handle = toOptionalString(source.handle)
+
+      if (!handle) {
+        return null
+      }
+
+      return {
+        handle,
+        title: toOptionalString(source.title) || undefined,
+        description: toOptionalString(source.description) || undefined,
+        deliveryLabel:
+          toOptionalString(source.deliveryLabel) ||
+          toOptionalString(source.delivery_label) ||
+          undefined,
+        fulfillmentTitle:
+          toOptionalString(source.fulfillmentTitle) ||
+          toOptionalString(source.fulfillment_title) ||
+          undefined,
+        fulfillmentDescription:
+          toOptionalString(source.fulfillmentDescription) ||
+          toOptionalString(source.fulfillment_description) ||
+          undefined,
+        thumbnail: toOptionalString(source.thumbnail) || undefined,
+        hideThumbnail:
+          source.hideThumbnail === true || source.hide_thumbnail === true,
+        hideVariantSelector:
+          source.hideVariantSelector === true ||
+          source.hide_variant_selector === true,
+      }
+    })
+    .filter((item): item is SiteProductDisplayConfig => Boolean(item))
+
+  return entries.length ? entries : undefined
 }
 
 function toAnnouncementArray(value: unknown) {
@@ -520,6 +695,56 @@ function toCategoryLinkArray(value: unknown) {
     .filter((item): item is SiteCategoryLinkConfig => Boolean(item))
 
   return links.length ? links : undefined
+}
+
+function toInsightEntryArray(value: unknown) {
+  if (!Array.isArray(value)) {
+    return undefined
+  }
+
+  const entries = value
+    .map((item): SiteInsightEntryConfig | null => {
+      if (!item || typeof item !== "object") {
+        return null
+      }
+
+      const source = item as Record<string, unknown>
+      const slug = toOptionalString(source.slug)
+      const title = toOptionalString(source.title)
+      const excerpt = toOptionalString(source.excerpt)
+      const body = toOptionalString(source.body)
+
+      if (!slug || !title || !excerpt || !body) {
+        return null
+      }
+
+      return {
+        slug,
+        title,
+        excerpt,
+        body,
+        contentType:
+          toOptionalString(source.contentType) ||
+          toOptionalString(source.content_type) ||
+          "article",
+        topic: toOptionalString(source.topic) || undefined,
+        tags: toStringArray(source.tags),
+        authorName:
+          toOptionalString(source.authorName) ||
+          toOptionalString(source.author_name) ||
+          undefined,
+        publishedAt:
+          toOptionalString(source.publishedAt) ||
+          toOptionalString(source.published_at) ||
+          undefined,
+        relatedProductHandles: toStringArray(
+          source.relatedProductHandles || source.related_product_handles
+        ),
+      }
+    })
+    .filter((item): item is SiteInsightEntryConfig => Boolean(item))
+
+  return entries.length ? entries : undefined
 }
 
 function toPositiveInteger(value: unknown) {
@@ -602,6 +827,24 @@ function validateSiteConfigInput(
   ) {
     throw new Error(
       `content.categories.links must be an array in ${context.filePath}`
+    )
+  }
+
+  if (
+    typeof input.content?.insights?.seedEntries !== "undefined" &&
+    !Array.isArray(input.content.insights.seedEntries)
+  ) {
+    throw new Error(
+      `content.insights.seedEntries must be an array in ${context.filePath}`
+    )
+  }
+
+  if (
+    typeof input.content?.insights?.seed_entries !== "undefined" &&
+    !Array.isArray(input.content.insights.seed_entries)
+  ) {
+    throw new Error(
+      `content.insights.seed_entries must be an array in ${context.filePath}`
     )
   }
 }

@@ -10,6 +10,7 @@ import {
 import type {
   Cart,
   AfterSale,
+  ContentEntry,
   ManualPaymentInstructions,
   DeliveryLookupResult,
   OrderLookupResult,
@@ -93,6 +94,35 @@ export async function retrieveProduct(handle: string): Promise<Product | null> {
   )
 
   return products[0] || null
+}
+
+export async function listContentEntries(input: {
+  siteId: string
+  limit?: number
+}): Promise<ContentEntry[]> {
+  const query = new URLSearchParams({
+    site_id: input.siteId,
+    limit: String(input.limit || 100),
+  })
+  const data = await medusaFetch<{ entries: ContentEntry[] }>(
+    `/store/content/entries?${query.toString()}`
+  )
+
+  return data.entries || []
+}
+
+export async function retrieveContentEntry(input: {
+  siteId: string
+  slug: string
+}): Promise<ContentEntry | null> {
+  const query = new URLSearchParams({
+    site_id: input.siteId,
+  })
+  const data = await medusaFetch<{ entry?: ContentEntry }>(
+    `/store/content/entries/${encodeURIComponent(input.slug)}?${query.toString()}`
+  )
+
+  return data.entry || null
 }
 
 export async function listRegions(): Promise<Region[]> {

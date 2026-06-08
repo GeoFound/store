@@ -120,5 +120,8 @@ module.exports = defineConfig({
     {
       resolve: "./src/modules/ai-core",
     },
+    {
+      resolve: "./src/modules/content-core",
+    },
   ],
 })

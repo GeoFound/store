@@ -97,6 +97,7 @@ function surfaceFromRoute(route) {
 
 function ownerFromRoute(route) {
   if (route.startsWith("/admin/analytics/")) return "analytics-core"
+  if (route.startsWith("/admin/content/") || route.startsWith("/store/content/")) return "content-core"
   if (route.startsWith("/admin/marketing/") || route.startsWith("/store/marketing/")) return "marketing-engine"
   if (route.startsWith("/admin/credential-inventory/")) return "credential-inventory"
   if (route.startsWith("/admin/digital-delivery/") || route.startsWith("/store/deliveries/")) return "digital-delivery"

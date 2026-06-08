@@ -4,6 +4,8 @@ import { notFound } from "next/navigation"
 import { ProductPurchasePanel } from "@/components/product-purchase-panel"
 import { SiteHeader } from "@/components/site-header"
 import { retrieveProduct } from "@/lib/commerce"
+import { getSiteConfig } from "@/lib/site-config"
+import { applyProductDisplayEntry } from "@/lib/site-products"
 
 export const dynamic = "force-dynamic"
 
@@ -15,12 +17,19 @@ type ProductPageProps = {
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { handle } = await params
-  const product = await retrieveProduct(handle)
+  const siteConfig = getSiteConfig()
+  const rawProduct = await retrieveProduct(handle)
 
-  if (!product) {
+  if (!rawProduct) {
     notFound()
   }
 
+  const product = applyProductDisplayEntry(
+    rawProduct,
+    siteConfig.content.catalog.productDisplay.find(
+      (entry) => entry.handle === rawProduct.handle
+    )
+  )
   const template = product.template
 
   return (
@@ -115,6 +124,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
               productTitle={product.title}
               template={template}
               variants={product.variants}
+              hideVariantSelector={product.display?.hideVariantSelector}
             />
           </aside>
         </div>

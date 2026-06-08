@@ -57,6 +57,7 @@
     "ai": "AI",
     "analytics": "Analytics",
     "auditLogs": "Audit Logs",
+    "content": "Content",
     "controlPanel": "Control Panel",
     "credentials": "Credentials",
     "deliveries": "Deliveries",
@@ -71,6 +72,7 @@
       "ai": "AI",
       "analytics": "Analytics",
       "auditLogs": "Audit Logs",
+      "content": "Content",
       "controlPanel": "Control Panel",
       "createProduct": "Create product",
       "credentials": "Credentials",
@@ -170,11 +172,13 @@
       "auditReview": "High-risk audit event",
       "catalogReview": "Publishing review",
       "catalogMeta": "Stock and fulfillment readiness",
+      "contentReview": "Content review",
       "description": "These queues should be checked before routine catalog or marketing work.",
       "emptyAfterSales": "No open after-sales requests in the latest results.",
       "emptyAnalytics": "No analytics dispatches need replay.",
       "emptyAudit": "No high-risk audit events in the latest results.",
       "emptyCatalog": "No catalog items need stock or fulfillment review.",
+      "emptyContent": "No content entries need review.",
       "emptyDelivery": "No pending deliveries in the latest results.",
       "emptyPayment": "No payment attempts need review in the latest results.",
       "emptySupplier": "No supplier procurements need review.",
@@ -198,6 +202,11 @@
         "body": "Review canonical events, dispatch failures, and replay analytics delivery.",
         "command": "Replay",
         "title": "Analytics"
+      },
+      "content": {
+        "body": "Create, review, and publish site-scoped articles, guides, and resource pages.",
+        "command": "Publish",
+        "title": "Content"
       },
       "ai": {
         "body": "Check AI provider readiness, task plugins, review queue, and admin-surface standards.",
@@ -266,6 +275,11 @@
         "detail": "{{unhealthy}} enabled channels need health review.",
         "label": "Payment channels"
       },
+      "content": {
+        "body": "published",
+        "detail": "{{review}} entries need editorial review.",
+        "label": "Content"
+      },
       "credentials": {
         "body": "available",
         "detail": "{{reserved}} credentials are reserved.",
@@ -309,6 +323,11 @@
         "empty": "No analytics events in the latest results.",
         "label": "Analytics delivery"
       },
+      "content": {
+        "detail": "{{published}} published entries; {{review}} need review.",
+        "empty": "No content entries in the latest results.",
+        "label": "Content publishing"
+      },
       "ai": {
         "detail": "{{configured}} configured providers; {{attention}} need attention.",
         "empty": "No AI provider is configured.",
@@ -349,6 +368,55 @@
       "description": "The shortest path to the work operators perform most often.",
       "title": "Common Workflows"
     }
+  },
+  "content": {
+    "actions": {
+      "archive": "Archive",
+      "publish": "Publish",
+      "review": "Send to review"
+    },
+    "create": {
+      "description": "Create reusable editorial entries. AI plugins can later write drafts into the same workflow.",
+      "submit": "Create content",
+      "title": "Create Content Entry"
+    },
+    "createFailed": "Failed to create content entry.",
+    "created": "Content entry created.",
+    "empty": "No content entries found.",
+    "entries": {
+      "description": "Only published entries are visible to the storefront public content API.",
+      "title": "Content Entries"
+    },
+    "fields": {
+      "actions": "Actions",
+      "aiAssisted": "AI assisted",
+      "author": "Author",
+      "body": "Body. Markdown-style plain text is supported.",
+      "excerpt": "Short excerpt",
+      "relatedProducts": "Related product handles, comma-separated",
+      "siteId": "Site ID",
+      "slug": "Slug",
+      "tags": "Tags, comma-separated",
+      "title": "Title",
+      "topic": "Topic",
+      "type": "Type"
+    },
+    "loadFailed": "Failed to load content entries.",
+    "metrics": {
+      "aiAssisted": "AI assisted",
+      "aiDetail": "Entries marked as AI-assisted.",
+      "draftDetail": "Draft entries waiting for writing.",
+      "drafts": "Drafts",
+      "liveDetail": "Published entries visible to readers.",
+      "published": "Published",
+      "review": "Review",
+      "reviewDetail": "Entries waiting for human approval."
+    },
+    "no": "No",
+    "title": "Content",
+    "updateFailed": "Failed to update content entry.",
+    "updated": "Content entry updated.",
+    "yes": "Yes"
   },
   "productPublishing": {
     "actions": {
@@ -396,11 +464,14 @@
     "disabled": "Disabled",
     "down": "Down",
     "draft": "Draft",
+    "article": "Article",
+    "case_study": "Case study",
     "expired": "Expired",
     "failed": "Failed",
     "fulfilled": "Fulfilled",
     "healthy": "Healthy",
     "high": "High",
+    "guide": "Guide",
     "in_stock": "In stock",
     "invalid": "Invalid",
     "issued": "Issued",
@@ -420,8 +491,11 @@
     "released": "Released",
     "replaced": "Replaced",
     "ready": "Ready",
+    "report": "Report",
     "reserved": "Reserved",
     "resolved": "Resolved",
+    "resource": "Resource",
+    "review": "Review",
     "revoked": "Revoked",
     "sold": "Sold",
     "needs_stock": "Needs stock",

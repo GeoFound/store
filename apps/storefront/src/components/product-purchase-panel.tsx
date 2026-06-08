@@ -11,6 +11,7 @@ type ProductPurchasePanelProps = {
   productTitle: string
   template?: ProductTemplate
   variants?: ProductVariant[]
+  hideVariantSelector?: boolean
 }
 
 export function ProductPurchasePanel({
@@ -18,6 +19,7 @@ export function ProductPurchasePanel({
   productTitle,
   template,
   variants = [],
+  hideVariantSelector = false,
 }: ProductPurchasePanelProps) {
   const requiresInventory = useMemo(
     () => requiresInventoryTracking(template),
@@ -81,7 +83,7 @@ export function ProductPurchasePanel({
         {template?.description || "Digital delivery is prepared after payment."}
       </p>
 
-      {variants.length > 1 ? (
+      {variants.length > 1 && !hideVariantSelector ? (
         <div className="mt-5">
           <label className="block text-sm font-medium opacity-80" htmlFor="variant">
             Option

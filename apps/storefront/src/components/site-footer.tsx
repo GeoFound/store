@@ -3,6 +3,12 @@ import { getSiteConfig } from "@/lib/site-config"
 
 export function SiteFooter() {
   const siteConfig = getSiteConfig()
+  const initials = siteConfig.site.name
+    .split(/\s+/)
+    .map((part) => part.slice(0, 1))
+    .join("")
+    .slice(0, 2)
+    .toUpperCase()
 
   return (
     <footer className="theme-surface theme-border border-t">
@@ -10,18 +16,21 @@ export function SiteFooter() {
         <div>
           <Link href="/" className="inline-flex items-center gap-3 font-semibold">
             <span className="theme-accent-action flex h-9 w-9 items-center justify-center text-sm">
-              AD
+              {initials || "AI"}
             </span>
             <span>{siteConfig.site.name}</span>
           </Link>
           <p className="mt-4 max-w-sm text-sm leading-6 opacity-70">
-            {siteConfig.site.description}. Digital goods, delivered from your
-            order page with guest checkout and recoverable access.
+            {siteConfig.site.description}. Articles, AI resources, and digital
+            products connected through one publishing and commerce platform.
           </p>
         </div>
         <div>
-          <h2 className="text-sm font-semibold">Shop</h2>
+          <h2 className="text-sm font-semibold">Explore</h2>
           <div className="mt-4 grid gap-3 text-sm opacity-75">
+            <Link href="/insights" className="hover:opacity-100">
+              {siteConfig.content.navigation.insights}
+            </Link>
             <Link href="/products" className="hover:opacity-100">
               {siteConfig.content.navigation.products}
             </Link>
@@ -36,7 +45,7 @@ export function SiteFooter() {
             <Link href="/orders" className="hover:opacity-100">
               {siteConfig.content.navigation.orders}
             </Link>
-            <span>Secure guest order access</span>
+            <span>Recoverable guest order access</span>
           </div>
         </div>
       </div>

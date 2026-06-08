@@ -6,7 +6,9 @@ import { ensureStorefrontExtensionsRegistered } from "@/extensions/defaults"
 import { renderStorefrontExtensions } from "@/extensions/registry"
 import { buildProductsHref, listProductCategories } from "@/lib/catalog"
 import { listProducts } from "@/lib/commerce"
+import { listContentEntries } from "@/lib/content"
 import { getSiteConfig, type SiteCategoryLinkConfig } from "@/lib/site-config"
+import { applyProductDisplayConfig } from "@/lib/site-products"
 import type { Product } from "@/lib/types"
 
 export const dynamic = "force-dynamic"
@@ -15,7 +17,14 @@ export default async function Home() {
   ensureStorefrontExtensionsRegistered()
   const siteConfig = getSiteConfig()
   const homeContent = siteConfig.content.home
-  const products = await listProducts()
+  const [rawProducts, insights] = await Promise.all([
+    listProducts(),
+    listContentEntries({ limit: 3 }),
+  ])
+  const products = applyProductDisplayConfig(
+    rawProducts,
+    siteConfig.content.catalog.productDisplay
+  )
   const featured = products.slice(0, homeContent.featuredLimit)
   const categoryLinks = resolveHomeCategoryLinks(
     products,
@@ -37,8 +46,14 @@ export default async function Home() {
               </p>
               <div className="mt-7 flex flex-wrap gap-3">
                 <Link
-                  href="/products"
+                  href="/insights"
                   className="theme-primary-action inline-flex min-h-12 items-center justify-center px-5 text-sm font-semibold"
+                >
+                  {homeContent.insightsCta}
+                </Link>
+                <Link
+                  href="/products"
+                  className="theme-secondary-action inline-flex min-h-12 items-center justify-center px-5 text-sm font-semibold"
                 >
                   {homeContent.browseCta}
                 </Link>
@@ -51,16 +66,22 @@ export default async function Home() {
               </div>
               <div className="mt-8 hidden max-w-2xl gap-3 text-sm sm:grid sm:grid-cols-3">
                 <div className="theme-field-row px-4 py-3">
-                  <div className="font-semibold">Guest checkout</div>
-                  <p className="mt-1 leading-5 opacity-70">Buy without accounts.</p>
+                  <div className="font-semibold">AI insights</div>
+                  <p className="mt-1 leading-5 opacity-70">
+                    Practical analysis and guides.
+                  </p>
                 </div>
                 <div className="theme-field-row px-4 py-3">
-                  <div className="font-semibold">Order access</div>
-                  <p className="mt-1 leading-5 opacity-70">Recover delivery later.</p>
+                  <div className="font-semibold">Digital products</div>
+                  <p className="mt-1 leading-5 opacity-70">
+                    Tools, assets, and playbooks.
+                  </p>
                 </div>
                 <div className="theme-field-row px-4 py-3">
-                  <div className="font-semibold">Digital delivery</div>
-                  <p className="mt-1 leading-5 opacity-70">Fulfilled after payment.</p>
+                  <div className="font-semibold">Backend publishing</div>
+                  <p className="mt-1 leading-5 opacity-70">
+                    Content managed from admin.
+                  </p>
                 </div>
               </div>
             </div>
@@ -149,6 +170,49 @@ export default async function Home() {
             </div>
           </section>
         ) : null}
+
+        <section className="mx-auto max-w-7xl px-4 pb-10 pt-2 sm:px-6">
+          <div className="mb-6 flex items-end justify-between gap-4">
+            <div>
+              <h2 className="text-3xl font-semibold">
+                {homeContent.insightsHeading}
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-6 opacity-70">
+                {homeContent.insightsDescription}
+              </p>
+            </div>
+            <Link
+              href="/insights"
+              className="theme-secondary-action hidden px-4 py-2 text-sm font-semibold sm:inline-flex"
+            >
+              {homeContent.insightsCta}
+            </Link>
+          </div>
+          {insights.length ? (
+            <div className="grid gap-4 md:grid-cols-3">
+              {insights.map((entry) => (
+                <Link
+                  key={entry.id}
+                  href={`/insights/${entry.slug}`}
+                  className="theme-card group block p-5"
+                >
+                  <div className="text-xs font-semibold uppercase opacity-60">
+                    {entry.topic || entry.content_type.replace(/_/g, " ")}
+                  </div>
+                  <h3 className="mt-3 text-xl font-semibold leading-tight">
+                    {entry.title}
+                  </h3>
+                  <p className="mt-3 text-sm leading-6 opacity-70">
+                    {entry.excerpt || entry.body}
+                  </p>
+                  <div className="theme-accent-text mt-5 text-sm font-semibold">
+                    {siteConfig.content.insights.readMoreLabel}
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : null}
+        </section>
 
         <section className="mx-auto max-w-7xl px-4 pb-14 pt-4 sm:px-6">
           <div className="mb-6 flex items-end justify-between gap-4">

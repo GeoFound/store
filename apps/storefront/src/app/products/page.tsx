@@ -12,6 +12,7 @@ import {
 } from "@/lib/catalog"
 import { listProducts } from "@/lib/commerce"
 import { getSiteConfig, type SiteCategoryLinkConfig } from "@/lib/site-config"
+import { applyProductDisplayConfig } from "@/lib/site-products"
 import type { ProductCategory } from "@/lib/types"
 
 export const dynamic = "force-dynamic"
@@ -27,7 +28,11 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   ensureStorefrontExtensionsRegistered()
   const siteConfig = getSiteConfig()
   const params = await searchParams
-  const products = await listProducts()
+  const rawProducts = await listProducts()
+  const products = applyProductDisplayConfig(
+    rawProducts,
+    siteConfig.content.catalog.productDisplay
+  )
   const activeCategory = params?.category || ""
   const activeSort = normalizeCatalogSort(params?.sort)
   const categories = listProductCategories(products)

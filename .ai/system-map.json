@@ -75,6 +75,14 @@
       "verification": ["pnpm --dir apps/backend test:unit", "pnpm ai:config", "pnpm ai:inventory"]
     },
     {
+      "id": "content-core",
+      "kind": "backend-module",
+      "path": "apps/backend/src/modules/content-core",
+      "owns": ["site-scoped content entries", "publishing status", "editorial metadata", "public content read APIs", "content admin publishing surface"],
+      "mustNotOwn": ["AI provider invocation", "automatic publishing without human review", "commerce checkout"],
+      "verification": ["pnpm --dir apps/backend test:unit", "pnpm ai:production", "pnpm ai:inventory"]
+    },
+    {
       "id": "analytics-core",
       "kind": "backend-module",
       "path": "apps/backend/src/modules/analytics-core",
@@ -148,7 +156,7 @@
       "id": "storefront-ui",
       "kind": "frontend-app",
       "path": "apps/storefront/src",
-      "owns": ["catalog", "cart", "checkout", "order lookup", "guest recovery UX"],
+      "owns": ["catalog", "cart", "checkout", "order lookup", "guest recovery UX", "public insights pages"],
       "mustNotOwn": ["database access", "credential decryption", "payment webhook handling"],
       "verification": ["pnpm --dir apps/storefront test", "pnpm --dir apps/storefront lint"]
     },
@@ -216,6 +224,13 @@
       "through": ["payment-router", "supplier-procurement", "digital-delivery"],
       "to": "product",
       "evidence": ["pnpm --dir apps/backend test:unit", "pnpm ai:doctor"]
+    },
+    {
+      "id": "content-to-product-discovery",
+      "from": "content-core",
+      "through": ["storefront-ui", "profile-system"],
+      "to": "product",
+      "evidence": ["pnpm ai:production", "pnpm --dir apps/storefront test"]
     },
     {
       "id": "ai-maintenance",

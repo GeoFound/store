@@ -12,6 +12,8 @@ import {
   analyticsDispatchesQuerySchema,
   analyticsEventsQuerySchema,
   claimOrderAccessBodySchema,
+  contentEntriesQuerySchema,
+  createContentEntryBodySchema,
   createAfterSaleBodySchema,
   createCartPaymentBodySchema,
   createCredentialBatchBodySchema,
@@ -33,6 +35,7 @@ import {
   sellReservationBodySchema,
   simpleLimitQuerySchema,
   updateAfterSaleBodySchema,
+  updateContentEntryBodySchema,
   updatePaymentChannelBodySchema,
   upsertSupplierMappingBodySchema,
   verifyRecoverBodySchema,
@@ -227,6 +230,37 @@ export default defineMiddlewares({
       middlewares: [validateAndTransformSimpleQuery(simpleLimitQuerySchema.passthrough())],
     },
     {
+      matcher: "/admin/content/entries",
+      methods: ["GET"],
+      middlewares: [validateAndTransformSimpleQuery(contentEntriesQuerySchema)],
+    },
+    {
+      matcher: "/admin/content/entries",
+      methods: ["POST"],
+      middlewares: [
+        createRateLimitMiddleware(adminMutationRateLimit, {
+          action: "security.admin_mutation.rate_limited",
+          riskLevel: "medium",
+          keyParts: (req) => [getRequestPath(req)],
+        }),
+        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        validateAndTransformBody(createContentEntryBodySchema),
+      ],
+    },
+    {
+      matcher: "/admin/content/entries/:id",
+      methods: ["POST"],
+      middlewares: [
+        createRateLimitMiddleware(adminMutationRateLimit, {
+          action: "security.admin_mutation.rate_limited",
+          riskLevel: "medium",
+          keyParts: (req) => [getRequestPath(req)],
+        }),
+        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        validateAndTransformBody(updateContentEntryBodySchema),
+      ],
+    },
+    {
       matcher: "/admin/analytics/events",
       methods: ["GET"],
       middlewares: [validateAndTransformSimpleQuery(analyticsEventsQuerySchema)],
@@ -328,6 +362,16 @@ export default defineMiddlewares({
       matcher: "/store/marketing/campaigns",
       methods: ["GET"],
       middlewares: [validateAndTransformSimpleQuery(simpleLimitQuerySchema.passthrough())],
+    },
+    {
+      matcher: "/store/content/entries",
+      methods: ["GET"],
+      middlewares: [validateAndTransformSimpleQuery(contentEntriesQuerySchema)],
+    },
+    {
+      matcher: "/store/content/entries/:slug",
+      methods: ["GET"],
+      middlewares: [validateAndTransformSimpleQuery(contentEntriesQuerySchema)],
     },
     {
       matcher: "/store/deliveries/:access_token/after-sales",

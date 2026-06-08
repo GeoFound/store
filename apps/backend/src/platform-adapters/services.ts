@@ -4,6 +4,8 @@ import { AI_CORE_MODULE } from "../modules/ai-core"
 import type AiCoreModuleService from "../modules/ai-core/service"
 import { ANALYTICS_CORE_MODULE } from "../modules/analytics-core"
 import type AnalyticsCoreModuleService from "../modules/analytics-core/service"
+import { CONTENT_CORE_MODULE } from "../modules/content-core"
+import type ContentCoreModuleService from "../modules/content-core/service"
 import { CREDENTIAL_INVENTORY_MODULE } from "../modules/credential-inventory"
 import type CredentialInventoryModuleService from "../modules/credential-inventory/service"
 import { DIGITAL_DELIVERY_MODULE } from "../modules/digital-delivery"
@@ -25,6 +27,10 @@ export function resolveAnalyticsCoreService(scope: BackendRuntimeContext) {
 
 export function resolveAiCoreService(scope: BackendRuntimeContext) {
   return scope.resolve(AI_CORE_MODULE) as AiCoreModuleService
+}
+
+export function resolveContentCoreService(scope: BackendRuntimeContext) {
+  return scope.resolve(CONTENT_CORE_MODULE) as ContentCoreModuleService
 }
 
 export function resolveCredentialInventoryService(scope: BackendRuntimeContext) {

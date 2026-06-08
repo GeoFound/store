@@ -47,6 +47,7 @@ describe("Medusa Dashboard shell patch", () => {
     expect(patch).toContain('to: "/credentials"')
     expect(patch).toContain('to: "/deliveries"')
     expect(patch).toContain('to: "/payments"')
+    expect(patch).toContain('to: "/content"')
     expect(patch).toContain('to: "/ai"')
   })
 

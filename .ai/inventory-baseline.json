@@ -49,6 +49,16 @@
         "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
       },
       {
+        "name": "content-core",
+        "owner": "content-core",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:production",
+          "pnpm --dir apps/backend test:unit"
+        ],
+        "rationale": "Site-scoped content publishing core for reusable articles, guides, resource pages, and future AI-assisted draft workflows."
+      },
+      {
         "name": "credential-inventory",
         "owner": "credential-inventory",
         "verification": [
@@ -229,6 +239,26 @@
           "pnpm check:ci"
         ],
         "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/admin/content/entries/[id]/route.ts",
+        "owner": "content-core",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "rationale": "Content admin update endpoint for status changes and editorial metadata updates."
+      },
+      {
+        "path": "apps/backend/src/api/admin/content/entries/route.ts",
+        "owner": "content-core",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "rationale": "Content admin listing and creation endpoint for the backend publishing panel."
       },
       {
         "path": "apps/backend/src/api/admin/credential-inventory/batches/route.ts",
@@ -472,6 +502,26 @@
           "pnpm check:ci"
         ],
         "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/api/store/content/entries/[slug]/route.ts",
+        "owner": "content-core",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "rationale": "Public published-content detail endpoint for storefront insight pages."
+      },
+      {
+        "path": "apps/backend/src/api/store/content/entries/route.ts",
+        "owner": "content-core",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "rationale": "Public published-content listing endpoint for storefront insight pages."
       },
       {
         "path": "apps/backend/src/api/store/deliveries/[access_token]/after-sales/route.ts",
@@ -742,6 +792,26 @@
           "pnpm --dir apps/storefront lint"
         ],
         "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/storefront/src/app/insights/[slug]/page.tsx",
+        "owner": "storefront-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/storefront test",
+          "pnpm --dir apps/storefront lint"
+        ],
+        "rationale": "Public insight article detail page backed by content-core published entries and site profile fallback content."
+      },
+      {
+        "path": "apps/storefront/src/app/insights/page.tsx",
+        "owner": "storefront-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/storefront test",
+          "pnpm --dir apps/storefront lint"
+        ],
+        "rationale": "Public insight listing page for AI articles, guides, reports, and future content types."
       },
       {
         "path": "apps/storefront/src/app/orders/page.tsx",

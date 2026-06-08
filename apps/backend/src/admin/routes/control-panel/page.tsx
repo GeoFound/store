@@ -134,6 +134,16 @@ type AnalyticsDispatch = {
   created_at?: string | null
 }
 
+type ContentEntry = {
+  id: string
+  site_id: string
+  title: string
+  slug: string
+  status: string
+  created_at?: string | null
+  published_at?: string | null
+}
+
 type AIProviderConfig = {
   code: string
   label: string
@@ -172,6 +182,7 @@ type ControlPanelState = {
   batches: CredentialBatch[]
   channels: PaymentChannel[]
   catalogVariants: CatalogVariant[]
+  contentEntries: ContentEntry[]
   marketingCampaigns: MarketingCampaign[]
   marketingCoupons: MarketingCoupon[]
   marketingReferralLinks: MarketingReferralLink[]
@@ -197,6 +208,7 @@ const EMPTY_STATE: ControlPanelState = {
   batches: [],
   channels: [],
   catalogVariants: [],
+  contentEntries: [],
   marketingCampaigns: [],
   marketingCoupons: [],
   marketingReferralLinks: [],
@@ -211,6 +223,7 @@ const CHANNEL_READY_STATUSES = new Set(["configured", "healthy", "active"])
 const SUPPLIER_ATTENTION_STATUSES = new Set(["failed", "needs_review"])
 const AFTER_SALES_OPEN_STATUSES = new Set(["open", "processing"])
 const ANALYTICS_ATTENTION_STATUSES = new Set(["failed", "dead"])
+const CONTENT_REVIEW_STATUSES = new Set(["review"])
 const AI_ATTENTION_STATUSES = new Set([
   "invalid",
   "missing_key_ref",
@@ -260,6 +273,12 @@ const workflowLinks = [
     commandKey: "controlPanel.links.suppliers.command",
     titleKey: "controlPanel.links.suppliers.title",
     to: "/suppliers",
+  },
+  {
+    bodyKey: "controlPanel.links.content.body",
+    commandKey: "controlPanel.links.content.command",
+    titleKey: "controlPanel.links.content.title",
+    to: "/content",
   },
   {
     bodyKey: "controlPanel.links.marketing.body",
@@ -351,6 +370,12 @@ const ControlPanelPage = () => {
     const activeReferralLinks = dashboard.marketingReferralLinks.filter(
       (link) => link.status === "active"
     ).length
+    const contentReviewCount = dashboard.contentEntries.filter((entry) =>
+      CONTENT_REVIEW_STATUSES.has(entry.status)
+    ).length
+    const publishedContentCount = dashboard.contentEntries.filter(
+      (entry) => entry.status === "published"
+    ).length
     const analyticsAttention = dashboard.analyticsDispatches.filter((dispatch) =>
       ANALYTICS_ATTENTION_STATUSES.has(dispatch.status)
     ).length
@@ -425,6 +450,15 @@ const ControlPanelPage = () => {
         value: activeCampaigns,
       },
       {
+        body: t("controlPanel.metrics.content.body"),
+        detail: t("controlPanel.metrics.content.detail", {
+          review: contentReviewCount,
+        }),
+        label: t("controlPanel.metrics.content.label"),
+        to: "/content",
+        value: publishedContentCount,
+      },
+      {
         body: t("controlPanel.metrics.analytics.body"),
         detail: t("controlPanel.metrics.analytics.detail", {
           count: dashboard.analyticsDispatches.length,
@@ -477,6 +511,12 @@ const ControlPanelPage = () => {
     const activeCampaigns = dashboard.marketingCampaigns.filter(
       (campaign) => campaign.status === "active"
     )
+    const contentInReview = dashboard.contentEntries.filter((entry) =>
+      CONTENT_REVIEW_STATUSES.has(entry.status)
+    )
+    const publishedContent = dashboard.contentEntries.filter(
+      (entry) => entry.status === "published"
+    )
     const failedDispatches = dashboard.analyticsDispatches.filter((dispatch) =>
       ANALYTICS_ATTENTION_STATUSES.has(dispatch.status)
     )
@@ -527,6 +567,21 @@ const ControlPanelPage = () => {
           ? t("controlPanel.signals.active")
           : t("controlPanel.signals.quiet"),
         to: "/marketing",
+      },
+      {
+        body:
+          contentInReview[0]?.title ||
+          publishedContent[0]?.title ||
+          t("controlPanel.signals.content.empty"),
+        detail: t("controlPanel.signals.content.detail", {
+          published: publishedContent.length,
+          review: contentInReview.length,
+        }),
+        label: t("controlPanel.signals.content.label"),
+        status: contentInReview.length
+          ? t("controlPanel.signals.needsReview")
+          : t("controlPanel.signals.ready"),
+        to: "/content",
       },
       {
         body:
@@ -656,6 +711,22 @@ const ControlPanelPage = () => {
       },
       {
         body:
+          dashboard.contentEntries.find((entry) =>
+            CONTENT_REVIEW_STATUSES.has(entry.status)
+          )?.title || t("controlPanel.attention.emptyContent"),
+        count: dashboard.contentEntries.filter((entry) =>
+          CONTENT_REVIEW_STATUSES.has(entry.status)
+        ).length,
+        label: t("controlPanel.attention.contentReview"),
+        meta: formatDate(
+          dashboard.contentEntries.find((entry) =>
+            CONTENT_REVIEW_STATUSES.has(entry.status)
+          )?.created_at
+        ),
+        to: "/content",
+      },
+      {
+        body:
           dashboard.auditLogs.find((log) => log.risk_level === "high")
             ?.action || t("controlPanel.attention.emptyAudit"),
         count: dashboard.auditLogs.filter((log) => log.risk_level === "high")
@@ -698,6 +769,7 @@ const ControlPanelPage = () => {
       adminApi<{ touchpoints: MarketingTouchpoint[] }>(
         "/admin/marketing/touchpoints?limit=25"
       ),
+      adminApi<{ entries: ContentEntry[] }>("/admin/content/entries?limit=25"),
       adminApi<{ events: AnalyticsEvent[] }>("/admin/analytics/events?limit=25"),
       adminApi<{ dispatches: AnalyticsDispatch[] }>(
         "/admin/analytics/dispatches?limit=25"
@@ -718,6 +790,7 @@ const ControlPanelPage = () => {
       marketingCoupons,
       marketingReferralLinks,
       marketingTouchpoints,
+      contentEntries,
       analyticsEvents,
       analyticsDispatches,
       aiSnapshot,
@@ -748,6 +821,7 @@ const ControlPanelPage = () => {
       catalogVariants: fulfilledValue(catalogVariants, { variants: [] })
         .variants,
       channels: fulfilledValue(channels, { channels: [] }).channels,
+      contentEntries: fulfilledValue(contentEntries, { entries: [] }).entries,
       marketingCampaigns: fulfilledValue(marketingCampaigns, {
         campaigns: [],
       }).campaigns,
