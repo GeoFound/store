@@ -1,0 +1,221 @@
+[
+  {
+    "id": "aevt_store_view_item_001",
+    "event_name": "view_item",
+    "source": "storefront",
+    "event_key": "storefront:view_item:prod_streaming_card:variant_streaming_card_month",
+    "occurred_at": "2026-06-08T01:00:00Z",
+    "created_at": "2026-06-08T01:00:01Z",
+    "cart_id": null,
+    "order_id": null,
+    "payment_attempt_id": null,
+    "customer_email_hash": null,
+    "payload_json": {
+      "params": {
+        "product_id": "prod_streaming_card",
+        "variant_id": "variant_streaming_card_month",
+        "currency": "USD",
+        "value": 15,
+        "quantity": 1,
+        "items": [
+          {
+            "item_id": "variant_streaming_card_month",
+            "product_id": "prod_streaming_card",
+            "quantity": 1,
+            "item_name": "Streaming Card Monthly"
+          }
+        ]
+      }
+    },
+    "metadata_json": {
+      "trace_id": "trace-store-local-view-item-001",
+      "session_id": "sess_store_local_001",
+      "anonymous_id": "anon_store_local_001",
+      "page_path": "/products/streaming-card",
+      "country": "US",
+      "language": "en-US",
+      "platform": "web"
+    }
+  },
+  {
+    "id": "aevt_store_add_to_cart_001",
+    "event_name": "add_to_cart",
+    "source": "storefront",
+    "event_key": "storefront:add_to_cart:variant_streaming_card_month:cart_store_001",
+    "occurred_at": "2026-06-08T01:01:00Z",
+    "created_at": "2026-06-08T01:01:01Z",
+    "cart_id": "cart_store_001",
+    "order_id": null,
+    "payment_attempt_id": null,
+    "customer_email_hash": null,
+    "payload_json": {
+      "params": {
+        "product_id": "prod_streaming_card",
+        "variant_id": "variant_streaming_card_month",
+        "currency": "USD",
+        "value": 15,
+        "quantity": 1,
+        "items": [
+          {
+            "item_id": "variant_streaming_card_month",
+            "product_id": "prod_streaming_card",
+            "quantity": 1
+          }
+        ]
+      }
+    },
+    "metadata_json": {
+      "trace_id": "trace-store-local-add-to-cart-001",
+      "session_id": "sess_store_local_001",
+      "anonymous_id": "anon_store_local_001",
+      "page_path": "/products/streaming-card",
+      "country": "US",
+      "language": "en-US",
+      "platform": "web"
+    }
+  },
+  {
+    "id": "aevt_store_view_cart_001",
+    "event_name": "view_cart",
+    "source": "storefront",
+    "event_key": "storefront:view_cart:cart_store_001:15",
+    "occurred_at": "2026-06-08T01:02:00Z",
+    "created_at": "2026-06-08T01:02:01Z",
+    "cart_id": "cart_store_001",
+    "order_id": null,
+    "payment_attempt_id": null,
+    "customer_email_hash": null,
+    "payload_json": {
+      "params": {
+        "product_id": "prod_streaming_card",
+        "variant_id": "variant_streaming_card_month",
+        "currency": "USD",
+        "value": 15,
+        "quantity": 1,
+        "items": [
+          {
+            "item_id": "variant_streaming_card_month",
+            "product_id": "prod_streaming_card",
+            "quantity": 1
+          }
+        ]
+      }
+    },
+    "metadata_json": {
+      "trace_id": "trace-store-local-view-cart-001",
+      "session_id": "sess_store_local_001",
+      "anonymous_id": "anon_store_local_001",
+      "page_path": "/cart",
+      "country": "US",
+      "language": "en-US",
+      "platform": "web"
+    }
+  },
+  {
+    "id": "aevt_store_begin_checkout_001",
+    "event_name": "begin_checkout",
+    "source": "storefront",
+    "event_key": "storefront:begin_checkout:cart_store_001:15",
+    "occurred_at": "2026-06-08T01:03:00Z",
+    "created_at": "2026-06-08T01:03:01Z",
+    "cart_id": "cart_store_001",
+    "order_id": null,
+    "payment_attempt_id": null,
+    "customer_email_hash": null,
+    "payload_json": {
+      "params": {
+        "product_id": "prod_streaming_card",
+        "variant_id": "variant_streaming_card_month",
+        "currency": "USD",
+        "value": 15,
+        "quantity": 1,
+        "items": [
+          {
+            "item_id": "variant_streaming_card_month",
+            "product_id": "prod_streaming_card",
+            "quantity": 1
+          }
+        ]
+      }
+    },
+    "metadata_json": {
+      "trace_id": "trace-store-local-begin-checkout-001",
+      "session_id": "sess_store_local_001",
+      "anonymous_id": "anon_store_local_001",
+      "page_path": "/checkout",
+      "country": "US",
+      "language": "en-US",
+      "platform": "web"
+    }
+  },
+  {
+    "id": "aevt_store_purchase_001",
+    "event_name": "purchase",
+    "source": "backend_hook",
+    "event_key": "ga4:purchase:payatt_store_001:order_store_001",
+    "occurred_at": "2026-06-08T01:04:00Z",
+    "created_at": "2026-06-08T01:04:01Z",
+    "cart_id": "cart_store_001",
+    "order_id": "order_store_001",
+    "payment_attempt_id": "payatt_store_001",
+    "customer_email_hash": "b4c9a289323b21a01c3e940f150eb9b8c542587f1abfd8f0e1cc1ffc5e475514",
+    "payload_json": {
+      "name": "purchase",
+      "client_id": "anon_store_local_001",
+      "params": {
+        "transaction_id": "order_store_001",
+        "payment_attempt_id": "payatt_store_001",
+        "product_id": "prod_streaming_card",
+        "variant_id": "variant_streaming_card_month",
+        "currency": "USD",
+        "value": 15,
+        "quantity": 1,
+        "items": [
+          {
+            "item_id": "variant_streaming_card_month",
+            "product_id": "prod_streaming_card",
+            "quantity": 1
+          }
+        ]
+      }
+    },
+    "metadata_json": {
+      "trace_id": "trace-store-local-purchase-001",
+      "session_id": "sess_store_local_001",
+      "anonymous_id": "anon_store_local_001",
+      "country": "US",
+      "language": "en-US",
+      "platform": "web"
+    }
+  },
+  {
+    "id": "aevt_store_order_access_claimed_001",
+    "event_name": "order_access_claimed",
+    "source": "backend_hook",
+    "event_key": "ga4:order_access_claimed:order_store_001:store_payment_claim",
+    "occurred_at": "2026-06-08T01:05:00Z",
+    "created_at": "2026-06-08T01:05:01Z",
+    "cart_id": null,
+    "order_id": "order_store_001",
+    "payment_attempt_id": "payatt_store_001",
+    "customer_email_hash": "b4c9a289323b21a01c3e940f150eb9b8c542587f1abfd8f0e1cc1ffc5e475514",
+    "payload_json": {
+      "name": "order_access_claimed",
+      "client_id": "anon_store_local_001",
+      "params": {
+        "order_id": "order_store_001",
+        "payment_attempt_id": "payatt_store_001",
+        "source": "store_payment_claim",
+        "purpose": "view_order"
+      }
+    },
+    "metadata_json": {
+      "trace_id": "trace-store-local-order-access-001",
+      "session_id": "sess_store_local_001",
+      "anonymous_id": "anon_store_local_001",
+      "country": "US",
+      "language": "en-US",
+      "platform": "web"
+    }
+  }
+]

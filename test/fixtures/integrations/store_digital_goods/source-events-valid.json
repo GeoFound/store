@@ -1,0 +1,205 @@
+[
+  {
+    "record_id": "store-analytics-aevt_store_view_item_001",
+    "tenant_id": "tenant-store-local",
+    "product_id": "store_digital_goods",
+    "source_event_name": "view_item",
+    "occurred_at": "2026-06-08T01:00:00.000Z",
+    "received_at": "2026-06-08T01:00:01.000Z",
+    "source": "store_analytics_event",
+    "trace_id": "trace-store-local-view-item-001",
+    "idempotency_key": "store-analytics-80b8652c6282051f1a1d",
+    "session_id": "sess_store_local_001",
+    "channel": "storefront",
+    "platform": "web",
+    "country": "US",
+    "language": "en-US",
+    "identity": {
+      "anonymous_id": "anon_store_local_001"
+    },
+    "properties": {
+      "product_id": "prod_streaming_card",
+      "variant_id": "variant_streaming_card_month",
+      "currency": "USD",
+      "amount": 15,
+      "quantity": 1,
+      "page_path": "/products/streaming-card",
+      "source_event_id": "aevt_store_view_item_001"
+    },
+    "processing_purpose": [
+      "analytics"
+    ],
+    "data_source_type": "first_party",
+    "data_classification": "pseudonymous"
+  },
+  {
+    "record_id": "store-analytics-aevt_store_add_to_cart_001",
+    "tenant_id": "tenant-store-local",
+    "product_id": "store_digital_goods",
+    "source_event_name": "add_to_cart",
+    "occurred_at": "2026-06-08T01:01:00.000Z",
+    "received_at": "2026-06-08T01:01:01.000Z",
+    "source": "store_analytics_event",
+    "trace_id": "trace-store-local-add-to-cart-001",
+    "idempotency_key": "store-analytics-ab3f8695a1781304c7ee",
+    "session_id": "sess_store_local_001",
+    "channel": "storefront",
+    "platform": "web",
+    "country": "US",
+    "language": "en-US",
+    "identity": {
+      "anonymous_id": "anon_store_local_001"
+    },
+    "properties": {
+      "product_id": "prod_streaming_card",
+      "variant_id": "variant_streaming_card_month",
+      "cart_id": "cart_store_001",
+      "currency": "USD",
+      "amount": 15,
+      "quantity": 1,
+      "page_path": "/products/streaming-card",
+      "source_event_id": "aevt_store_add_to_cart_001"
+    },
+    "processing_purpose": [
+      "analytics"
+    ],
+    "data_source_type": "first_party",
+    "data_classification": "pseudonymous"
+  },
+  {
+    "record_id": "store-analytics-aevt_store_view_cart_001",
+    "tenant_id": "tenant-store-local",
+    "product_id": "store_digital_goods",
+    "source_event_name": "view_cart",
+    "occurred_at": "2026-06-08T01:02:00.000Z",
+    "received_at": "2026-06-08T01:02:01.000Z",
+    "source": "store_analytics_event",
+    "trace_id": "trace-store-local-view-cart-001",
+    "idempotency_key": "store-analytics-e839a4b9c17e46a875f8",
+    "session_id": "sess_store_local_001",
+    "channel": "storefront",
+    "platform": "web",
+    "country": "US",
+    "language": "en-US",
+    "identity": {
+      "anonymous_id": "anon_store_local_001"
+    },
+    "properties": {
+      "product_id": "prod_streaming_card",
+      "variant_id": "variant_streaming_card_month",
+      "cart_id": "cart_store_001",
+      "currency": "USD",
+      "amount": 15,
+      "quantity": 1,
+      "page_path": "/cart",
+      "source_event_id": "aevt_store_view_cart_001"
+    },
+    "processing_purpose": [
+      "analytics"
+    ],
+    "data_source_type": "first_party",
+    "data_classification": "pseudonymous"
+  },
+  {
+    "record_id": "store-analytics-aevt_store_begin_checkout_001",
+    "tenant_id": "tenant-store-local",
+    "product_id": "store_digital_goods",
+    "source_event_name": "begin_checkout",
+    "occurred_at": "2026-06-08T01:03:00.000Z",
+    "received_at": "2026-06-08T01:03:01.000Z",
+    "source": "store_analytics_event",
+    "trace_id": "trace-store-local-begin-checkout-001",
+    "idempotency_key": "store-analytics-9f117175661aedc71050",
+    "session_id": "sess_store_local_001",
+    "channel": "storefront",
+    "platform": "web",
+    "country": "US",
+    "language": "en-US",
+    "identity": {
+      "anonymous_id": "anon_store_local_001"
+    },
+    "properties": {
+      "product_id": "prod_streaming_card",
+      "variant_id": "variant_streaming_card_month",
+      "cart_id": "cart_store_001",
+      "currency": "USD",
+      "amount": 15,
+      "quantity": 1,
+      "page_path": "/checkout",
+      "source_event_id": "aevt_store_begin_checkout_001"
+    },
+    "processing_purpose": [
+      "analytics"
+    ],
+    "data_source_type": "first_party",
+    "data_classification": "pseudonymous"
+  },
+  {
+    "record_id": "store-analytics-aevt_store_purchase_001",
+    "tenant_id": "tenant-store-local",
+    "product_id": "store_digital_goods",
+    "source_event_name": "purchase",
+    "occurred_at": "2026-06-08T01:04:00.000Z",
+    "received_at": "2026-06-08T01:04:01.000Z",
+    "source": "store_analytics_event",
+    "trace_id": "trace-store-local-purchase-001",
+    "idempotency_key": "store-analytics-38e8c22a2d0c67123029",
+    "session_id": "sess_store_local_001",
+    "channel": "backend",
+    "platform": "web",
+    "country": "US",
+    "language": "en-US",
+    "identity": {
+      "email_hash": "b4c9a289323b21a01c3e940f150eb9b8c542587f1abfd8f0e1cc1ffc5e475514",
+      "anonymous_id": "anon_store_local_001"
+    },
+    "properties": {
+      "product_id": "prod_streaming_card",
+      "variant_id": "variant_streaming_card_month",
+      "cart_id": "cart_store_001",
+      "order_id": "order_store_001",
+      "payment_attempt_id": "payatt_store_001",
+      "currency": "USD",
+      "amount": 15,
+      "quantity": 1,
+      "source_event_id": "aevt_store_purchase_001"
+    },
+    "processing_purpose": [
+      "analytics",
+      "operations"
+    ],
+    "data_source_type": "first_party",
+    "data_classification": "pseudonymous"
+  },
+  {
+    "record_id": "store-analytics-aevt_store_order_access_claimed_001",
+    "tenant_id": "tenant-store-local",
+    "product_id": "store_digital_goods",
+    "source_event_name": "order_access_claimed",
+    "occurred_at": "2026-06-08T01:05:00.000Z",
+    "received_at": "2026-06-08T01:05:01.000Z",
+    "source": "store_analytics_event",
+    "trace_id": "trace-store-local-order-access-001",
+    "idempotency_key": "store-analytics-1801e90eacb17ff8d826",
+    "session_id": "sess_store_local_001",
+    "channel": "backend",
+    "platform": "web",
+    "country": "US",
+    "language": "en-US",
+    "identity": {
+      "email_hash": "b4c9a289323b21a01c3e940f150eb9b8c542587f1abfd8f0e1cc1ffc5e475514",
+      "anonymous_id": "anon_store_local_001"
+    },
+    "properties": {
+      "order_id": "order_store_001",
+      "payment_attempt_id": "payatt_store_001",
+      "source_event_id": "aevt_store_order_access_claimed_001"
+    },
+    "processing_purpose": [
+      "analytics",
+      "operations"
+    ],
+    "data_source_type": "first_party",
+    "data_classification": "pseudonymous"
+  }
+]
