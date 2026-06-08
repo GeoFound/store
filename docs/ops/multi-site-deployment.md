@@ -86,25 +86,20 @@ For the active `site-1` sample target, define:
 
 On each VPS:
 
-1. Bootstrap folders and placeholder files:
+1. Bootstrap the runtime, folders, env files, systemd units, Caddy, and local PostgreSQL/Redis:
 
 ```bash
-sudo APP_ROOT=/opt/store APP_USER=store bash scripts/deploy/bootstrap-vps.sh
+sudo APP_ROOT=/opt/store \
+  APP_USER=store \
+  STOREFRONT_DOMAIN=<storefront-domain> \
+  API_DOMAIN=<api-domain> \
+  CADDY_ADMIN_EMAIL=<ops-email> \
+  bash scripts/deploy/bootstrap-vps.sh
 ```
 
-2. Install systemd services:
+The script installs Node.js, pnpm, Docker, Caddy, git/curl/jq, creates generated database/Redis/application secrets, installs service units, and starts the data containers. It leaves only external account values and deploy target secrets for the operator to provide.
 
-```bash
-sudo APP_ROOT=/opt/store APP_USER=store bash scripts/deploy/install-systemd.sh
-```
-
-3. Start postgres/redis services:
-
-```bash
-APP_ROOT=/opt/store pnpm services:up:prod
-```
-
-4. Configure reverse proxy domains (Caddy/Nginx).
+2. Fill target-specific provider values in `/opt/store/shared/backend.env` and `/opt/store/shared/storefront.env`.
 
 ## 5. Workflow: Deploy Sites
 

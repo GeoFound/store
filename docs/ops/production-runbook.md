@@ -52,13 +52,6 @@
 
 ### 3.1 服务器准备
 
-安装运行依赖：
-
-- Node.js 22+
-- pnpm 10+
-- Docker + Docker Compose
-- git / curl / jq
-
 发布用户（例如 `store`）需要具备 `sudo systemctl` 权限，否则发布脚本无法重启服务。
 
 示例 sudoers（用 `visudo` 配置）：
@@ -76,19 +69,38 @@ git clone <your-repo-url> /opt/store/repo
 cd /opt/store/repo
 ```
 
-### 3.2 初始化部署目录与 env
+### 3.2 自动初始化 VPS 运行环境
 
 ```bash
-sudo APP_ROOT=/opt/store APP_USER=store bash scripts/deploy/bootstrap-vps.sh
+sudo APP_ROOT=/opt/store \
+  APP_USER=store \
+  STOREFRONT_DOMAIN=example.com \
+  API_DOMAIN=api.example.com \
+  CADDY_ADMIN_EMAIL=ops@example.com \
+  bash scripts/deploy/bootstrap-vps.sh
 ```
 
-然后编辑：
+该脚本会自动完成：
+
+- 安装 Node.js、pnpm、Docker、Docker Compose、Caddy、git、curl、jq。
+- 创建 `store` 运行用户。
+- 创建 `/opt/store` 部署目录。
+- 生成 PostgreSQL/Redis 密码和应用密钥。
+- 写入 `/opt/store/shared/backend.env`、`storefront.env`、`services.env`。
+- 安装 backend/storefront systemd 服务。
+- 启动 PostgreSQL + Redis 容器。
+- 当传入真实域名时写入并启用 Caddy 反向代理。
+
+然后只编辑无法自动生成的外部值：
 
 - `/opt/store/shared/backend.env`
 - `/opt/store/shared/storefront.env`
-- `/opt/store/shared/services.env`
 
-务必替换所有密钥、域名、数据库密码。
+重点检查：
+
+- `NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY`
+- 真实 storefront/API 域名和 CORS。
+- 生产支付、邮件、供应商账号的 API key（若启用）。
 
 若启用 Resend 邮件发送，还需要在 `backend.env` 设置：
 
@@ -102,25 +114,13 @@ sudo APP_ROOT=/opt/store APP_USER=store bash scripts/deploy/bootstrap-vps.sh
 - 可选 `CREDENTIAL_ENCRYPTION_KEY_PREVIOUS`（逗号分隔）
 - 可选 `DELIVERY_ENCRYPTION_KEY_PREVIOUS`（逗号分隔）
 
-### 3.3 安装 systemd 服务
+### 3.3 配置 Caddy
 
-```bash
-cd /opt/store/repo
-sudo APP_ROOT=/opt/store APP_USER=store bash scripts/deploy/install-systemd.sh
-```
+若 `bootstrap-vps.sh` 已传入真实 `STOREFRONT_DOMAIN` 和 `API_DOMAIN`，Caddyfile 会自动写入 `/etc/caddy/Caddyfile`。
 
-### 3.4 启动 DB/Redis
+也可以用模板手动对照：`ops/caddy/Caddyfile.production.example`。
 
-```bash
-cd /opt/store/repo
-APP_ROOT=/opt/store pnpm services:up:prod
-```
-
-### 3.5 配置 Caddy
-
-使用模板：`ops/caddy/Caddyfile.production.example`
-
-至少配置：
+至少确认：
 
 - `STOREFRONT_DOMAIN`
 - `API_DOMAIN`
@@ -130,7 +130,7 @@ APP_ROOT=/opt/store pnpm services:up:prod
 - `example.com -> 127.0.0.1:8000`
 - `api.example.com -> 127.0.0.1:9002`
 
-### 3.5.1 Cloudflare（可选但推荐）
+### 3.3.1 Cloudflare（可选但推荐）
 
 若站点前置 Cloudflare，建议：
 
@@ -151,7 +151,7 @@ CLOUDFLARE_API_TOKEN=<token-with-zone-settings-read> \
   bash scripts/deploy/edge-preflight.sh
 ```
 
-### 3.6 首次发布
+### 3.4 首次发布
 
 ```bash
 cd /opt/store/repo

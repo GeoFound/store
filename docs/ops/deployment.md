@@ -2,7 +2,7 @@
 
 This repository now includes a production deployment toolchain for a single-VPS first architecture:
 
-- `scripts/deploy/bootstrap-vps.sh`: initialize deployment directories and env placeholders.
+- `scripts/deploy/bootstrap-vps.sh`: install the VPS runtime, initialize deployment directories, generate production secrets, install systemd units, configure Caddy, and start PostgreSQL/Redis.
 - `scripts/deploy/install-systemd.sh`: install backend/storefront systemd services.
 - `scripts/deploy/deploy.sh`: lock, build, migrate, switch symlink, restart, health-gate, and rollback-on-failure.
 - `scripts/deploy/rollback.sh`: switch to previous (or target) release and restart services.
@@ -26,17 +26,24 @@ This fits the current modular monolith and keeps operational complexity low whil
 
 ## Quick Start
 
-1. Bootstrap server directories (run as root on server):
+1. Bootstrap the VPS runtime (run as root on server):
 
 ```bash
-sudo APP_ROOT=/opt/store APP_USER=store bash scripts/deploy/bootstrap-vps.sh
+sudo APP_ROOT=/opt/store \
+  APP_USER=store \
+  STOREFRONT_DOMAIN=example.com \
+  API_DOMAIN=api.example.com \
+  CADDY_ADMIN_EMAIL=ops@example.com \
+  bash scripts/deploy/bootstrap-vps.sh
 ```
 
-2. Fill secrets and origins:
+This one command installs Node.js, pnpm, Docker, Caddy, git/curl/jq, creates the `store` runtime user, writes initial env files with generated secrets, installs systemd units, and starts PostgreSQL/Redis. If `STOREFRONT_DOMAIN` or `API_DOMAIN` still use the example values, Caddy is installed but the production Caddyfile is not written.
+
+2. Fill values that cannot be generated automatically:
 
 - `/opt/store/shared/backend.env`
 - `/opt/store/shared/storefront.env`
-- `/opt/store/shared/services.env`
+- optional `/opt/store/shared/services.env` only if you need to override generated database/Redis passwords or bind ports
 
 Recommended security baseline in `backend.env`:
 
@@ -64,27 +71,15 @@ If rotating encryption keys, keep previous keys temporarily:
 
 - backend: optional `CREDENTIAL_ENCRYPTION_KEY_PREVIOUS`, `DELIVERY_ENCRYPTION_KEY_PREVIOUS` (comma-separated)
 
-3. Install systemd units (run as root on server):
-
-```bash
-sudo APP_ROOT=/opt/store APP_USER=store bash scripts/deploy/install-systemd.sh
-```
-
-4. Start infrastructure on server:
-
-```bash
-APP_ROOT=/opt/store pnpm services:up:prod
-```
-
 If deploy is triggered by a non-root user, that user must have sudo permission for `systemctl` commands used by `scripts/deploy/deploy.sh` and `rollback.sh`.
 
-5. Deploy current ref:
+3. Deploy current ref:
 
 ```bash
 APP_ROOT=/opt/store bash scripts/deploy/deploy.sh --ref main
 ```
 
-6. Verify health:
+4. Verify health:
 
 ```bash
 BACKEND_HEALTH_URL=http://127.0.0.1:9002/health \
@@ -92,7 +87,7 @@ STOREFRONT_HEALTH_URL=http://127.0.0.1:8000/api/health \
   bash scripts/deploy/health-gate.sh
 ```
 
-7. Verify public HTTPS edge:
+5. Verify public HTTPS edge:
 
 ```bash
 STOREFRONT_PUBLIC_URL=https://example.com \
