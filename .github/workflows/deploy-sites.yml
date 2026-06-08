@@ -226,7 +226,7 @@ jobs:
           echo "env_dir=$env_dir/output" >> "$GITHUB_OUTPUT"
 
       - name: Start SSH agent
-        uses: webfactory/ssh-agent@v0.9.0
+        uses: webfactory/ssh-agent@v0.10.0
         with:
           ssh-private-key: ${{ secrets[matrix.deploy_key_secret] }}
 
