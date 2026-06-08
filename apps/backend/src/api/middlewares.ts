@@ -3,6 +3,7 @@ import {
   type MedusaNextFunction,
   type MedusaRequest,
   type MedusaResponse,
+  authenticate,
   validateAndTransformBody,
 } from "@medusajs/framework/http"
 import { MedusaError } from "@medusajs/framework/utils"
@@ -146,6 +147,11 @@ export default defineMiddlewares({
       matcher: "/store/payment-methods",
       methods: ["GET"],
       middlewares: [validateAndTransformSimpleQuery(paymentMethodsQuerySchema)],
+    },
+    {
+      matcher: "/store/account/orders",
+      methods: ["GET"],
+      middlewares: [authenticate("customer", ["session", "bearer"])],
     },
     {
       matcher: "/admin/payment-attempts",

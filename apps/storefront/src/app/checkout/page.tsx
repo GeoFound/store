@@ -12,8 +12,8 @@ export default function CheckoutPage() {
               Guest checkout
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 opacity-70">
-              Buy without logging in. Your email is used for order recovery and
-              secure order access.
+              Buy without logging in, or use your signed-in account email for
+              faster recovery and secure order access.
             </p>
           </div>
           <CheckoutView />

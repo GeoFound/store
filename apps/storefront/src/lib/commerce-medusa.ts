@@ -10,7 +10,9 @@ import {
 import type {
   Cart,
   AfterSale,
+  AccountOrder,
   ContentEntry,
+  CustomerAccount,
   ManualPaymentInstructions,
   DeliveryLookupResult,
   OrderLookupResult,
@@ -25,31 +27,85 @@ import type {
 
 type FetchOptions = {
   method?: "GET" | "POST" | "DELETE"
-  body?: Record<string, unknown>
+  body?: unknown
   cache?: RequestCache
+  token?: string
+  publishable?: boolean
+}
+
+type StorefrontFetchOptions = {
+  method?: "GET" | "POST" | "DELETE"
+  body?: unknown
+  cache?: RequestCache
+}
+
+type TokenResponse = {
+  token: string
+}
+
+type CustomerResponse = {
+  customer: CustomerAccount
+}
+
+type AccountOrdersResponse = {
+  customer: CustomerAccount
+  orders: AccountOrder[]
 }
 
 async function medusaFetch<T>(
   path: string,
   options: FetchOptions = {},
 ): Promise<T> {
-  if (!medusaPublishableKey) {
-    throw new Error("Missing NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY")
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  }
+  const usePublishable = options.publishable ?? path.startsWith("/store")
+
+  if (usePublishable) {
+    if (!medusaPublishableKey) {
+      throw new Error("Missing NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY")
+    }
+
+    headers["x-publishable-api-key"] = medusaPublishableKey
+  }
+
+  if (options.token) {
+    headers.authorization = `Bearer ${options.token}`
   }
 
   const response = await fetch(`${medusaBackendUrl}${path}`, {
     method: options.method || "GET",
     cache: options.cache || "no-store",
+    headers,
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  })
+
+  if (!response.ok) {
+    throw new Error(
+      await readResponseError(response, `Medusa request failed: ${response.status}`)
+    )
+  }
+
+  return response.json() as Promise<T>
+}
+
+async function storefrontFetch<T>(
+  path: string,
+  options: StorefrontFetchOptions = {},
+): Promise<T> {
+  const response = await fetch(path, {
+    method: options.method || "GET",
+    cache: options.cache || "no-store",
     headers: {
       "Content-Type": "application/json",
-      "x-publishable-api-key": medusaPublishableKey,
     },
     body: options.body ? JSON.stringify(options.body) : undefined,
   })
 
   if (!response.ok) {
-    const text = await response.text()
-    throw new Error(text || `Medusa request failed: ${response.status}`)
+    throw new Error(
+      await readResponseError(response, `Storefront request failed: ${response.status}`)
+    )
   }
 
   return response.json() as Promise<T>
@@ -232,6 +288,193 @@ export async function updateCartEmail(input: {
   return data.cart
 }
 
+export async function loginCustomerAccount(input: {
+  email: string
+  password: string
+}): Promise<void> {
+  await storefrontFetch<{ ok: boolean }>("/api/account/login", {
+    method: "POST",
+    body: {
+      email: input.email,
+      password: input.password,
+    },
+  })
+}
+
+export async function registerCustomerAccount(input: {
+  firstName: string
+  lastName: string
+  email: string
+  password: string
+}): Promise<void> {
+  await storefrontFetch<{ ok: boolean }>("/api/account/register", {
+    method: "POST",
+    body: {
+      email: input.email,
+      password: input.password,
+      first_name: input.firstName,
+      last_name: input.lastName,
+    },
+  })
+}
+
+export async function startGoogleCustomerAccountLogin(): Promise<{
+  location?: string
+}> {
+  return storefrontFetch("/api/account/google/start", {
+    method: "POST",
+  })
+}
+
+export async function logoutCustomerAccount(): Promise<void> {
+  await storefrontFetch<{ ok: boolean }>("/api/account/logout", {
+    method: "POST",
+  })
+}
+
+export async function retrieveCurrentCustomerAccount(): Promise<CustomerAccount | null> {
+  const response = await fetch("/api/account/me", {
+    cache: "no-store",
+  }).catch(() => null)
+
+  if (!response || response.status === 401) {
+    return null
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      await readResponseError(response, `Storefront request failed: ${response.status}`)
+    )
+  }
+
+  const data = (await response.json()) as { customer?: CustomerAccount }
+
+  return data.customer || null
+}
+
+export async function loginCustomerAccountWithMedusa(input: {
+  email: string
+  password: string
+}) {
+  const { token } = await medusaFetch<TokenResponse>("/auth/customer/emailpass", {
+    method: "POST",
+    body: {
+      email: input.email,
+      password: input.password,
+    },
+    publishable: false,
+  })
+
+  return token
+}
+
+export async function registerCustomerAccountWithMedusa(input: {
+  firstName: string
+  lastName: string
+  email: string
+  password: string
+}) {
+  let token = ""
+
+  try {
+    const registered = await medusaFetch<TokenResponse>(
+      "/auth/customer/emailpass/register",
+      {
+        method: "POST",
+        body: {
+          email: input.email,
+          password: input.password,
+        },
+        publishable: false,
+      }
+    )
+    token = registered.token
+  } catch (error) {
+    if (!isExistingIdentityError(error)) {
+      throw error
+    }
+
+    token = await loginCustomerAccountWithMedusa({
+      email: input.email,
+      password: input.password,
+    })
+  }
+
+  if (decodeJwtPayload(token).actor_id) {
+    return token
+  }
+
+  await createCustomerForTokenWithMedusa(token, {
+    email: input.email,
+    first_name: input.firstName,
+    last_name: input.lastName,
+  })
+
+  return refreshCustomerTokenWithMedusa(token)
+}
+
+export async function startGoogleCustomerLoginWithMedusa(callbackUrl: string) {
+  return medusaFetch<{ location?: string; token?: string }>(
+    "/auth/customer/google",
+    {
+      method: "POST",
+      body: {
+        callback_url: callbackUrl,
+      },
+      publishable: false,
+    }
+  )
+}
+
+export async function completeGoogleCustomerLoginWithMedusa(input: {
+  query: URLSearchParams
+}) {
+  const body = Object.fromEntries(input.query.entries())
+  const { token } = await medusaFetch<TokenResponse>(
+    "/auth/customer/google/callback",
+    {
+      method: "POST",
+      body,
+      publishable: false,
+    }
+  )
+
+  if (decodeJwtPayload(token).actor_id) {
+    return token
+  }
+
+  const metadata = readJwtObject(decodeJwtPayload(token).user_metadata)
+  const email = readString(metadata.email)
+
+  if (!email) {
+    throw new Error("Google account did not return a verified email.")
+  }
+
+  await createCustomerForTokenWithMedusa(token, {
+    email,
+    first_name: readString(metadata.given_name),
+    last_name: readString(metadata.family_name),
+  })
+
+  return refreshCustomerTokenWithMedusa(token)
+}
+
+export async function retrieveCustomerAccountWithMedusa(token: string) {
+  const data = await medusaFetch<CustomerResponse>("/store/customers/me", {
+    token,
+  })
+
+  return data.customer
+}
+
+export async function listCustomerAccountOrdersWithMedusa(token: string) {
+  const data = await medusaFetch<AccountOrdersResponse>("/store/account/orders", {
+    token,
+  })
+
+  return data.orders || []
+}
+
 export async function listPaymentMethods(input?: {
   amount?: number
   currency?: string
@@ -394,6 +637,95 @@ export async function createAfterSale(input: {
       },
     },
   )
+}
+
+async function createCustomerForTokenWithMedusa(
+  token: string,
+  input: {
+    email: string
+    first_name?: string
+    last_name?: string
+  }
+) {
+  return medusaFetch<CustomerResponse>("/store/customers", {
+    method: "POST",
+    token,
+    body: {
+      email: input.email,
+      first_name: input.first_name || undefined,
+      last_name: input.last_name || undefined,
+    },
+  })
+}
+
+async function refreshCustomerTokenWithMedusa(token: string) {
+  const refreshed = await medusaFetch<TokenResponse>("/auth/token/refresh", {
+    method: "POST",
+    token,
+    publishable: false,
+  })
+
+  return refreshed.token
+}
+
+async function readResponseError(response: Response, fallback: string) {
+  const text = await response.text()
+
+  if (!text) {
+    return fallback
+  }
+
+  try {
+    const data = JSON.parse(text) as {
+      message?: string
+      error?: string
+      type?: string
+    }
+
+    return data.message || data.error || text
+  } catch {
+    return text
+  }
+}
+
+function isExistingIdentityError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error)
+
+  return message.toLowerCase().includes("identity with email already exists")
+}
+
+function decodeJwtPayload(token: string) {
+  const payload = token.split(".")[1]
+
+  if (!payload) {
+    return {} as Record<string, unknown>
+  }
+
+  const normalized = payload.replace(/-/g, "+").replace(/_/g, "/")
+  const padded = normalized.padEnd(
+    normalized.length + ((4 - (normalized.length % 4)) % 4),
+    "="
+  )
+
+  try {
+    const bytes = Uint8Array.from(globalThis.atob(padded), (char) =>
+      char.charCodeAt(0)
+    )
+
+    return JSON.parse(new TextDecoder().decode(bytes)) as Record<string, unknown>
+  } catch {
+    return {}
+  }
+}
+
+function readJwtObject(value: unknown) {
+  return value && typeof value === "object"
+    ? (value as Record<string, unknown>)
+    : {}
+}
+
+function readString(value: unknown) {
+  return typeof value === "string" ? value.trim() : ""
 }
 
 function mapProductTemplate(

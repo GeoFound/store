@@ -688,6 +688,19 @@
         ]
       },
       {
+        "path": "apps/backend/src/api/store/account/orders/route.ts",
+        "route": "/store/account/orders",
+        "surface": "store",
+        "owner": "store-api",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
         "path": "apps/backend/src/api/store/carts/[cart_id]/payments/route.ts",
         "route": "/store/carts/:cart_id/payments",
         "surface": "store",

@@ -7,6 +7,7 @@ import type {
   ManualPaymentInstructions,
   MarketingCheckoutInput,
   MarketingResolvedContext,
+  CustomerAccount,
   OrderLookupResult,
   PaymentAttempt,
   PaymentMethod,
@@ -47,6 +48,19 @@ export type CommerceBackend = {
     cartId: string
     email: string
   }): Promise<Cart>
+  loginCustomerAccount(input: {
+    email: string
+    password: string
+  }): Promise<void>
+  registerCustomerAccount(input: {
+    firstName: string
+    lastName: string
+    email: string
+    password: string
+  }): Promise<void>
+  startGoogleCustomerAccountLogin(): Promise<{ location?: string }>
+  logoutCustomerAccount(): Promise<void>
+  retrieveCurrentCustomerAccount(): Promise<CustomerAccount | null>
   listPaymentMethods(input?: {
     amount?: number
     currency?: string
@@ -199,6 +213,34 @@ export async function updateCartEmail(input: {
   email: string
 }) {
   return (await getCommerceBackend()).updateCartEmail(input)
+}
+
+export async function loginCustomerAccount(input: {
+  email: string
+  password: string
+}) {
+  return (await getCommerceBackend()).loginCustomerAccount(input)
+}
+
+export async function registerCustomerAccount(input: {
+  firstName: string
+  lastName: string
+  email: string
+  password: string
+}) {
+  return (await getCommerceBackend()).registerCustomerAccount(input)
+}
+
+export async function startGoogleCustomerAccountLogin() {
+  return (await getCommerceBackend()).startGoogleCustomerAccountLogin()
+}
+
+export async function logoutCustomerAccount() {
+  return (await getCommerceBackend()).logoutCustomerAccount()
+}
+
+export async function retrieveCurrentCustomerAccount() {
+  return (await getCommerceBackend()).retrieveCurrentCustomerAccount()
 }
 
 export async function listPaymentMethods(input?: {

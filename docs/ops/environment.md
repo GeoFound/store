@@ -27,6 +27,14 @@ Required:
 | `AUTH_CORS` | Allowed auth origins | Include Admin and storefront origins. |
 | `PORT` | Backend port | Local default is `9002`. |
 
+Optional customer account authentication:
+
+| Name | Purpose | Production note |
+| --- | --- | --- |
+| `GOOGLE_CLIENT_ID` | Google OAuth client ID for customer account login | Configure together with `GOOGLE_CLIENT_SECRET` and `GOOGLE_CALLBACK_URL`; leave all empty to disable Google login. |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth client secret for customer account login | Backend-only secret. |
+| `GOOGLE_CALLBACK_URL` | Storefront callback URL registered in Google Cloud | Use the storefront BFF callback, for example `https://example.com/api/account/google/callback`. |
+
 Optional analytics and observability:
 
 | Name | Purpose | Production note |

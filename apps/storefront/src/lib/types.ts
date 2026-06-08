@@ -220,6 +220,24 @@ export type OrderLookupResult = {
   deliveries: OrderDeliveryLookupResult[]
 }
 
+export type CustomerAccount = {
+  id: string
+  email: string
+  first_name?: string | null
+  last_name?: string | null
+  phone?: string | null
+  created_at?: string | null
+  updated_at?: string | null
+}
+
+export type AccountOrder = {
+  order: OrderSummary & {
+    customer_id?: string | null
+    items?: CartLineItem[]
+  }
+  access_token: string
+}
+
 export type AfterSale = {
   id: string
   delivery_id: string

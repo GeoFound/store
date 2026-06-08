@@ -1,4 +1,9 @@
-import { loadEnv, defineConfig } from '@medusajs/framework/utils'
+import {
+  ContainerRegistrationKeys,
+  Modules,
+  loadEnv,
+  defineConfig,
+} from '@medusajs/framework/utils'
 import "./src/platform-adapters/integrations"
 import {
   resolveEncryptionKeyRing,
@@ -18,6 +23,40 @@ resolveEncryptionKeyRing("DELIVERY_ENCRYPTION_KEY", {
   ],
 })
 
+const googleAuthValues = [
+  process.env.GOOGLE_CLIENT_ID,
+  process.env.GOOGLE_CLIENT_SECRET,
+  process.env.GOOGLE_CALLBACK_URL,
+]
+const hasGoogleAuthConfig = googleAuthValues.every(Boolean)
+
+if (googleAuthValues.some(Boolean) && !hasGoogleAuthConfig) {
+  throw new Error(
+    "GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_CALLBACK_URL must be configured together."
+  )
+}
+
+const customerAuthProviders = ["emailpass", ...(hasGoogleAuthConfig ? ["google"] : [])]
+const authProviders = [
+  {
+    resolve: "@medusajs/medusa/auth-emailpass",
+    id: "emailpass",
+  },
+  ...(hasGoogleAuthConfig
+    ? [
+        {
+          resolve: "@medusajs/medusa/auth-google",
+          id: "google",
+          options: {
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            callbackUrl: process.env.GOOGLE_CALLBACK_URL,
+          },
+        },
+      ]
+    : []),
+]
+
 module.exports = defineConfig({
   projectConfig: {
     databaseUrl: process.env.DATABASE_URL,
@@ -25,6 +64,10 @@ module.exports = defineConfig({
       storeCors: process.env.STORE_CORS!,
       adminCors: process.env.ADMIN_CORS!,
       authCors: process.env.AUTH_CORS!,
+      authMethodsPerActor: {
+        user: ["emailpass"],
+        customer: customerAuthProviders,
+      },
       jwtSecret: resolveSecuritySecret("JWT_SECRET", {
         testFallback: "test-jwt-secret",
       }),
@@ -34,6 +77,13 @@ module.exports = defineConfig({
     }
   },
   modules: [
+    {
+      resolve: "@medusajs/medusa/auth",
+      dependencies: [Modules.CACHE, ContainerRegistrationKeys.LOGGER],
+      options: {
+        providers: authProviders,
+      },
+    },
     {
       resolve: "@medusajs/medusa/caching",
       options: {

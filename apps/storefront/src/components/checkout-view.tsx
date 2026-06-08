@@ -5,6 +5,7 @@ import Link from "next/link"
 import {
   createCartPayment,
   listPaymentMethods,
+  retrieveCurrentCustomerAccount,
   retrieveCart,
   retrievePaymentAttempt,
   updateCartEmail,
@@ -116,6 +117,13 @@ export function CheckoutView() {
         if (pendingPaymentState.claimToken) {
           setClaimToken(pendingPaymentState.claimToken)
         }
+
+        if (!cartId) {
+          return
+        }
+
+        const account = await retrieveCurrentCustomerAccount().catch(() => null)
+        setEmail((current) => current || account?.email || "")
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load cart.")
       } finally {
@@ -274,8 +282,8 @@ export function CheckoutView() {
             placeholder="buyer@example.com"
           />
           <p className="mt-2 text-sm opacity-70">
-            No account or password is required. This email is used for receipt,
-            order recovery, and secure order access.
+            No account or password is required. Signed-in accounts can reuse the
+            account email and see matching orders later.
           </p>
         </section>
 

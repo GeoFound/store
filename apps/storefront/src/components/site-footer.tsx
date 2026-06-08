@@ -37,6 +37,9 @@ export function SiteFooter() {
             <Link href="/cart" className="hover:opacity-100">
               {siteConfig.content.navigation.cart}
             </Link>
+            <Link href="/account" className="hover:opacity-100">
+              Account
+            </Link>
           </div>
         </div>
         <div>

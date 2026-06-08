@@ -486,6 +486,16 @@
         "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
       },
       {
+        "path": "apps/backend/src/api/store/account/orders/route.ts",
+        "owner": "store-api",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "rationale": "Authenticated customer account order listing endpoint that reuses auditable order access tokens for delivery viewing."
+      },
+      {
         "path": "apps/backend/src/api/store/carts/[cart_id]/payments/route.ts",
         "owner": "store-api",
         "verification": [
@@ -763,6 +773,86 @@
       }
     ],
     "storefrontEntrypoints": [
+      {
+        "path": "apps/storefront/src/app/account/login/page.tsx",
+        "owner": "storefront-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/storefront test",
+          "pnpm --dir apps/storefront lint"
+        ],
+        "rationale": "Customer account sign-in and registration page for email/password and optional Google authentication."
+      },
+      {
+        "path": "apps/storefront/src/app/account/page.tsx",
+        "owner": "storefront-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/storefront test",
+          "pnpm --dir apps/storefront lint"
+        ],
+        "rationale": "Authenticated customer account dashboard with reusable order access links and guest checkout fallback."
+      },
+      {
+        "path": "apps/storefront/src/app/api/account/google/callback/route.ts",
+        "owner": "storefront-runtime",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/storefront test",
+          "pnpm --dir apps/storefront lint"
+        ],
+        "rationale": "Storefront BFF callback route that completes customer Google authentication and stores the auth token in an HttpOnly cookie."
+      },
+      {
+        "path": "apps/storefront/src/app/api/account/google/start/route.ts",
+        "owner": "storefront-runtime",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/storefront test",
+          "pnpm --dir apps/storefront lint"
+        ],
+        "rationale": "Storefront BFF route that starts optional customer Google authentication without exposing provider details to client code."
+      },
+      {
+        "path": "apps/storefront/src/app/api/account/login/route.ts",
+        "owner": "storefront-runtime",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/storefront test",
+          "pnpm --dir apps/storefront lint"
+        ],
+        "rationale": "Storefront BFF route for customer email/password sign-in using an HttpOnly auth cookie."
+      },
+      {
+        "path": "apps/storefront/src/app/api/account/logout/route.ts",
+        "owner": "storefront-runtime",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/storefront test",
+          "pnpm --dir apps/storefront lint"
+        ],
+        "rationale": "Storefront BFF route that clears the customer auth cookie for account sign-out."
+      },
+      {
+        "path": "apps/storefront/src/app/api/account/me/route.ts",
+        "owner": "storefront-runtime",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/storefront test",
+          "pnpm --dir apps/storefront lint"
+        ],
+        "rationale": "Storefront BFF route that exposes the current customer account to server-backed UI flows without exposing stored tokens."
+      },
+      {
+        "path": "apps/storefront/src/app/api/account/register/route.ts",
+        "owner": "storefront-runtime",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/storefront test",
+          "pnpm --dir apps/storefront lint"
+        ],
+        "rationale": "Storefront BFF route for customer account creation and automatic sign-in through an HttpOnly auth cookie."
+      },
       {
         "path": "apps/storefront/src/app/api/health/route.ts",
         "owner": "storefront-runtime",
