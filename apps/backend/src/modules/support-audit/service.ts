@@ -6,6 +6,10 @@ import type {
   UpdateAfterSaleInput,
   WriteAuditLogInput,
 } from "./types"
+import {
+  type AuditRetentionConfig,
+  getAuditRetentionConfig,
+} from "./config"
 
 class SupportAuditModuleService extends MedusaService({
   AfterSale,
@@ -107,6 +111,56 @@ class SupportAuditModuleService extends MedusaService({
       }
     )
   }
+
+  async pruneAuditLogs(input?: {
+    now?: Date
+    config?: AuditRetentionConfig
+  }) {
+    const config = input?.config || getAuditRetentionConfig()
+
+    if (!config.enabled) {
+      return {
+        deleted_count: 0,
+        enabled: false,
+        cutoff_at: null,
+      }
+    }
+
+    const now = input?.now || new Date()
+    const cutoff = new Date(
+      now.getTime() - config.retentionDays * 24 * 60 * 60 * 1000
+    )
+    const oldest = await this.listAuditLogs(
+      {},
+      {
+        take: config.batchSize,
+        order: {
+          created_at: "ASC",
+        },
+      }
+    )
+    const expiredIds = oldest
+      .filter((entry) => isBeforeCutoff(entry.created_at, cutoff))
+      .map((entry) => String(entry.id))
+
+    if (expiredIds.length) {
+      await this.deleteAuditLogs(expiredIds)
+    }
+
+    return {
+      deleted_count: expiredIds.length,
+      enabled: true,
+      cutoff_at: cutoff.toISOString(),
+      retention_days: config.retentionDays,
+      batch_size: config.batchSize,
+    }
+  }
 }
 
 export default SupportAuditModuleService
+
+function isBeforeCutoff(value: unknown, cutoff: Date) {
+  const date = value instanceof Date ? value : new Date(String(value))
+
+  return Number.isFinite(date.getTime()) && date.getTime() < cutoff.getTime()
+}

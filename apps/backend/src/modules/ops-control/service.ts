@@ -48,11 +48,7 @@ class OpsControlModuleService {
           risk: "high",
           requires_human_confirmation: true,
           available_now: true,
-          evidence_required: [
-            "failing release id",
-            "target release id",
-            "pnpm deploy:health after rollback",
-          ],
+          evidence_required: ["failing release id", "target release id", "pnpm deploy:health after rollback"],
         },
         {
           id: "system.restart-services",
@@ -60,11 +56,7 @@ class OpsControlModuleService {
           risk: "medium",
           requires_human_confirmation: true,
           available_now: false,
-          evidence_required: [
-            "systemd unit status before restart",
-            "journal error excerpt",
-            "pnpm deploy:health after restart",
-          ],
+          evidence_required: ["systemd unit status before restart", "journal error excerpt", "pnpm deploy:health after restart"],
         },
         {
           id: "backup.restore-test",
@@ -72,11 +64,7 @@ class OpsControlModuleService {
           risk: "medium",
           requires_human_confirmation: true,
           available_now: false,
-          evidence_required: [
-            "latest backup artifact",
-            "separate restore target",
-            "restore command output",
-          ],
+          evidence_required: ["latest backup artifact", "separate restore target", "restore command output"],
         },
       ],
     }
@@ -300,14 +288,38 @@ class OpsControlModuleService {
         scope: "vps",
         recommended: true,
       }),
+      boolSetting(env, "OPS_BACKUP_ENCRYPTION_ENABLED", {
+        label: "Encrypted backup artifacts",
+        owner: "ops-control",
+        scope: "vps",
+        recommended: true,
+      }),
       valueSetting(env, "OPS_BACKUP_LAST_RESTORE_TEST_AT", {
         label: "Last restore test timestamp",
         owner: "ops-control",
         scope: "vps",
         recommended: null,
       }),
+      boolSetting(env, "OPS_AUDIT_RETENTION_ENABLED", {
+        label: "Audit retention active",
+        owner: "ops-control",
+        scope: "vps",
+        recommended: true,
+      }),
+      valueSetting(env, "AUDIT_LOG_RETENTION_DAYS", {
+        label: "Audit retention days",
+        owner: "support-audit",
+        scope: "backend",
+        recommended: "365",
+      }),
       boolSetting(env, "OPS_VPS_DOCTOR_ENABLED", {
         label: "VPS doctor scheduled",
+        owner: "ops-control",
+        scope: "vps",
+        recommended: true,
+      }),
+      boolSetting(env, "OPS_APP_USER_LEAST_PRIVILEGE", {
+        label: "Least-privilege app user",
         owner: "ops-control",
         scope: "vps",
         recommended: true,
@@ -377,6 +389,42 @@ class OpsControlModuleService {
         title: "Off-VPS backup copy is not marked enabled",
         detail: "A VPS loss would also lose local database backups.",
         recommended_action: "Configure an offsite backup target and set OPS_BACKUP_OFFSITE_ENABLED=true after verifying copy and restore.",
+        human_gate: true,
+      }))
+    }
+
+    if (!truthy(env.OPS_BACKUP_ENCRYPTION_ENABLED)) {
+      findings.push(finding({
+        id: "ops.backup-encryption-not-enabled",
+        severity: "critical",
+        owner: "ops-control",
+        title: "Backup encryption is not marked enabled",
+        detail: "Database dumps can contain customer data and redeemable credentials; local and offsite artifacts must be encrypted.",
+        recommended_action: "Set BACKUP_ENCRYPTION_KEY for backup jobs, verify .dump.enc output, and set OPS_BACKUP_ENCRYPTION_ENABLED=true.",
+        human_gate: true,
+      }))
+    }
+
+    if (!truthy(env.OPS_AUDIT_RETENTION_ENABLED)) {
+      findings.push(finding({
+        id: "ops.audit-retention-not-enabled",
+        severity: "warning",
+        owner: "support-audit",
+        title: "Audit retention is not marked enabled",
+        detail: "Audit logs need a defined retention window and scheduled pruning to avoid unbounded growth.",
+        recommended_action: "Keep AUDIT_LOG_RETENTION_ENABLED=true, run the prune-audit-logs job, and set OPS_AUDIT_RETENTION_ENABLED=true.",
+        human_gate: true,
+      }))
+    }
+
+    if (!truthy(env.OPS_APP_USER_LEAST_PRIVILEGE)) {
+      findings.push(finding({
+        id: "ops.app-user-not-least-privilege",
+        severity: "critical",
+        owner: "ops-control",
+        title: "Application user is not marked least privilege",
+        detail: "The backend/storefront runtime user must not be root or have Docker socket access.",
+        recommended_action: "Run pnpm deploy:vps-doctor, remove APP_USER from docker group, and set OPS_APP_USER_LEAST_PRIVILEGE=true after verification.",
         human_gate: true,
       }))
     }

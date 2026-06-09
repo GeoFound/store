@@ -37,10 +37,14 @@
       "backup_required": false,
       "restore_test_required": false,
       "rollback_required": false,
-      "human_gate_required": false
+      "human_gate_required": false,
+      "admin_edge_protection_required": false,
+      "redis_rate_limit_smoke_required": false
     },
     "evidence": {
-      "required_static_commands": ["pnpm profile:validate -- --site-id jp-cards --site-env development"],
+      "required_static_commands": [
+        "pnpm profile:validate -- --site-id jp-cards --site-env development"
+      ],
       "required_runtime_commands": [],
       "last_runtime_health_ref": null,
       "last_edge_preflight_ref": null,
@@ -49,7 +53,9 @@
       "last_restore_test_ref": null,
       "last_rollback_ref": null,
       "last_staging_evidence_ref": null,
-      "human_gate_ref": null
+      "human_gate_ref": null,
+      "last_admin_edge_ref": null,
+      "last_rate_limit_ref": null
     }
   },
   "theme": {

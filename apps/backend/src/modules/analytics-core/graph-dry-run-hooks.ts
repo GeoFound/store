@@ -14,9 +14,9 @@ import {
 } from "./graph-dry-run-destination"
 import { isGraphDryRunEnabled } from "./graph-dry-run-config"
 import {
-  buildGa4OrderAccessPayload,
-  buildGa4PurchasePayload,
-} from "../analytics-ga4/payload"
+  buildGraphDryRunOrderAccessPayload,
+  buildGraphDryRunPurchasePayload,
+} from "./graph-dry-run-payload"
 
 let hooksRegistered = false
 
@@ -55,7 +55,7 @@ export function ensureGraphDryRunHooksRegistered() {
         orderId: event.payload.orderId,
         paymentAttemptId: toOptionalText(attempt.id) || null,
         customerEmail: toOptionalText(requestPayload.customer_email) || null,
-        payload: buildGa4PurchasePayload({
+        payload: buildGraphDryRunPurchasePayload({
           orderId: event.payload.orderId,
           attempt,
         }),
@@ -94,7 +94,7 @@ export function ensureGraphDryRunHooksRegistered() {
         destinationCodes: [GRAPH_DRY_RUN_DESTINATION_CODE],
         orderId: event.payload.orderId,
         customerEmail: event.payload.customerEmail,
-        payload: buildGa4OrderAccessPayload({
+        payload: buildGraphDryRunOrderAccessPayload({
           eventName: "order_access_claimed",
           orderId: event.payload.orderId,
           payload: event.payload as unknown as Record<string, unknown>,

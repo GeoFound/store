@@ -510,6 +510,14 @@ function isPlaceholderValue(value, patterns) {
   return patterns.some((pattern) => new RegExp(pattern, "i").test(value))
 }
 
+function isTruthy(value) {
+  return ["1", "true", "yes", "on"].includes(String(value || "").trim().toLowerCase())
+}
+
+function checkEnvPresent(env, keys) {
+  return keys.filter((key) => !env.get(key)?.trim())
+}
+
 function readJsonFromGit(ref, relativePath) {
   if (!ref) {
     return null
@@ -1016,6 +1024,7 @@ function validateProductionConfig(config, issues, warnings) {
   const placeholderPatterns = config?.productionConfig?.placeholderPatterns || []
   const checkedExamples = []
   const checkedActualFiles = []
+  const actualEnvByVar = new Map()
 
   for (const example of exampleFiles) {
     validateMetadata(example, "production.config-example", issues)
@@ -1105,6 +1114,10 @@ function validateProductionConfig(config, issues, warnings) {
     }
 
     const env = parseEnvFile(relativePath)
+    actualEnvByVar.set(actual.envVar, {
+      env,
+      path: relativePath,
+    })
     const requiredKeys = [
       ...keysForScopes(byScope, actual.scopes || []),
       ...(actual.extraRequiredKeys || []).map((key) => ({
@@ -1164,11 +1177,179 @@ function validateProductionConfig(config, issues, warnings) {
     })
   }
 
+  validateCrossFileProductionEnv(actualEnvByVar, issues)
+
   return {
     requiredProductionKeyCount: [...byScope.values()].flat().length,
     exampleFiles: checkedExamples,
     actualEnvFiles: checkedActualFiles,
   }
+}
+
+function validateCrossFileProductionEnv(actualEnvByVar, issues) {
+  const backend = actualEnvByVar.get("AI_BACKEND_PRODUCTION_ENV_FILE")
+  const storefront = actualEnvByVar.get("AI_STOREFRONT_PRODUCTION_ENV_FILE")
+  const ops = actualEnvByVar.get("AI_OPS_PRODUCTION_ENV_FILE")
+
+  if (backend) {
+    validateBackendProductionEnv(backend, issues)
+  }
+
+  if (ops) {
+    validateOpsProductionEnv(ops, issues)
+  }
+
+  if (!storefront) {
+    return
+  }
+
+  const env = storefront.env
+  const turnstileEnabled = isTruthy(env.get("ACCOUNT_AUTH_TURNSTILE_ENABLED"))
+  const publicTurnstileEnabled = isTruthy(env.get("NEXT_PUBLIC_ACCOUNT_AUTH_TURNSTILE_ENABLED"))
+
+  if (turnstileEnabled || publicTurnstileEnabled) {
+    const missing = checkEnvPresent(env, [
+      "ACCOUNT_AUTH_TURNSTILE_ENABLED",
+      "NEXT_PUBLIC_ACCOUNT_AUTH_TURNSTILE_ENABLED",
+      "NEXT_PUBLIC_TURNSTILE_SITE_KEY",
+      "TURNSTILE_SECRET_KEY",
+    ])
+
+    if (missing.length) {
+      issues.push({
+        id: "production.config-turnstile-incomplete",
+        path: storefront.path,
+        keys: missing,
+        message:
+          "Turnstile is enabled but the storefront env does not contain both public challenge config and server verification secret.",
+      })
+    }
+
+    if (turnstileEnabled !== publicTurnstileEnabled) {
+      issues.push({
+        id: "production.config-turnstile-switch-mismatch",
+        path: storefront.path,
+        message:
+          "ACCOUNT_AUTH_TURNSTILE_ENABLED and NEXT_PUBLIC_ACCOUNT_AUTH_TURNSTILE_ENABLED must match so the UI submits tokens whenever the BFF requires them.",
+      })
+    }
+  }
+}
+
+function validateOpsProductionEnv(ops, issues) {
+  const env = ops.env
+
+  if (!isTruthy(env.get("BACKUP_ENCRYPTION_REQUIRED"))) {
+    issues.push({
+      id: "production.config-backup-encryption-not-required",
+      path: ops.path,
+      key: "BACKUP_ENCRYPTION_REQUIRED",
+      message:
+        "Production ops env must set BACKUP_ENCRYPTION_REQUIRED=1 so backup jobs fail closed without encryption.",
+    })
+  }
+
+  if (!isThirtyTwoByteKey(env.get("BACKUP_ENCRYPTION_KEY") || "")) {
+    issues.push({
+      id: "production.config-backup-encryption-key-invalid",
+      path: ops.path,
+      key: "BACKUP_ENCRYPTION_KEY",
+      message: "BACKUP_ENCRYPTION_KEY must decode to 32 bytes.",
+    })
+  }
+}
+
+function validateBackendProductionEnv(backend, issues) {
+  const env = backend.env
+
+  if ((env.get("SECURITY_RATE_LIMIT_STORE") || "").trim().toLowerCase() !== "redis") {
+    issues.push({
+      id: "production.config-rate-limit-not-redis",
+      path: backend.path,
+      message:
+        "Production backend env must set SECURITY_RATE_LIMIT_STORE=redis so rate limits are shared across processes and restarts.",
+    })
+  }
+
+  if (!env.get("SECURITY_RATE_LIMIT_REDIS_URL")?.trim() && !env.get("REDIS_URL")?.trim()) {
+    issues.push({
+      id: "production.config-rate-limit-redis-url-missing",
+      path: backend.path,
+      message:
+        "Production backend env must provide REDIS_URL or SECURITY_RATE_LIMIT_REDIS_URL for Redis-backed rate limiting.",
+    })
+  }
+
+  for (const [key, id, message] of [
+    [
+      "CLOUDFLARE_ACCESS_ADMIN_ENABLED",
+      "production.config-admin-edge-not-enabled",
+      "Production backend env must mark CLOUDFLARE_ACCESS_ADMIN_ENABLED=true after admin edge protection is verified.",
+    ],
+    [
+      "OPS_BACKUP_ENCRYPTION_ENABLED",
+      "production.config-backup-encryption-not-enabled",
+      "Production backend env must mark OPS_BACKUP_ENCRYPTION_ENABLED=true after encrypted backup artifacts are verified.",
+    ],
+    [
+      "OPS_AUDIT_RETENTION_ENABLED",
+      "production.config-audit-retention-not-enabled",
+      "Production backend env must mark OPS_AUDIT_RETENTION_ENABLED=true after audit retention pruning is enabled.",
+    ],
+    [
+      "OPS_APP_USER_LEAST_PRIVILEGE",
+      "production.config-app-user-not-least-privilege",
+      "Production backend env must mark OPS_APP_USER_LEAST_PRIVILEGE=true after VPS doctor confirms the runtime user lacks Docker/root access.",
+    ],
+  ]) {
+    if (!isTruthy(env.get(key))) {
+      issues.push({
+        id,
+        path: backend.path,
+        key,
+        message,
+      })
+    }
+  }
+
+  const retentionEnabled = env.get("AUDIT_LOG_RETENTION_ENABLED")
+  if (retentionEnabled && !isTruthy(retentionEnabled)) {
+    issues.push({
+      id: "production.config-audit-retention-disabled",
+      path: backend.path,
+      key: "AUDIT_LOG_RETENTION_ENABLED",
+      message: "Production backend env must not disable audit-log retention.",
+    })
+  }
+
+  const retentionDays = Number.parseInt(env.get("AUDIT_LOG_RETENTION_DAYS") || "365", 10)
+  const minimumRetentionDays = Number.parseInt(env.get("AUDIT_LOG_RETENTION_MIN_DAYS") || "90", 10)
+  if (
+    !Number.isInteger(retentionDays) ||
+    !Number.isInteger(minimumRetentionDays) ||
+    retentionDays < minimumRetentionDays
+  ) {
+    issues.push({
+      id: "production.config-audit-retention-window-invalid",
+      path: backend.path,
+      message:
+        "AUDIT_LOG_RETENTION_DAYS must be an integer greater than or equal to AUDIT_LOG_RETENTION_MIN_DAYS.",
+    })
+  }
+}
+
+function isThirtyTwoByteKey(value) {
+  const trimmed = String(value || "").trim()
+
+  if (!trimmed) {
+    return false
+  }
+
+  const key = /^[0-9a-f]{64}$/i.test(trimmed)
+    ? Buffer.from(trimmed, "hex")
+    : Buffer.from(trimmed, "base64")
+
+  return key.length === 32
 }
 
 function createBaselineConfig() {
@@ -1295,6 +1476,17 @@ function createBaselineConfig() {
           owner: "ops-runtime",
           verification: ["pnpm ai:production"],
         },
+        {
+          path: "ops/env/ops.production.env.example",
+          scopes: [],
+          extraRequiredKeys: [
+            "BACKUP_DIR",
+            "BACKUP_ENCRYPTION_REQUIRED",
+            "BACKUP_ENCRYPTION_KEY",
+          ],
+          owner: "ops-runtime",
+          verification: ["pnpm ai:production"],
+        },
       ],
       actualEnvFiles: [
         {
@@ -1313,6 +1505,17 @@ function createBaselineConfig() {
           envVar: "AI_SERVICES_PRODUCTION_ENV_FILE",
           scopes: [],
           extraRequiredKeys: ["POSTGRES_PASSWORD", "REDIS_PASSWORD"],
+          owner: "ops-runtime",
+          verification: ["pnpm ai:production"],
+        },
+        {
+          envVar: "AI_OPS_PRODUCTION_ENV_FILE",
+          scopes: [],
+          extraRequiredKeys: [
+            "BACKUP_DIR",
+            "BACKUP_ENCRYPTION_REQUIRED",
+            "BACKUP_ENCRYPTION_KEY",
+          ],
           owner: "ops-runtime",
           verification: ["pnpm ai:production"],
         },

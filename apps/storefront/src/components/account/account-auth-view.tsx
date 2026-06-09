@@ -1,11 +1,16 @@
 "use client"
 
-import { FormEvent, useState } from "react"
+import { FormEvent, useCallback, useState } from "react"
 import {
   loginCustomerAccount,
   registerCustomerAccount,
   startGoogleCustomerAccountLogin,
 } from "@/lib/commerce"
+import {
+  accountTurnstileEnabled,
+  accountTurnstileSiteKey,
+} from "@/lib/config"
+import { TurnstileWidget } from "./turnstile-widget"
 
 type Mode = "login" | "register"
 
@@ -22,6 +27,12 @@ export function AccountAuthView({ initialError = "" }: AccountAuthViewProps) {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState(initialError)
+  const [turnstileToken, setTurnstileToken] = useState("")
+  const turnstileReady = accountTurnstileEnabled && Boolean(accountTurnstileSiteKey)
+  const turnstileMisconfigured = accountTurnstileEnabled && !accountTurnstileSiteKey
+  const handleTurnstileTokenChange = useCallback((token: string) => {
+    setTurnstileToken(token)
+  }, [])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -30,10 +41,19 @@ export function AccountAuthView({ initialError = "" }: AccountAuthViewProps) {
     setError("")
 
     try {
+      if (turnstileMisconfigured) {
+        throw new Error("Account challenge is not configured.")
+      }
+
+      if (turnstileReady && !turnstileToken) {
+        throw new Error("Complete the security challenge.")
+      }
+
       if (mode === "login") {
         await loginCustomerAccount({
           email,
           password,
+          turnstileToken,
         })
       } else {
         await registerCustomerAccount({
@@ -41,6 +61,7 @@ export function AccountAuthView({ initialError = "" }: AccountAuthViewProps) {
           lastName,
           email,
           password,
+          turnstileToken,
         })
       }
 
@@ -160,6 +181,13 @@ export function AccountAuthView({ initialError = "" }: AccountAuthViewProps) {
             autoComplete={mode === "login" ? "current-password" : "new-password"}
           />
         </div>
+
+        {turnstileReady ? (
+          <TurnstileWidget
+            siteKey={accountTurnstileSiteKey}
+            onTokenChange={handleTurnstileTokenChange}
+          />
+        ) : null}
 
         <button
           type="submit"

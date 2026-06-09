@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "createdAt": "2026-06-08",
+  "createdAt": "2026-06-09",
   "principles": [
     "Public API contract changes must be visible in machine-readable route entries.",
     "Routes that read request bodies must use validateAndTransformBody or carry expiring accepted debt.",
@@ -1324,6 +1324,19 @@
         "verification": [
           "pnpm ai:production"
         ]
+      },
+      {
+        "path": "ops/env/ops.production.env.example",
+        "scopes": [],
+        "extraRequiredKeys": [
+          "BACKUP_DIR",
+          "BACKUP_ENCRYPTION_REQUIRED",
+          "BACKUP_ENCRYPTION_KEY"
+        ],
+        "owner": "ops-runtime",
+        "verification": [
+          "pnpm ai:production"
+        ]
       }
     ],
     "actualEnvFiles": [
@@ -1355,6 +1368,19 @@
         "extraRequiredKeys": [
           "POSTGRES_PASSWORD",
           "REDIS_PASSWORD"
+        ],
+        "owner": "ops-runtime",
+        "verification": [
+          "pnpm ai:production"
+        ]
+      },
+      {
+        "envVar": "AI_OPS_PRODUCTION_ENV_FILE",
+        "scopes": [],
+        "extraRequiredKeys": [
+          "BACKUP_DIR",
+          "BACKUP_ENCRYPTION_REQUIRED",
+          "BACKUP_ENCRYPTION_KEY"
         ],
         "owner": "ops-runtime",
         "verification": [

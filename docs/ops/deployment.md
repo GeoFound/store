@@ -7,6 +7,9 @@ This repository now includes a production deployment toolchain for a single-VPS 
 - `scripts/deploy/deploy.sh`: lock, build, migrate, switch symlink, restart, health-gate, and rollback-on-failure.
 - `scripts/deploy/rollback.sh`: switch to previous (or target) release and restart services.
 - `scripts/deploy/edge-preflight.sh`: verify public HTTPS, HSTS, and optional Cloudflare SSL mode.
+- `scripts/deploy/admin-edge-protection.sh`: verify admin/API paths are blocked by Cloudflare Access or equivalent edge protection before app handling.
+- `scripts/deploy/rate-limit-smoke.sh`: verify a real runtime endpoint returns `429` after the Redis-backed rate-limit threshold.
+- `scripts/deploy/vps-doctor.sh`: verify VPS service health, latest backup, restricted Docker socket access, least-privilege app user, SSH, firewall, and update posture.
 - `.github/workflows/deploy.yml`: one-click deploy/rollback from GitHub Actions.
 - `.github/workflows/deploy-sites.yml`: profile-driven multi-site deployment to multiple isolated VPS targets.
 
@@ -56,7 +59,7 @@ HTTPS / edge baseline:
 
 - Public storefront and API endpoints must use HTTPS.
 - If Cloudflare is enabled, use SSL/TLS mode `Full (strict)` (do not use `Flexible` in production).
-- Stripe live webhook endpoints require HTTPS.
+- Admin/API paths must be behind Cloudflare Access, IP allowlisting, or equivalent MFA-backed edge protection.
 
 If analytics plugins are enabled in production, also fill:
 
@@ -69,7 +72,7 @@ If Resend is enabled in production, also fill:
 
 If rotating encryption keys, keep previous keys temporarily:
 
-- backend: optional `CREDENTIAL_ENCRYPTION_KEY_PREVIOUS`, `DELIVERY_ENCRYPTION_KEY_PREVIOUS` (comma-separated)
+- backend: optional `CREDENTIAL_ENCRYPTION_KEY_PREVIOUS`, `DELIVERY_ENCRYPTION_KEY_PREVIOUS`, `SUPPLIER_ENCRYPTION_KEY_PREVIOUS` (comma-separated)
 
 If deploy is triggered by a non-root user, that user must have sudo permission for `systemctl` commands used by `scripts/deploy/deploy.sh` and `rollback.sh`.
 
@@ -106,6 +109,25 @@ REQUIRE_CLOUDFLARE_SSL_MODE=strict \
 CLOUDFLARE_ZONE_ID=<zone-id> \
 CLOUDFLARE_API_TOKEN=<token-with-zone-settings-read> \
   bash scripts/deploy/edge-preflight.sh
+```
+
+6. Verify admin edge protection and real rate limiting:
+
+```bash
+API_PUBLIC_URL=https://api.example.com \
+EXPECT_CLOUDFLARE=true \
+EXPECT_CLOUDFLARE_ACCESS=true \
+  bash scripts/deploy/admin-edge-protection.sh
+
+BACKEND_URL=https://api.example.com \
+BACKEND_ENV_FILE=/opt/store/shared/backend.env \
+  bash scripts/deploy/rate-limit-smoke.sh
+```
+
+7. Verify host posture:
+
+```bash
+APP_ROOT=/opt/store APP_USER=store bash scripts/deploy/vps-doctor.sh
 ```
 
 GitHub Actions optional edge secrets (for `.github/workflows/deploy.yml`):

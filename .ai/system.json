@@ -56,7 +56,10 @@
       "pnpm profile:validate:all",
       "pnpm deploy:health",
       "pnpm deploy:edge",
+      "pnpm deploy:admin-edge",
+      "pnpm deploy:rate-limit",
       "pnpm deploy:regression",
+      "pnpm deploy:vps-doctor",
       "backup and rollback evidence"
     ],
     "failurePrinciple": "Anything that may be wrong should fail as early as practical."
@@ -141,7 +144,14 @@
       "site:gate",
       "deploy:health",
       "deploy:edge",
-      "deploy:regression"
+      "deploy:admin-edge",
+      "deploy:rate-limit",
+      "deploy:regression",
+      "deploy:vps-doctor",
+      "backup:db",
+      "backup:restore-drill",
+      "restore:db",
+      "secrets:rotate"
     ]
   }
 }

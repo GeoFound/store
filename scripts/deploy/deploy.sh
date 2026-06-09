@@ -37,6 +37,8 @@ Environment:
   STOREFRONT_ENV_FILE           Storefront env file path (default: APP_ROOT/shared/storefront.env)
   RUN_DB_MIGRATIONS             1 to run migrations (default), 0 to skip
   EDGE_PREFLIGHT_ENABLED        1 to verify public HTTPS/edge headers after deploy
+  ADMIN_EDGE_PROTECTION_ENABLED 1 to verify admin/API edge protection after deploy
+  RATE_LIMIT_SMOKE_ENABLED      1 to verify Redis-backed rate limit after deploy
   STOREFRONT_PUBLIC_URL         Public storefront URL for edge preflight
   API_PUBLIC_URL                Public API URL for edge preflight
   EXPECT_CLOUDFLARE             true/false for Cloudflare header and SSL mode checks
@@ -399,6 +401,19 @@ if is_truthy "${EDGE_PREFLIGHT_ENABLED:-0}"; then
   CLOUDFLARE_ZONE_ID="${CLOUDFLARE_ZONE_ID:-}" \
   CLOUDFLARE_API_TOKEN="${CLOUDFLARE_API_TOKEN:-}" \
   bash "$REPO_ROOT/scripts/deploy/edge-preflight.sh"
+fi
+
+if is_truthy "${ADMIN_EDGE_PROTECTION_ENABLED:-0}"; then
+  API_PUBLIC_URL="${API_PUBLIC_URL:-}" \
+  EXPECT_CLOUDFLARE="${EXPECT_CLOUDFLARE:-true}" \
+  EXPECT_CLOUDFLARE_ACCESS="${EXPECT_CLOUDFLARE_ACCESS:-true}" \
+  bash "$REPO_ROOT/scripts/deploy/admin-edge-protection.sh"
+fi
+
+if is_truthy "${RATE_LIMIT_SMOKE_ENABLED:-0}"; then
+  BACKEND_URL="${BACKEND_URL:-${API_PUBLIC_URL:-}}" \
+  BACKEND_ENV_FILE="$BACKEND_ENV_FILE" \
+  bash "$REPO_ROOT/scripts/deploy/rate-limit-smoke.sh"
 fi
 
 if [[ -n "$POST_DEPLOY_CHECK_COMMAND" ]]; then

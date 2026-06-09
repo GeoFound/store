@@ -20,9 +20,10 @@ VPS_DOCTOR_OUTPUT=/opt/store/shared/logs/vps-doctor-latest.json \
   pnpm deploy:vps-doctor
 ```
 
-The script checks systemd services, local health endpoints, Docker containers,
-disk and memory pressure, latest PostgreSQL backup, SSH posture, UFW, and
-unattended security updates. It writes JSON evidence when
+The script checks systemd services and unit users, local health endpoints, Docker
+containers, Docker socket permissions, whether `APP_USER` has Docker access,
+disk and memory pressure, latest encrypted PostgreSQL backup, SSH posture, UFW,
+and unattended security updates. It writes JSON evidence when
 `VPS_DOCTOR_OUTPUT` is set.
 
 After verification, set the related `OPS_*` flags in

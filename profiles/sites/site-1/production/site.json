@@ -37,11 +37,24 @@
       "backup_required": true,
       "restore_test_required": true,
       "rollback_required": true,
-      "human_gate_required": true
+      "human_gate_required": true,
+      "admin_edge_protection_required": true,
+      "redis_rate_limit_smoke_required": true
     },
     "evidence": {
-      "required_static_commands": ["pnpm check:ci", "pnpm profile:validate:all", "pnpm site:validate:all"],
-      "required_runtime_commands": ["pnpm deploy:health", "pnpm deploy:edge", "pnpm deploy:regression", "pnpm deploy:vps-doctor"],
+      "required_static_commands": [
+        "pnpm check:ci",
+        "pnpm profile:validate:all",
+        "pnpm site:validate:all"
+      ],
+      "required_runtime_commands": [
+        "pnpm deploy:health",
+        "pnpm deploy:edge",
+        "pnpm deploy:admin-edge",
+        "pnpm deploy:rate-limit",
+        "pnpm deploy:regression",
+        "pnpm deploy:vps-doctor"
+      ],
       "last_runtime_health_ref": null,
       "last_edge_preflight_ref": null,
       "last_regression_ref": null,
@@ -49,7 +62,9 @@
       "last_restore_test_ref": null,
       "last_rollback_ref": null,
       "last_staging_evidence_ref": null,
-      "human_gate_ref": null
+      "human_gate_ref": null,
+      "last_admin_edge_ref": null,
+      "last_rate_limit_ref": null
     }
   },
   "theme": {
@@ -189,7 +204,11 @@
           "body": "Useful AI writing starts before generation. Keep source notes, claims, examples, and product observations separate, then decide what problem the article helps a reader solve.\n\nA strong workflow has four steps: collect evidence, cluster it into a clear angle, draft with an AI assistant, and require human review before publishing. The AI module can support drafting, but the content system should own status, site scope, and final publishing.\n\nThis keeps the platform flexible. Data from projects such as research workspaces can become source material without forcing every future AI provider or plugin into one fixed implementation.",
           "content_type": "guide",
           "topic": "AI writing",
-          "tags": ["ai-writing", "editorial-workflow", "research"],
+          "tags": [
+            "ai-writing",
+            "editorial-workflow",
+            "research"
+          ],
           "author_name": "Atlas AI",
           "published_at": "2026-06-08T00:00:00.000Z",
           "related_product_handles": []
@@ -201,7 +220,11 @@
           "body": "A blog page is useful, but a durable AI platform needs a content system. Articles should be site-scoped, status-aware, searchable by topic, and able to connect back to digital products.\n\nThat structure lets the same backend support articles, guides, reports, reviews, and resource pages. It also gives AI plugins a safe place to write drafts without publishing directly to readers.\n\nThe practical target is not a perfect CMS on day one. The target is a reusable content core, a human-friendly admin surface, and frontend pages that can improve as real publishing habits emerge.",
           "content_type": "article",
           "topic": "Platform strategy",
-          "tags": ["content-system", "ai-platform", "publishing"],
+          "tags": [
+            "content-system",
+            "ai-platform",
+            "publishing"
+          ],
           "author_name": "Atlas AI",
           "published_at": "2026-06-08T00:00:00.000Z",
           "related_product_handles": []
@@ -213,7 +236,11 @@
           "body": "AI infrastructure changes quickly, so a store platform should avoid hard-coding one provider. The stable layer is configuration: provider code, protocol, endpoint, model, key reference, site scope, and readiness status.\n\nSpecific features should be plugins. One plugin may draft articles, another may summarize product data, and another may help support. Each plugin can choose a provider through the AI core instead of embedding provider assumptions.\n\nThis separation keeps deployment flexible and gives operators a clear backend panel for health, missing keys, review queues, and future AI work.",
           "content_type": "report",
           "topic": "AI architecture",
-          "tags": ["ai-core", "providers", "plugins"],
+          "tags": [
+            "ai-core",
+            "providers",
+            "plugins"
+          ],
           "author_name": "Atlas AI",
           "published_at": "2026-06-08T00:00:00.000Z",
           "related_product_handles": []

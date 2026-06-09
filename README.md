@@ -71,6 +71,15 @@ STOREFRONT_PUBLIC_URL=https://example.com \
 API_PUBLIC_URL=https://api.example.com \
 EXPECT_CLOUDFLARE=false \
   pnpm deploy:edge
+
+API_PUBLIC_URL=https://api.example.com \
+EXPECT_CLOUDFLARE=true \
+EXPECT_CLOUDFLARE_ACCESS=true \
+  pnpm deploy:admin-edge
+
+BACKEND_URL=https://api.example.com \
+BACKEND_ENV_FILE=/opt/store/shared/backend.env \
+  pnpm deploy:rate-limit
 ```
 
 When both dev servers are running:
@@ -92,6 +101,7 @@ site fallback.
 ## Backup
 
 ```bash
-pnpm backup:db
-pnpm restore:db backups/store-YYYYMMDDTHHMMSSZ.dump
+BACKUP_ENCRYPTION_KEY=... BACKUP_ENCRYPTION_REQUIRED=1 pnpm backup:db
+BACKUP_ENCRYPTION_KEY=... pnpm backup:restore-drill backups/store-YYYYMMDDTHHMMSSZ.dump.enc
+POSTGRES_CONTAINER=store-restore-test BACKUP_ENCRYPTION_KEY=... pnpm restore:db backups/store-YYYYMMDDTHHMMSSZ.dump.enc
 ```

@@ -57,6 +57,10 @@ Optional analytics and observability:
 | `AI_PROVIDER_CONFIGS_JSON` | JSON array of AI provider configs with `code`, `protocol`, `base_url`, `api_key_env`, and `default_model` fields | Keep backend-only. Do not put plaintext keys here; reference deployment-owned key env names such as `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, or `ANTHROPIC_API_KEY`. |
 | `SUPPLIER_ENCRYPTION_KEY` | Primary AES-256-GCM key for supplier fulfillment snapshots | Must decode to 32 bytes. Defaults to `DELIVERY_ENCRYPTION_KEY` when omitted. Keep separate in production when supplier payloads include redeemable secrets. |
 | `SUPPLIER_ENCRYPTION_KEY_PREVIOUS` | Optional previous supplier keys for key rotation (comma-separated) | Each key must decode to 32 bytes. |
+| `AUDIT_LOG_RETENTION_ENABLED` | Enable scheduled audit-log pruning | Default `true`. |
+| `AUDIT_LOG_RETENTION_DAYS` | Audit log retention window | Default `365`; must be at least `AUDIT_LOG_RETENTION_MIN_DAYS`. |
+| `AUDIT_LOG_RETENTION_MIN_DAYS` | Minimum allowed audit retention window | Default `90`; prevents accidental short retention. |
+| `AUDIT_LOG_RETENTION_PRUNE_BATCH_SIZE` | Max audit logs pruned per job run | Default `1000`. |
 | `RELOADLY_ENV` | Reloadly environment selector (`sandbox` or `production`) | Default `sandbox`. |
 | `RELOADLY_CLIENT_ID` | Reloadly OAuth client id | Required to use `supplier-provider:reloadly`; backend only. |
 | `RELOADLY_CLIENT_SECRET` | Reloadly OAuth client secret | Required to use `supplier-provider:reloadly`; backend only. |
@@ -94,7 +98,12 @@ Optional analytics and observability:
 | `CLOUDFLARE_WAF_MANAGED_RULES_ENABLED` | Operator-attested Cloudflare managed WAF state | Set `true` only after verifying the zone. |
 | `CLOUDFLARE_ACCESS_ADMIN_ENABLED` | Operator-attested Cloudflare Access or equivalent admin edge protection | Set `true` only after admin/API protection is active. |
 | `STOREFRONT_PUBLIC_URL` / `API_PUBLIC_URL` | Public URLs shown in ops-control and used by deploy edge checks | Use HTTPS production origins. |
-| `OPS_*` | Operator-attested VPS posture and AI operations flags | These feed `/admin/ops-control/*`; set only after machine evidence such as `pnpm deploy:vps-doctor`. |
+| `OPS_BACKUP_ENCRYPTION_ENABLED` | Operator-attested encrypted backup state | Set `true` only after `BACKUP_ENCRYPTION_KEY` produces `.dump.enc` artifacts. |
+| `OPS_BACKUP_OFFSITE_ENABLED` | Operator-attested off-VPS backup state | Set `true` only after copy and restore evidence exists. |
+| `OPS_BACKUP_LAST_RESTORE_TEST_AT` | UTC timestamp of the latest restore drill | Set after `pnpm backup:restore-drill <backup>` passes on a separate target. |
+| `OPS_AUDIT_RETENTION_ENABLED` | Operator-attested audit retention state | Set `true` when the prune job is enabled and retention config is valid. |
+| `OPS_APP_USER_LEAST_PRIVILEGE` | Operator-attested least-privilege runtime user | Set `true` after `pnpm deploy:vps-doctor` confirms backend/storefront run as APP_USER and APP_USER lacks Docker access. |
+| `OPS_*` | Other operator-attested VPS posture and AI operations flags | These feed `/admin/ops-control/*`; set only after machine evidence such as `pnpm deploy:vps-doctor`. |
 | `PLATFORM_ENABLED_PLUGINS` | Backend plugin allow-list (comma-separated IDs). | Backend-only; public storefront plugin env is intentionally ignored by backend runtime. |
 | `PLATFORM_DISABLED_PLUGINS` | Backend plugin deny-list (comma-separated IDs). | Backend-only; public storefront plugin env is intentionally ignored by backend runtime. |
 | `PLATFORM_ENABLED_CONTRACTS` | Capability contract allow-list (`capability:name1,name2;...`). | Applied before plugin registration for deterministic startup behavior. |
@@ -149,6 +158,8 @@ Optional analytics and plugin runtime:
 | `NEXT_PUBLIC_SITE_ENV` | Public site profile environment key (`production`, `staging`, etc). |
 | `ACCOUNT_AUTH_RATE_LIMIT_*` | Storefront BFF login/register/Google-start rate-limit knobs | Defaults to 20 requests per 600 seconds with a 900-second block. |
 | `ACCOUNT_AUTH_TURNSTILE_ENABLED` | Require Cloudflare Turnstile verification for login/register BFF routes | Default `false`; enable only after the storefront submits `turnstile_token`. |
+| `NEXT_PUBLIC_ACCOUNT_AUTH_TURNSTILE_ENABLED` | Render the storefront Turnstile challenge | Must match `ACCOUNT_AUTH_TURNSTILE_ENABLED` when enabling challenges. |
+| `NEXT_PUBLIC_TURNSTILE_SITE_KEY` | Public Cloudflare Turnstile site key | Public key only; required when the public challenge switch is enabled. |
 | `TURNSTILE_SECRET_KEY` | Server-side Turnstile secret used by storefront BFF routes | Secret; keep out of public `NEXT_PUBLIC_*` env. |
 
 Do not place payment provider secrets or encryption keys in storefront env.
@@ -173,6 +184,18 @@ Optional:
 | `REDIS_BIND_IP` | Host bind IP for Redis port mapping. Default `127.0.0.1`. |
 | `REDIS_PORT` | Host port for Redis. Default `6380`. |
 
+## Operations Secrets
+
+File (production scripts): `/opt/store/shared/ops.env`
+
+Required for production backups:
+
+| Name | Purpose |
+| --- | --- |
+| `BACKUP_DIR` | Directory for database backup artifacts. |
+| `BACKUP_ENCRYPTION_REQUIRED` | Keep `1` in production so backup jobs fail closed without a key. |
+| `BACKUP_ENCRYPTION_KEY` | AES-256-GCM backup artifact key; must decode to 32 bytes. Keep root-readable only. |
+
 ## Deployment Layout
 
 When using the production deployment scripts, runtime env files are managed outside the release directory:
@@ -180,6 +203,7 @@ When using the production deployment scripts, runtime env files are managed outs
 - Backend: `/opt/store/shared/backend.env`
 - Storefront: `/opt/store/shared/storefront.env`
 - Infrastructure services (`docker compose`): `/opt/store/shared/services.env`
+- Operations-only secrets: `/opt/store/shared/ops.env`
 
 Each new release symlinks these files into:
 

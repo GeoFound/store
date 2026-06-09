@@ -34,6 +34,27 @@
       "evidenceRequired": "Domain, HTTPS, headers, and edge expectations passed."
     },
     {
+      "id": "admin-edge-protection",
+      "checkType": "command",
+      "command": ["pnpm", "deploy:admin-edge"],
+      "requiresRuntime": true,
+      "evidenceRequired": "Admin/API paths require Cloudflare Access, MFA-backed edge protection, or equivalent 401/403 protection before app handling."
+    },
+    {
+      "id": "redis-rate-limit-smoke",
+      "checkType": "command",
+      "command": ["pnpm", "deploy:rate-limit"],
+      "requiresRuntime": true,
+      "evidenceRequired": "A real runtime endpoint returns 429 after the configured Redis-backed rate-limit threshold."
+    },
+    {
+      "id": "vps-doctor",
+      "checkType": "command",
+      "command": ["pnpm", "deploy:vps-doctor"],
+      "requiresRuntime": true,
+      "evidenceRequired": "VPS doctor report shows app user least privilege, restricted Docker socket access, service health, backup presence, SSH, firewall, and update posture."
+    },
+    {
       "id": "regression-smoke",
       "checkType": "command",
       "command": ["pnpm", "deploy:regression"],

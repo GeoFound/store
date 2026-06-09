@@ -51,12 +51,14 @@ export type CommerceBackend = {
   loginCustomerAccount(input: {
     email: string
     password: string
+    turnstileToken?: string
   }): Promise<void>
   registerCustomerAccount(input: {
     firstName: string
     lastName: string
     email: string
     password: string
+    turnstileToken?: string
   }): Promise<void>
   startGoogleCustomerAccountLogin(): Promise<{ location?: string }>
   logoutCustomerAccount(): Promise<void>
@@ -218,6 +220,7 @@ export async function updateCartEmail(input: {
 export async function loginCustomerAccount(input: {
   email: string
   password: string
+  turnstileToken?: string
 }) {
   return (await getCommerceBackend()).loginCustomerAccount(input)
 }
@@ -227,6 +230,7 @@ export async function registerCustomerAccount(input: {
   lastName: string
   email: string
   password: string
+  turnstileToken?: string
 }) {
   return (await getCommerceBackend()).registerCustomerAccount(input)
 }

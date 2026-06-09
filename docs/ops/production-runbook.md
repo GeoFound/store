@@ -151,6 +151,15 @@ CLOUDFLARE_API_TOKEN=<token-with-zone-settings-read> \
   bash scripts/deploy/edge-preflight.sh
 ```
 
+Admin/API 路径需要 Cloudflare Access、IP allowlist 或等效 MFA edge protection。部署后执行：
+
+```bash
+API_PUBLIC_URL=https://api.example.com \
+EXPECT_CLOUDFLARE=true \
+EXPECT_CLOUDFLARE_ACCESS=true \
+  bash scripts/deploy/admin-edge-protection.sh
+```
+
 ### 3.4 首次发布
 
 ```bash
@@ -200,10 +209,11 @@ APP_ROOT=/opt/store bash scripts/deploy/deploy.sh --ref main
 
 - 迁移默认在部署时执行（`RUN_DB_MIGRATIONS=true`）。
 - 生产要求迁移向后兼容（expand/contract），避免立刻删除旧字段。
-- 每次生产迁移前执行备份：
+- 每次生产迁移前执行加密备份，并做恢复演练：
 
 ```bash
-pnpm backup:db
+BACKUP_ENCRYPTION_KEY=... BACKUP_ENCRYPTION_REQUIRED=1 pnpm backup:db
+BACKUP_ENCRYPTION_KEY=... pnpm backup:restore-drill backups/store-YYYYMMDDTHHMMSSZ.dump.enc
 ```
 
 - 大版本变更先在预发做完整回归（尤其 webhook/claim/recover）。
@@ -224,6 +234,14 @@ BACKEND_ENV_FILE=/opt/store/shared/backend.env \
 - manual webhook 签名验证路径
 - claim 并发保护
 - recover 发码与验码主流程
+
+真实 Redis-backed rate limit 需要单独 smoke：
+
+```bash
+BACKEND_URL=https://api.example.com \
+BACKEND_ENV_FILE=/opt/store/shared/backend.env \
+  bash scripts/deploy/rate-limit-smoke.sh
+```
 
 ## 7. manual webhook 调用方规范
 
@@ -305,6 +323,14 @@ STOREFRONT_PUBLIC_URL=https://example.com \
 API_PUBLIC_URL=https://api.example.com \
 EXPECT_CLOUDFLARE=false \
   bash scripts/deploy/edge-preflight.sh
+```
+
+Admin edge / rate limit / VPS posture：
+
+```bash
+bash scripts/deploy/admin-edge-protection.sh
+bash scripts/deploy/rate-limit-smoke.sh
+bash scripts/deploy/vps-doctor.sh
 ```
 
 回归：

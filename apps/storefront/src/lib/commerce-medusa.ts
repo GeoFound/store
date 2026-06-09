@@ -291,12 +291,14 @@ export async function updateCartEmail(input: {
 export async function loginCustomerAccount(input: {
   email: string
   password: string
+  turnstileToken?: string
 }): Promise<void> {
   await storefrontFetch<{ ok: boolean }>("/api/account/login", {
     method: "POST",
     body: {
       email: input.email,
       password: input.password,
+      turnstile_token: input.turnstileToken || undefined,
     },
   })
 }
@@ -306,6 +308,7 @@ export async function registerCustomerAccount(input: {
   lastName: string
   email: string
   password: string
+  turnstileToken?: string
 }): Promise<void> {
   await storefrontFetch<{ ok: boolean }>("/api/account/register", {
     method: "POST",
@@ -314,6 +317,7 @@ export async function registerCustomerAccount(input: {
       password: input.password,
       first_name: input.firstName,
       last_name: input.lastName,
+      turnstile_token: input.turnstileToken || undefined,
     },
   })
 }

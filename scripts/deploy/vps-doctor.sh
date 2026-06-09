@@ -2,12 +2,14 @@
 set -euo pipefail
 
 APP_ROOT="${APP_ROOT:-/opt/store}"
+APP_USER="${APP_USER:-store}"
 BACKUP_DIR="${BACKUP_DIR:-$APP_ROOT/shared/backups}"
 OUTPUT="${VPS_DOCTOR_OUTPUT:-}"
 BACKEND_SERVICE="${BACKEND_SERVICE:-store-backend}"
 STOREFRONT_SERVICE="${STOREFRONT_SERVICE:-store-storefront}"
 API_HEALTH_URL="${API_HEALTH_URL:-http://127.0.0.1:9002/health}"
 STOREFRONT_HEALTH_URL="${STOREFRONT_HEALTH_URL:-http://127.0.0.1:8000/api/health}"
+ALLOW_APP_USER_DOCKER_ACCESS="${ALLOW_APP_USER_DOCKER_ACCESS:-0}"
 
 require_cmd() {
   local cmd="$1"
@@ -34,6 +36,12 @@ add_check() {
     "$(json_string "$evidence")" >> "$CHECKS_FILE"
 }
 
+is_truthy() {
+  local normalized
+  normalized="$(printf '%s' "${1:-}" | tr '[:upper:]' '[:lower:]')"
+  [[ "$normalized" == "1" || "$normalized" == "true" || "$normalized" == "yes" || "$normalized" == "on" ]]
+}
+
 systemd_status() {
   local unit="$1"
 
@@ -46,6 +54,24 @@ systemd_status() {
     add_check "systemd.$unit" "ok" "$unit is active"
   else
     add_check "systemd.$unit" "critical" "$unit is not active" "$(systemctl is-active "$unit" 2>/dev/null || true)"
+  fi
+}
+
+systemd_user_check() {
+  local unit="$1"
+  local expected_user="$2"
+  local actual_user
+
+  if ! command -v systemctl >/dev/null 2>&1; then
+    return
+  fi
+
+  actual_user="$(systemctl show -p User --value "$unit" 2>/dev/null || true)"
+
+  if [[ "$actual_user" == "$expected_user" ]]; then
+    add_check "systemd.$unit.user" "ok" "$unit runs as $expected_user"
+  else
+    add_check "systemd.$unit.user" "critical" "$unit must run as APP_USER for least privilege" "${actual_user:-root/default}"
   fi
 }
 
@@ -73,6 +99,19 @@ systemd_status "$BACKEND_SERVICE"
 systemd_status "$STOREFRONT_SERVICE"
 systemd_status caddy
 systemd_status docker
+systemd_user_check "$BACKEND_SERVICE" "$APP_USER"
+systemd_user_check "$STOREFRONT_SERVICE" "$APP_USER"
+
+if id "$APP_USER" >/dev/null 2>&1; then
+  app_uid="$(id -u "$APP_USER")"
+  if [[ "$app_uid" == "0" ]]; then
+    add_check "host.app-user" "critical" "APP_USER must not be root" "$APP_USER"
+  else
+    add_check "host.app-user" "ok" "APP_USER exists and is non-root" "$APP_USER:$app_uid"
+  fi
+else
+  add_check "host.app-user" "critical" "APP_USER does not exist" "$APP_USER"
+fi
 
 http_status "health.backend" "$API_HEALTH_URL"
 http_status "health.storefront" "$STOREFRONT_HEALTH_URL"
@@ -92,8 +131,28 @@ if command -v docker >/dev/null 2>&1; then
 fi
 
 if [[ -e /var/run/docker.sock ]]; then
-  socket_mode="$(stat -c '%a %U:%G' /var/run/docker.sock 2>/dev/null || true)"
-  add_check "docker.socket" "ok" "Docker socket exists; verify group membership remains restricted" "$socket_mode"
+  socket_mode="$(stat -c '%a' /var/run/docker.sock 2>/dev/null || true)"
+  socket_owner="$(stat -c '%U:%G' /var/run/docker.sock 2>/dev/null || true)"
+  socket_evidence="$socket_mode $socket_owner"
+  other_digit="${socket_mode: -1}"
+
+  if [[ "$other_digit" =~ ^[0-7]$ ]] && (( other_digit & 2 )); then
+    add_check "docker.socket.mode" "critical" "Docker socket is writable by others" "$socket_evidence"
+  else
+    add_check "docker.socket.mode" "ok" "Docker socket is not writable by others" "$socket_evidence"
+  fi
+
+  if id "$APP_USER" >/dev/null 2>&1 && id -nG "$APP_USER" | tr ' ' '\n' | grep -qx docker; then
+    if is_truthy "$ALLOW_APP_USER_DOCKER_ACCESS"; then
+      add_check "docker.socket.app-user" "warning" "APP_USER has docker group access by explicit override" "$APP_USER"
+    else
+      add_check "docker.socket.app-user" "critical" "APP_USER must not be in the docker group for least privilege" "$APP_USER"
+    fi
+  else
+    add_check "docker.socket.app-user" "ok" "APP_USER does not have docker group access" "$APP_USER"
+  fi
+else
+  add_check "docker.socket.mode" "warning" "Docker socket was not found"
 fi
 
 disk_pct="$(df -P "$APP_ROOT" 2>/dev/null | awk 'NR==2 {gsub(/%/, "", $5); print $5}')"
@@ -122,15 +181,21 @@ fi
 
 latest_backup="$(
   if [[ -d "$BACKUP_DIR" ]]; then
-    find "$BACKUP_DIR" -type f -name '*.dump' -printf '%T@ %p\n' 2>/dev/null \
+    find "$BACKUP_DIR" -type f \( -name '*.dump' -o -name '*.dump.enc' \) -printf '%T@ %p\n' 2>/dev/null \
       | sort -nr \
       | awk 'NR==1 {$1=""; sub(/^ /, ""); print}'
   fi
 )"
 if [[ -n "$latest_backup" ]]; then
   add_check "backup.latest" "ok" "Latest PostgreSQL backup exists" "$latest_backup"
+  if [[ "$latest_backup" == *.dump.enc ]]; then
+    add_check "backup.encryption" "ok" "Latest PostgreSQL backup is encrypted" "$latest_backup"
+  else
+    add_check "backup.encryption" "critical" "Latest PostgreSQL backup is not encrypted" "$latest_backup"
+  fi
 else
-  add_check "backup.latest" "critical" "No PostgreSQL backup dump found" "$BACKUP_DIR"
+  add_check "backup.latest" "critical" "No PostgreSQL backup dump or encrypted dump found" "$BACKUP_DIR"
+  add_check "backup.encryption" "critical" "No encrypted PostgreSQL backup found" "$BACKUP_DIR"
 fi
 
 if command -v sshd >/dev/null 2>&1; then
@@ -168,8 +233,9 @@ report="$(
   jq -s \
     --arg generated_at "$generated_at" \
     --arg app_root "$APP_ROOT" \
+    --arg app_user "$APP_USER" \
     --arg backup_dir "$BACKUP_DIR" \
-    '{generated_at: $generated_at, app_root: $app_root, backup_dir: $backup_dir, checks: .}' \
+    '{generated_at: $generated_at, app_root: $app_root, app_user: $app_user, backup_dir: $backup_dir, checks: .}' \
     "$CHECKS_FILE"
 )"
 

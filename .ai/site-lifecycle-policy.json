@@ -32,6 +32,8 @@
     "cloudflare_required",
     "runtime_health_required",
     "edge_preflight_required",
+    "admin_edge_protection_required",
+    "redis_rate_limit_smoke_required",
     "regression_required",
     "backup_required",
     "restore_test_required",
@@ -41,6 +43,8 @@
   "promotionEvidenceFields": [
     "last_runtime_health_ref",
     "last_edge_preflight_ref",
+    "last_admin_edge_ref",
+    "last_rate_limit_ref",
     "last_regression_ref",
     "last_backup_ref",
     "last_restore_test_ref",
@@ -60,6 +64,8 @@
   "requiredRuntimeCommands": [
     "pnpm deploy:health",
     "pnpm deploy:edge",
+    "pnpm deploy:admin-edge",
+    "pnpm deploy:rate-limit",
     "pnpm deploy:regression",
     "pnpm deploy:vps-doctor"
   ],

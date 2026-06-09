@@ -68,8 +68,23 @@
       "requiresRuntime": true
     },
     {
+      "id": "deploy-admin-edge",
+      "command": ["pnpm", "deploy:admin-edge"],
+      "requiresRuntime": true
+    },
+    {
+      "id": "deploy-rate-limit",
+      "command": ["pnpm", "deploy:rate-limit"],
+      "requiresRuntime": true
+    },
+    {
       "id": "deploy-regression",
       "command": ["pnpm", "deploy:regression"],
+      "requiresRuntime": true
+    },
+    {
+      "id": "deploy-vps-doctor",
+      "command": ["pnpm", "deploy:vps-doctor"],
       "requiresRuntime": true
     }
   ],

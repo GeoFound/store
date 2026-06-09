@@ -40,6 +40,30 @@ describe("ops control service", () => {
     )
   })
 
+  it("reports missing backup encryption and least-privilege evidence", () => {
+    const service = new OpsControlModuleService()
+    const snapshot = service.getMaintenanceSnapshot({
+      env: {
+        OPS_BACKUP_OFFSITE_ENABLED: "true",
+        OPS_BACKUP_ENCRYPTION_ENABLED: "false",
+        OPS_APP_USER_LEAST_PRIVILEGE: "false",
+      },
+    })
+
+    expect(snapshot.findings).toContainEqual(
+      expect.objectContaining({
+        id: "ops.backup-encryption-not-enabled",
+        severity: "critical",
+      })
+    )
+    expect(snapshot.findings).toContainEqual(
+      expect.objectContaining({
+        id: "ops.app-user-not-least-privilege",
+        severity: "critical",
+      })
+    )
+  })
+
   it("keeps AI auto remediation behind a critical human gate", () => {
     const service = new OpsControlModuleService()
     const snapshot = service.getAiOpsSnapshot({
