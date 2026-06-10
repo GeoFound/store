@@ -1,8 +1,10 @@
 import Link from "next/link"
+import { isCustomerAccountEnabled } from "@/lib/customer-account-policy"
 import { getSiteConfig } from "@/lib/site-config"
 
 export function SiteHeader() {
   const siteConfig = getSiteConfig()
+  const accountEnabled = isCustomerAccountEnabled()
   const initials = siteConfig.site.name
     .split(/\s+/)
     .map((part) => part.slice(0, 1))
@@ -46,12 +48,14 @@ export function SiteHeader() {
             >
               {siteConfig.content.navigation.orders}
             </Link>
-            <Link
-              href="/account"
-              className="px-1.5 py-2 opacity-75 hover:opacity-100 sm:px-2"
-            >
-              Account
-            </Link>
+            {accountEnabled ? (
+              <Link
+                href="/account"
+                className="px-1.5 py-2 opacity-75 hover:opacity-100 sm:px-2"
+              >
+                Account
+              </Link>
+            ) : null}
             <Link
               href="/cart"
               className="theme-secondary-action inline-flex items-center gap-1.5 px-2 py-2 font-semibold sm:gap-2 sm:px-3"

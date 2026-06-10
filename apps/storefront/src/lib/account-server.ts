@@ -5,9 +5,11 @@ import type { NextResponse } from "next/server"
 
 export {
   completeGoogleCustomerLoginWithMedusa as completeGoogleCustomerLogin,
+  confirmCustomerPasswordResetWithMedusa as confirmCustomerPasswordReset,
   listCustomerAccountOrdersWithMedusa as listCustomerAccountOrders,
   loginCustomerAccountWithMedusa as loginCustomerAccount,
   registerCustomerAccountWithMedusa as registerCustomerAccount,
+  requestCustomerPasswordResetWithMedusa as requestCustomerPasswordReset,
   retrieveCustomerAccountWithMedusa as retrieveCustomerAccount,
   startGoogleCustomerLoginWithMedusa as startGoogleCustomerLogin,
 } from "./commerce-medusa"

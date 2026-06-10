@@ -1,5 +1,5 @@
 import Link from "next/link"
-import Image from "next/image"
+import type { CSSProperties } from "react"
 import { ProductGrid } from "@/components/product-grid"
 import { SiteHeader } from "@/components/site-header"
 import { ensureStorefrontExtensionsRegistered } from "@/extensions/defaults"
@@ -13,10 +13,24 @@ import type { Product } from "@/lib/types"
 
 export const dynamic = "force-dynamic"
 
+const heroWordStates = [
+  { label: "Browsing", word: "Browse" },
+  { label: "Checkout", word: "Order" },
+  { label: "Delivery", word: "Access" },
+  { label: "Recovery", word: "Claim" },
+]
+const heroWordSizer = heroWordStates.reduce((longest, state) =>
+  state.word.length > longest.word.length ? state : longest
+).word
+
 export default async function Home() {
   ensureStorefrontExtensionsRegistered()
   const siteConfig = getSiteConfig()
   const homeContent = siteConfig.content.home
+  const heroName = withTerminalPeriod(siteConfig.site.name)
+  const heroWordStyle = {
+    "--store-copy-hero-word-scale": getHeroWordScale(heroWordSizer),
+  } as CSSProperties
   const [rawProducts, insights] = await Promise.all([
     listProducts(),
     listContentEntries({ limit: 3 }),
@@ -35,72 +49,68 @@ export default async function Home() {
     <>
       <SiteHeader />
       <main className="flex-1">
-        <section className="theme-surface theme-border atlas-hero-grid border-b">
-          <div className="mx-auto grid max-w-7xl gap-10 px-4 py-10 sm:px-6 lg:min-h-[640px] lg:grid-cols-[0.95fr_1.05fr] lg:items-center lg:py-12">
-            <div className="max-w-3xl">
-              <h1 className="text-4xl font-semibold leading-[1.04] tracking-normal sm:text-6xl">
-                {homeContent.headline}
-              </h1>
-              <p className="mt-5 max-w-2xl text-base leading-7 opacity-75 sm:text-lg">
-                {homeContent.description}
-              </p>
-              <div className="mt-7 flex flex-wrap gap-3">
-                <Link
-                  href="/insights"
-                  className="theme-primary-action inline-flex min-h-12 items-center justify-center px-5 text-sm font-semibold"
+        <section className="theme-surface theme-border store-copy-hero border-b">
+          <div className="store-copy-hero-inner mx-auto flex flex-col items-center px-4 text-center sm:px-6">
+            <h1
+              className="store-copy-hero-title"
+              aria-label={`${heroName} Browse effortlessly.`}
+            >
+              <span className="store-copy-hero-line store-copy-hero-line-top">
+                {heroName}
+              </span>
+              <span className="store-copy-hero-line store-copy-hero-line-bottom">
+                <span
+                  className="store-copy-hero-rotator"
+                  aria-hidden="true"
+                  style={heroWordStyle}
                 >
-                  {homeContent.insightsCta}
-                </Link>
-                <Link
-                  href="/products"
-                  className="theme-secondary-action inline-flex min-h-12 items-center justify-center px-5 text-sm font-semibold"
-                >
-                  {homeContent.browseCta}
-                </Link>
-                <Link
-                  href="/orders"
-                  className="theme-secondary-action inline-flex min-h-12 items-center justify-center px-5 text-sm font-semibold"
-                >
-                  {homeContent.ordersCta}
-                </Link>
-              </div>
-              <div className="mt-8 hidden max-w-2xl gap-3 text-sm sm:grid sm:grid-cols-3">
-                <div className="theme-field-row px-4 py-3">
-                  <div className="font-semibold">AI insights</div>
-                  <p className="mt-1 leading-5 opacity-70">
-                    Practical analysis and guides.
-                  </p>
-                </div>
-                <div className="theme-field-row px-4 py-3">
-                  <div className="font-semibold">Digital products</div>
-                  <p className="mt-1 leading-5 opacity-70">
-                    Tools, assets, and playbooks.
-                  </p>
-                </div>
-                <div className="theme-field-row px-4 py-3">
-                  <div className="font-semibold">Backend publishing</div>
-                  <p className="mt-1 leading-5 opacity-70">
-                    Content managed from admin.
-                  </p>
-                </div>
-              </div>
-            </div>
-            <div className="relative">
-              <div className="atlas-dots absolute right-8 top-4 hidden h-28 w-28 opacity-60 md:block" />
-              <div className="atlas-dots-amber absolute bottom-8 left-8 hidden h-16 w-20 opacity-80 md:block" />
-              <div className="theme-panel relative aspect-[16/8] overflow-hidden border-0 bg-white shadow-[var(--shadow-soft)] md:aspect-[16/9] lg:aspect-[16/10]">
-                <Image
-                  src="/atlas-delivery-hero.png"
-                  alt="Laptop and phone showing abstract digital order delivery screens"
-                  fill
-                  sizes="(min-width: 1024px) 50vw, 100vw"
-                  priority
-                  className="object-cover"
-                />
-              </div>
+                  <span className="store-copy-hero-rotator-sizer">
+                    {heroWordSizer}
+                  </span>
+                  {heroWordStates.map((state) => (
+                    <span key={state.word} className="store-copy-hero-state">
+                      <span className="store-copy-hero-tag">
+                        <svg
+                          aria-hidden="true"
+                          className="store-copy-hero-tag-icon"
+                          viewBox="0 0 24 24"
+                        >
+                          <path d="M9 18 3 12l6-6M15 6l6 6-6 6" />
+                        </svg>
+                        {state.label}
+                      </span>
+                      <span className="store-copy-hero-word">{state.word}</span>
+                    </span>
+                  ))}
+                </span>
+                <span className="store-copy-hero-static">effortlessly.</span>
+              </span>
+            </h1>
+            <p className="store-copy-hero-description">
+              {homeContent.description}
+            </p>
+            <div className="store-copy-hero-actions">
+              <Link
+                href="/products"
+                className="store-copy-hero-primary-action"
+              >
+                <span>Browse products</span>
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M5 12h13M13 6l6 6-6 6" />
+                </svg>
+              </Link>
+              <Link
+                href="/orders"
+                className="store-copy-hero-secondary-action"
+              >
+                <span>Find order</span>
+                <svg aria-hidden="true" viewBox="0 0 24 24">
+                  <path d="M5 12h13M13 6l6 6-6 6" />
+                </svg>
+              </Link>
             </div>
           </div>
-          <div className="mx-auto grid max-w-7xl gap-4 px-4 pb-10 sm:px-6 lg:grid-cols-1">
+          <div className="mx-auto grid max-w-7xl gap-4 px-4 pb-10 sm:px-6">
             {homeContent.announcements.map((announcement) => (
               <div
                 key={`${announcement.title}:${announcement.body}`}
@@ -260,4 +270,16 @@ function resolveHomeCategoryLinks(
       }),
       description: undefined,
     }))
+}
+
+function withTerminalPeriod(value: string) {
+  const trimmed = value.trim()
+
+  return /[.!?。！？]$/.test(trimmed) ? trimmed : `${trimmed}.`
+}
+
+function getHeroWordScale(value: string) {
+  const length = Array.from(value.trim()).length || 1
+
+  return length <= 6 ? "1" : Math.max(0.7, 6 / length).toFixed(3)
 }

@@ -14,8 +14,16 @@ Required:
 | `REDIS_URL` | Redis connection string | Use private network address; when Redis auth is enabled include password (for example `redis://:password@127.0.0.1:6380`). |
 | `JWT_SECRET` | Medusa auth JWT signing secret | Generate a long random value. |
 | `COOKIE_SECRET` | Medusa cookie signing secret | Generate a long random value, different from `JWT_SECRET`. |
-| `MANUAL_WEBHOOK_SECRET` | HMAC secret for `/hooks/payment/manual` signatures | Must be shared only with trusted webhook caller. Rotate periodically. |
+| `MANUAL_WEBHOOK_SECRET` | HMAC secret for `/hooks/payment/manual` signatures | Must be shared only with trusted webhook caller. Rotate periodically. The default manual payment channel is disabled for public checkout. |
 | `MANUAL_WEBHOOK_SIGNATURE_TOLERANCE_SECONDS` | Manual webhook timestamp tolerance window | Default `300`. Keep small to reduce replay window. |
+| `PLISIO_API_KEY` | Plisio secret key used to create crypto invoices and verify callback `verify_hash` | Required for crypto payment production. Keep backend-only. |
+| `PLISIO_CALLBACK_BASE_URL` | Public backend origin used to build `/hooks/payment/plisio?json=true` | Required for crypto payment production. Must be reachable by Plisio. |
+| `PLISIO_API_BASE_URL` | Plisio API base URL | Default `https://api.plisio.net/api/v1`; override only for controlled sandbox/proxy testing. |
+| `PLISIO_SUCCESS_URL` / `PLISIO_FAIL_URL` | Storefront return URLs shown from the Plisio invoice page | Optional; defaults to `STOREFRONT_PUBLIC_URL` checkout URLs when available. |
+| `PLISIO_DEFAULT_CRYPTO_CURRENCY` | Optional default Plisio crypto currency ID, such as `BTC` or `USDT` | Leave empty to let Plisio use active shop currencies. |
+| `PLISIO_ALLOWED_PSYS_CIDS` | Optional comma-separated Plisio crypto allow-list | Use to restrict invoice choices to approved coins only. |
+| `PLISIO_EXPIRE_MINUTES` | Optional Plisio invoice expiry window | Default env template uses `60`. |
+| `CHECKOUT_OUT_OF_STOCK_POLICY` | Checkout behavior when local credential inventory is depleted | `block` refuses payment; `allow_supplier_backorder` allows checkout only when the variant has a supplier metadata path or enabled supplier mapping. |
 | `ORDER_RECOVERY_MAX_FAILED_ATTEMPTS` | Max failed verify attempts before temporary block | Default `5`. |
 | `ORDER_RECOVERY_BLOCK_SECONDS` | Temporary block duration for recovery verification | Default `600` seconds. |
 | `CREDENTIAL_ENCRYPTION_KEY` | Primary AES-256-GCM key for inventory credentials | Must decode to 32 bytes. |
@@ -57,6 +65,7 @@ Optional analytics and observability:
 | `AI_PROVIDER_CONFIGS_JSON` | JSON array of AI provider configs with `code`, `protocol`, `base_url`, `api_key_env`, and `default_model` fields | Keep backend-only. Do not put plaintext keys here; reference deployment-owned key env names such as `OPENROUTER_API_KEY`, `OPENAI_API_KEY`, or `ANTHROPIC_API_KEY`. |
 | `SUPPLIER_ENCRYPTION_KEY` | Primary AES-256-GCM key for supplier fulfillment snapshots | Must decode to 32 bytes. Defaults to `DELIVERY_ENCRYPTION_KEY` when omitted. Keep separate in production when supplier payloads include redeemable secrets. |
 | `SUPPLIER_ENCRYPTION_KEY_PREVIOUS` | Optional previous supplier keys for key rotation (comma-separated) | Each key must decode to 32 bytes. |
+| `SUPPLIER_AUTO_PROCUREMENT_ENABLED` | Allow payment finalization to call supplier APIs automatically | Default `false`; when false, supplier-backed orders create `needs_review` procurement records and pending deliveries for manual handling. |
 | `AUDIT_LOG_RETENTION_ENABLED` | Enable scheduled audit-log pruning | Default `true`. |
 | `AUDIT_LOG_RETENTION_DAYS` | Audit log retention window | Default `365`; must be at least `AUDIT_LOG_RETENTION_MIN_DAYS`. |
 | `AUDIT_LOG_RETENTION_MIN_DAYS` | Minimum allowed audit retention window | Default `90`; prevents accidental short retention. |
@@ -132,30 +141,34 @@ File: `apps/storefront/.env.local`
 
 Required:
 
-| Name | Purpose |
-| --- | --- |
-| `MEDUSA_BACKEND_URL` | Server-side backend Store API URL used by storefront runtime routes such as `/api/health`. |
-| `NEXT_PUBLIC_MEDUSA_BACKEND_URL` | Public URL of the backend Store API. |
-| `NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY` | Medusa publishable API key. |
-| `NEXT_PUBLIC_MEDUSA_REGION_ID` | Optional fixed region id. |
-| `NEXT_PUBLIC_ALLOWED_IMAGE_HOSTS` | Comma-separated image hosts or URLs allowed by Next Image remote patterns. |
+| Name | Purpose | Notes |
+| --- | --- | --- |
+| `MEDUSA_BACKEND_URL` | Server-side backend Store API URL used by storefront runtime routes such as `/api/health`. | |
+| `NEXT_PUBLIC_MEDUSA_BACKEND_URL` | Public URL of the backend Store API. | |
+| `NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY` | Medusa publishable API key. | |
+| `NEXT_PUBLIC_MEDUSA_REGION_ID` | Optional fixed region id. | |
+| `NEXT_PUBLIC_ALLOWED_IMAGE_HOSTS` | Comma-separated image hosts or URLs allowed by Next Image remote patterns. | |
 | `NEXT_PUBLIC_COMMERCE_BACKEND` | Storefront commerce adapter id. | Default `medusa`; unsupported values fail early at runtime. |
 
 Optional analytics and plugin runtime:
 
-| Name | Purpose |
-| --- | --- |
-| `NEXT_PUBLIC_GA4_MEASUREMENT_ID` | Enables GA4 storefront script injection when non-empty. |
-| `NEXT_PUBLIC_HOTJAR_SITE_ID` | Enables Hotjar storefront script injection when non-empty. |
-| `NEXT_PUBLIC_HOTJAR_SNIPPET_VERSION` | Hotjar snippet version, default `6`. |
-| `NEXT_PUBLIC_PRIVACY_BANNER_ENABLED` | Toggle storefront cookie/analytics consent banner. Default `true`. |
-| `NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT` | Require explicit consent before GA4/Hotjar scripts and analytics events. Default `true`. |
-| `NEXT_PUBLIC_PLATFORM_ENABLED_PLUGINS` | Storefront plugin allow-list (comma-separated IDs). |
-| `NEXT_PUBLIC_PLATFORM_DISABLED_PLUGINS` | Comma-separated plugin IDs to disable on storefront (for example `analytics-hotjar,analytics-ga4`). |
+| Name | Purpose | Notes |
+| --- | --- | --- |
+| `NEXT_PUBLIC_GA4_MEASUREMENT_ID` | Enables GA4 storefront script injection when non-empty. | |
+| `NEXT_PUBLIC_HOTJAR_SITE_ID` | Enables Hotjar storefront script injection when non-empty. | |
+| `NEXT_PUBLIC_HOTJAR_SNIPPET_VERSION` | Hotjar snippet version. | Default `6`. |
+| `NEXT_PUBLIC_PRIVACY_BANNER_ENABLED` | Toggle storefront cookie/analytics consent banner. | Default `true`. |
+| `NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT` | Require explicit consent before GA4/Hotjar scripts and analytics events. | Default `true`. |
+| `NEXT_PUBLIC_PLATFORM_ENABLED_PLUGINS` | Storefront plugin allow-list (comma-separated IDs). | |
+| `NEXT_PUBLIC_PLATFORM_DISABLED_PLUGINS` | Comma-separated plugin IDs to disable on storefront (for example `analytics-hotjar,analytics-ga4`). | |
 | `NEXT_PUBLIC_SHOW_PLATFORM_DEMO_EXTENSIONS` | Enable demo storefront extension points for local/plugin testing. | Keep `false` outside controlled development. |
-| `SITE_PROFILES_ROOT` | Filesystem path to `profiles/sites`. Defaults to `../../profiles/sites` from the storefront app. |
-| `NEXT_PUBLIC_SITE_ID` | Public site identifier for profile-driven storefront rendering. |
-| `NEXT_PUBLIC_SITE_ENV` | Public site profile environment key (`production`, `staging`, etc). |
+| `SITE_PROFILES_ROOT` | Filesystem path to `profiles/sites`. | Defaults to `../../profiles/sites` from the storefront app. |
+| `NEXT_PUBLIC_SITE_ID` | Public site identifier for profile-driven storefront rendering. | |
+| `NEXT_PUBLIC_SITE_ENV` | Public site profile environment key (`production`, `staging`, etc). | |
+| `CUSTOMER_ACCOUNT_MODE` | Customer account mode. | `guest_optional` keeps checkout guest-first; `guest_only` disables account sign-in/registration. |
+| `CUSTOMER_PASSWORD_RESET_ENABLED` | Enable storefront customer password reset BFF routes. | Default `true` when customer accounts are enabled. |
+| `CUSTOMER_PASSWORD_RESET_URL` | Public storefront reset-password page used in reset email metadata. | Production should be `https://<storefront>/account/reset-password`. |
+| `CUSTOMER_EMAIL_VERIFICATION_STRATEGY` | Lightweight customer email verification strategy. | Recommended `recovery_only`; order recovery and reset links verify possession. |
 | `ACCOUNT_AUTH_RATE_LIMIT_*` | Storefront BFF login/register/Google-start rate-limit knobs | Defaults to 20 requests per 600 seconds with a 900-second block. |
 | `ACCOUNT_AUTH_TURNSTILE_ENABLED` | Require Cloudflare Turnstile verification for login/register BFF routes | Default `false`; enable only after the storefront submits `turnstile_token`. |
 | `NEXT_PUBLIC_ACCOUNT_AUTH_TURNSTILE_ENABLED` | Render the storefront Turnstile challenge | Must match `ACCOUNT_AUTH_TURNSTILE_ENABLED` when enabling challenges. |

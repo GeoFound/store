@@ -1,0 +1,28 @@
+{
+  "id": "ADR-0009",
+  "status": "accepted",
+  "title": "Keep customer accounts lightweight and guest-first",
+  "date": "2026-06-09",
+  "decision": "Use a guest-first customer model. Customer accounts are optional, controlled by CUSTOMER_ACCOUNT_MODE, and only provide sign-in, basic profile identity, order listing, delivery access links, and password reset. Order recovery remains available without an account. Email verification stays lightweight through recovery/reset links via CUSTOMER_EMAIL_VERIFICATION_STRATEGY=recovery_only. Membership levels, subscription entitlements, points, stored balance, device management, and complex entitlement-marketing automation are intentionally deferred.",
+  "evidence": [
+    "conversation:2026-06-09-user-lightweight-membership-decision",
+    "apps/storefront/src/lib/customer-account-policy.ts",
+    "apps/storefront/src/app/account/reset-password/page.tsx",
+    "apps/storefront/src/app/api/account/password-reset/request/route.ts",
+    "apps/storefront/src/app/api/account/password-reset/confirm/route.ts",
+    "apps/backend/src/modules/ops-control/customer-snapshot.ts"
+  ],
+  "humanDecisions": {
+    "customer_account_mode": "guest_optional",
+    "password_reset": "enabled",
+    "email_verification_strategy": "recovery_only",
+    "deferred": [
+      "membership levels",
+      "subscription entitlements",
+      "points and balance",
+      "login device management",
+      "complex member operations",
+      "complex entitlement and marketing automation"
+    ]
+  }
+}

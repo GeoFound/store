@@ -3,12 +3,20 @@ import {
   registerCustomerAccount,
   setCustomerAuthCookie,
 } from "@/lib/account-server"
+import { isCustomerAccountEnabled } from "@/lib/customer-account-policy"
 import {
   checkAccountAuthRateLimit,
   verifyAccountTurnstile,
 } from "@/lib/server-abuse-guard"
 
 export async function POST(request: Request) {
+  if (!isCustomerAccountEnabled()) {
+    return NextResponse.json(
+      { message: "Customer accounts are not enabled." },
+      { status: 404 }
+    )
+  }
+
   const rateLimitResponse = checkAccountAuthRateLimit(request, "account-register")
 
   if (rateLimitResponse) {

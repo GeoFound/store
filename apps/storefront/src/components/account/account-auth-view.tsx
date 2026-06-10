@@ -16,9 +16,13 @@ type Mode = "login" | "register"
 
 type AccountAuthViewProps = {
   initialError?: string
+  passwordResetEnabled?: boolean
 }
 
-export function AccountAuthView({ initialError = "" }: AccountAuthViewProps) {
+export function AccountAuthView({
+  initialError = "",
+  passwordResetEnabled = true,
+}: AccountAuthViewProps) {
   const [mode, setMode] = useState<Mode>("login")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -167,9 +171,19 @@ export function AccountAuthView({ initialError = "" }: AccountAuthViewProps) {
         </div>
 
         <div>
-          <label className="block text-sm font-medium" htmlFor="account-password">
-            Password
-          </label>
+          <div className="flex items-center justify-between gap-3">
+            <label className="block text-sm font-medium" htmlFor="account-password">
+              Password
+            </label>
+            {mode === "login" && passwordResetEnabled ? (
+              <a
+                href="/account/reset-password"
+                className="text-sm font-semibold underline"
+              >
+                Forgot?
+              </a>
+            ) : null}
+          </div>
           <input
             id="account-password"
             type="password"

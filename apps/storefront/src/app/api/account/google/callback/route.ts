@@ -3,8 +3,13 @@ import {
   completeGoogleCustomerLogin,
   setCustomerAuthCookie,
 } from "@/lib/account-server"
+import { isCustomerAccountEnabled } from "@/lib/customer-account-policy"
 
 export async function GET(request: Request) {
+  if (!isCustomerAccountEnabled()) {
+    return NextResponse.redirect(new URL("/orders", request.url))
+  }
+
   const url = new URL(request.url)
 
   try {
