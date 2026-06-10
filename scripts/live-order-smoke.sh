@@ -334,6 +334,70 @@ commit;
 SQL
 }
 
+ensure_smoke_manual_payment_channel() {
+  docker exec -i "$POSTGRES_CONTAINER" psql -U store -d store <<'SQL'
+begin;
+
+update payment_channel
+set enabled = true,
+    provider_code = 'manual',
+    health_status = 'healthy',
+    config_json = coalesce(config_json, '{}'::jsonb)
+      || jsonb_build_object(
+        'live_smoke_enabled',
+        true,
+        'live_smoke_previous_enabled',
+        enabled
+      ),
+    updated_at = now()
+where code = 'manual'
+  and deleted_at is null;
+
+insert into payment_channel (
+  id,
+  code,
+  name,
+  display_name,
+  type,
+  enabled,
+  priority,
+  provider_code,
+  config_json,
+  health_status,
+  created_at,
+  updated_at
+)
+select
+  'paychan_live_smoke_manual',
+  'manual',
+  'Manual Payment',
+  'Manual payment',
+  'manual',
+  true,
+  100,
+  'manual',
+  jsonb_build_object(
+    'instructions',
+    'Live acceptance smoke manual payment channel.',
+    'live_smoke_enabled',
+    true,
+    'live_smoke_previous_enabled',
+    false
+  ),
+  'healthy',
+  now(),
+  now()
+where not exists (
+  select 1
+  from payment_channel
+  where code = 'manual'
+    and deleted_at is null
+);
+
+commit;
+SQL
+}
+
 DEFAULT_ENCRYPTION_KEY="0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 CREDENTIAL_ENCRYPTION_KEY="$(resolve_encryption_key CREDENTIAL_ENCRYPTION_KEY "$DEFAULT_ENCRYPTION_KEY")"
 DELIVERY_ENCRYPTION_KEY="$(resolve_encryption_key DELIVERY_ENCRYPTION_KEY "$CREDENTIAL_ENCRYPTION_KEY")"
@@ -587,6 +651,9 @@ fi
 
 echo "Binding guest email..."
 api_post "/store/carts/$cart_id" "{\"email\":\"$BUYER_EMAIL\"}" >/dev/null
+
+echo "Ensuring smoke manual payment channel..."
+ensure_smoke_manual_payment_channel
 
 echo "Creating payment attempt..."
 payment_json="$(api_post "/store/carts/$cart_id/payments" '{"payment_method":"manual"}')"
