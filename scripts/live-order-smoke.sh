@@ -143,9 +143,14 @@ select_decryptable_variant_id() {
   CANDIDATES_JSON="$candidates_json" \
   PRIMARY_KEY="$CREDENTIAL_ENCRYPTION_KEY" \
   PREVIOUS_KEYS="$CREDENTIAL_ENCRYPTION_KEY_PREVIOUS" \
+  ALLOWED_VARIANT_IDS_JSON="${ALLOWED_VARIANT_IDS_JSON:-[]}" \
     node -e '
 const crypto = require("crypto");
 const candidates = JSON.parse(process.env.CANDIDATES_JSON || "[]");
+const allowedVariantIds = new Set(
+  JSON.parse(process.env.ALLOWED_VARIANT_IDS_JSON || "[]")
+    .filter((id) => typeof id === "string")
+);
 const rawKeys = [
   process.env.PRIMARY_KEY || "",
   ...(process.env.PREVIOUS_KEYS || "").split(/[\n,]/).map((entry) => entry.trim()),
@@ -169,6 +174,10 @@ for (const rawKey of rawKeys) {
 
 for (const candidate of candidates) {
   if (!candidate || typeof candidate.product_variant_id !== "string" || typeof candidate.credential_blob !== "string") {
+    continue;
+  }
+
+  if (allowedVariantIds.size > 0 && !allowedVariantIds.has(candidate.product_variant_id)) {
     continue;
   }
 
@@ -539,21 +548,12 @@ echo "Fetching region and product data..."
 regions_json="$(api_get "/store/regions")"
 region_id="$(json_get "$regions_json" '.regions[0].id')"
 products_json="$(api_get "/store/products?limit=1&region_id=$region_id&fields=id,title,handle,*variants")"
-variant_id="$(select_decryptable_variant_id)"
+storefront_variant_ids_json="$(printf '%s' "$products_json" | jq -c '[.products[].variants[].id]')"
+variant_id="$(ALLOWED_VARIANT_IDS_JSON="$storefront_variant_ids_json" select_decryptable_variant_id)"
 variant_id="$(printf '%s' "$variant_id" | tr -d '[:space:]')"
 
 if [[ -z "$variant_id" ]]; then
-  fallback_variant_id="$(
-    docker exec "$POSTGRES_CONTAINER" \
-      psql -U store -d store -tAc \
-      "select product_variant_id from account_item where status = 'in_stock' and deleted_at is null order by created_at asc limit 1;"
-  )"
-  fallback_variant_id="$(printf '%s' "$fallback_variant_id" | tr -d '[:space:]')"
-
-  if [[ -z "$fallback_variant_id" ]]; then
-    fallback_variant_id="$(json_get "$products_json" '.products[0].variants[0].id // empty' || true)"
-  fi
-
+  fallback_variant_id="$(json_get "$products_json" '.products[0].variants[0].id // empty' || true)"
   fallback_variant_id="$(printf '%s' "$fallback_variant_id" | tr -d '[:space:]')"
 
   if [[ -z "$fallback_variant_id" ]]; then
@@ -563,7 +563,7 @@ if [[ -z "$variant_id" ]]; then
 
   echo "No decryptable inventory found; seeding temporary smoke inventory for variant $fallback_variant_id..."
   seed_smoke_inventory_for_variant "$fallback_variant_id"
-  variant_id="$(select_decryptable_variant_id)"
+  variant_id="$(ALLOWED_VARIANT_IDS_JSON="$storefront_variant_ids_json" select_decryptable_variant_id)"
   variant_id="$(printf '%s' "$variant_id" | tr -d '[:space:]')"
 fi
 
