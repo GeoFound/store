@@ -169,6 +169,15 @@ const tenantAllowedHosts = Array.from(
     normalizeHost(profile?.domains?.api),
   ].filter(Boolean))
 ).join(",")
+const dataPolicy = profile?.lifecycle?.data_policy || {}
+const outOfStockPolicy =
+  toNonEmptyString(dataPolicy.out_of_stock_checkout_policy) ||
+  "block"
+const supplierAutoProcurementEnabled =
+  dataPolicy.supplier_auto_procurement_enabled === true ? "true" : "false"
+const customerAccountMode =
+  toNonEmptyString(dataPolicy.customer_account_mode) ||
+  "guest_optional"
 
 if (target === "backend" || target === "all") {
   printLine("SITE_ID", resolvedSiteId)
@@ -183,6 +192,11 @@ if (target === "backend" || target === "all") {
   printLine("PLATFORM_DISABLED_PLUGINS", disabledPlugins)
   printLine("PLATFORM_ENABLED_CONTRACTS", enabledContracts)
   printLine("PLATFORM_DISABLED_CONTRACTS", disabledContracts)
+  printLine("CHECKOUT_OUT_OF_STOCK_POLICY", outOfStockPolicy)
+  printLine("SUPPLIER_AUTO_PROCUREMENT_ENABLED", supplierAutoProcurementEnabled)
+  printLine("CUSTOMER_ACCOUNT_MODE", customerAccountMode)
+  printLine("CUSTOMER_PASSWORD_RESET_ENABLED", "true")
+  printLine("CUSTOMER_EMAIL_VERIFICATION_STRATEGY", "recovery_only")
 }
 
 if (target === "storefront" || target === "all") {
@@ -194,5 +208,10 @@ if (target === "storefront" || target === "all") {
   printLine("NEXT_PUBLIC_MEDUSA_BACKEND_URL", apiOrigin)
   printLine("NEXT_PUBLIC_PLATFORM_ENABLED_PLUGINS", enabledPlugins)
   printLine("NEXT_PUBLIC_PLATFORM_DISABLED_PLUGINS", disabledPlugins)
+  printLine("STOREFRONT_PUBLIC_URL", storefrontOrigin)
+  printLine("CUSTOMER_ACCOUNT_MODE", customerAccountMode)
+  printLine("CUSTOMER_PASSWORD_RESET_ENABLED", "true")
+  printLine("CUSTOMER_PASSWORD_RESET_URL", `${storefrontOrigin}/account/reset-password`)
+  printLine("CUSTOMER_EMAIL_VERIFICATION_STRATEGY", "recovery_only")
 }
 NODE

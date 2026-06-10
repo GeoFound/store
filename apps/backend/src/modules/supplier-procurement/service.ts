@@ -1,44 +1,14 @@
 import { MedusaError, MedusaService } from "@medusajs/framework/utils"
-import {
-  getSupplierProvider,
-  type SupplierMappingSnapshot,
-  type SupplierProvider,
-} from "../../platform/supplier"
+import { getSupplierProvider, type SupplierMappingSnapshot, type SupplierProvider } from "../../platform/supplier"
 import SupplierProcurementOrder from "./models/supplier-procurement-order"
 import SupplierProductMapping from "./models/supplier-product-mapping"
-import type {
-  CreateSupplierDeliveryInput,
-  ListDueSupplierProcurementsInput,
-  ListSupplierMappingsInput,
-  ListSupplierProcurementsInput,
-  SupplierProcurementStatus,
-  SupplierProductMappingInput,
-} from "./types"
-import {
-  buildDefaultSupplierDeliveryPayload,
-  normalizeCurrencyCode,
-  normalizeDate,
-  normalizeLimit,
-  normalizeOptionalNumber,
-  normalizeQuantity,
-  normalizeRecord,
-  redactSensitiveRecord,
-  requireText,
-  toNullableText,
-  toOptionalText,
-} from "./service-helpers"
-import {
-  decryptStoredFulfillmentPayload,
-  encryptFulfillmentPayload,
-} from "./fulfillment-payload-codec"
-import {
-  prepareSupplierDeliveryRecord,
-  type PreparedSupplierDeliveryRecord,
-} from "./delivery-record"
-import {
-  buildSafeSupplierRequestPayload,
-  resolveSupplierIdempotencyKey,
-} from "./request-payload"
+import type { CreateSupplierDeliveryInput, ListDueSupplierProcurementsInput, ListSupplierMappingsInput, ListSupplierProcurementsInput, SupplierProcurementStatus, SupplierProductMappingInput } from "./types"
+import { buildDefaultSupplierDeliveryPayload, normalizeCurrencyCode, normalizeDate, normalizeLimit, normalizeOptionalNumber, normalizeQuantity, normalizeRecord, redactSensitiveRecord, requireText, toNullableText, toOptionalText } from "./service-helpers"
+import { decryptStoredFulfillmentPayload, encryptFulfillmentPayload } from "./fulfillment-payload-codec"
+import { prepareSupplierDeliveryRecord, type PreparedSupplierDeliveryRecord } from "./delivery-record"
+import { buildSafeSupplierRequestPayload, resolveSupplierIdempotencyKey } from "./request-payload"
+import { isSupplierAutoProcurementEnabled } from "../../platform/checkout-policy"
+import { initialSupplierProcurementStatus, prepareSupplierManualReviewDelivery, shouldQueueSupplierManualReview, supplierAutoProcurementError, supplierAutoProcurementMetadata } from "./auto-procurement-policy"
 
 type SupplierProcurementOrderRecord = Record<string, any>
 type SupplierProductMappingRecord = Record<string, any>
@@ -198,17 +168,7 @@ class SupplierProcurementModuleService extends MedusaService({
     }
 
     const context = await this.resolveSupplierContext(input)
-    const provider = getSupplierProvider(context.providerCode, {
-      productTypeCode: input.productType || undefined,
-    })
-
-    if (!provider) {
-      throw new MedusaError(
-        MedusaError.Types.NOT_ALLOWED,
-        `Supplier provider ${context.providerCode} is not registered`
-      )
-    }
-
+    const autoProcurementEnabled = isSupplierAutoProcurementEnabled()
     const existing = await this.retrieveProcurementByIdempotencyKey(
       context.idempotencyKey
     )
@@ -218,7 +178,7 @@ class SupplierProcurementModuleService extends MedusaService({
         idempotency_key: context.idempotencyKey,
         provider_code: context.providerCode,
         provider_order_id: null,
-        status: "pending",
+        status: initialSupplierProcurementStatus(autoProcurementEnabled),
         product_variant_id: context.productVariantId || null,
         order_id: input.orderId || null,
         cart_id: input.cartId || null,
@@ -232,15 +192,36 @@ class SupplierProcurementModuleService extends MedusaService({
         response_payload: null,
         fulfillment_payload_encrypted: null,
         fulfillment_payload_version: 1,
-        error_message: null,
+        error_message: supplierAutoProcurementError(autoProcurementEnabled),
         retry_count: 0,
         next_retry_at: null,
         fulfilled_at: null,
-        metadata_json: {
-          ...context.metadata,
-          supplier_mapping_id: context.mapping?.id || null,
-        },
+        metadata_json: supplierAutoProcurementMetadata({
+          metadata: context.metadata,
+          enabled: autoProcurementEnabled,
+          mappingId: context.mapping?.id,
+        }),
       }))
+
+    if (
+      shouldQueueSupplierManualReview({
+        enabled: autoProcurementEnabled,
+        order,
+      })
+    ) {
+      return prepareSupplierManualReviewDelivery(input, order)
+    }
+
+    const provider = getSupplierProvider(context.providerCode, {
+      productTypeCode: input.productType || undefined,
+    })
+
+    if (!provider) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        `Supplier provider ${context.providerCode} is not registered`
+      )
+    }
 
     const procurement = await this.processProcurementOrder({
       order,

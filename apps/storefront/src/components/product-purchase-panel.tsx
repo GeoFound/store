@@ -109,9 +109,13 @@ export function ProductPurchasePanel({
             isSoldOut
               ? "theme-status-danger"
               : "theme-status-success"
-          }`}
+            }`}
         >
-          {isSoldOut ? "Sold out" : "In stock"}
+          {isSoldOut
+            ? "Sold out"
+            : selectedVariant?.is_backorderable
+              ? "Supplier order"
+              : "In stock"}
         </span>
       </div>
 
@@ -132,11 +136,21 @@ export function ProductPurchasePanel({
             {template?.title || "After payment"}
           </span>
         </div>
-        {requiresInventory && typeof selectedVariant?.available_quantity === "number" ? (
+        {requiresInventory &&
+        !selectedVariant?.is_backorderable &&
+        typeof selectedVariant?.available_quantity === "number" ? (
           <div className="flex justify-between gap-4">
             <span>Available</span>
             <span className="font-medium text-[var(--foreground)]">
               {selectedVariant.available_quantity}
+            </span>
+          </div>
+        ) : null}
+        {selectedVariant?.is_backorderable ? (
+          <div className="flex justify-between gap-4">
+            <span>Stock source</span>
+            <span className="font-medium text-[var(--foreground)]">
+              Supplier
             </span>
           </div>
         ) : null}
@@ -163,6 +177,10 @@ export function ProductPurchasePanel({
 }
 
 function isVariantOutOfStock(variant: ProductVariant) {
+  if (typeof variant.purchase_available === "boolean") {
+    return !variant.purchase_available
+  }
+
   return variant.is_in_stock === false || !variant.available_quantity
 }
 
@@ -174,6 +192,10 @@ function buildVariantLabel(
     (typeof variant.title === "string" && variant.title.trim()) ||
     (typeof variant.sku === "string" && variant.sku.trim()) ||
     variant.id
+
+  if (variant.is_backorderable) {
+    return `${title} (supplier order)`
+  }
 
   if (requiresInventory && typeof variant.available_quantity === "number") {
     return `${title} (${variant.available_quantity} available)`

@@ -27,6 +27,11 @@ import {
 } from "../../../utils/payment-attempt"
 import { createTokenWithPrefix } from "../../../utils/token"
 import { releaseInventoryReservations } from "./inventory-reservation-cleanup"
+import {
+  getCheckoutPolicy,
+  hasSupplierBackorderPath,
+  isOutOfStockReservationError,
+} from "../../../platform-adapters/checkout-policy"
 
 export type ReserveCartInventoryStepInput = {
   cartId: string
@@ -46,6 +51,7 @@ export const reserveCartInventoryStep = createStep(
     const paymentRouter = resolvePaymentRouterService(container)
     const inventoryScope = createInventoryHandlerScope(container)
     const orderAccessProviderCode = resolveConfiguredOrderAccessProviderCode()
+    const checkoutPolicy = getCheckoutPolicy()
     const reservations: InventoryReservation[] = []
     const fulfillmentItems: FulfillmentItemSummary[] = []
 
@@ -153,16 +159,60 @@ export const reserveCartInventoryStep = createStep(
           ...metadata,
         }
 
-        const reserved = await handler.reserve({
-          scope: inventoryScope,
-          cartId: input.cartId,
-          attemptId: input.attemptId,
-          item: rawItem,
-          productVariantId: variantId,
-          quantity,
-          reservationKey,
-          metadata: reservationMetadata,
-        })
+        let reserved: InventoryReservation[]
+
+        try {
+          reserved = await handler.reserve({
+            scope: inventoryScope,
+            cartId: input.cartId,
+            attemptId: input.attemptId,
+            item: rawItem,
+            productVariantId: variantId,
+            quantity,
+            reservationKey,
+            metadata: reservationMetadata,
+          })
+        } catch (error) {
+          const canUseSupplierBackorder =
+            isOutOfStockReservationError(error) &&
+            checkoutPolicy.outOfStockPolicy === "allow_supplier_backorder"
+              ? await hasSupplierBackorderPath({
+                  scope: container,
+                  productVariantId: variantId,
+                  metadata,
+                })
+              : false
+
+          if (canUseSupplierBackorder) {
+            fulfillmentItems.push({
+              fulfillment_key: fulfillmentKey,
+              cart_item_id: itemId,
+              product_variant_id: variantId,
+              quantity,
+              inventory_mode: "none",
+              inventory_handler_code: "noop",
+              delivery_handler_code: "supplier-procurement",
+              fulfillment_policy_code: "checkout:out-of-stock-supplier-backorder",
+              product_type: productType || template?.productType || null,
+              template_code: template?.code || null,
+              metadata: {
+                ...reservationMetadata,
+                cart_item_id: itemId,
+                fulfillment_key: fulfillmentKey,
+                checkout_out_of_stock_policy: checkoutPolicy.outOfStockPolicy,
+                checkout_stock_source: "supplier_backorder",
+                source_inventory_handler_code: handler.code,
+                inventory_handler_code: "noop",
+                delivery_handler_code: "supplier-procurement",
+                fulfillment_policy_code:
+                  "checkout:out-of-stock-supplier-backorder",
+              },
+            })
+            continue
+          }
+
+          throw error
+        }
 
         reservations.push(
           ...reserved.map((reservation) => ({

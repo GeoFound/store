@@ -221,7 +221,11 @@ export function CheckoutView() {
         payment.claim_token,
         payment.instructions
       )
-      setMessage("Payment attempt created. Keep the reference until payment is confirmed.")
+      setMessage(
+        payment.attempt.payment_url
+          ? "Crypto invoice created. Open the payment link and keep this page open for confirmation."
+          : "Payment attempt created. Keep the reference until payment is confirmed."
+      )
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save checkout.")
     } finally {
@@ -380,20 +384,53 @@ export function CheckoutView() {
         {message ? <p className="text-sm text-[var(--success)]">{message}</p> : null}
         {error ? <p className="text-sm text-[var(--danger)]">{error}</p> : null}
 
-        {paymentAttempt && instructions ? (
+        {paymentAttempt ? (
           <section className="theme-status-success rounded-[var(--radius)] p-4">
             <h2 className="text-base font-semibold">
-              {instructions.title}
+              {instructions?.title || "Payment pending"}
             </h2>
-            <p className="mt-2 text-sm leading-6">
-              {instructions.body}
-            </p>
-            <div className="theme-panel mt-3 p-3 text-sm shadow-none">
-              <span className="block opacity-70">Payment reference</span>
-              <span className="mt-1 block font-mono font-semibold">
-                {instructions.reference}
-              </span>
-            </div>
+            {instructions?.body ? (
+              <p className="mt-2 text-sm leading-6">
+                {instructions.body}
+              </p>
+            ) : null}
+            {paymentAttempt.payment_url ? (
+              <div className="theme-panel mt-3 grid gap-3 p-3 text-sm shadow-none">
+                <span className="block opacity-70">Crypto payment link</span>
+                <a
+                  href={paymentAttempt.payment_url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="theme-primary-action inline-flex min-h-11 w-fit items-center px-4 text-sm font-semibold"
+                >
+                  Open crypto payment
+                </a>
+                {paymentAttempt.expires_at ? (
+                  <span className="text-xs opacity-70">
+                    Expires: {formatPaymentDate(paymentAttempt.expires_at)}
+                  </span>
+                ) : null}
+                {paymentAttempt.qr_code_url ? (
+                  <>
+                    {/* Plisio may return data:image QR payloads, which Next Image cannot optimize reliably. */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={paymentAttempt.qr_code_url}
+                      alt="Crypto payment QR code"
+                      className="h-32 w-32 rounded-[var(--radius)] bg-white p-2"
+                    />
+                  </>
+                ) : null}
+              </div>
+            ) : null}
+            {instructions?.reference ? (
+              <div className="theme-panel mt-3 p-3 text-sm shadow-none">
+                <span className="block opacity-70">Payment reference</span>
+                <span className="mt-1 block font-mono font-semibold">
+                  {instructions.reference}
+                </span>
+              </div>
+            ) : null}
             <p className="mt-3 text-sm">
               Attempt ID: {paymentAttempt.id}
             </p>
@@ -485,4 +522,14 @@ function normalizeResolvedMarketing(value: unknown): MarketingResolvedContext | 
   }
 
   return value as MarketingResolvedContext
+}
+
+function formatPaymentDate(value: string) {
+  const date = new Date(value)
+
+  if (!Number.isFinite(date.getTime())) {
+    return value
+  }
+
+  return date.toLocaleString()
 }

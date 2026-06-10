@@ -62,6 +62,9 @@ export type InventoryAvailability = {
   sold_count: number
   locked_count: number
   is_in_stock: boolean
+  purchase_available?: boolean
+  backorderable?: boolean
+  availability_policy?: string
 }
 
 export interface InventoryHandler {

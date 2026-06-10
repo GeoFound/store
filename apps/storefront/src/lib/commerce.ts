@@ -60,6 +60,14 @@ export type CommerceBackend = {
     password: string
     turnstileToken?: string
   }): Promise<void>
+  requestCustomerAccountPasswordReset(input: {
+    email: string
+    turnstileToken?: string
+  }): Promise<void>
+  confirmCustomerAccountPasswordReset(input: {
+    token: string
+    password: string
+  }): Promise<void>
   startGoogleCustomerAccountLogin(): Promise<{ location?: string }>
   logoutCustomerAccount(): Promise<void>
   retrieveCurrentCustomerAccount(): Promise<CustomerAccount | null>
@@ -74,7 +82,7 @@ export type CommerceBackend = {
     analytics?: AnalyticsCheckoutContext
   }): Promise<{
     attempt: PaymentAttempt
-    instructions: ManualPaymentInstructions
+    instructions: ManualPaymentInstructions | null
     claim_token: string
     marketing?: MarketingResolvedContext
   }>
@@ -233,6 +241,20 @@ export async function registerCustomerAccount(input: {
   turnstileToken?: string
 }) {
   return (await getCommerceBackend()).registerCustomerAccount(input)
+}
+
+export async function requestCustomerAccountPasswordReset(input: {
+  email: string
+  turnstileToken?: string
+}) {
+  return (await getCommerceBackend()).requestCustomerAccountPasswordReset(input)
+}
+
+export async function confirmCustomerAccountPasswordReset(input: {
+  token: string
+  password: string
+}) {
+  return (await getCommerceBackend()).confirmCustomerAccountPasswordReset(input)
 }
 
 export async function startGoogleCustomerAccountLogin() {

@@ -14,6 +14,9 @@ export type ProductVariant = {
   reserved_quantity?: number
   sold_quantity?: number
   is_in_stock?: boolean
+  purchase_available?: boolean
+  is_backorderable?: boolean
+  availability_policy?: string
   calculated_price?: MoneyAmount
 }
 
@@ -121,6 +124,9 @@ export type PaymentAttempt = {
   status: "pending" | "paid" | "failed" | "expired" | "partial" | "refunded"
   provider_code: string
   paid_at?: string | null
+  payment_url?: string | null
+  qr_code_url?: string | null
+  expires_at?: string | null
   order_access_claimed_at?: string | null
   order_access_claim_token_hint?: string | null
   payment_finalized_at?: string | null

@@ -29,6 +29,8 @@ export function persistPendingPaymentState(
       PENDING_PAYMENT_INSTRUCTIONS_KEY,
       JSON.stringify(instructions)
     )
+  } else {
+    window.sessionStorage.removeItem(PENDING_PAYMENT_INSTRUCTIONS_KEY)
   }
 
   clearLegacyPendingPaymentState()

@@ -37,12 +37,43 @@ export async function handlePaymentWebhook(
     return
   }
 
+  if (webhook.status === "pending") {
+    res.status(202).json({
+      ignored: true,
+      provider_order_id: webhook.providerOrderId,
+      status: webhook.status,
+    })
+    return
+  }
+
   if (webhook.status !== "paid") {
     const existingAttempt =
       await paymentRouter.retrievePaymentAttemptByProviderOrderId({
         providerOrderId: webhook.providerOrderId,
         providerCode: input.providerCode,
       })
+    if (existingAttempt.status === "paid") {
+      await emitAuditLog(req.scope, {
+        actorType: "webhook",
+        action: `payment_attempt.webhook_${webhook.status}_ignored`,
+        entityType: "payment_attempt",
+        entityId: existingAttempt.id,
+        riskLevel: "medium",
+        metadata: {
+          provider_code: input.providerCode,
+          provider_order_id: existingAttempt.provider_order_id,
+          status: existingAttempt.status,
+        },
+      })
+
+      res.status(202).json({
+        attempt: existingAttempt,
+        ignored: true,
+        reason: "attempt_already_paid",
+      })
+      return
+    }
+
     const callbackPayload = {
       source: input.source,
       provider_code: input.providerCode,

@@ -88,11 +88,14 @@ describe("POST /store/carts/:cart_id/payments", () => {
       },
       paidAttempts: [],
     })
+    runWorkflowMock.mockRejectedValue(
+      new Error("Cart is already completed and cannot accept a new payment attempt")
+    )
 
     await expect(POST(req as any, res as any)).rejects.toThrow(
       "already completed"
     )
-    expect(runWorkflowMock).not.toHaveBeenCalled()
+    expect(runWorkflowMock).toHaveBeenCalledTimes(1)
   })
 
   it("rejects creating payment attempt when payment is already confirmed", async () => {
@@ -112,11 +115,14 @@ describe("POST /store/carts/:cart_id/payments", () => {
         },
       ],
     })
+    runWorkflowMock.mockRejectedValue(
+      new Error("Payment is already confirmed for this cart")
+    )
 
     await expect(POST(req as any, res as any)).rejects.toThrow(
       "Payment is already confirmed for this cart"
     )
-    expect(runWorkflowMock).not.toHaveBeenCalled()
+    expect(runWorkflowMock).toHaveBeenCalledTimes(1)
   })
 
   it("creates payment attempt for open cart and returns normalized response", async () => {
@@ -146,6 +152,9 @@ describe("POST /store/carts/:cart_id/payments", () => {
           currency: "usd",
           status: "pending",
           provider_code: "manual",
+          payment_url: null,
+          qr_code_url: null,
+          expires_at: null,
         },
         instructions: {
           title: "Manual payment pending",
@@ -171,6 +180,9 @@ describe("POST /store/carts/:cart_id/payments", () => {
         currency: "usd",
         status: "pending",
         provider_code: "manual",
+        payment_url: null,
+        qr_code_url: null,
+        expires_at: null,
       },
       instructions: {
         title: "Manual payment pending",

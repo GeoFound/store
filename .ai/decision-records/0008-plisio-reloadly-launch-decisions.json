@@ -1,0 +1,25 @@
+{
+  "id": "ADR-0008",
+  "status": "accepted",
+  "date": "2026-06-09",
+  "title": "Launch with Plisio crypto payments and Reloadly-first supplier procurement",
+  "context": "Production readiness review found that payment-router and supplier modules existed, but real payment channel, provider webhook verification, live smoke evidence, refund policy, supplier stability evidence, and digital goods exception handling still needed operator decisions.",
+  "decision": "Use Plisio as the first real payment provider for cryptocurrency-only checkout. Payment attempts create immediate Plisio invoices and do not add credit-card acceptance. The default manual payment channel is not public; refunds are manual from the payment provider/admin process. Reloadly is the first live supplier path, while supplier auto procurement remains disabled in production profiles and backend runtime env until sandbox and live smoke evidence exists. Out-of-stock checkout is controlled by CHECKOUT_OUT_OF_STOCK_POLICY: block refuses payment, while allow_supplier_backorder allows payment only for variants with supplier metadata or enabled supplier mappings. Duplicate delivery creation is treated as idempotent with the first active delivery kept. Invalid delivered credentials enter after-sales review, replacement is attempted first, and manual refund is used only when replacement is not possible.",
+  "consequences": [
+    "Production backend configuration now requires PLISIO_API_KEY and PLISIO_CALLBACK_BASE_URL.",
+    "Storefront checkout can expose Plisio only when the provider is configured.",
+    "Payment webhooks must verify Plisio verify_hash and use the JSON callback path.",
+    "Credit-card provider integration remains out of scope for this launch.",
+    "Manual payment provider remains available for controlled admin operations but is disabled as a default public checkout channel.",
+    "Reloadly live enablement still requires real provider sandbox/prod evidence before production auto procurement is enabled.",
+    "Out-of-stock checkout behavior is no longer a prose-only decision; it is a backend/profile option surfaced in ops-control."
+  ],
+  "evidence": [
+    "conversation:2026-06-09-user-payment-supplier-decisions",
+    "apps/backend/src/modules/payment-router/providers/plisio.ts",
+    "apps/backend/src/platform-adapters/defaults.ts",
+    "profiles/sites/site-1/production/site.json",
+    "profiles/sites/jp-cards/production/site.json",
+    "docs/ops/supplier-procurement.md"
+  ]
+}

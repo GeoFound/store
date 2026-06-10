@@ -1,7 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 import {
+  confirmCustomerAccountPasswordReset,
   loginCustomerAccount,
   registerCustomerAccount,
+  requestCustomerAccountPasswordReset,
 } from "./commerce-medusa"
 
 describe("commerce-medusa account auth", () => {
@@ -56,6 +58,50 @@ describe("commerce-medusa account auth", () => {
           first_name: "Ada",
           last_name: "Lovelace",
           turnstile_token: "turnstile-register-token",
+        }),
+      })
+    )
+  })
+
+  it("sends a Turnstile token with password reset requests", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(jsonResponse({ ok: true }))
+
+    await requestCustomerAccountPasswordReset({
+      email: "buyer@example.com",
+      turnstileToken: "turnstile-reset-token",
+    })
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/account/password-reset/request",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          email: "buyer@example.com",
+          turnstile_token: "turnstile-reset-token",
+        }),
+      })
+    )
+  })
+
+  it("sends token and password with password reset confirmation", async () => {
+    const fetchMock = vi
+      .spyOn(globalThis, "fetch")
+      .mockResolvedValue(jsonResponse({ ok: true }))
+
+    await confirmCustomerAccountPasswordReset({
+      token: "reset-token",
+      password: "password-123",
+    })
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/account/password-reset/confirm",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({
+          token: "reset-token",
+          password: "password-123",
         }),
       })
     )

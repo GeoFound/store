@@ -1,4 +1,5 @@
 import { manualPaymentProvider } from "../modules/payment-router/providers/manual"
+import { plisioPaymentProvider } from "../modules/payment-router/providers/plisio"
 import { credentialInventoryHandler } from "../modules/credential-inventory/handler"
 import { credentialDeliveryHandler } from "./credential-delivery"
 import { manualDeliveryHandler } from "../modules/digital-delivery/handler"
@@ -64,8 +65,8 @@ export function registerDefaultPlatformCapabilities(
   registry.registerPlugin<PaymentProvider>({
     manifest: {
       ...PAYMENT_ROUTER_PLUGIN_MANIFEST,
-      title: "Manual Payment Provider",
-      description: "Built-in manual payment capability.",
+      title: "Built-in Payment Providers",
+      description: "Built-in manual and Plisio payment capabilities.",
     },
     contracts: [
       {
@@ -76,6 +77,15 @@ export function registerDefaultPlatformCapabilities(
         priority: 100,
         enabled: true,
         implementation: manualPaymentProvider,
+      },
+      {
+        capability: "payment-provider",
+        name: plisioPaymentProvider.code,
+        pluginId: PAYMENT_ROUTER_PLUGIN_MANIFEST.id,
+        version: "v1",
+        priority: 110,
+        enabled: true,
+        implementation: plisioPaymentProvider,
       },
     ],
   })

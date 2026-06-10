@@ -47,6 +47,20 @@ describe("checkout pending payment storage", () => {
     expect(window.sessionStorage.getItem(ATTEMPT_KEY)).toBe("pay_legacy")
   })
 
+  it("clears stale instructions when the next payment has no manual instructions", () => {
+    persistPendingPaymentState("pay_manual", "claim_manual", {
+      title: "Manual payment",
+      body: "Send payment",
+      reference: "ref_1",
+    })
+
+    persistPendingPaymentState("pay_crypto", "claim_crypto", null)
+
+    expect(window.sessionStorage.getItem(ATTEMPT_KEY)).toBe("pay_crypto")
+    expect(window.sessionStorage.getItem(CLAIM_TOKEN_KEY)).toBe("claim_crypto")
+    expect(window.sessionStorage.getItem(INSTRUCTIONS_KEY)).toBeNull()
+  })
+
   it("clears current and legacy pending payment state", () => {
     window.sessionStorage.setItem(ATTEMPT_KEY, "pay_session")
     window.localStorage.setItem(ATTEMPT_KEY, "pay_legacy")

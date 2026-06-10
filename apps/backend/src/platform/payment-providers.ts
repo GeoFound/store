@@ -42,7 +42,7 @@ export type CreateProviderPaymentResult = {
 
 export type PaymentWebhookResult = {
   providerOrderId: string
-  status: "paid" | "failed" | "expired"
+  status: "pending" | "paid" | "failed" | "expired"
   payload: Record<string, unknown>
 }
 
@@ -59,6 +59,7 @@ export type PaymentQueryResult = {
 
 export interface PaymentProvider {
   code: string
+  isConfigured?(): boolean
   createPayment(
     input: CreateProviderPaymentInput
   ): Promise<CreateProviderPaymentResult> | CreateProviderPaymentResult

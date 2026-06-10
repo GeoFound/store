@@ -195,10 +195,7 @@ export const replayAnalyticsDispatchBodySchema = z.object({
   dispatch_id: z.string().trim().min(1),
 })
 
-export const paymentWebhookSchema = z.object({
-  provider_order_id: z.string().trim().min(1),
-  status: z.enum(["paid", "failed", "expired"]),
-})
+export const paymentWebhookSchema = z.object({}).passthrough()
 
 export const manualPaymentWebhookSchema = z.object({
   provider_order_id: z.string().trim().min(1),

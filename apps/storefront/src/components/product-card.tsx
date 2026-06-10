@@ -77,7 +77,17 @@ function pickDisplayVariant(
   }
 
   return (
-    variants.find((variant) => variant.is_in_stock !== false && Boolean(variant.available_quantity)) ||
+    variants.find((variant) => isVariantPurchasable(variant)) ||
     variants[0]
   )
+}
+
+function isVariantPurchasable(
+  variant: NonNullable<Product["variants"]>[number]
+) {
+  if (typeof variant.purchase_available === "boolean") {
+    return variant.purchase_available
+  }
+
+  return variant.is_in_stock !== false && Boolean(variant.available_quantity)
 }

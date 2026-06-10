@@ -322,6 +322,32 @@ export async function registerCustomerAccount(input: {
   })
 }
 
+export async function requestCustomerAccountPasswordReset(input: {
+  email: string
+  turnstileToken?: string
+}): Promise<void> {
+  await storefrontFetch<{ ok: boolean }>("/api/account/password-reset/request", {
+    method: "POST",
+    body: {
+      email: input.email,
+      turnstile_token: input.turnstileToken || undefined,
+    },
+  })
+}
+
+export async function confirmCustomerAccountPasswordReset(input: {
+  token: string
+  password: string
+}): Promise<void> {
+  await storefrontFetch<{ ok: boolean }>("/api/account/password-reset/confirm", {
+    method: "POST",
+    body: {
+      token: input.token,
+      password: input.password,
+    },
+  })
+}
+
 export async function startGoogleCustomerAccountLogin(): Promise<{
   location?: string
 }> {
@@ -479,6 +505,39 @@ export async function listCustomerAccountOrdersWithMedusa(token: string) {
   return data.orders || []
 }
 
+export async function requestCustomerPasswordResetWithMedusa(input: {
+  email: string
+  resetUrl: string
+}) {
+  await medusaEmptyFetch("/auth/customer/emailpass/reset-password", {
+    method: "POST",
+    publishable: false,
+    accept: "text/plain",
+    body: {
+      identifier: input.email,
+      metadata: {
+        reset_password_url: input.resetUrl,
+        resetPasswordUrl: input.resetUrl,
+        actor: "customer",
+      },
+    },
+  })
+}
+
+export async function confirmCustomerPasswordResetWithMedusa(input: {
+  token: string
+  password: string
+}) {
+  await medusaEmptyFetch("/auth/customer/emailpass/update", {
+    method: "POST",
+    publishable: false,
+    token: input.token,
+    body: {
+      password: input.password,
+    },
+  })
+}
+
 export async function listPaymentMethods(input?: {
   amount?: number
   currency?: string
@@ -508,7 +567,7 @@ export async function createCartPayment(input: {
   analytics?: AnalyticsCheckoutContext
 }): Promise<{
   attempt: PaymentAttempt
-  instructions: ManualPaymentInstructions
+  instructions: ManualPaymentInstructions | null
   claim_token: string
   marketing?: MarketingResolvedContext
 }> {
@@ -692,6 +751,42 @@ async function readResponseError(response: Response, fallback: string) {
   }
 }
 
+async function medusaEmptyFetch(
+  path: string,
+  options: FetchOptions & { accept?: string } = {}
+) {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    Accept: options.accept || "application/json",
+  }
+  const usePublishable = options.publishable ?? path.startsWith("/store")
+
+  if (usePublishable) {
+    if (!medusaPublishableKey) {
+      throw new Error("Missing NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY")
+    }
+
+    headers["x-publishable-api-key"] = medusaPublishableKey
+  }
+
+  if (options.token) {
+    headers.authorization = `Bearer ${options.token}`
+  }
+
+  const response = await fetch(`${medusaBackendUrl}${path}`, {
+    method: options.method || "GET",
+    cache: options.cache || "no-store",
+    headers,
+    body: options.body ? JSON.stringify(options.body) : undefined,
+  })
+
+  if (!response.ok) {
+    throw new Error(
+      await readResponseError(response, `Medusa request failed: ${response.status}`)
+    )
+  }
+}
+
 function isExistingIdentityError(error: unknown) {
   const message = error instanceof Error ? error.message : String(error)
 
@@ -783,6 +878,9 @@ async function mapProductsWithAvailability(
               reserved_quantity: availability.reserved_count,
               sold_quantity: availability.sold_count,
               is_in_stock: availability.is_in_stock,
+              purchase_available: availability.purchase_available,
+              is_backorderable: availability.backorderable,
+              availability_policy: availability.availability_policy,
             }
           : variant
       }),
@@ -832,6 +930,10 @@ function requiresCredentialInventory(product: Product) {
 }
 
 function isVariantOutOfStock(variant: NonNullable<Product["variants"]>[number]) {
+  if (typeof variant.purchase_available === "boolean") {
+    return !variant.purchase_available
+  }
+
   return variant.is_in_stock === false || !variant.available_quantity
 }
 
@@ -843,4 +945,7 @@ type VariantAvailability = {
   sold_count: number
   locked_count: number
   is_in_stock: boolean
+  purchase_available?: boolean
+  backorderable?: boolean
+  availability_policy?: string
 }

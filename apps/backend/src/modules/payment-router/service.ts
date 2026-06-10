@@ -15,36 +15,35 @@ class PaymentRouterModuleService extends MedusaService({
   PaymentAttempt,
 }) {
   async ensureDefaultChannels() {
-    const existing = await this.listPaymentChannels({
-      code: "manual",
+    await this.ensureDefaultChannel({
+      code: "plisio",
+      name: "Plisio Crypto",
+      display_name: "Crypto payment",
+      type: "crypto",
+      enabled: true,
+      priority: 10,
+      provider_code: "plisio",
+      health_status: "healthy",
+      config_json: {
+        instructions:
+          "Pay immediately on the Plisio invoice page. Orders are delivered after blockchain confirmation.",
+      },
     })
 
-    if (existing.length) {
-      return
-    }
-
-    try {
-      await this.createPaymentChannels({
-        code: "manual",
-        name: "Manual Payment",
-        display_name: "Manual payment",
-        type: "manual",
-        enabled: true,
-        priority: 100,
-        provider_code: "manual",
-        health_status: "healthy",
-        config_json: {
-          instructions:
-            "Submit the order, then contact support with the payment reference.",
-        },
-      })
-    } catch (error) {
-      if (isUniqueConstraintViolation(error)) {
-        return
-      }
-
-      throw error
-    }
+    await this.ensureDefaultChannel({
+      code: "manual",
+      name: "Manual Payment",
+      display_name: "Manual payment",
+      type: "manual",
+      enabled: false,
+      priority: 100,
+      provider_code: "manual",
+      health_status: "healthy",
+      config_json: {
+        instructions:
+          "Submit the order, then contact support with the payment reference.",
+      },
+    })
   }
 
   async listAvailablePaymentChannels(input?: {
@@ -66,11 +65,17 @@ class PaymentRouterModuleService extends MedusaService({
     )
 
     return channels.filter((channel) => {
-      if (!hasPaymentProvider(channel.provider_code)) {
+      const provider = getPaymentProvider(channel.provider_code)
+
+      if (!provider) {
         return false
       }
 
       if (channel.health_status === "down") {
+        return false
+      }
+
+      if (provider.isConfigured && !provider.isConfigured()) {
         return false
       }
 
@@ -189,6 +194,9 @@ class PaymentRouterModuleService extends MedusaService({
       status: attempt.status,
       provider_code: attempt.provider_code,
       paid_at: attempt.paid_at,
+      payment_url: attempt.payment_url,
+      qr_code_url: attempt.qr_code_url,
+      expires_at: attempt.expires_at,
     }
   }
 
@@ -303,6 +311,36 @@ class PaymentRouterModuleService extends MedusaService({
         MedusaError.Types.NOT_ALLOWED,
         `Payment provider ${providerCode} is not registered`
       )
+    }
+  }
+
+  private async ensureDefaultChannel(input: {
+    code: string
+    name: string
+    display_name: string
+    type: "manual" | "aggregate_cn" | "crypto"
+    enabled: boolean
+    priority: number
+    provider_code: string
+    health_status: "healthy" | "degraded" | "down"
+    config_json: Record<string, unknown>
+  }) {
+    const existing = await this.listPaymentChannels({
+      code: input.code,
+    })
+
+    if (existing.length) {
+      return
+    }
+
+    try {
+      await this.createPaymentChannels(input)
+    } catch (error) {
+      if (isUniqueConstraintViolation(error)) {
+        return
+      }
+
+      throw error
     }
   }
 }

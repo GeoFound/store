@@ -2,6 +2,31 @@
 
 Supplier procurement is the external-resource layer for API-backed virtual goods such as Reloadly gift cards, Reloadly airtime, G2A keys, and future suppliers.
 
+## Launch Position
+
+The first live supplier path is Reloadly. Keep
+`supplier_auto_procurement_enabled=false` in production profiles and
+`SUPPLIER_AUTO_PROCUREMENT_ENABLED=false` in backend runtime env until Reloadly
+sandbox and live smoke evidence exists for the exact product families and regions
+being sold.
+
+When automatic procurement is disabled, supplier-backed paid orders create a
+`needs_review` procurement record and a pending delivery. Failed automatic
+procurement is handled manually: leave the supplier order in `failed`,
+`needs_review`, or `pending`, review the admin supplier queue, retry only after
+checking provider idempotency/provider order status, then replace delivery
+credentials or issue a manual refund from the payment provider dashboard.
+
+Digital goods stock policy for launch is a backend option:
+
+- `CHECKOUT_OUT_OF_STOCK_POLICY=block` refuses payment when local credential
+  inventory cannot be reserved.
+- `CHECKOUT_OUT_OF_STOCK_POLICY=allow_supplier_backorder` allows payment only
+  when the variant has supplier metadata or an enabled supplier mapping.
+- Treat duplicate delivery creation as idempotent; keep the first active delivery.
+- For invalid credentials, open after-sales review, attempt replacement first, and
+  use manual refund only when replacement is not possible.
+
 ## Boundaries
 
 - `supplier-provider` talks to a supplier API.

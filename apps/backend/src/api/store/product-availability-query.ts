@@ -7,6 +7,7 @@ export type VariantInventoryContext = {
   variantId: string
   productType: string | null
   handlerCode: string
+  metadata: Record<string, unknown>
 }
 
 export async function resolveVariantInventoryContexts(
@@ -101,6 +102,7 @@ export async function resolveVariantInventoryContexts(
         variantId,
         productType: productType || template?.productType || null,
         handlerCode,
+        metadata,
       }
     })
   )

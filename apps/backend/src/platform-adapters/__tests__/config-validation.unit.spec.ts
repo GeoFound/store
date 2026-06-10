@@ -54,7 +54,7 @@ describe("platform profile configuration validation", () => {
   it("rejects profiles without a real payment provider", () => {
     const result = validatePlatformProfileConfig({
       disabled_contracts: {
-        "payment-provider": ["manual"],
+        "payment-provider": ["manual", "plisio"],
       },
     })
 

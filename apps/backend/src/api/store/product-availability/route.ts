@@ -9,6 +9,10 @@ import {
   resolveVariantInventoryContexts,
   toVariantIds,
 } from "../product-availability-query"
+import {
+  getCheckoutPolicy,
+  hasSupplierBackorderPath,
+} from "../../../platform-adapters/checkout-policy"
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const query = (req.validatedQuery || req.query) as {
@@ -24,6 +28,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   }
 
   const variantContexts = await resolveVariantInventoryContexts(req, variantIds)
+  const checkoutPolicy = getCheckoutPolicy()
   const inventoryScope = createInventoryHandlerScope(req.scope)
   const availabilityByVariantId = new Map<string, InventoryAvailability>()
   const handlerToVariantIds = new Map<string, Set<string>>()
@@ -69,31 +74,62 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     )
   )
 
-  const availability = variantContexts.map((context) => {
-    if (context.handlerCode === "noop") {
-      return {
-        variant_id: context.variantId,
-        total_count: 0,
-        available_count: Number.MAX_SAFE_INTEGER,
-        reserved_count: 0,
-        sold_count: 0,
-        locked_count: 0,
-        is_in_stock: true,
+  const availability = await Promise.all(
+    variantContexts.map(async (context) => {
+      if (context.handlerCode === "noop") {
+        return {
+          variant_id: context.variantId,
+          total_count: 0,
+          available_count: Number.MAX_SAFE_INTEGER,
+          reserved_count: 0,
+          sold_count: 0,
+          locked_count: 0,
+          is_in_stock: true,
+          purchase_available: true,
+          backorderable: false,
+          availability_policy: "no_inventory",
+        }
       }
-    }
 
-    return (
-      availabilityByVariantId.get(context.variantId) || {
-        variant_id: context.variantId,
-        total_count: 0,
-        available_count: 0,
-        reserved_count: 0,
-        sold_count: 0,
-        locked_count: 0,
-        is_in_stock: false,
+      const base =
+        availabilityByVariantId.get(context.variantId) || {
+          variant_id: context.variantId,
+          total_count: 0,
+          available_count: 0,
+          reserved_count: 0,
+          sold_count: 0,
+          locked_count: 0,
+          is_in_stock: false,
+        }
+
+      const canUseSupplierBackorder =
+        checkoutPolicy.outOfStockPolicy === "allow_supplier_backorder" &&
+        !base.is_in_stock
+          ? await hasSupplierBackorderPath({
+              scope: req.scope,
+              productVariantId: context.variantId,
+              metadata: context.metadata,
+            })
+          : false
+
+      if (canUseSupplierBackorder) {
+        return {
+          ...base,
+          is_in_stock: true,
+          purchase_available: true,
+          backorderable: true,
+          availability_policy: "allow_supplier_backorder",
+        }
       }
-    )
-  })
+
+      return {
+        ...base,
+        purchase_available: base.is_in_stock,
+        backorderable: false,
+        availability_policy: "inventory",
+      }
+    })
+  )
 
   res.json({
     availability,
