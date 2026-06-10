@@ -95,6 +95,13 @@ STOREFRONT_HEALTH_URL=http://127.0.0.1:8000/api/health \
 ```bash
 STOREFRONT_PUBLIC_URL=https://example.com \
 API_PUBLIC_URL=https://api.example.com \
+EXPECT_CLOUDFLARE=true \
+CLOUDFLARE_ZONE_ID=<zone-id> \
+CLOUDFLARE_API_TOKEN=<token-with-dns-read> \
+  bash scripts/deploy/dns-preflight.sh
+
+STOREFRONT_PUBLIC_URL=https://example.com \
+API_PUBLIC_URL=https://api.example.com \
 EXPECT_CLOUDFLARE=false \
   bash scripts/deploy/edge-preflight.sh
 ```
@@ -109,6 +116,15 @@ REQUIRE_CLOUDFLARE_SSL_MODE=strict \
 CLOUDFLARE_ZONE_ID=<zone-id> \
 CLOUDFLARE_API_TOKEN=<token-with-zone-settings-read> \
   bash scripts/deploy/edge-preflight.sh
+```
+
+Verify managed WAF rules:
+
+```bash
+CLOUDFLARE_ZONE_ID=<zone-id> \
+CLOUDFLARE_API_TOKEN=<token-with-rulesets-read> \
+CLOUDFLARE_WAF_MANAGED_RULES_ENABLED=true \
+  bash scripts/deploy/cloudflare-waf-preflight.sh
 ```
 
 6. Verify admin edge protection and real rate limiting:

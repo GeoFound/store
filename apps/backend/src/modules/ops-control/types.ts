@@ -4,7 +4,16 @@ export type OpsControlSetting = {
   key: string
   label: string
   owner: string
-  scope: "backend" | "storefront" | "deploy" | "cloudflare" | "vps" | "ai"
+  scope:
+    | "backend"
+    | "storefront"
+    | "deploy"
+    | "cloudflare"
+    | "vps"
+    | "ai"
+    | "payment"
+    | "supplier"
+    | "customer"
   configured: boolean
   secret: boolean
   value: string | boolean | number | null
@@ -31,6 +40,21 @@ export type OpsControlSection = {
   findings: OpsControlFinding[]
 }
 
+export type OpsControlPolicySurface = {
+  id: string
+  title: string
+  owner: string
+  backend_panel_required: boolean
+  production_gate_required: boolean
+  human_choice_required: boolean
+  admin_route: string
+  control_panel_section: string
+  profile_controls: string[]
+  evidence_fields: string[]
+  runtime_commands: string[]
+  config_keys: string[]
+}
+
 export type OpsControlDashboardSnapshot = {
   generated_at: string
   module: "ops-control"
@@ -39,10 +63,21 @@ export type OpsControlDashboardSnapshot = {
     critical_findings: number
     warning_findings: number
     human_gate_actions: number
+    control_panel_surface_count: number
+    gated_surface_count: number
   }
+  launch_readiness: OpsControlSection
   security: OpsControlSection
   maintenance: OpsControlSection
+  customer: OpsControlSection
+  commerce: OpsControlSection
   ai_ops: OpsControlSection
+  control_panel_policy: {
+    version: string
+    production_control_rule: string
+    forbidden_surface_count: number
+    required_surfaces: OpsControlPolicySurface[]
+  }
   findings: OpsControlFinding[]
   operator_actions: Array<{
     id: string

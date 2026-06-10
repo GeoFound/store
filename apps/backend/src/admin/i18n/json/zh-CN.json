@@ -492,12 +492,27 @@
       "humanGate": "人工门禁",
       "humanGateDetail": "需要明确批准的动作",
       "status": "状态",
+      "surfaces": "面板覆盖项",
+      "surfacesDetail": "{{count}} 项生产门禁",
       "warnings": "提醒",
       "warningDetail": "上线前需要验证的项目"
+    },
+    "policy": {
+      "adminRoute": "后台路由",
+      "description": "生产关键能力必须出现在后端控制面板，并映射到可执行门禁。",
+      "evidenceFields": "证据字段",
+      "gated": "已纳入门禁",
+      "runtimeCommands": "运行命令",
+      "section": "面板分区",
+      "title": "控制面板门禁策略",
+      "visible": "可见"
     },
     "refreshing": "刷新中...",
     "sections": {
       "aiOps": "AI 运维",
+      "commerce": "支付与供应商",
+      "customer": "客户访问",
+      "launchReadiness": "上线就绪",
       "maintenance": "维护",
       "security": "安全"
     },

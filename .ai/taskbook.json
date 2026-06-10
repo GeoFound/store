@@ -31,7 +31,7 @@
       "owner": "ai-with-human-decision",
       "trigger": "before go-live, provider change, domain change, or deploy pipeline change",
       "commands": ["pnpm ai:production", "pnpm site:validate:all", "pnpm site:evidence -- --site-id <id> --site-env staging", "pnpm site:gate -- --site-id <id> --site-env production", "pnpm ai:evidence:full"],
-      "evidence": ["production readiness ok=true", "site lifecycle contract valid", "staging evidence report written", "production gate ready_for_promotion=true", "API contract snapshot passed", "schema migration baseline passed", "production config template coverage passed", "CI passed", "profile validation passed", "health gate passed", "edge preflight passed", "regression smoke passed"]
+      "evidence": ["production readiness ok=true", "site lifecycle contract valid", "staging evidence report written", "production gate ready_for_promotion=true", "API contract snapshot passed", "schema migration baseline passed", "production config template coverage passed", "CI passed", "profile validation passed", "health gate passed", "DNS preflight passed", "edge preflight passed", "Cloudflare WAF preflight passed", "admin edge protection passed", "rate-limit smoke passed", "regression smoke passed"]
     },
     {
       "id": "multi-site-evolution",

@@ -1,3 +1,12 @@
+import { createAiOpsSnapshot } from "./ai-ops-snapshot"
+import { createCommerceSnapshot } from "./commerce-snapshot"
+import { createCustomerSnapshot } from "./customer-snapshot"
+import {
+  createControlPanelPolicySnapshot,
+  createLaunchReadinessSnapshot,
+} from "./launch-readiness-snapshot"
+import { OPERATOR_ACTIONS } from "./operator-actions"
+import { ADMIN_CONTROL_PANEL_POLICY } from "../../platform/admin-control-panel-policy"
 import type {
   OpsControlDashboardSnapshot,
   OpsControlFinding,
@@ -19,12 +28,18 @@ const SECRET_KEYS = new Set([
 class OpsControlModuleService {
   getDashboardSnapshot(input?: { env?: Env }): OpsControlDashboardSnapshot {
     const env = input?.env || process.env
+    const launchReadiness = createLaunchReadinessSnapshot({ env })
     const security = this.getSecuritySnapshot({ env })
     const maintenance = this.getMaintenanceSnapshot({ env })
-    const aiOps = this.getAiOpsSnapshot({ env })
+    const customer = this.getCustomerSnapshot({ env })
+    const commerce = this.getCommerceSnapshot({ env })
+    const aiOps = createAiOpsSnapshot({ env })
     const findings = [
+      ...launchReadiness.findings,
       ...security.findings,
       ...maintenance.findings,
+      ...customer.findings,
+      ...commerce.findings,
       ...aiOps.findings,
     ].sort(compareFindings)
 
@@ -32,41 +47,33 @@ class OpsControlModuleService {
       generated_at: new Date().toISOString(),
       module: "ops-control",
       summary: {
-        status: summarizeStatus([security.status, maintenance.status, aiOps.status]),
+        status: summarizeStatus([
+          launchReadiness.status,
+          security.status,
+          maintenance.status,
+          customer.status,
+          commerce.status,
+          aiOps.status,
+        ]),
         critical_findings: findings.filter((finding) => finding.severity === "critical").length,
         warning_findings: findings.filter((finding) => finding.severity === "warning").length,
         human_gate_actions: findings.filter((finding) => finding.human_gate).length,
+        control_panel_surface_count:
+          ADMIN_CONTROL_PANEL_POLICY.requiredProductionSurfaces.length,
+        gated_surface_count:
+          ADMIN_CONTROL_PANEL_POLICY.requiredProductionSurfaces.filter(
+            (surface) => surface.productionGateRequired
+          ).length,
       },
+      launch_readiness: launchReadiness,
       security,
       maintenance,
+      customer,
+      commerce,
       ai_ops: aiOps,
+      control_panel_policy: createControlPanelPolicySnapshot(),
       findings,
-      operator_actions: [
-        {
-          id: "deploy.rollback",
-          title: "Rollback deployment",
-          risk: "high",
-          requires_human_confirmation: true,
-          available_now: true,
-          evidence_required: ["failing release id", "target release id", "pnpm deploy:health after rollback"],
-        },
-        {
-          id: "system.restart-services",
-          title: "Restart production services",
-          risk: "medium",
-          requires_human_confirmation: true,
-          available_now: false,
-          evidence_required: ["systemd unit status before restart", "journal error excerpt", "pnpm deploy:health after restart"],
-        },
-        {
-          id: "backup.restore-test",
-          title: "Run backup restore proof",
-          risk: "medium",
-          requires_human_confirmation: true,
-          available_now: false,
-          evidence_required: ["latest backup artifact", "separate restore target", "restore command output"],
-        },
-      ],
+      operator_actions: OPERATOR_ACTIONS,
     }
   }
 
@@ -227,6 +234,18 @@ class OpsControlModuleService {
         title: "Cloudflare SSL mode is not strict",
         detail: "Production should use Cloudflare Full (strict), never Flexible.",
         recommended_action: "Set REQUIRE_CLOUDFLARE_SSL_MODE=strict and configure the Cloudflare zone SSL/TLS mode to Full (strict).",
+        human_gate: true,
+      }))
+    }
+
+    if (!truthy(env.CLOUDFLARE_WAF_MANAGED_RULES_ENABLED)) {
+      findings.push(finding({
+        id: "security.cloudflare-waf-not-enabled",
+        severity: "warning",
+        owner: "ops-control",
+        title: "Cloudflare managed WAF rules are not marked enabled",
+        detail: "Managed WAF rules must be enabled and verified before production promotion.",
+        recommended_action: "Enable Cloudflare managed WAF rules, run pnpm deploy:waf, and set CLOUDFLARE_WAF_MANAGED_RULES_ENABLED=true after verification.",
         human_gate: true,
       }))
     }
@@ -471,78 +490,18 @@ class OpsControlModuleService {
     })
   }
 
-  getAiOpsSnapshot(input?: { env?: Env }): OpsControlSection {
-    const env = input?.env || process.env
-    const settings: OpsControlSetting[] = [
-      boolSetting(env, "AI_ENABLED", {
-        label: "AI runtime enabled",
-        owner: "ai-core",
-        scope: "ai",
-        recommended: false,
-      }),
-      valueSetting(env, "AI_DEFAULT_PROVIDER", {
-        label: "Default AI provider",
-        owner: "ai-core",
-        scope: "ai",
-        recommended: null,
-      }),
-      valueSetting(env, "AI_PROVIDER_CONFIGS_JSON", {
-        label: "AI provider configs",
-        owner: "ai-core",
-        scope: "ai",
-        recommended: null,
-        secret: true,
-      }),
-      boolSetting(env, "OPS_AI_REVIEW_ENABLED", {
-        label: "AI operations review",
-        owner: "ops-control",
-        scope: "ai",
-        recommended: true,
-      }),
-      boolSetting(env, "OPS_AI_AUTO_REMEDIATE_ENABLED", {
-        label: "AI auto remediation",
-        owner: "ops-control",
-        scope: "ai",
-        recommended: false,
-        notes: "Keep false unless a narrow command allow-list and approval gate are installed.",
-      }),
-    ]
-    const findings: OpsControlFinding[] = []
-
-    if (truthy(env.OPS_AI_AUTO_REMEDIATE_ENABLED)) {
-      findings.push(finding({
-        id: "ai-ops.auto-remediate-enabled",
-        severity: "critical",
-        owner: "ops-control",
-        title: "AI auto remediation is enabled",
-        detail: "Production AI maintenance should remain evidence-first with human confirmation for high-risk actions.",
-        recommended_action: "Set OPS_AI_AUTO_REMEDIATE_ENABLED=false unless an audited allow-list and approval flow are active.",
-        human_gate: true,
-      }))
-    }
-
-    if (!truthy(env.OPS_AI_REVIEW_ENABLED)) {
-      findings.push(finding({
-        id: "ai-ops.review-disabled",
-        severity: "warning",
-        owner: "ops-control",
-        title: "AI operations review is not marked enabled",
-        detail: "The backend will expose the ops review task, but scheduled review evidence is not marked active.",
-        recommended_action: "Run AI maintenance review from evidence snapshots and set OPS_AI_REVIEW_ENABLED=true after scheduling.",
-        human_gate: false,
-      }))
-    }
-
-    return section({
-      settings,
-      findings,
-      summary: {
-        ai_enabled: truthy(env.AI_ENABLED),
-        ai_ops_review_enabled: truthy(env.OPS_AI_REVIEW_ENABLED),
-        auto_remediation_enabled: truthy(env.OPS_AI_AUTO_REMEDIATE_ENABLED),
-      },
-    })
+  getCommerceSnapshot(input?: { env?: Env }): OpsControlSection {
+    return createCommerceSnapshot(input)
   }
+
+  getCustomerSnapshot(input?: { env?: Env }): OpsControlSection {
+    return createCustomerSnapshot(input)
+  }
+
+  getAiOpsSnapshot(input?: { env?: Env }): OpsControlSection {
+    return createAiOpsSnapshot(input)
+  }
+
 }
 
 export default OpsControlModuleService

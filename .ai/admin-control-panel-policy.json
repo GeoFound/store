@@ -1,6 +1,7 @@
 {
-  "version": "1.0.0",
-  "purpose": "Define which product and platform capabilities require a human-usable backend control panel surface.",
+  "version": "1.1.0",
+  "purpose": "Define which product and platform capabilities require a human-usable backend control panel surface, production gate mapping, and machine evidence.",
+  "productionControlRule": "Any capability that can affect launch, revenue, fulfillment, customer access, security, cost, provider state, data, backup, rollback, compliance, or a human production decision must appear in the backend control panel and must map to an executable gate or explicit evidence field before production promotion.",
   "admissionCriteria": [
     {
       "id": "external-provider",
@@ -36,6 +37,16 @@
       "id": "security-or-compliance",
       "title": "Security, audit, or compliance",
       "description": "The capability handles secrets, sensitive data, provider access, risk signals, or compliance-relevant records."
+    },
+    {
+      "id": "production-gate",
+      "title": "Production gate or launch decision",
+      "description": "The capability contributes to staging, production promotion, go-live, rollback, or irreversible runtime decisions."
+    },
+    {
+      "id": "runtime-evidence",
+      "title": "Runtime evidence",
+      "description": "The capability needs real runtime proof, smoke checks, provider probes, or generated evidence before it is safe to rely on."
     }
   ],
   "requiredSurface": [
@@ -65,9 +76,225 @@
       "description": "Expose recent activity, actor context, artifact references, and links to audit logs where available."
     },
     {
+      "id": "evidence",
+      "title": "Evidence",
+      "description": "Expose the command, timestamp, result, report path, or evidence reference used by production gates."
+    },
+    {
+      "id": "production-gates",
+      "title": "Production gates",
+      "description": "Show which site lifecycle controls and evidence fields block promotion."
+    },
+    {
       "id": "safe-empty-state",
       "title": "Safe empty state",
       "description": "Empty or disabled states must still explain readiness in operational terms and avoid pretending the capability is healthy."
+    }
+  ],
+  "forbiddenSurface": [
+    {
+      "id": "plaintext-secrets",
+      "title": "Plaintext secrets",
+      "description": "Never render API secrets, database URLs, Redis URLs, private keys, certificate private keys, or provider tokens."
+    },
+    {
+      "id": "arbitrary-command-execution",
+      "title": "Arbitrary command execution",
+      "description": "Never expose a free-form shell command input in the backend panel."
+    },
+    {
+      "id": "unguarded-irreversible-action",
+      "title": "Unguarded irreversible action",
+      "description": "Never allow go-live, rollback, DNS mutation, WAF mutation, Access mutation, data migration, or production write enablement without an explicit human gate and machine evidence."
+    },
+    {
+      "id": "human-attestation-as-proof",
+      "title": "Human attestation as proof",
+      "description": "Human confirmation is a decision input only; it must not replace executable runtime evidence."
+    }
+  ],
+  "requiredProductionSurfaces": [
+    {
+      "id": "launch-readiness",
+      "title": "Launch readiness",
+      "owner": "ops-control",
+      "backendPanelRequired": true,
+      "productionGateRequired": true,
+      "humanChoiceRequired": true,
+      "adminRoute": "/app/ops",
+      "controlPanelSection": "launch_readiness",
+      "profileControls": ["backend_control_panel_required", "runtime_health_required", "human_gate_required"],
+      "evidenceFields": ["last_backend_control_panel_ref", "last_runtime_health_ref", "human_gate_ref"],
+      "runtimeCommands": ["pnpm deploy:health"],
+      "configKeys": ["NODE_ENV", "PORT", "SITE_ID", "SITE_ENV", "COOKIE_SECRET", "JWT_SECRET", "DATABASE_URL", "REDIS_URL"]
+    },
+    {
+      "id": "site-tenancy",
+      "title": "Site tenancy and profile",
+      "owner": "profile-system",
+      "backendPanelRequired": true,
+      "productionGateRequired": true,
+      "humanChoiceRequired": true,
+      "adminRoute": "/app/ops",
+      "controlPanelSection": "launch_readiness",
+      "profileControls": ["backend_control_panel_required"],
+      "evidenceFields": ["last_backend_control_panel_ref"],
+      "runtimeCommands": ["pnpm site:validate:all"],
+      "configKeys": ["NEXT_PUBLIC_SITE_ID", "NEXT_PUBLIC_SITE_ENV", "TENANCY_MODE", "TENANT_ALLOWED_HOSTS", "TENANT_FAIL_ON_HOST_MISMATCH", "TENANT_SHARED_DATA_PLANE_READY"]
+    },
+    {
+      "id": "dns-cloudflare-edge",
+      "title": "DNS and Cloudflare edge",
+      "owner": "ops-control",
+      "backendPanelRequired": true,
+      "productionGateRequired": true,
+      "humanChoiceRequired": true,
+      "adminRoute": "/app/ops",
+      "controlPanelSection": "launch_readiness",
+      "profileControls": ["cloudflare_required", "dns_required", "cloudflare_ssl_strict_required", "edge_preflight_required"],
+      "evidenceFields": ["last_dns_ref", "last_cloudflare_ssl_ref", "last_edge_preflight_ref"],
+      "runtimeCommands": ["pnpm deploy:dns", "pnpm deploy:edge"],
+      "configKeys": ["STOREFRONT_PUBLIC_URL", "API_PUBLIC_URL", "EXPECT_CLOUDFLARE", "REQUIRE_CLOUDFLARE_SSL_MODE", "CLOUDFLARE_ZONE_ID", "CLOUDFLARE_API_TOKEN"]
+    },
+    {
+      "id": "edge-security",
+      "title": "WAF, Access, origin, and rate limits",
+      "owner": "security-guard",
+      "backendPanelRequired": true,
+      "productionGateRequired": true,
+      "humanChoiceRequired": true,
+      "adminRoute": "/app/ops",
+      "controlPanelSection": "security",
+      "profileControls": ["cloudflare_waf_required", "admin_edge_protection_required", "redis_rate_limit_smoke_required"],
+      "evidenceFields": ["last_cloudflare_waf_ref", "last_admin_edge_ref", "last_rate_limit_ref"],
+      "runtimeCommands": ["pnpm deploy:waf", "pnpm deploy:admin-edge", "pnpm deploy:rate-limit"],
+      "configKeys": ["ADMIN_CORS", "AUTH_CORS", "STORE_CORS", "SECURITY_RATE_LIMIT_STORE", "CLOUDFLARE_WAF_MANAGED_RULES_ENABLED", "CLOUDFLARE_ACCESS_ADMIN_ENABLED"]
+    },
+    {
+      "id": "payment-checkout",
+      "title": "Payment and checkout",
+      "owner": "payment-router",
+      "backendPanelRequired": true,
+      "productionGateRequired": true,
+      "humanChoiceRequired": true,
+      "adminRoute": "/app/payments",
+      "controlPanelSection": "commerce",
+      "profileControls": ["payment_provider_required", "regression_required"],
+      "evidenceFields": ["last_payment_provider_ref", "last_regression_ref"],
+      "runtimeCommands": ["pnpm deploy:regression"],
+      "configKeys": ["PLISIO_API_KEY", "PLISIO_CALLBACK_BASE_URL", "MANUAL_WEBHOOK_SECRET"]
+    },
+    {
+      "id": "supplier-fulfillment",
+      "title": "Supplier fulfillment",
+      "owner": "supplier-procurement",
+      "backendPanelRequired": true,
+      "productionGateRequired": true,
+      "humanChoiceRequired": true,
+      "adminRoute": "/app/suppliers",
+      "controlPanelSection": "commerce",
+      "profileControls": ["supplier_readiness_required"],
+      "evidenceFields": ["last_supplier_readiness_ref"],
+      "runtimeCommands": ["pnpm deploy:regression"],
+      "configKeys": ["SUPPLIER_ENCRYPTION_KEY", "SUPPLIER_AUTO_PROCUREMENT_ENABLED", "RELOADLY_CLIENT_ID", "RELOADLY_CLIENT_SECRET", "G2A_API_KEY"]
+    },
+    {
+      "id": "inventory-delivery",
+      "title": "Inventory and digital delivery",
+      "owner": "digital-delivery",
+      "backendPanelRequired": true,
+      "productionGateRequired": true,
+      "humanChoiceRequired": false,
+      "adminRoute": "/app/credentials",
+      "controlPanelSection": "commerce",
+      "profileControls": ["delivery_inventory_required", "regression_required"],
+      "evidenceFields": ["last_delivery_inventory_ref", "last_regression_ref"],
+      "runtimeCommands": ["pnpm deploy:regression"],
+      "configKeys": ["CREDENTIAL_ENCRYPTION_KEY", "DELIVERY_ENCRYPTION_KEY"]
+    },
+    {
+      "id": "customer-access",
+      "title": "Customer account and order access",
+      "owner": "guest-order-access",
+      "backendPanelRequired": true,
+      "productionGateRequired": true,
+      "humanChoiceRequired": true,
+      "adminRoute": "/app/ops",
+      "controlPanelSection": "customer",
+      "profileControls": ["customer_access_required", "regression_required"],
+      "evidenceFields": ["last_customer_access_ref", "last_regression_ref"],
+      "runtimeCommands": ["pnpm deploy:regression"],
+      "configKeys": ["CUSTOMER_ACCOUNT_MODE", "CUSTOMER_PASSWORD_RESET_ENABLED", "CUSTOMER_EMAIL_VERIFICATION_STRATEGY", "ORDER_ACCESS_PROVIDER_CODE"]
+    },
+    {
+      "id": "storefront-commerce",
+      "title": "Storefront commerce runtime",
+      "owner": "storefront-commerce",
+      "backendPanelRequired": true,
+      "productionGateRequired": true,
+      "humanChoiceRequired": false,
+      "adminRoute": "/app/ops",
+      "controlPanelSection": "launch_readiness",
+      "profileControls": ["runtime_health_required"],
+      "evidenceFields": ["last_runtime_health_ref"],
+      "runtimeCommands": ["pnpm deploy:health"],
+      "configKeys": ["MEDUSA_BACKEND_URL", "NEXT_PUBLIC_MEDUSA_BACKEND_URL", "NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY"]
+    },
+    {
+      "id": "notifications",
+      "title": "Transactional notifications",
+      "owner": "notification-resend",
+      "backendPanelRequired": true,
+      "productionGateRequired": true,
+      "humanChoiceRequired": true,
+      "adminRoute": "/app/ops",
+      "controlPanelSection": "maintenance",
+      "profileControls": ["notification_readiness_required"],
+      "evidenceFields": ["last_notification_ref"],
+      "runtimeCommands": ["pnpm check:ci"],
+      "configKeys": ["RESEND_ENABLED", "RESEND_API_KEY", "RESEND_FROM_EMAIL"]
+    },
+    {
+      "id": "analytics-privacy",
+      "title": "Analytics, privacy, and marketing",
+      "owner": "analytics-core",
+      "backendPanelRequired": true,
+      "productionGateRequired": true,
+      "humanChoiceRequired": true,
+      "adminRoute": "/app/analytics",
+      "controlPanelSection": "ai_ops",
+      "profileControls": ["analytics_privacy_required"],
+      "evidenceFields": ["last_analytics_privacy_ref"],
+      "runtimeCommands": ["pnpm check:ci"],
+      "configKeys": ["ANALYTICS_ENABLED", "GA4_ENABLED", "NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT", "NEXT_PUBLIC_PRIVACY_BANNER_ENABLED"]
+    },
+    {
+      "id": "backup-rollback",
+      "title": "Backup, restore, and rollback",
+      "owner": "ops-control",
+      "backendPanelRequired": true,
+      "productionGateRequired": true,
+      "humanChoiceRequired": true,
+      "adminRoute": "/app/ops",
+      "controlPanelSection": "maintenance",
+      "profileControls": ["backup_required", "restore_test_required", "rollback_required"],
+      "evidenceFields": ["last_backup_ref", "last_restore_test_ref", "last_rollback_ref"],
+      "runtimeCommands": ["pnpm deploy:vps-doctor"],
+      "configKeys": ["OPS_BACKUP_OFFSITE_ENABLED", "OPS_BACKUP_ENCRYPTION_ENABLED", "OPS_BACKUP_LAST_RESTORE_TEST_AT", "OPS_VPS_DOCTOR_ENABLED"]
+    },
+    {
+      "id": "ai-ops",
+      "title": "AI operations",
+      "owner": "ai-core",
+      "backendPanelRequired": true,
+      "productionGateRequired": true,
+      "humanChoiceRequired": true,
+      "adminRoute": "/app/ai",
+      "controlPanelSection": "ai_ops",
+      "profileControls": ["backend_control_panel_required"],
+      "evidenceFields": ["last_backend_control_panel_ref"],
+      "runtimeCommands": ["pnpm ai:doctor"],
+      "configKeys": ["AI_ENABLED", "AI_DEFAULT_PROVIDER", "AI_PROVIDER_CONFIGS_JSON", "OPS_AI_REVIEW_ENABLED", "OPS_AI_AUTO_REMEDIATE_ENABLED"]
     }
   ]
 }

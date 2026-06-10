@@ -19,8 +19,8 @@
       "id": "production-deployment",
       "kind": "runtime-target",
       "path": "scripts/deploy",
-      "owns": ["VPS deployment execution", "Cloudflare edge preflight", "runtime health gates", "rollback execution"],
-      "verification": ["pnpm deploy:health", "pnpm deploy:edge", "pnpm deploy:regression", "pnpm deploy:vps-doctor", "pnpm site:gate"]
+      "owns": ["VPS deployment execution", "Cloudflare DNS preflight", "Cloudflare edge preflight", "Cloudflare managed WAF preflight", "runtime health gates", "rollback execution"],
+      "verification": ["pnpm deploy:health", "pnpm deploy:dns", "pnpm deploy:edge", "pnpm deploy:waf", "pnpm deploy:admin-edge", "pnpm deploy:rate-limit", "pnpm deploy:regression", "pnpm deploy:vps-doctor", "pnpm site:gate"]
     },
     {
       "id": "backend-platform-core",

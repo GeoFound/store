@@ -27,11 +27,25 @@
       "evidenceRequired": "Public or target runtime health gate passed."
     },
     {
+      "id": "dns-preflight",
+      "checkType": "command",
+      "command": ["pnpm", "deploy:dns"],
+      "requiresRuntime": true,
+      "evidenceRequired": "Storefront and API domains resolve, and Cloudflare DNS records are present and proxied when Cloudflare is required."
+    },
+    {
       "id": "edge-preflight",
       "checkType": "command",
       "command": ["pnpm", "deploy:edge"],
       "requiresRuntime": true,
       "evidenceRequired": "Domain, HTTPS, headers, and edge expectations passed."
+    },
+    {
+      "id": "cloudflare-waf",
+      "checkType": "command",
+      "command": ["pnpm", "deploy:waf"],
+      "requiresRuntime": true,
+      "evidenceRequired": "Cloudflare managed WAF rules are enabled in the zone ruleset entrypoint."
     },
     {
       "id": "admin-edge-protection",

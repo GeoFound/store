@@ -84,6 +84,9 @@ const system = readJson(".ai/system.json")
 const taskbook = readJson(".ai/taskbook.json")
 const evidencePolicy = readJson(".ai/evidence-policy.json")
 const systemMap = readJson(".ai/system-map.json")
+const adminControlPanelPolicy = readJson(".ai/admin-control-panel-policy.json")
+const siteLifecyclePolicy = readJson(".ai/site-lifecycle-policy.json")
+const configSurfacePolicy = readJson(".ai/config-surface.json")
 const decisionRecords = readJsonFiles(".ai/decision-records")
 const reviewChecklists = readJsonFiles(".ai/review-checklists")
 const packageJson = readJson("package.json")
@@ -414,6 +417,16 @@ if (evidencePolicy) {
   }
 }
 
+if (adminControlPanelPolicy) {
+  validateAdminControlPanelPolicy({
+    policy: adminControlPanelPolicy,
+    siteLifecyclePolicy,
+    configSurfacePolicy,
+    evidencePolicy,
+    packageJson,
+  })
+}
+
 const configSurfaceReport = createConfigSurfaceReport()
 assert(configSurfaceReport.ok, {
   id: "config-surface.failed",
@@ -503,6 +516,167 @@ return {
   issues,
   warnings,
 }
+}
+
+function validateAdminControlPanelPolicy(input) {
+  const policy = input.policy
+  const siteLifecyclePolicy = input.siteLifecyclePolicy || {}
+  const configSurfacePolicy = input.configSurfacePolicy || {}
+  const evidencePolicy = input.evidencePolicy || {}
+  const packageJson = input.packageJson || {}
+  const surfaces = policy.requiredProductionSurfaces || []
+  const allowedSections = new Set([
+    "launch_readiness",
+    "security",
+    "maintenance",
+    "customer",
+    "commerce",
+    "ai_ops",
+  ])
+  const profileControls = new Set(siteLifecyclePolicy.requiredControls || [])
+  const evidenceFields = new Set([
+    ...(siteLifecyclePolicy.promotionEvidenceFields || []),
+    ...(siteLifecyclePolicy.productionOnlyEvidenceFields || []),
+  ])
+  const configEntries = configSurfacePolicy.entries || {}
+  const configKeys = new Set(Object.keys(configEntries))
+  const coveredConfigKeys = new Set()
+  const coveredProductionCommands = new Set()
+  const expectedProductionCommands = new Set(
+    (evidencePolicy.productionChecks || [])
+      .map((check) => Array.isArray(check.command) ? check.command.join(" ") : "")
+      .filter(Boolean)
+  )
+  const surfaceIds = new Set()
+
+  assert(typeof policy.productionControlRule === "string" && policy.productionControlRule.length > 0, {
+    id: "admin-control-panel.production-control-rule-missing",
+    message: "Admin control panel policy must declare the production control rule.",
+  })
+  assert(Array.isArray(policy.forbiddenSurface) && policy.forbiddenSurface.length > 0, {
+    id: "admin-control-panel.forbidden-surface-missing",
+    message: "Admin control panel policy must declare forbidden backend panel surfaces.",
+  })
+  assert(Array.isArray(surfaces) && surfaces.length > 0, {
+    id: "admin-control-panel.production-surfaces-missing",
+    message: "Admin control panel policy must declare required production surfaces.",
+  })
+
+  for (const surface of surfaces) {
+    assert(Boolean(surface.id), {
+      id: "admin-control-panel.surface-id-missing",
+      message: "Required production surface is missing id.",
+    })
+    if (surface.id) {
+      assert(!surfaceIds.has(surface.id), {
+        id: "admin-control-panel.surface-id-duplicate",
+        surface: surface.id,
+        message: "Required production surface id must be unique.",
+      })
+      surfaceIds.add(surface.id)
+    }
+
+    for (const key of ["title", "owner", "adminRoute", "controlPanelSection"]) {
+      assert(Boolean(surface[key]), {
+        id: "admin-control-panel.surface-metadata-missing",
+        surface: surface.id,
+        field: key,
+        message: "Required production surface is missing metadata.",
+      })
+    }
+
+    assert(surface.backendPanelRequired === true, {
+      id: "admin-control-panel.surface-backend-panel-not-required",
+      surface: surface.id,
+      message: "Production-significant surfaces must require a backend panel.",
+    })
+    assert(surface.productionGateRequired === true, {
+      id: "admin-control-panel.surface-production-gate-not-required",
+      surface: surface.id,
+      message: "Production-significant surfaces must require a production gate.",
+    })
+    assert(
+      typeof surface.adminRoute === "string" && surface.adminRoute.startsWith("/app/"),
+      {
+        id: "admin-control-panel.surface-admin-route-invalid",
+        surface: surface.id,
+        route: surface.adminRoute,
+        message: "Required production surface adminRoute must point to a backend admin app route.",
+      }
+    )
+    assert(allowedSections.has(surface.controlPanelSection), {
+      id: "admin-control-panel.surface-section-invalid",
+      surface: surface.id,
+      section: surface.controlPanelSection,
+      message: "Required production surface references an unknown ops-control section.",
+    })
+
+    for (const control of surface.profileControls || []) {
+      assert(profileControls.has(control), {
+        id: "admin-control-panel.surface-profile-control-untracked",
+        surface: surface.id,
+        control,
+        message: "Required production surface references a site lifecycle control not declared in policy.requiredControls.",
+      })
+    }
+
+    for (const field of surface.evidenceFields || []) {
+      assert(evidenceFields.has(field), {
+        id: "admin-control-panel.surface-evidence-field-untracked",
+        surface: surface.id,
+        field,
+        message: "Required production surface references an evidence field not enforced by site lifecycle policy.",
+      })
+    }
+
+    for (const command of surface.runtimeCommands || []) {
+      const scriptName = command.startsWith("pnpm ") ? command.slice("pnpm ".length) : ""
+
+      if (scriptName) {
+        assert(Boolean(packageJson.scripts?.[scriptName]), {
+          id: "admin-control-panel.surface-runtime-command-missing-script",
+          surface: surface.id,
+          command,
+          message: "Required production surface references a pnpm script that is not registered.",
+        })
+      }
+
+      if (expectedProductionCommands.has(command)) {
+        coveredProductionCommands.add(command)
+      }
+    }
+
+    for (const key of surface.configKeys || []) {
+      coveredConfigKeys.add(key)
+      assert(configKeys.has(key), {
+        id: "admin-control-panel.surface-config-key-unregistered",
+        surface: surface.id,
+        key,
+        message: "Required production surface references a runtime config key not registered in .ai/config-surface.json.",
+      })
+    }
+  }
+
+  for (const command of expectedProductionCommands) {
+    assert(coveredProductionCommands.has(command), {
+      id: "admin-control-panel.production-command-uncovered",
+      command,
+      message: "Production evidence command is not mapped to a backend control panel production surface.",
+    })
+  }
+
+  for (const [key, entry] of Object.entries(configEntries)) {
+    if (entry?.requiredInProduction !== true) {
+      continue
+    }
+
+    assert(coveredConfigKeys.has(key), {
+      id: "admin-control-panel.production-config-key-uncovered",
+      key,
+      owner: entry.owner,
+      message: "Production-required config key is not mapped to any backend control panel production surface.",
+    })
+  }
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

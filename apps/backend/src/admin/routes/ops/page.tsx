@@ -48,6 +48,21 @@ type OpsAction = {
   evidence_required: string[]
 }
 
+type OpsPolicySurface = {
+  id: string
+  title: string
+  owner: string
+  backend_panel_required: boolean
+  production_gate_required: boolean
+  human_choice_required: boolean
+  admin_route: string
+  control_panel_section: string
+  profile_controls: string[]
+  evidence_fields: string[]
+  runtime_commands: string[]
+  config_keys: string[]
+}
+
 type OpsDashboard = {
   generated_at: string
   summary: {
@@ -55,10 +70,21 @@ type OpsDashboard = {
     critical_findings: number
     warning_findings: number
     human_gate_actions: number
+    control_panel_surface_count: number
+    gated_surface_count: number
   }
+  launch_readiness: OpsSection
   security: OpsSection
   maintenance: OpsSection
+  customer: OpsSection
+  commerce: OpsSection
   ai_ops: OpsSection
+  control_panel_policy: {
+    version: string
+    production_control_rule: string
+    forbidden_surface_count: number
+    required_surfaces: OpsPolicySurface[]
+  }
   findings: OpsFinding[]
   operator_actions: OpsAction[]
 }
@@ -70,6 +96,14 @@ const EMPTY_STATE: OpsDashboard = {
     critical_findings: 0,
     warning_findings: 0,
     human_gate_actions: 0,
+    control_panel_surface_count: 0,
+    gated_surface_count: 0,
+  },
+  launch_readiness: {
+    status: "disabled",
+    summary: {},
+    settings: [],
+    findings: [],
   },
   security: {
     status: "disabled",
@@ -83,11 +117,29 @@ const EMPTY_STATE: OpsDashboard = {
     settings: [],
     findings: [],
   },
+  customer: {
+    status: "disabled",
+    summary: {},
+    settings: [],
+    findings: [],
+  },
+  commerce: {
+    status: "disabled",
+    summary: {},
+    settings: [],
+    findings: [],
+  },
   ai_ops: {
     status: "disabled",
     summary: {},
     settings: [],
     findings: [],
+  },
+  control_panel_policy: {
+    version: "",
+    production_control_rule: "",
+    forbidden_surface_count: 0,
+    required_surfaces: [],
   },
   findings: [],
   operator_actions: [],
@@ -125,6 +177,13 @@ const OpsPage = () => {
         value: state.summary.human_gate_actions,
         detail: t("ops.metrics.humanGateDetail"),
       },
+      {
+        label: t("ops.metrics.surfaces"),
+        value: state.summary.control_panel_surface_count,
+        detail: t("ops.metrics.surfacesDetail", {
+          count: state.summary.gated_surface_count,
+        }),
+      },
     ],
     [state, t]
   )
@@ -158,7 +217,7 @@ const OpsPage = () => {
 
       <MessageBox error={error} />
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
         {metrics.map((metric) => (
           <Container key={metric.label} className="p-0">
             <div className="px-5 py-4">
@@ -217,6 +276,10 @@ const OpsPage = () => {
 
       <div className="grid gap-4 xl:grid-cols-3">
         <SettingsSection
+          title={t("ops.sections.launchReadiness")}
+          section={state.launch_readiness}
+        />
+        <SettingsSection
           title={t("ops.sections.security")}
           section={state.security}
         />
@@ -224,8 +287,65 @@ const OpsPage = () => {
           title={t("ops.sections.maintenance")}
           section={state.maintenance}
         />
+        <SettingsSection
+          title={t("ops.sections.customer")}
+          section={state.customer}
+        />
+        <SettingsSection
+          title={t("ops.sections.commerce")}
+          section={state.commerce}
+        />
         <SettingsSection title={t("ops.sections.aiOps")} section={state.ai_ops} />
       </div>
+
+      <AdminSection
+        title={t("ops.policy.title")}
+        description={state.control_panel_policy.production_control_rule || t("ops.policy.description")}
+      >
+        <div className="grid gap-3 lg:grid-cols-2">
+          {state.control_panel_policy.required_surfaces.map((surface) => (
+            <div
+              key={surface.id}
+              className="flex h-full flex-col gap-3 rounded border border-ui-border-base p-4"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <Heading level="h3" className="truncate">
+                    {surface.title}
+                  </Heading>
+                  <Text className="font-mono text-xs text-ui-fg-subtle">
+                    {surface.id}
+                  </Text>
+                </div>
+                <Badge color={surface.production_gate_required ? "red" : "orange"}>
+                  {surface.production_gate_required
+                    ? t("ops.policy.gated")
+                    : t("ops.policy.visible")}
+                </Badge>
+              </div>
+              <div className="grid gap-1 text-sm">
+                <Text className="text-ui-fg-subtle">
+                  {t("ops.fields.owner")}: {surface.owner}
+                </Text>
+                <Text className="text-ui-fg-subtle">
+                  {t("ops.policy.adminRoute")}: {surface.admin_route}
+                </Text>
+                <Text className="text-ui-fg-subtle">
+                  {t("ops.policy.section")}: {surface.control_panel_section}
+                </Text>
+              </div>
+              <PolicyList
+                title={t("ops.policy.evidenceFields")}
+                items={surface.evidence_fields}
+              />
+              <PolicyList
+                title={t("ops.policy.runtimeCommands")}
+                items={surface.runtime_commands}
+              />
+            </div>
+          ))}
+        </div>
+      </AdminSection>
 
       <AdminSection
         title={t("ops.actions.title")}
@@ -260,6 +380,25 @@ const OpsPage = () => {
           ))}
         </div>
       </AdminSection>
+    </div>
+  )
+}
+
+function PolicyList(props: { title: string; items: string[] }) {
+  if (!props.items.length) {
+    return null
+  }
+
+  return (
+    <div>
+      <Text className="mb-1 text-ui-fg-subtle">{props.title}</Text>
+      <ul className="list-disc space-y-1 pl-4 text-ui-fg-subtle">
+        {props.items.map((item) => (
+          <li key={item} className="font-mono text-xs">
+            {item}
+          </li>
+        ))}
+      </ul>
     </div>
   )
 }

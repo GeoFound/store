@@ -13,6 +13,8 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
 
   res.json({
     maintenance: opsControl.getMaintenanceSnapshot(),
+    customer: opsControl.getCustomerSnapshot(),
+    commerce: opsControl.getCommerceSnapshot(),
     ai_ops: opsControl.getAiOpsSnapshot(),
   })
 }

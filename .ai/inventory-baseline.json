@@ -843,6 +843,16 @@
         "rationale": "Authenticated customer account dashboard with reusable order access links and guest checkout fallback."
       },
       {
+        "path": "apps/storefront/src/app/account/reset-password/page.tsx",
+        "owner": "storefront-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/storefront test",
+          "pnpm --dir apps/storefront lint"
+        ],
+        "rationale": "Lightweight customer password reset page for optional email/password accounts while guest order recovery remains available."
+      },
+      {
         "path": "apps/storefront/src/app/api/account/google/callback/route.ts",
         "owner": "storefront-runtime",
         "verification": [
@@ -891,6 +901,26 @@
           "pnpm --dir apps/storefront lint"
         ],
         "rationale": "Storefront BFF route that exposes the current customer account to server-backed UI flows without exposing stored tokens."
+      },
+      {
+        "path": "apps/storefront/src/app/api/account/password-reset/confirm/route.ts",
+        "owner": "storefront-runtime",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/storefront test",
+          "pnpm --dir apps/storefront lint"
+        ],
+        "rationale": "Storefront BFF route that confirms customer password reset through the backend auth provider without exposing provider details to client code."
+      },
+      {
+        "path": "apps/storefront/src/app/api/account/password-reset/request/route.ts",
+        "owner": "storefront-runtime",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/storefront test",
+          "pnpm --dir apps/storefront lint"
+        ],
+        "rationale": "Storefront BFF route that requests a customer password reset with account rate limiting, optional Turnstile, and a controlled reset URL."
       },
       {
         "path": "apps/storefront/src/app/api/account/register/route.ts",

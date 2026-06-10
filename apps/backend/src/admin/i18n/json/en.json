@@ -492,12 +492,27 @@
       "humanGate": "Human gates",
       "humanGateDetail": "Actions requiring explicit approval",
       "status": "Status",
+      "surfaces": "Panel surfaces",
+      "surfacesDetail": "{{count}} production-gated",
       "warnings": "Warnings",
       "warningDetail": "Items to verify before go-live"
+    },
+    "policy": {
+      "adminRoute": "Admin route",
+      "description": "Production-significant capabilities must appear in the backend control panel and map to executable gates.",
+      "evidenceFields": "Evidence fields",
+      "gated": "Gated",
+      "runtimeCommands": "Runtime commands",
+      "section": "Panel section",
+      "title": "Control Panel Gate Policy",
+      "visible": "Visible"
     },
     "refreshing": "Refreshing...",
     "sections": {
       "aiOps": "AI Ops",
+      "commerce": "Payments & Suppliers",
+      "customer": "Customer Access",
+      "launchReadiness": "Launch Readiness",
       "maintenance": "Maintenance",
       "security": "Security"
     },

@@ -399,6 +399,11 @@ function validateDataPolicy(dataPolicy, args, envPolicy, issues) {
 
   assertText(dataPolicy.graph_mode, "lifecycle.data_policy.graph_mode", issues)
   assertText(dataPolicy.payment_mode, "lifecycle.data_policy.payment_mode", issues)
+  assertText(
+    dataPolicy.out_of_stock_checkout_policy,
+    "lifecycle.data_policy.out_of_stock_checkout_policy",
+    issues
+  )
 
   if (!(policy.allowedGraphModes || []).includes(dataPolicy.graph_mode)) {
     issues.push(
@@ -406,6 +411,20 @@ function validateDataPolicy(dataPolicy, args, envPolicy, issues) {
         "lifecycle.graph-mode-invalid",
         `graph_mode must be one of ${(policy.allowedGraphModes || []).join(", ")}`,
         "lifecycle.data_policy.graph_mode"
+      )
+    )
+  }
+
+  if (
+    !(policy.allowedOutOfStockCheckoutPolicies || []).includes(
+      dataPolicy.out_of_stock_checkout_policy
+    )
+  ) {
+    issues.push(
+      issue(
+        "lifecycle.out-of-stock-checkout-policy-invalid",
+        `out_of_stock_checkout_policy must be one of ${(policy.allowedOutOfStockCheckoutPolicies || []).join(", ")}`,
+        "lifecycle.data_policy.out_of_stock_checkout_policy"
       )
     )
   }
@@ -464,9 +483,21 @@ function validateControls(controls, args, envPolicy, issues) {
 
   if (envPolicy.runtimeEvidenceRequired) {
     for (const key of [
+      "backend_control_panel_required",
       "cloudflare_required",
+      "dns_required",
+      "cloudflare_ssl_strict_required",
+      "cloudflare_waf_required",
       "runtime_health_required",
       "edge_preflight_required",
+      "admin_edge_protection_required",
+      "redis_rate_limit_smoke_required",
+      "payment_provider_required",
+      "supplier_readiness_required",
+      "delivery_inventory_required",
+      "customer_access_required",
+      "notification_readiness_required",
+      "analytics_privacy_required",
       "regression_required",
       "backup_required",
       "restore_test_required",
@@ -538,6 +569,28 @@ function validateEvidenceContract(evidence, envPolicy, issues, warnings) {
             `lifecycle.evidence.${key}`
           )
         )
+      }
+    }
+
+    const policyCommands = key === "required_runtime_commands"
+      ? policy.requiredRuntimeCommands || []
+      : policy.requiredStaticCommands || []
+
+    const enforcePolicyCommandCoverage = key === "required_runtime_commands"
+      ? required
+      : envPolicy.runtimeEvidenceRequired === true || envPolicy.humanGateRequired === true
+
+    if (enforcePolicyCommandCoverage) {
+      for (const command of policyCommands) {
+        if (!evidence[key].includes(command)) {
+          issues.push(
+            issue(
+              "lifecycle.evidence-command-missing-policy-command",
+              `${key} must include ${command}`,
+              `lifecycle.evidence.${key}`
+            )
+          )
+        }
       }
     }
   }

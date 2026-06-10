@@ -26,11 +26,16 @@
       "graph_production_write_enabled": false,
       "analytics_export_mode": "dry_run",
       "payment_mode": "test",
-      "supplier_auto_procurement_enabled": false
+      "supplier_auto_procurement_enabled": false,
+      "out_of_stock_checkout_policy": "allow_supplier_backorder"
     },
     "controls": {
       "staging_required": true,
+      "backend_control_panel_required": true,
       "cloudflare_required": true,
+      "dns_required": true,
+      "cloudflare_ssl_strict_required": true,
+      "cloudflare_waf_required": true,
       "runtime_health_required": true,
       "edge_preflight_required": true,
       "regression_required": true,
@@ -39,24 +44,44 @@
       "rollback_required": true,
       "human_gate_required": false,
       "admin_edge_protection_required": true,
-      "redis_rate_limit_smoke_required": true
+      "redis_rate_limit_smoke_required": true,
+      "payment_provider_required": true,
+      "supplier_readiness_required": true,
+      "delivery_inventory_required": true,
+      "customer_access_required": true,
+      "notification_readiness_required": true,
+      "analytics_privacy_required": true
     },
     "evidence": {
       "required_static_commands": [
+        "pnpm ai:doctor",
+        "pnpm ai:production",
         "pnpm check:ci",
         "pnpm profile:validate:all",
         "pnpm site:validate:all"
       ],
       "required_runtime_commands": [
         "pnpm deploy:health",
+        "pnpm deploy:dns",
         "pnpm deploy:edge",
+        "pnpm deploy:waf",
         "pnpm deploy:admin-edge",
         "pnpm deploy:rate-limit",
         "pnpm deploy:regression",
         "pnpm deploy:vps-doctor"
       ],
+      "last_backend_control_panel_ref": null,
+      "last_dns_ref": null,
       "last_runtime_health_ref": null,
+      "last_cloudflare_ssl_ref": null,
+      "last_cloudflare_waf_ref": null,
       "last_edge_preflight_ref": null,
+      "last_payment_provider_ref": null,
+      "last_supplier_readiness_ref": null,
+      "last_delivery_inventory_ref": null,
+      "last_customer_access_ref": null,
+      "last_notification_ref": null,
+      "last_analytics_privacy_ref": null,
       "last_regression_ref": null,
       "last_backup_ref": null,
       "last_restore_test_ref": null,

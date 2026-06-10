@@ -26,11 +26,16 @@
       "graph_production_write_enabled": false,
       "analytics_export_mode": "fixture_only",
       "payment_mode": "test",
-      "supplier_auto_procurement_enabled": false
+      "supplier_auto_procurement_enabled": false,
+      "out_of_stock_checkout_policy": "block"
     },
     "controls": {
       "staging_required": false,
+      "backend_control_panel_required": false,
       "cloudflare_required": false,
+      "dns_required": false,
+      "cloudflare_ssl_strict_required": false,
+      "cloudflare_waf_required": false,
       "runtime_health_required": false,
       "edge_preflight_required": false,
       "regression_required": false,
@@ -39,15 +44,31 @@
       "rollback_required": false,
       "human_gate_required": false,
       "admin_edge_protection_required": false,
-      "redis_rate_limit_smoke_required": false
+      "redis_rate_limit_smoke_required": false,
+      "payment_provider_required": false,
+      "supplier_readiness_required": false,
+      "delivery_inventory_required": false,
+      "customer_access_required": false,
+      "notification_readiness_required": false,
+      "analytics_privacy_required": false
     },
     "evidence": {
       "required_static_commands": [
         "pnpm profile:validate -- --site-id jp-cards --site-env development"
       ],
       "required_runtime_commands": [],
+      "last_backend_control_panel_ref": null,
+      "last_dns_ref": null,
       "last_runtime_health_ref": null,
+      "last_cloudflare_ssl_ref": null,
+      "last_cloudflare_waf_ref": null,
       "last_edge_preflight_ref": null,
+      "last_payment_provider_ref": null,
+      "last_supplier_readiness_ref": null,
+      "last_delivery_inventory_ref": null,
+      "last_customer_access_ref": null,
+      "last_notification_ref": null,
+      "last_analytics_privacy_ref": null,
       "last_regression_ref": null,
       "last_backup_ref": null,
       "last_restore_test_ref": null,

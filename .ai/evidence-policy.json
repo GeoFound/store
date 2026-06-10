@@ -63,8 +63,18 @@
       "requiresRuntime": true
     },
     {
+      "id": "deploy-dns",
+      "command": ["pnpm", "deploy:dns"],
+      "requiresRuntime": true
+    },
+    {
       "id": "deploy-edge",
       "command": ["pnpm", "deploy:edge"],
+      "requiresRuntime": true
+    },
+    {
+      "id": "deploy-waf",
+      "command": ["pnpm", "deploy:waf"],
       "requiresRuntime": true
     },
     {
