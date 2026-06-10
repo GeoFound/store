@@ -7,14 +7,14 @@ export function AdminSection(props: {
   children: ReactNode
 }) {
   return (
-    <Container className="divide-y p-0">
+    <Container className="min-w-0 divide-y p-0">
       <div className="px-6 py-4">
         <Heading level="h2">{props.title}</Heading>
         {props.description ? (
           <Text className="mt-1 text-ui-fg-subtle">{props.description}</Text>
         ) : null}
       </div>
-      <div className="p-6">{props.children}</div>
+      <div className="min-w-0 overflow-x-auto p-6">{props.children}</div>
     </Container>
   )
 }

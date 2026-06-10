@@ -85,6 +85,24 @@ describe("ops control service", () => {
             "pnpm deploy:admin-edge",
           ]),
         }),
+        expect.objectContaining({
+          id: "analytics-privacy",
+          control_panel_section: "growth",
+        }),
+      ])
+    )
+    expect(
+      dashboard.control_panel_policy.information_architecture.route_placements
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          route: "/app/ops",
+          section: "risk_system",
+        }),
+        expect.objectContaining({
+          route: "/app/after-sales",
+          section: "customers_support",
+        }),
       ])
     )
     expect(JSON.stringify(dashboard)).not.toContain("secret-cloudflare-token")

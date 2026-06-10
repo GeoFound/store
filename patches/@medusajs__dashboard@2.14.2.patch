@@ -84,6 +84,7 @@ index ed9a8e0153971d23cc29f2aae5e610c2c1c4964e..336f2acf9b6d5040d5907e6f27dee731
 +        "/suppliers",
 +        "/after-sales",
 +        "/audit-logs",
++        "/ops",
 +        "/content",
 +        "/marketing",
 +        "/analytics",
@@ -117,16 +118,6 @@ index ed9a8e0153971d23cc29f2aae5e610c2c1c4964e..336f2acf9b6d5040d5907e6f27dee731
 +              to: "/control-panel"
 +            })
            ]
-+        },
-+        {
-+          label: t5("adminNav.sections.intelligence"),
-+          items: [
-+            customRoute("/ai", {
-+              icon: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(import_icons10.SquaresPlus, {}),
-+              label: t5("adminNav.items.ai"),
-+              to: "/ai"
-+            })
-+          ]
          },
          {
 -          icon: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(import_icons10.Tag, {}),
@@ -195,10 +186,6 @@ index ed9a8e0153971d23cc29f2aae5e610c2c1c4964e..336f2acf9b6d5040d5907e6f27dee731
 +                {
 +                  label: t5("adminNav.items.deliveries"),
 +                  to: "/deliveries"
-+                },
-+                {
-+                  label: t5("adminNav.items.afterSales"),
-+                  to: "/after-sales"
 +                }
 +              ]
              }
@@ -296,6 +283,11 @@ index ed9a8e0153971d23cc29f2aae5e610c2c1c4964e..336f2acf9b6d5040d5907e6f27dee731
 -        "button",
 +          label: t5("adminNav.sections.customers"),
 +          items: [
++            customRoute("/after-sales", {
++              icon: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(import_icons10.Users, {}),
++              label: t5("adminNav.items.afterSales"),
++              to: "/after-sales"
++            }),
 +            {
 +              icon: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(import_icons10.Users, {}),
 +              label: t5("customers.domain"),
@@ -307,6 +299,16 @@ index ed9a8e0153971d23cc29f2aae5e610c2c1c4964e..336f2acf9b6d5040d5907e6f27dee731
 +                }
 +              ]
 +            }
++          ]
++        },
++        {
++          label: t5("adminNav.sections.intelligence"),
++          items: [
++            customRoute("/ai", {
++              icon: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(import_icons10.SquaresPlus, {}),
++              label: t5("adminNav.items.ai"),
++              to: "/ai"
++            })
 +          ]
 +        },
          {
@@ -322,6 +324,11 @@ index ed9a8e0153971d23cc29f2aae5e610c2c1c4964e..336f2acf9b6d5040d5907e6f27dee731
 -            /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(import_ui14.Text, { size: "small", leading: "compact", className: "text-ui-fg-muted", children: "\u2318K" })
 +          label: t5("adminNav.sections.riskSystem"),
 +          items: [
++            customRoute("/ops", {
++              icon: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(import_icons10.CogSixTooth, {}),
++              label: t5("adminNav.items.ops"),
++              to: "/ops"
++            }),
 +            customRoute("/audit-logs", {
 +              icon: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(import_icons10.SquaresPlus, {}),
 +              label: t5("adminNav.items.auditLogs"),
@@ -468,6 +475,7 @@ index 939abb4e15c5b88acf6f0a14695e2c3aaeadb893..8d45c2264390e10a3ecc4147526e5f8c
 +    "/suppliers",
 +    "/after-sales",
 +    "/audit-logs",
++    "/ops",
 +    "/content",
 +    "/marketing",
 +    "/analytics",
@@ -501,16 +509,6 @@ index 939abb4e15c5b88acf6f0a14695e2c3aaeadb893..8d45c2264390e10a3ecc4147526e5f8c
 +          to: "/control-panel"
 +        })
        ]
-+    },
-+    {
-+      label: t2("adminNav.sections.intelligence"),
-+      items: [
-+        customRoute("/ai", {
-+          icon: /* @__PURE__ */ jsx13(SquaresPlus, {}),
-+          label: t2("adminNav.items.ai"),
-+          to: "/ai"
-+        })
-+      ]
      },
      {
 -      icon: /* @__PURE__ */ jsx13(Tag, {}),
@@ -579,10 +577,6 @@ index 939abb4e15c5b88acf6f0a14695e2c3aaeadb893..8d45c2264390e10a3ecc4147526e5f8c
 +            {
 +              label: t2("adminNav.items.deliveries"),
 +              to: "/deliveries"
-+            },
-+            {
-+              label: t2("adminNav.items.afterSales"),
-+              to: "/after-sales"
 +            }
 +          ]
          }
@@ -680,6 +674,11 @@ index 939abb4e15c5b88acf6f0a14695e2c3aaeadb893..8d45c2264390e10a3ecc4147526e5f8c
 -    "button",
 +      label: t2("adminNav.sections.customers"),
 +      items: [
++        customRoute("/after-sales", {
++          icon: /* @__PURE__ */ jsx13(Users, {}),
++          label: t2("adminNav.items.afterSales"),
++          to: "/after-sales"
++        }),
 +        {
 +          icon: /* @__PURE__ */ jsx13(Users, {}),
 +          label: t2("customers.domain"),
@@ -691,6 +690,16 @@ index 939abb4e15c5b88acf6f0a14695e2c3aaeadb893..8d45c2264390e10a3ecc4147526e5f8c
 +            }
 +          ]
 +        }
++      ]
++    },
++    {
++      label: t2("adminNav.sections.intelligence"),
++      items: [
++        customRoute("/ai", {
++          icon: /* @__PURE__ */ jsx13(SquaresPlus, {}),
++          label: t2("adminNav.items.ai"),
++          to: "/ai"
++        })
 +      ]
 +    },
      {
@@ -706,6 +715,11 @@ index 939abb4e15c5b88acf6f0a14695e2c3aaeadb893..8d45c2264390e10a3ecc4147526e5f8c
 -        /* @__PURE__ */ jsx13(Text5, { size: "small", leading: "compact", className: "text-ui-fg-muted", children: "\u2318K" })
 +      label: t2("adminNav.sections.riskSystem"),
 +      items: [
++        customRoute("/ops", {
++          icon: /* @__PURE__ */ jsx13(CogSixTooth, {}),
++          label: t2("adminNav.items.ops"),
++          to: "/ops"
++        }),
 +        customRoute("/audit-logs", {
 +          icon: /* @__PURE__ */ jsx13(SquaresPlus, {}),
 +          label: t2("adminNav.items.auditLogs"),
@@ -919,6 +933,7 @@ index c554883a355b95afb80139346ac38859029b155d..3a20315bcfad58747cdaa4fd9014e91a
 +  "/suppliers",
 +  "/after-sales",
 +  "/audit-logs",
++  "/ops",
 +  "/content",
 +  "/marketing",
 +  "/analytics",
@@ -990,16 +1005,6 @@ index c554883a355b95afb80139346ac38859029b155d..3a20315bcfad58747cdaa4fd9014e91a
 +          to: "/control-panel",
 +        }),
        ],
-+    },
-+    {
-+      label: t("adminNav.sections.intelligence"),
-+      items: [
-+        customRoute("/ai", {
-+          icon: <SquaresPlus />,
-+          label: t("adminNav.items.ai"),
-+          to: "/ai",
-+        }),
-+      ],
      },
      {
 -      icon: <Tag />,
@@ -1055,10 +1060,6 @@ index c554883a355b95afb80139346ac38859029b155d..3a20315bcfad58747cdaa4fd9014e91a
 +            {
 +              label: t("adminNav.items.deliveries"),
 +              to: "/deliveries",
-+            },
-+            {
-+              label: t("adminNav.items.afterSales"),
-+              to: "/after-sales",
 +            },
 +          ],
          },
@@ -1152,6 +1153,11 @@ index c554883a355b95afb80139346ac38859029b155d..3a20315bcfad58747cdaa4fd9014e91a
 -      to: "/promotions",
 +      label: t("adminNav.sections.customers"),
        items: [
++        customRoute("/after-sales", {
++          icon: <Users />,
++          label: t("adminNav.items.afterSales"),
++          to: "/after-sales",
++        }),
          {
 -          label: t("campaigns.domain"),
 -          to: "/campaigns",
@@ -1167,12 +1173,27 @@ index c554883a355b95afb80139346ac38859029b155d..3a20315bcfad58747cdaa4fd9014e91a
          },
        ],
      },
++    {
++      label: t("adminNav.sections.intelligence"),
++      items: [
++        customRoute("/ai", {
++          icon: <SquaresPlus />,
++          label: t("adminNav.items.ai"),
++          to: "/ai",
++        }),
++      ],
++    },
      {
 -      icon: <CurrencyDollar />,
 -      label: t("priceLists.domain"),
 -      to: "/price-lists",
 +      label: t("adminNav.sections.riskSystem"),
 +      items: [
++        customRoute("/ops", {
++          icon: <CogSixTooth />,
++          label: t("adminNav.items.ops"),
++          to: "/ops",
++        }),
 +        customRoute("/audit-logs", {
 +          icon: <SquaresPlus />,
 +          label: t("adminNav.items.auditLogs"),

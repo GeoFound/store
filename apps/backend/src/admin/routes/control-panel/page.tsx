@@ -1,5 +1,5 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk"
-import { Badge, Button, Container, Heading, Text } from "@medusajs/ui"
+import { Badge, Button, Container, Heading, Input, Text } from "@medusajs/ui"
 import { useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { Link } from "react-router-dom"
@@ -231,98 +231,182 @@ const AI_ATTENTION_STATUSES = new Set([
 ])
 const AI_REVIEW_STATUSES = new Set(["requires_review"])
 
-const workflowLinks = [
+const workflowGroups = [
   {
-    bodyKey: "controlPanel.links.productPublishing.body",
-    commandKey: "controlPanel.links.productPublishing.command",
-    titleKey: "controlPanel.links.productPublishing.title",
-    to: "/product-publishing",
+    bodyKey: "controlPanel.workflow.sections.catalog.body",
+    id: "catalog",
+    links: [
+      {
+        bodyKey: "controlPanel.links.productPublishing.body",
+        commandKey: "controlPanel.links.productPublishing.command",
+        titleKey: "controlPanel.links.productPublishing.title",
+        to: "/product-publishing",
+      },
+      {
+        bodyKey: "controlPanel.links.products.body",
+        commandKey: "controlPanel.links.products.command",
+        titleKey: "controlPanel.links.products.title",
+        to: "/products",
+      },
+    ],
+    placementKey: "controlPanel.workflow.sections.catalog.placement",
+    titleKey: "controlPanel.workflow.sections.catalog.title",
   },
   {
-    bodyKey: "controlPanel.links.orders.body",
-    commandKey: "controlPanel.links.orders.command",
-    titleKey: "controlPanel.links.orders.title",
-    to: "/orders",
+    bodyKey: "controlPanel.workflow.sections.orders.body",
+    id: "orders",
+    links: [
+      {
+        bodyKey: "controlPanel.links.orders.body",
+        commandKey: "controlPanel.links.orders.command",
+        titleKey: "controlPanel.links.orders.title",
+        to: "/orders",
+      },
+      {
+        bodyKey: "controlPanel.links.deliveries.body",
+        commandKey: "controlPanel.links.deliveries.command",
+        titleKey: "controlPanel.links.deliveries.title",
+        to: "/deliveries",
+      },
+    ],
+    placementKey: "controlPanel.workflow.sections.orders.placement",
+    titleKey: "controlPanel.workflow.sections.orders.title",
   },
   {
-    bodyKey: "controlPanel.links.products.body",
-    commandKey: "controlPanel.links.products.command",
-    titleKey: "controlPanel.links.products.title",
-    to: "/products",
+    bodyKey: "controlPanel.workflow.sections.inventory.body",
+    id: "inventory",
+    links: [
+      {
+        bodyKey: "controlPanel.links.credentials.body",
+        commandKey: "controlPanel.links.credentials.command",
+        titleKey: "controlPanel.links.credentials.title",
+        to: "/credentials",
+      },
+    ],
+    placementKey: "controlPanel.workflow.sections.inventory.placement",
+    titleKey: "controlPanel.workflow.sections.inventory.title",
   },
   {
-    bodyKey: "controlPanel.links.payments.body",
-    commandKey: "controlPanel.links.payments.command",
-    titleKey: "controlPanel.links.payments.title",
-    to: "/payments",
+    bodyKey: "controlPanel.workflow.sections.paymentsSuppliers.body",
+    id: "paymentsSuppliers",
+    links: [
+      {
+        bodyKey: "controlPanel.links.payments.body",
+        commandKey: "controlPanel.links.payments.command",
+        titleKey: "controlPanel.links.payments.title",
+        to: "/payments",
+      },
+      {
+        bodyKey: "controlPanel.links.suppliers.body",
+        commandKey: "controlPanel.links.suppliers.command",
+        titleKey: "controlPanel.links.suppliers.title",
+        to: "/suppliers",
+      },
+    ],
+    placementKey: "controlPanel.workflow.sections.paymentsSuppliers.placement",
+    titleKey: "controlPanel.workflow.sections.paymentsSuppliers.title",
   },
   {
-    bodyKey: "controlPanel.links.ops.body",
-    commandKey: "controlPanel.links.ops.command",
-    titleKey: "controlPanel.links.ops.title",
-    to: "/ops",
+    bodyKey: "controlPanel.workflow.sections.growth.body",
+    id: "growth",
+    links: [
+      {
+        bodyKey: "controlPanel.links.content.body",
+        commandKey: "controlPanel.links.content.command",
+        titleKey: "controlPanel.links.content.title",
+        to: "/content",
+      },
+      {
+        bodyKey: "controlPanel.links.marketing.body",
+        commandKey: "controlPanel.links.marketing.command",
+        titleKey: "controlPanel.links.marketing.title",
+        to: "/marketing",
+      },
+      {
+        bodyKey: "controlPanel.links.analytics.body",
+        commandKey: "controlPanel.links.analytics.command",
+        titleKey: "controlPanel.links.analytics.title",
+        to: "/analytics",
+      },
+    ],
+    placementKey: "controlPanel.workflow.sections.growth.placement",
+    titleKey: "controlPanel.workflow.sections.growth.title",
   },
   {
-    bodyKey: "controlPanel.links.deliveries.body",
-    commandKey: "controlPanel.links.deliveries.command",
-    titleKey: "controlPanel.links.deliveries.title",
-    to: "/deliveries",
+    bodyKey: "controlPanel.workflow.sections.customersSupport.body",
+    id: "customersSupport",
+    links: [
+      {
+        bodyKey: "controlPanel.links.afterSales.body",
+        commandKey: "controlPanel.links.afterSales.command",
+        titleKey: "controlPanel.links.afterSales.title",
+        to: "/after-sales",
+      },
+    ],
+    placementKey: "controlPanel.workflow.sections.customersSupport.placement",
+    titleKey: "controlPanel.workflow.sections.customersSupport.title",
   },
   {
-    bodyKey: "controlPanel.links.credentials.body",
-    commandKey: "controlPanel.links.credentials.command",
-    titleKey: "controlPanel.links.credentials.title",
-    to: "/credentials",
+    bodyKey: "controlPanel.workflow.sections.intelligence.body",
+    id: "intelligence",
+    links: [
+      {
+        bodyKey: "controlPanel.links.ai.body",
+        commandKey: "controlPanel.links.ai.command",
+        titleKey: "controlPanel.links.ai.title",
+        to: "/ai",
+      },
+    ],
+    placementKey: "controlPanel.workflow.sections.intelligence.placement",
+    titleKey: "controlPanel.workflow.sections.intelligence.title",
   },
   {
-    bodyKey: "controlPanel.links.suppliers.body",
-    commandKey: "controlPanel.links.suppliers.command",
-    titleKey: "controlPanel.links.suppliers.title",
-    to: "/suppliers",
-  },
-  {
-    bodyKey: "controlPanel.links.content.body",
-    commandKey: "controlPanel.links.content.command",
-    titleKey: "controlPanel.links.content.title",
-    to: "/content",
-  },
-  {
-    bodyKey: "controlPanel.links.marketing.body",
-    commandKey: "controlPanel.links.marketing.command",
-    titleKey: "controlPanel.links.marketing.title",
-    to: "/marketing",
-  },
-  {
-    bodyKey: "controlPanel.links.analytics.body",
-    commandKey: "controlPanel.links.analytics.command",
-    titleKey: "controlPanel.links.analytics.title",
-    to: "/analytics",
-  },
-  {
-    bodyKey: "controlPanel.links.ai.body",
-    commandKey: "controlPanel.links.ai.command",
-    titleKey: "controlPanel.links.ai.title",
-    to: "/ai",
-  },
-  {
-    bodyKey: "controlPanel.links.afterSales.body",
-    commandKey: "controlPanel.links.afterSales.command",
-    titleKey: "controlPanel.links.afterSales.title",
-    to: "/after-sales",
-  },
-  {
-    bodyKey: "controlPanel.links.audit.body",
-    commandKey: "controlPanel.links.audit.command",
-    titleKey: "controlPanel.links.audit.title",
-    to: "/audit-logs",
+    bodyKey: "controlPanel.workflow.sections.riskSystem.body",
+    id: "riskSystem",
+    links: [
+      {
+        bodyKey: "controlPanel.links.ops.body",
+        commandKey: "controlPanel.links.ops.command",
+        titleKey: "controlPanel.links.ops.title",
+        to: "/ops",
+      },
+      {
+        bodyKey: "controlPanel.links.audit.body",
+        commandKey: "controlPanel.links.audit.command",
+        titleKey: "controlPanel.links.audit.title",
+        to: "/audit-logs",
+      },
+    ],
+    placementKey: "controlPanel.workflow.sections.riskSystem.placement",
+    titleKey: "controlPanel.workflow.sections.riskSystem.title",
   },
 ]
+
+const workflowFilterOptions = [
+  {
+    id: "all",
+    titleKey: "controlPanel.workflow.allSections",
+  },
+  ...workflowGroups.map((group) => ({
+    id: group.id,
+    titleKey: group.titleKey,
+  })),
+]
+
+const severityRank = {
+  critical: 0,
+  warning: 1,
+  info: 2,
+  ready: 3,
+}
 
 const ControlPanelPage = () => {
   const { t } = useTranslation()
   const [dashboard, setDashboard] = useState<ControlPanelState>(EMPTY_STATE)
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(true)
+  const [selectedWorkflowGroup, setSelectedWorkflowGroup] = useState("all")
+  const [workflowQuery, setWorkflowQuery] = useState("")
 
   useEffect(() => {
     void refresh()
@@ -500,6 +584,154 @@ const ControlPanelPage = () => {
         label: t("controlPanel.metrics.support.label"),
         to: "/after-sales",
         value: openAfterSales,
+      },
+    ]
+  }, [dashboard, t])
+
+  const priorityActions = useMemo(() => {
+    const enabledChannels = dashboard.channels.filter(
+      (channel) => channel.enabled
+    )
+    const unhealthyChannels = enabledChannels.filter(
+      (channel) => !CHANNEL_READY_STATUSES.has(channel.health_status)
+    )
+    const paymentAttentionCount = dashboard.paymentAttempts.filter(
+      (attempt) => !PAYMENT_DONE_STATUSES.has(attempt.status)
+    ).length
+    const pendingDeliveryCount = dashboard.pendingDeliveries.length
+    const publishNeedsAction = dashboard.catalogVariants.filter((variant) => {
+      if (variant.credential_inventory_supported) {
+        return (variant.available_count || 0) <= 0
+      }
+
+      return !variant.delivery_handler_code
+    }).length
+    const supplierAttention = dashboard.supplierProcurements.filter((item) =>
+      SUPPLIER_ATTENTION_STATUSES.has(item.status)
+    ).length
+    const openAfterSales = dashboard.afterSales.filter((item) =>
+      AFTER_SALES_OPEN_STATUSES.has(item.status)
+    ).length
+    const analyticsAttention = dashboard.analyticsDispatches.filter((dispatch) =>
+      ANALYTICS_ATTENTION_STATUSES.has(dispatch.status)
+    ).length
+    const contentReviewCount = dashboard.contentEntries.filter((entry) =>
+      CONTENT_REVIEW_STATUSES.has(entry.status)
+    ).length
+    const aiAttention =
+      dashboard.aiProviders.filter((provider) =>
+        AI_ATTENTION_STATUSES.has(provider.status)
+      ).length +
+      dashboard.aiTaskRuns.filter((run) => AI_REVIEW_STATUSES.has(run.status))
+        .length
+    const highRiskEvents = dashboard.auditLogs.filter(
+      (log) => log.risk_level === "high"
+    ).length
+
+    const actions = [
+      {
+        body: t("controlPanel.triage.actions.audit.body"),
+        count: highRiskEvents,
+        detail: t("controlPanel.triage.actions.audit.detail"),
+        label: t("controlPanel.attention.auditReview"),
+        severity: "critical",
+        to: "/audit-logs",
+      },
+      {
+        body: t("controlPanel.triage.actions.channels.body"),
+        count: unhealthyChannels.length,
+        detail: t("controlPanel.triage.actions.channels.detail", {
+          enabled: enabledChannels.length,
+        }),
+        label: t("controlPanel.metrics.channels.label"),
+        severity: "critical",
+        to: "/payments",
+      },
+      {
+        body: t("controlPanel.triage.actions.payments.body"),
+        count: paymentAttentionCount,
+        detail: t("controlPanel.triage.actions.payments.detail"),
+        label: t("controlPanel.attention.paymentReview"),
+        severity: "critical",
+        to: "/payments",
+      },
+      {
+        body: t("controlPanel.triage.actions.deliveries.body"),
+        count: pendingDeliveryCount,
+        detail: t("controlPanel.triage.actions.deliveries.detail"),
+        label: t("controlPanel.attention.pendingDelivery"),
+        severity: "critical",
+        to: "/deliveries",
+      },
+      {
+        body: t("controlPanel.triage.actions.afterSales.body"),
+        count: openAfterSales,
+        detail: t("controlPanel.triage.actions.afterSales.detail"),
+        label: t("controlPanel.attention.afterSalesReview"),
+        severity: "critical",
+        to: "/after-sales",
+      },
+      {
+        body: t("controlPanel.triage.actions.catalog.body"),
+        count: publishNeedsAction,
+        detail: t("controlPanel.triage.actions.catalog.detail"),
+        label: t("controlPanel.attention.catalogReview"),
+        severity: "warning",
+        to: "/product-publishing",
+      },
+      {
+        body: t("controlPanel.triage.actions.suppliers.body"),
+        count: supplierAttention,
+        detail: t("controlPanel.triage.actions.suppliers.detail"),
+        label: t("controlPanel.attention.supplierReview"),
+        severity: "warning",
+        to: "/suppliers",
+      },
+      {
+        body: t("controlPanel.triage.actions.analytics.body"),
+        count: analyticsAttention,
+        detail: t("controlPanel.triage.actions.analytics.detail"),
+        label: t("controlPanel.attention.analyticsReview"),
+        severity: "warning",
+        to: "/analytics",
+      },
+      {
+        body: t("controlPanel.triage.actions.content.body"),
+        count: contentReviewCount,
+        detail: t("controlPanel.triage.actions.content.detail"),
+        label: t("controlPanel.attention.contentReview"),
+        severity: "info",
+        to: "/content",
+      },
+      {
+        body: t("controlPanel.triage.actions.ai.body"),
+        count: aiAttention,
+        detail: t("controlPanel.triage.actions.ai.detail"),
+        label: t("controlPanel.metrics.ai.label"),
+        severity: "info",
+        to: "/ai",
+      },
+    ]
+      .filter((action) => action.count > 0)
+      .sort(
+        (a, b) =>
+          severityRank[a.severity as keyof typeof severityRank] -
+            severityRank[b.severity as keyof typeof severityRank] ||
+          b.count - a.count
+      )
+
+    if (actions.length > 0) {
+      return actions
+    }
+
+    return [
+      {
+        body: t("controlPanel.triage.allClear.body"),
+        count: 0,
+        detail: t("controlPanel.triage.allClear.detail"),
+        label: t("controlPanel.triage.allClear.label"),
+        severity: "ready",
+        to: "/product-publishing",
       },
     ]
   }, [dashboard, t])
@@ -748,6 +980,35 @@ const ControlPanelPage = () => {
     [dashboard, t]
   )
 
+  const filteredWorkflowGroups = useMemo(() => {
+    const query = workflowQuery.trim().toLowerCase()
+
+    return workflowGroups.filter((group) => {
+      if (selectedWorkflowGroup !== "all" && group.id !== selectedWorkflowGroup) {
+        return false
+      }
+
+      if (!query) {
+        return true
+      }
+
+      const searchableText = [
+        t(group.titleKey),
+        t(group.bodyKey),
+        t(group.placementKey),
+        ...group.links.flatMap((link) => [
+          t(link.titleKey),
+          t(link.bodyKey),
+          t(link.commandKey),
+        ]),
+      ]
+        .join(" ")
+        .toLowerCase()
+
+      return searchableText.includes(query)
+    })
+  }, [selectedWorkflowGroup, t, workflowQuery])
+
   async function refresh() {
     setError("")
     setLoading(true)
@@ -856,7 +1117,7 @@ const ControlPanelPage = () => {
 
   return (
     <div className="flex flex-col gap-y-4">
-      <Container className="p-0">
+      <Container className="min-w-0 p-0">
         <div className="flex flex-col gap-4 px-6 py-5 lg:flex-row lg:items-start lg:justify-between">
           <div className="max-w-[760px]">
             <Heading level="h1">{t("controlPanel.title")}</Heading>
@@ -887,10 +1148,57 @@ const ControlPanelPage = () => {
         </div>
       </Container>
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <Container className="min-w-0 divide-y p-0">
+        <SectionHeader
+          title={t("controlPanel.triage.title")}
+          description={t("controlPanel.triage.description")}
+        />
+        <div className="grid divide-y lg:grid-cols-[minmax(0,1fr)_320px] lg:divide-x lg:divide-y-0">
+          <div className="divide-y">
+            {priorityActions.slice(0, 6).map((action) => (
+              <Link
+                key={`${action.to}-${action.label}`}
+                to={action.to}
+                className="grid gap-3 px-6 py-4 transition-fg hover:bg-ui-bg-subtle md:grid-cols-[96px_minmax(0,1fr)_auto] md:items-center"
+              >
+                <div className="flex items-center gap-2">
+                  <Badge>{action.count}</Badge>
+                  <Badge>{t(`controlPanel.triage.severity.${action.severity}`)}</Badge>
+                </div>
+                <div className="min-w-0">
+                  <Heading level="h3">{action.label}</Heading>
+                  <Text className="mt-1 truncate text-ui-fg-subtle">
+                    {action.body}
+                  </Text>
+                  <Text className="mt-1 text-ui-fg-subtle">{action.detail}</Text>
+                </div>
+                <Text className="text-ui-fg-interactive">
+                  {t("controlPanel.triage.openQueue")}
+                </Text>
+              </Link>
+            ))}
+          </div>
+          <div className="space-y-3 px-6 py-4">
+            <Text className="font-medium text-ui-fg-base">
+              {t("controlPanel.triage.operatingOrder.title")}
+            </Text>
+            <Text className="text-ui-fg-subtle">
+              {t("controlPanel.triage.operatingOrder.revenue")}
+            </Text>
+            <Text className="text-ui-fg-subtle">
+              {t("controlPanel.triage.operatingOrder.fulfillment")}
+            </Text>
+            <Text className="text-ui-fg-subtle">
+              {t("controlPanel.triage.operatingOrder.growth")}
+            </Text>
+          </div>
+        </div>
+      </Container>
+
+      <div className="grid gap-4 md:grid-cols-3 xl:grid-cols-6">
         {metrics.map((metric) => (
-          <Container key={metric.label} className="p-0">
-            <Link to={metric.to} className="block px-5 py-4">
+          <Container key={metric.label} className="h-full min-w-0 p-0">
+            <Link to={metric.to} className="block h-full min-h-[136px] px-5 py-4">
               <Text className="text-ui-fg-subtle">{metric.label}</Text>
               <div className="mt-3 flex items-baseline gap-2">
                 <span className="text-3xl font-semibold text-ui-fg-base">
@@ -904,12 +1212,12 @@ const ControlPanelPage = () => {
         ))}
       </div>
 
-      <Container className="divide-y p-0">
+      <Container className="min-w-0 divide-y p-0">
         <SectionHeader
           title={t("controlPanel.signals.title")}
           description={t("controlPanel.signals.description")}
         />
-        <div className="grid divide-y md:grid-cols-2 md:divide-x md:divide-y-0 xl:grid-cols-5">
+        <div className="grid divide-y md:grid-cols-2 md:divide-x md:divide-y-0 xl:grid-cols-3">
           {operatorSignals.map((signal) => (
             <Link
               key={signal.label}
@@ -931,8 +1239,84 @@ const ControlPanelPage = () => {
         </div>
       </Container>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-        <Container className="divide-y p-0">
+      <Container className="min-w-0 divide-y p-0">
+        <SectionHeader
+          title={t("controlPanel.workflow.title")}
+          description={t("controlPanel.workflow.description")}
+        />
+        <div className="flex flex-col gap-3 border-b border-ui-border-base px-4 py-3 xl:flex-row xl:items-center xl:justify-between">
+          <div className="w-full xl:max-w-[420px]">
+            <Input
+              value={workflowQuery}
+              onChange={(event) => setWorkflowQuery(event.target.value)}
+              placeholder={t("controlPanel.workflow.searchPlaceholder")}
+            />
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1 xl:pb-0">
+            {workflowFilterOptions.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => setSelectedWorkflowGroup(option.id)}
+                className={`shrink-0 rounded border px-3 py-2 text-sm transition-fg ${
+                  selectedWorkflowGroup === option.id
+                    ? "border-ui-border-interactive bg-ui-bg-interactive text-ui-fg-on-inverted"
+                    : "border-ui-border-base bg-ui-bg-base text-ui-fg-subtle hover:bg-ui-bg-subtle"
+                }`}
+              >
+                {t(option.titleKey)}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="grid gap-4 p-4 lg:grid-cols-2 xl:grid-cols-4">
+          {filteredWorkflowGroups.map((group) => (
+            <div
+              key={group.titleKey}
+              className="flex min-w-0 flex-col rounded border border-ui-border-base"
+            >
+              <div className="border-b border-ui-border-base px-4 py-3">
+                <Heading level="h3">{t(group.titleKey)}</Heading>
+                <Text className="mt-1 text-ui-fg-subtle">{t(group.bodyKey)}</Text>
+                <Text className="mt-2 text-ui-fg-subtle">
+                  {t(group.placementKey)}
+                </Text>
+              </div>
+              <div className="divide-y">
+                {group.links.map((link) => (
+                  <Link
+                    key={link.to}
+                    to={link.to}
+                    className="block px-4 py-3 transition-fg hover:bg-ui-bg-subtle"
+                  >
+                    <div className="flex min-w-0 items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <Text className="font-medium text-ui-fg-base">
+                          {t(link.titleKey)}
+                        </Text>
+                        <Text className="mt-1 truncate text-ui-fg-subtle">
+                          {t(link.bodyKey)}
+                        </Text>
+                      </div>
+                      <Text className="shrink-0 text-ui-fg-interactive">
+                        {t(link.commandKey)}
+                      </Text>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
+          {filteredWorkflowGroups.length === 0 ? (
+            <div className="lg:col-span-2 xl:col-span-4">
+              <EmptyRow label={t("controlPanel.workflow.noMatches")} />
+            </div>
+          ) : null}
+        </div>
+      </Container>
+
+      <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+        <Container className="min-w-0 divide-y p-0">
           <SectionHeader
             title={t("controlPanel.attention.title")}
             description={t("controlPanel.attention.description")}
@@ -942,10 +1326,10 @@ const ControlPanelPage = () => {
               <Link
                 key={item.label}
                 to={item.to}
-                className="grid gap-3 px-6 py-4 md:grid-cols-[120px_minmax(0,1fr)_auto] md:items-center"
+                className="grid min-w-0 gap-3 px-6 py-4 md:grid-cols-[120px_minmax(0,1fr)_auto] md:items-center"
               >
                 <Badge>{item.count}</Badge>
-                <div>
+                <div className="min-w-0">
                   <Heading level="h3">{item.label}</Heading>
                   <Text className="mt-1 truncate text-ui-fg-subtle">
                     {item.body}
@@ -960,66 +1344,7 @@ const ControlPanelPage = () => {
           </div>
         </Container>
 
-        <Container className="divide-y p-0">
-          <SectionHeader
-            title={t("controlPanel.workflow.title")}
-            description={t("controlPanel.workflow.description")}
-          />
-          <div className="divide-y">
-            {workflowLinks.map((link) => (
-              <Link
-                key={link.to}
-                to={link.to}
-                className="block px-6 py-4 transition-fg hover:bg-ui-bg-subtle"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <Heading level="h3">{t(link.titleKey)}</Heading>
-                    <Text className="mt-1 text-ui-fg-subtle">
-                      {t(link.bodyKey)}
-                    </Text>
-                  </div>
-                  <Text className="shrink-0 text-ui-fg-interactive">
-                    {t(link.commandKey)}
-                  </Text>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </Container>
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-2">
-        <Container className="divide-y p-0">
-          <SectionHeader
-            title={t("controlPanel.recentPayments.title")}
-            description={t("controlPanel.recentPayments.description")}
-          />
-          <div className="divide-y">
-            {dashboard.paymentAttempts.slice(0, 5).map((attempt) => (
-              <div
-                key={attempt.id}
-                className="grid gap-2 px-6 py-3 md:grid-cols-[minmax(0,1fr)_120px_120px] md:items-center"
-              >
-                <div className="min-w-0">
-                  <Text className="truncate font-mono">{attempt.id}</Text>
-                  <Text className="text-ui-fg-subtle">
-                    {attempt.provider_code} · {formatDate(attempt.created_at)}
-                  </Text>
-                </div>
-                <Badge>{translatedStatus(t, attempt.status)}</Badge>
-                <Text className="font-mono">
-                  {attempt.amount} {attempt.currency}
-                </Text>
-              </div>
-            ))}
-            {dashboard.paymentAttempts.length === 0 ? (
-              <EmptyRow label={t("controlPanel.empty")} />
-            ) : null}
-          </div>
-        </Container>
-
-        <Container className="divide-y p-0">
+        <Container className="min-w-0 divide-y p-0">
           <SectionHeader
             title={t("controlPanel.recentAudit.title")}
             description={t("controlPanel.recentAudit.description")}
@@ -1028,7 +1353,7 @@ const ControlPanelPage = () => {
             {dashboard.auditLogs.slice(0, 5).map((log) => (
               <div
                 key={log.id}
-                className="grid gap-2 px-6 py-3 md:grid-cols-[minmax(0,1fr)_96px_128px] md:items-center"
+                className="grid min-w-0 gap-2 px-6 py-3 md:grid-cols-[minmax(0,1fr)_96px_128px] md:items-center"
               >
                 <div className="min-w-0">
                   <Text className="truncate">{log.action}</Text>
@@ -1048,6 +1373,35 @@ const ControlPanelPage = () => {
           </div>
         </Container>
       </div>
+
+      <Container className="min-w-0 divide-y p-0">
+        <SectionHeader
+          title={t("controlPanel.recentPayments.title")}
+          description={t("controlPanel.recentPayments.description")}
+        />
+        <div className="divide-y">
+          {dashboard.paymentAttempts.slice(0, 5).map((attempt) => (
+            <div
+              key={attempt.id}
+              className="grid min-w-0 gap-2 px-6 py-3 md:grid-cols-[minmax(0,1fr)_120px_120px] md:items-center"
+            >
+              <div className="min-w-0">
+                <Text className="truncate font-mono">{attempt.id}</Text>
+                <Text className="text-ui-fg-subtle">
+                  {attempt.provider_code} · {formatDate(attempt.created_at)}
+                </Text>
+              </div>
+              <Badge>{translatedStatus(t, attempt.status)}</Badge>
+              <Text className="font-mono">
+                {attempt.amount} {attempt.currency}
+              </Text>
+            </div>
+          ))}
+          {dashboard.paymentAttempts.length === 0 ? (
+            <EmptyRow label={t("controlPanel.empty")} />
+          ) : null}
+        </div>
+      </Container>
     </div>
   )
 }

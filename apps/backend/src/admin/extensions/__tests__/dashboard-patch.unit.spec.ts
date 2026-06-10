@@ -26,6 +26,7 @@ describe("Medusa Dashboard shell patch", () => {
     expect(patch).toContain('+      label: t("adminNav.sections.intelligence"),')
     expect(patch).toContain('+      label: t("adminNav.sections.customers"),')
     expect(patch).toContain('+      label: t("adminNav.sections.riskSystem"),')
+    expect(patch).toContain('+          label: t("adminNav.items.ops"),')
   })
 
   it("keeps core Medusa commerce routes reachable", () => {
@@ -49,6 +50,7 @@ describe("Medusa Dashboard shell patch", () => {
     expect(patch).toContain('to: "/payments"')
     expect(patch).toContain('to: "/content"')
     expect(patch).toContain('to: "/ai"')
+    expect(patch).toContain('to: "/ops"')
   })
 
   it("patches the distributed dashboard runtime files", () => {

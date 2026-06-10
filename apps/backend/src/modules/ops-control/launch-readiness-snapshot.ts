@@ -124,6 +124,31 @@ export function createControlPanelPolicySnapshot(): OpsControlDashboardSnapshot[
   return {
     version: ADMIN_CONTROL_PANEL_POLICY.version,
     production_control_rule: ADMIN_CONTROL_PANEL_POLICY.productionControlRule,
+    information_architecture: {
+      default_admin_route:
+        ADMIN_CONTROL_PANEL_POLICY.informationArchitecture.defaultAdminRoute,
+      route_prefix: ADMIN_CONTROL_PANEL_POLICY.informationArchitecture.routePrefix,
+      section_order:
+        ADMIN_CONTROL_PANEL_POLICY.informationArchitecture.sectionOrder.map(
+          (section) => ({
+            id: section.id,
+            title: section.title,
+            description: section.description,
+          })
+        ),
+      route_placements:
+        ADMIN_CONTROL_PANEL_POLICY.informationArchitecture.routePlacements.map(
+          (placement) => ({
+            route: placement.route,
+            section: placement.section,
+            title: placement.title,
+            owner: placement.owner,
+            purpose: placement.purpose,
+          })
+        ),
+      extension_placement_rule:
+        ADMIN_CONTROL_PANEL_POLICY.informationArchitecture.extensionPlacementRule,
+    },
     forbidden_surface_count: ADMIN_CONTROL_PANEL_POLICY.forbiddenSurface.length,
     required_surfaces: ADMIN_CONTROL_PANEL_POLICY.requiredProductionSurfaces.map(
       (surface) => ({

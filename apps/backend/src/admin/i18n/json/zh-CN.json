@@ -87,7 +87,7 @@
     },
     "sections": {
       "catalog": "商品与目录",
-      "customers": "客户",
+      "customers": "客户与支持",
       "growth": "增长",
       "intelligence": "智能",
       "inventory": "凭证与库存",
@@ -168,6 +168,70 @@
     "refreshing": "刷新中...",
     "secondaryAction": "查看支付",
     "title": "控制台",
+    "triage": {
+      "actions": {
+        "afterSales": {
+          "body": "先处理未关闭的客户请求，再做日常商品工作。",
+          "detail": "直接影响客户的问题不应该被增长事项盖住。"
+        },
+        "ai": {
+          "body": "复核需要处理的 AI provider 配置或 AI 运行。",
+          "detail": "AI 事项在 provider 和审核队列干净前只作为辅助。"
+        },
+        "analytics": {
+          "body": "先重放失败的分析投递，再用数据做判断。",
+          "detail": "增长报表必须能看到投递失败，才有运营价值。"
+        },
+        "audit": {
+          "body": "继续做生产变更前，先检查高风险审计事件。",
+          "detail": "风险事件优先级高于日常操作。"
+        },
+        "catalog": {
+          "body": "修复没有库存或没有履约路径的商品规格。",
+          "detail": "这个队列清空前，不应把商品当成可售。"
+        },
+        "channels": {
+          "body": "复核健康状态异常的已启用支付通道。",
+          "detail": "当前可见 {{enabled}} 个已启用通道。"
+        },
+        "deliveries": {
+          "body": "完成已售出或已排队但等待交付的项目。",
+          "detail": "履约延迟会直接影响客户信任。"
+        },
+        "payments": {
+          "body": "复核尚未结清的支付尝试。",
+          "detail": "收款和履约判断应该从支付状态开始。"
+        },
+        "suppliers": {
+          "body": "重试或检查需要复核的供应商采购。",
+          "detail": "供应商失败可能在支付成功后阻塞履约。"
+        },
+        "content": {
+          "body": "批准或退回等待审核的内容条目。",
+          "detail": "内容工作优先级低于收款、履约和客服队列。"
+        }
+      },
+      "allClear": {
+        "body": "最近控制面板数据里没有大于 0 的紧急队列。",
+        "detail": "可以使用下方工作流地图处理计划内的商品、增长和系统工作。",
+        "label": "暂无紧急队列"
+      },
+      "description": "给后台操作者看的优先级队列：先收款、履约、客服、风险，再做计划内增长工作。",
+      "openQueue": "打开",
+      "operatingOrder": {
+        "fulfillment": "2. 然后清空交付、供应商和售后事项。",
+        "growth": "3. 最后再处理内容、营销、分析和 AI 审核。",
+        "revenue": "1. 先看支付、审计和通道健康阻塞。",
+        "title": "处理顺序"
+      },
+      "severity": {
+        "critical": "紧急",
+        "info": "计划",
+        "ready": "干净",
+        "warning": "复核"
+      },
+      "title": "今日优先处理"
+    },
     "attention": {
       "afterSalesReview": "售后复核",
       "analyticsReview": "分析重放",
@@ -372,7 +436,52 @@
       "title": "最近支付"
     },
     "workflow": {
+      "allSections": "全部分区",
       "description": "运营人员最常处理事项的最短路径。",
+      "noMatches": "没有匹配当前筛选条件的工作区。",
+      "searchPlaceholder": "搜索路由、工作区或归位规则",
+      "sections": {
+        "catalog": {
+          "body": "创建商品并证明商品可售。",
+          "placement": "商品创建、规格可售检查、模板、发布检查放这里。",
+          "title": "商品与目录"
+        },
+        "customersSupport": {
+          "body": "处理直接影响客户的支持事项。",
+          "placement": "客户找回、支持请求、补发、退款、售后记录放这里。",
+          "title": "客户与支持"
+        },
+        "growth": {
+          "body": "发布内容并查看增长数据。",
+          "placement": "内容、活动、优惠券、推荐、归因、隐私安全分析和报表放这里。",
+          "title": "增长"
+        },
+        "intelligence": {
+          "body": "复核 AI provider 和生成工作。",
+          "placement": "AI provider 就绪、任务插件、生成草稿、人工审核队列放这里。",
+          "title": "智能"
+        },
+        "inventory": {
+          "body": "保持可售凭证库存充足。",
+          "placement": "凭证批次、库存水位、预占状态、库存导入放这里。",
+          "title": "凭证与库存"
+        },
+        "orders": {
+          "body": "跟进订单直到完成履约。",
+          "placement": "订单查询、交付记录、人工履约、客户订单历史放这里。",
+          "title": "订单与交付"
+        },
+        "paymentsSuppliers": {
+          "body": "保持收款和供应商履约健康。",
+          "placement": "支付通道、支付尝试、供应商映射、采购、provider 健康放这里。",
+          "title": "支付与供应商"
+        },
+        "riskSystem": {
+          "body": "检查生产门禁、风险和证据。",
+          "placement": "上线就绪、DNS、边缘安全、备份、回滚、审计日志和运行证据放这里。",
+          "title": "风控与系统"
+        }
+      },
       "title": "常用工作流"
     }
   },
@@ -502,6 +611,7 @@
       "description": "生产关键能力必须出现在后端控制面板，并映射到可执行门禁。",
       "evidenceFields": "证据字段",
       "gated": "已纳入门禁",
+      "noRoutes": "暂无路由",
       "runtimeCommands": "运行命令",
       "section": "面板分区",
       "title": "控制面板门禁策略",

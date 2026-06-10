@@ -55,6 +55,20 @@ export type OpsControlPolicySurface = {
   config_keys: string[]
 }
 
+export type OpsControlPolicySection = {
+  id: string
+  title: string
+  description: string
+}
+
+export type OpsControlPolicyRoutePlacement = {
+  route: string
+  section: string
+  title: string
+  owner: string
+  purpose: string
+}
+
 export type OpsControlDashboardSnapshot = {
   generated_at: string
   module: "ops-control"
@@ -75,6 +89,13 @@ export type OpsControlDashboardSnapshot = {
   control_panel_policy: {
     version: string
     production_control_rule: string
+    information_architecture: {
+      default_admin_route: string
+      route_prefix: string
+      section_order: OpsControlPolicySection[]
+      route_placements: OpsControlPolicyRoutePlacement[]
+      extension_placement_rule: string
+    }
     forbidden_surface_count: number
     required_surfaces: OpsControlPolicySurface[]
   }

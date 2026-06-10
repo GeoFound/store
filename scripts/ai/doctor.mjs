@@ -525,14 +525,15 @@ function validateAdminControlPanelPolicy(input) {
   const evidencePolicy = input.evidencePolicy || {}
   const packageJson = input.packageJson || {}
   const surfaces = policy.requiredProductionSurfaces || []
-  const allowedSections = new Set([
-    "launch_readiness",
-    "security",
-    "maintenance",
-    "customer",
-    "commerce",
-    "ai_ops",
-  ])
+  const informationArchitecture = policy.informationArchitecture || {}
+  const sectionOrder = Array.isArray(informationArchitecture.sectionOrder)
+    ? informationArchitecture.sectionOrder
+    : []
+  const routePlacements = Array.isArray(informationArchitecture.routePlacements)
+    ? informationArchitecture.routePlacements
+    : []
+  const allowedSections = new Set(sectionOrder.map((section) => section.id).filter(Boolean))
+  const placedRoutes = new Set(routePlacements.map((placement) => placement.route).filter(Boolean))
   const profileControls = new Set(siteLifecyclePolicy.requiredControls || [])
   const evidenceFields = new Set([
     ...(siteLifecyclePolicy.promotionEvidenceFields || []),
@@ -561,6 +562,89 @@ function validateAdminControlPanelPolicy(input) {
     id: "admin-control-panel.production-surfaces-missing",
     message: "Admin control panel policy must declare required production surfaces.",
   })
+  assert(typeof informationArchitecture.defaultAdminRoute === "string" && informationArchitecture.defaultAdminRoute.startsWith("/app/"), {
+    id: "admin-control-panel.default-admin-route-invalid",
+    route: informationArchitecture.defaultAdminRoute,
+    message: "Admin control panel policy must declare a default backend admin route.",
+  })
+  assert(Array.isArray(sectionOrder) && sectionOrder.length > 0, {
+    id: "admin-control-panel.information-architecture-sections-missing",
+    message: "Admin control panel policy must declare ordered information architecture sections.",
+  })
+  assert(Array.isArray(routePlacements) && routePlacements.length > 0, {
+    id: "admin-control-panel.route-placements-missing",
+    message: "Admin control panel policy must declare backend admin route placements.",
+  })
+
+  const sectionIds = new Set()
+
+  for (const section of sectionOrder) {
+    assert(Boolean(section.id), {
+      id: "admin-control-panel.section-id-missing",
+      message: "Admin control panel information architecture section is missing id.",
+    })
+    if (section.id) {
+      assert(!sectionIds.has(section.id), {
+        id: "admin-control-panel.section-id-duplicate",
+        section: section.id,
+        message: "Admin control panel information architecture section id must be unique.",
+      })
+      sectionIds.add(section.id)
+    }
+    for (const key of ["title", "description"]) {
+      assert(Boolean(section[key]), {
+        id: "admin-control-panel.section-metadata-missing",
+        section: section.id,
+        field: key,
+        message: "Admin control panel information architecture section is missing metadata.",
+      })
+    }
+  }
+
+  const routeIds = new Set()
+
+  for (const placement of routePlacements) {
+    assert(typeof placement.route === "string" && placement.route.startsWith("/app/"), {
+      id: "admin-control-panel.route-placement-route-invalid",
+      route: placement.route,
+      message: "Admin control panel route placement must point to a backend admin app route.",
+    })
+    assert(allowedSections.has(placement.section), {
+      id: "admin-control-panel.route-placement-section-invalid",
+      route: placement.route,
+      section: placement.section,
+      message: "Admin control panel route placement references an unknown information architecture section.",
+    })
+    if (placement.route) {
+      assert(!routeIds.has(placement.route), {
+        id: "admin-control-panel.route-placement-duplicate",
+        route: placement.route,
+        message: "Admin control panel route placement route must be unique.",
+      })
+      routeIds.add(placement.route)
+    }
+    for (const key of ["title", "owner", "purpose"]) {
+      assert(Boolean(placement[key]), {
+        id: "admin-control-panel.route-placement-metadata-missing",
+        route: placement.route,
+        field: key,
+        message: "Admin control panel route placement is missing metadata.",
+      })
+    }
+  }
+
+  for (const file of sourceFiles("apps/backend/src/admin/routes").filter((name) => name.endsWith("/page.tsx"))) {
+    const route = `/app/${file
+      .replace("apps/backend/src/admin/routes/", "")
+      .replace("/page.tsx", "")}`
+
+    assert(placedRoutes.has(route), {
+      id: "admin-control-panel.admin-route-unplaced",
+      route,
+      path: file,
+      message: "Backend admin route is missing from admin control panel information architecture.",
+    })
+  }
 
   for (const surface of surfaces) {
     assert(Boolean(surface.id), {
@@ -604,6 +688,12 @@ function validateAdminControlPanelPolicy(input) {
         message: "Required production surface adminRoute must point to a backend admin app route.",
       }
     )
+    assert(placedRoutes.has(surface.adminRoute), {
+      id: "admin-control-panel.surface-admin-route-unplaced",
+      surface: surface.id,
+      route: surface.adminRoute,
+      message: "Required production surface adminRoute is not placed in the backend control panel information architecture.",
+    })
     assert(allowedSections.has(surface.controlPanelSection), {
       id: "admin-control-panel.surface-section-invalid",
       surface: surface.id,

@@ -87,7 +87,7 @@
     },
     "sections": {
       "catalog": "Catalog",
-      "customers": "Customers",
+      "customers": "Customers & Support",
       "growth": "Growth",
       "intelligence": "Intelligence",
       "inventory": "Inventory",
@@ -168,6 +168,70 @@
     "refreshing": "Refreshing...",
     "secondaryAction": "Review payments",
     "title": "Control Panel",
+    "triage": {
+      "actions": {
+        "afterSales": {
+          "body": "Resolve open customer requests before routine catalog work.",
+          "detail": "Customer-facing issues should not be buried below growth tasks."
+        },
+        "ai": {
+          "body": "Review provider configuration or AI runs that need human review.",
+          "detail": "AI work stays advisory until provider and review queues are clean."
+        },
+        "analytics": {
+          "body": "Replay failed analytics dispatches before using the data for decisions.",
+          "detail": "Growth reporting is only useful when dispatch failures are visible."
+        },
+        "audit": {
+          "body": "Inspect high-risk events before making further production changes.",
+          "detail": "Risk events belong ahead of routine operating work."
+        },
+        "catalog": {
+          "body": "Fix variants without stock or a fulfillment path.",
+          "detail": "A product should not be treated as sellable until this queue is clear."
+        },
+        "channels": {
+          "body": "Review unhealthy enabled payment channels.",
+          "detail": "{{enabled}} enabled channels are currently visible."
+        },
+        "deliveries": {
+          "body": "Finish sold or queued items waiting for delivery.",
+          "detail": "Fulfillment delay directly affects customer trust."
+        },
+        "payments": {
+          "body": "Review payment attempts that are not settled.",
+          "detail": "Revenue and fulfillment decisions start from payment state."
+        },
+        "suppliers": {
+          "body": "Retry or inspect supplier procurements needing review.",
+          "detail": "Supplier failures can block fulfillment even when payment succeeded."
+        },
+        "content": {
+          "body": "Approve or return content entries waiting in review.",
+          "detail": "Editorial work stays below revenue, fulfillment, and support queues."
+        }
+      },
+      "allClear": {
+        "body": "No immediate operating queue is above zero in the latest dashboard data.",
+        "detail": "Use the workflow map below for planned catalog, growth, and system work.",
+        "label": "No urgent queue"
+      },
+      "description": "A ranked work queue for the operator: revenue, fulfillment, support, risk, then planned growth work.",
+      "openQueue": "Open",
+      "operatingOrder": {
+        "fulfillment": "2. Then clear delivery, supplier, and after-sales work.",
+        "growth": "3. Only then move to content, marketing, analytics, and AI review.",
+        "revenue": "1. Start with payment, audit, and channel-health blockers.",
+        "title": "Operating order"
+      },
+      "severity": {
+        "critical": "Critical",
+        "info": "Planned",
+        "ready": "Clear",
+        "warning": "Review"
+      },
+      "title": "Operator Triage"
+    },
     "attention": {
       "afterSalesReview": "After-sales review",
       "analyticsReview": "Analytics replay",
@@ -372,7 +436,52 @@
       "title": "Recent Payments"
     },
     "workflow": {
+      "allSections": "All sections",
       "description": "The shortest path to the work operators perform most often.",
+      "noMatches": "No workflow section matches the current filter.",
+      "searchPlaceholder": "Search routes, work areas, or placement rules",
+      "sections": {
+        "catalog": {
+          "body": "Create and prove products are sellable.",
+          "placement": "Put product creation, variant readiness, templates, and publishing checks here.",
+          "title": "Catalog"
+        },
+        "customersSupport": {
+          "body": "Resolve customer-facing support work.",
+          "placement": "Put customer recovery, support tickets, replacements, refunds, and after-sales records here.",
+          "title": "Customers & Support"
+        },
+        "growth": {
+          "body": "Publish content and review growth data.",
+          "placement": "Put content, campaigns, coupons, referrals, attribution, privacy-safe analytics, and reporting here.",
+          "title": "Growth"
+        },
+        "intelligence": {
+          "body": "Review AI providers and generated work.",
+          "placement": "Put AI provider readiness, task plugins, generated drafts, and human review queues here.",
+          "title": "Intelligence"
+        },
+        "inventory": {
+          "body": "Keep credential stock ready for sale.",
+          "placement": "Put credential batches, stock levels, reservation state, and inventory imports here.",
+          "title": "Inventory"
+        },
+        "orders": {
+          "body": "Follow orders through fulfillment.",
+          "placement": "Put order lookup, delivery records, manual fulfillment, and customer order history here.",
+          "title": "Orders & Delivery"
+        },
+        "paymentsSuppliers": {
+          "body": "Keep revenue and provider fulfillment healthy.",
+          "placement": "Put payment channels, payment attempts, supplier mappings, procurement, and provider health here.",
+          "title": "Payments & Suppliers"
+        },
+        "riskSystem": {
+          "body": "Check production gates, risk, and evidence.",
+          "placement": "Put launch readiness, DNS, edge security, backups, rollback, audit logs, and runtime evidence here.",
+          "title": "Risk & System"
+        }
+      },
       "title": "Common Workflows"
     }
   },
@@ -502,6 +611,7 @@
       "description": "Production-significant capabilities must appear in the backend control panel and map to executable gates.",
       "evidenceFields": "Evidence fields",
       "gated": "Gated",
+      "noRoutes": "No routes",
       "runtimeCommands": "Runtime commands",
       "section": "Panel section",
       "title": "Control Panel Gate Policy",

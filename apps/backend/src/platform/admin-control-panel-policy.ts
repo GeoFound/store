@@ -1,5 +1,5 @@
 export const ADMIN_CONTROL_PANEL_POLICY = {
-  version: "1.1.0",
+  version: "1.2.0",
   purpose:
     "Define which product and platform capabilities require a human-usable backend control panel surface, production gate mapping, and machine evidence.",
   productionControlRule:
@@ -135,6 +135,208 @@ export const ADMIN_CONTROL_PANEL_POLICY = {
         "Human confirmation is a decision input only; it must not replace executable runtime evidence.",
     },
   ],
+  informationArchitecture: {
+    defaultAdminRoute: "/app/control-panel",
+    routePrefix: "/app",
+    sectionOrder: [
+      {
+        id: "overview",
+        title: "Overview",
+        description:
+          "Cross-domain triage, summary metrics, and the first place an operator lands.",
+      },
+      {
+        id: "catalog",
+        title: "Catalog",
+        description:
+          "Product creation, publishing readiness, templates, collections, categories, and pricing structure.",
+      },
+      {
+        id: "orders",
+        title: "Orders and delivery",
+        description:
+          "Orders, fulfillment state, manual delivery, and order-linked recovery work.",
+      },
+      {
+        id: "inventory",
+        title: "Inventory",
+        description:
+          "Credential batches, credential item state, stock reservations, and replenishment work.",
+      },
+      {
+        id: "payments_suppliers",
+        title: "Payments and suppliers",
+        description:
+          "Payment routing, provider attempts, supplier configuration, supplier mappings, and procurement retries.",
+      },
+      {
+        id: "growth",
+        title: "Growth",
+        description:
+          "Content, marketing campaigns, coupons, referral links, analytics events, privacy consent, and replay queues.",
+      },
+      {
+        id: "customers_support",
+        title: "Customers and support",
+        description:
+          "Customer records, customer groups, account access, after-sales requests, replacements, and support outcomes.",
+      },
+      {
+        id: "intelligence",
+        title: "Intelligence",
+        description:
+          "AI provider readiness, AI task plugins, generated work queues, and human review for AI output.",
+      },
+      {
+        id: "risk_system",
+        title: "Risk and system",
+        description:
+          "Production readiness, security, Cloudflare, backup, rollback, audit logs, and other high-risk operator controls.",
+      },
+    ],
+    routePlacements: [
+      {
+        route: "/app/control-panel",
+        section: "overview",
+        title: "Control panel",
+        owner: "ops-control",
+        purpose: "Operator home, cross-domain status, and next actions.",
+      },
+      {
+        route: "/app/products",
+        section: "catalog",
+        title: "Products",
+        owner: "medusa-core",
+        purpose:
+          "Product, variant, collection, category, and sales-channel management.",
+      },
+      {
+        route: "/app/products/create",
+        section: "catalog",
+        title: "Create product",
+        owner: "medusa-core",
+        purpose: "New product creation.",
+      },
+      {
+        route: "/app/product-publishing",
+        section: "catalog",
+        title: "Product publishing",
+        owner: "product-templates",
+        purpose:
+          "Template, fulfillment handler, inventory, and delivery readiness before a product is treated as sellable.",
+      },
+      {
+        route: "/app/orders",
+        section: "orders",
+        title: "Orders",
+        owner: "medusa-core",
+        purpose:
+          "Order history, payment context, customer context, and post-purchase investigation.",
+      },
+      {
+        route: "/app/deliveries",
+        section: "orders",
+        title: "Deliveries",
+        owner: "digital-delivery",
+        purpose: "Pending fulfillment, manual delivery creation, and delivery records.",
+      },
+      {
+        route: "/app/credentials",
+        section: "inventory",
+        title: "Credential inventory",
+        owner: "credential-inventory",
+        purpose:
+          "Credential import, available stock, reserved stock, sold stock, and depleted batches.",
+      },
+      {
+        route: "/app/inventory",
+        section: "inventory",
+        title: "Inventory",
+        owner: "medusa-core",
+        purpose: "General inventory and reservation management.",
+      },
+      {
+        route: "/app/payments",
+        section: "payments_suppliers",
+        title: "Payments",
+        owner: "payment-router",
+        purpose:
+          "Payment channels, payment attempts, provider state, and auditable manual confirmation.",
+      },
+      {
+        route: "/app/suppliers",
+        section: "payments_suppliers",
+        title: "Suppliers",
+        owner: "supplier-procurement",
+        purpose:
+          "Supplier provider readiness, variant mappings, procurement state, and retry queues.",
+      },
+      {
+        route: "/app/content",
+        section: "growth",
+        title: "Content",
+        owner: "content-core",
+        purpose:
+          "Site-scoped content drafts, review, publishing, and editorial metadata.",
+      },
+      {
+        route: "/app/marketing",
+        section: "growth",
+        title: "Marketing",
+        owner: "marketing-engine",
+        purpose:
+          "Campaigns, offers, coupons, referral links, and marketing touchpoints.",
+      },
+      {
+        route: "/app/analytics",
+        section: "growth",
+        title: "Analytics",
+        owner: "analytics-core",
+        purpose:
+          "Analytics events, dispatch failures, privacy-related consent flow visibility, and replay queues.",
+      },
+      {
+        route: "/app/customers",
+        section: "customers_support",
+        title: "Customers",
+        owner: "medusa-core",
+        purpose: "Customer identity and group management.",
+      },
+      {
+        route: "/app/after-sales",
+        section: "customers_support",
+        title: "After-sales",
+        owner: "support-audit",
+        purpose:
+          "Customer requests, replacements, support notes, and after-sales outcomes.",
+      },
+      {
+        route: "/app/ai",
+        section: "intelligence",
+        title: "AI",
+        owner: "ai-core",
+        purpose: "AI provider readiness, task plugins, task runs, and AI review queues.",
+      },
+      {
+        route: "/app/ops",
+        section: "risk_system",
+        title: "Operations",
+        owner: "ops-control",
+        purpose:
+          "Production readiness, Cloudflare, security, backup, rollback, and machine evidence.",
+      },
+      {
+        route: "/app/audit-logs",
+        section: "risk_system",
+        title: "Audit logs",
+        owner: "support-audit",
+        purpose:
+          "Sensitive actions, high-risk events, actor context, and compliance audit trail.",
+      },
+    ],
+    extensionPlacementRule:
+      "New backend admin functionality must be assigned to the most specific section above. Use risk_system for production gates, secrets, security, backup, rollback, or audit; payments_suppliers for revenue/provider fulfillment; growth for public content, campaigns, analytics, and privacy; customers_support for account access and support; intelligence for AI provider or generated-work review; overview only for cross-domain summaries.",
+  },
   requiredProductionSurfaces: [
     {
       id: "launch-readiness",
@@ -144,7 +346,7 @@ export const ADMIN_CONTROL_PANEL_POLICY = {
       productionGateRequired: true,
       humanChoiceRequired: true,
       adminRoute: "/app/ops",
-      controlPanelSection: "launch_readiness",
+      controlPanelSection: "risk_system",
       profileControls: [
         "backend_control_panel_required",
         "runtime_health_required",
@@ -175,7 +377,7 @@ export const ADMIN_CONTROL_PANEL_POLICY = {
       productionGateRequired: true,
       humanChoiceRequired: true,
       adminRoute: "/app/ops",
-      controlPanelSection: "launch_readiness",
+      controlPanelSection: "risk_system",
       profileControls: ["backend_control_panel_required"],
       evidenceFields: ["last_backend_control_panel_ref"],
       runtimeCommands: ["pnpm site:validate:all"],
@@ -196,7 +398,7 @@ export const ADMIN_CONTROL_PANEL_POLICY = {
       productionGateRequired: true,
       humanChoiceRequired: true,
       adminRoute: "/app/ops",
-      controlPanelSection: "launch_readiness",
+      controlPanelSection: "risk_system",
       profileControls: [
         "cloudflare_required",
         "dns_required",
@@ -226,7 +428,7 @@ export const ADMIN_CONTROL_PANEL_POLICY = {
       productionGateRequired: true,
       humanChoiceRequired: true,
       adminRoute: "/app/ops",
-      controlPanelSection: "security",
+      controlPanelSection: "risk_system",
       profileControls: [
         "cloudflare_waf_required",
         "admin_edge_protection_required",
@@ -259,7 +461,7 @@ export const ADMIN_CONTROL_PANEL_POLICY = {
       productionGateRequired: true,
       humanChoiceRequired: true,
       adminRoute: "/app/payments",
-      controlPanelSection: "commerce",
+      controlPanelSection: "payments_suppliers",
       profileControls: ["payment_provider_required", "regression_required"],
       evidenceFields: ["last_payment_provider_ref", "last_regression_ref"],
       runtimeCommands: ["pnpm deploy:regression"],
@@ -273,7 +475,7 @@ export const ADMIN_CONTROL_PANEL_POLICY = {
       productionGateRequired: true,
       humanChoiceRequired: true,
       adminRoute: "/app/suppliers",
-      controlPanelSection: "commerce",
+      controlPanelSection: "payments_suppliers",
       profileControls: ["supplier_readiness_required"],
       evidenceFields: ["last_supplier_readiness_ref"],
       runtimeCommands: ["pnpm deploy:regression"],
@@ -293,7 +495,7 @@ export const ADMIN_CONTROL_PANEL_POLICY = {
       productionGateRequired: true,
       humanChoiceRequired: false,
       adminRoute: "/app/credentials",
-      controlPanelSection: "commerce",
+      controlPanelSection: "inventory",
       profileControls: ["delivery_inventory_required", "regression_required"],
       evidenceFields: ["last_delivery_inventory_ref", "last_regression_ref"],
       runtimeCommands: ["pnpm deploy:regression"],
@@ -307,7 +509,7 @@ export const ADMIN_CONTROL_PANEL_POLICY = {
       productionGateRequired: true,
       humanChoiceRequired: true,
       adminRoute: "/app/ops",
-      controlPanelSection: "customer",
+      controlPanelSection: "customers_support",
       profileControls: ["customer_access_required", "regression_required"],
       evidenceFields: ["last_customer_access_ref", "last_regression_ref"],
       runtimeCommands: ["pnpm deploy:regression"],
@@ -326,7 +528,7 @@ export const ADMIN_CONTROL_PANEL_POLICY = {
       productionGateRequired: true,
       humanChoiceRequired: false,
       adminRoute: "/app/ops",
-      controlPanelSection: "launch_readiness",
+      controlPanelSection: "risk_system",
       profileControls: ["runtime_health_required"],
       evidenceFields: ["last_runtime_health_ref"],
       runtimeCommands: ["pnpm deploy:health"],
@@ -344,7 +546,7 @@ export const ADMIN_CONTROL_PANEL_POLICY = {
       productionGateRequired: true,
       humanChoiceRequired: true,
       adminRoute: "/app/ops",
-      controlPanelSection: "maintenance",
+      controlPanelSection: "risk_system",
       profileControls: ["notification_readiness_required"],
       evidenceFields: ["last_notification_ref"],
       runtimeCommands: ["pnpm check:ci"],
@@ -358,7 +560,7 @@ export const ADMIN_CONTROL_PANEL_POLICY = {
       productionGateRequired: true,
       humanChoiceRequired: true,
       adminRoute: "/app/analytics",
-      controlPanelSection: "ai_ops",
+      controlPanelSection: "growth",
       profileControls: ["analytics_privacy_required"],
       evidenceFields: ["last_analytics_privacy_ref"],
       runtimeCommands: ["pnpm check:ci"],
@@ -377,7 +579,7 @@ export const ADMIN_CONTROL_PANEL_POLICY = {
       productionGateRequired: true,
       humanChoiceRequired: true,
       adminRoute: "/app/ops",
-      controlPanelSection: "maintenance",
+      controlPanelSection: "risk_system",
       profileControls: ["backup_required", "restore_test_required", "rollback_required"],
       evidenceFields: ["last_backup_ref", "last_restore_test_ref", "last_rollback_ref"],
       runtimeCommands: ["pnpm deploy:vps-doctor"],
@@ -396,7 +598,7 @@ export const ADMIN_CONTROL_PANEL_POLICY = {
       productionGateRequired: true,
       humanChoiceRequired: true,
       adminRoute: "/app/ai",
-      controlPanelSection: "ai_ops",
+      controlPanelSection: "intelligence",
       profileControls: ["backend_control_panel_required"],
       evidenceFields: ["last_backend_control_panel_ref"],
       runtimeCommands: ["pnpm ai:doctor"],

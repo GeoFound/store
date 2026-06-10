@@ -63,6 +63,20 @@ type OpsPolicySurface = {
   config_keys: string[]
 }
 
+type OpsPolicySection = {
+  id: string
+  title: string
+  description: string
+}
+
+type OpsPolicyRoutePlacement = {
+  route: string
+  section: string
+  title: string
+  owner: string
+  purpose: string
+}
+
 type OpsDashboard = {
   generated_at: string
   summary: {
@@ -82,6 +96,13 @@ type OpsDashboard = {
   control_panel_policy: {
     version: string
     production_control_rule: string
+    information_architecture: {
+      default_admin_route: string
+      route_prefix: string
+      section_order: OpsPolicySection[]
+      route_placements: OpsPolicyRoutePlacement[]
+      extension_placement_rule: string
+    }
     forbidden_surface_count: number
     required_surfaces: OpsPolicySurface[]
   }
@@ -138,6 +159,13 @@ const EMPTY_STATE: OpsDashboard = {
   control_panel_policy: {
     version: "",
     production_control_rule: "",
+    information_architecture: {
+      default_admin_route: "/app/control-panel",
+      route_prefix: "/app",
+      section_order: [],
+      route_placements: [],
+      extension_placement_rule: "",
+    },
     forbidden_surface_count: 0,
     required_surfaces: [],
   },
@@ -302,6 +330,47 @@ const OpsPage = () => {
         title={t("ops.policy.title")}
         description={state.control_panel_policy.production_control_rule || t("ops.policy.description")}
       >
+        <div className="mb-6 grid gap-3 lg:grid-cols-3">
+          {state.control_panel_policy.information_architecture.section_order.map(
+            (section) => {
+              const routes =
+                state.control_panel_policy.information_architecture.route_placements.filter(
+                  (placement) => placement.section === section.id
+                )
+
+              return (
+                <div
+                  key={section.id}
+                  className="flex h-full min-w-0 flex-col gap-3 rounded border border-ui-border-base p-4"
+                >
+                  <div>
+                    <Heading level="h3">{section.title}</Heading>
+                    <Text className="mt-1 text-ui-fg-subtle">
+                      {section.description}
+                    </Text>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {routes.map((placement) => (
+                      <Badge key={placement.route}>{placement.title}</Badge>
+                    ))}
+                    {routes.length === 0 ? (
+                      <Badge color="orange">{t("ops.policy.noRoutes")}</Badge>
+                    ) : null}
+                  </div>
+                </div>
+              )
+            }
+          )}
+        </div>
+        {state.control_panel_policy.information_architecture
+          .extension_placement_rule ? (
+          <Text className="mb-6 text-ui-fg-subtle">
+            {
+              state.control_panel_policy.information_architecture
+                .extension_placement_rule
+            }
+          </Text>
+        ) : null}
         <div className="grid gap-3 lg:grid-cols-2">
           {state.control_panel_policy.required_surfaces.map((surface) => (
             <div
