@@ -1,4 +1,8 @@
 packages:
   - "apps/*"
+packageExtensions:
+  '@medusajs/medusa@2.14.2':
+    dependencies:
+      zod: 4.2.0
 patchedDependencies:
   '@medusajs/dashboard@2.14.2': patches/@medusajs__dashboard@2.14.2.patch

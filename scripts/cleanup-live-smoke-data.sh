@@ -232,6 +232,14 @@ from (
 ) as counts
 where b.id = counts.batch_id;
 
+update payment_channel
+set enabled = coalesce((config_json->>'live_smoke_previous_enabled')::boolean, false),
+    config_json = config_json - 'live_smoke_enabled' - 'live_smoke_previous_enabled',
+    updated_at = now()
+where code = 'manual'
+  and deleted_at is null
+  and config_json->>'live_smoke_enabled' = 'true';
+
 select
   (select count(*) from tmp_smoke_orders) as deleted_orders,
   (select count(*) from tmp_smoke_carts) as deleted_carts,
