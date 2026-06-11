@@ -100,6 +100,33 @@ describe("HomeSections", () => {
 
     expect(sectionTypes(container)).toEqual(["featured-products"])
   })
+
+  it("applies profile hero pattern and compact product grid variants", () => {
+    const siteConfig = siteConfigWithSections([
+      section("hero", "instant-delivery-trust"),
+      section("featured-products", "compact-commerce-grid"),
+    ])
+    siteConfig.content.home.heroPattern =
+      "linear-gradient(135deg, rgb(15, 118, 110), rgb(249, 115, 22))"
+
+    const { container } = render(
+      <HomeSections
+        siteConfig={siteConfig}
+        featuredProducts={[product]}
+        categoryLinks={[]}
+        insights={[]}
+      />
+    )
+    const hero = container.querySelector('[data-section-type="hero"]')
+    const productGrid = container.querySelector("[data-product-grid-density]")
+
+    expect(hero).toHaveClass("store-copy-hero-compact")
+    expect(hero?.getAttribute("style")).toContain(
+      "--store-copy-hero-pattern"
+    )
+    expect(hero?.getAttribute("style")).toContain("linear-gradient")
+    expect(productGrid).toHaveAttribute("data-product-grid-density", "compact")
+  })
 })
 
 function section(

@@ -53,11 +53,14 @@ if [[ ! -f "$PROFILE_FILE" ]]; then
   exit 2
 fi
 
-PROFILE_FILE="$PROFILE_FILE" SITE_ID="$SITE_ID" node <<'NODE'
+PROFILE_FILE="$PROFILE_FILE" SITE_ID="$SITE_ID" REPO_ROOT="$REPO_ROOT" node <<'NODE'
 const fs = require("node:fs")
+const path = require("node:path")
 
 const profilePath = process.env.PROFILE_FILE
 const expectedSiteId = process.env.SITE_ID || ""
+const repoRoot = process.env.REPO_ROOT || process.cwd()
+const experiencePolicyPath = path.join(repoRoot, ".ai", "storefront-experience-policy.json")
 
 function assert(condition, message) {
   if (!condition) {
@@ -69,8 +72,27 @@ function isNonEmptyString(value) {
   return typeof value === "string" && value.trim().length > 0
 }
 
+function normalizeSectionType(value) {
+  return isNonEmptyString(value)
+    ? value.trim().toLowerCase().replace(/_/g, "-")
+    : ""
+}
+
 const raw = fs.readFileSync(profilePath, "utf8")
 const profile = JSON.parse(raw)
+const experiencePolicy = JSON.parse(fs.readFileSync(experiencePolicyPath, "utf8"))
+const allowedPageKeys = new Set(experiencePolicy.pageContracts || [])
+const allowedSectionTypes = new Set(
+  (experiencePolicy.sectionTypes || []).map((sectionType) =>
+    normalizeSectionType(sectionType?.type)
+  )
+)
+const pageSectionTypes = new Map(
+  Object.entries(experiencePolicy.pageSectionTypes || {}).map(([pageKey, sections]) => [
+    pageKey,
+    new Set(Array.isArray(sections) ? sections.map(normalizeSectionType) : [])
+  ])
+)
 
 assert(profile && typeof profile === "object", "Profile must be a JSON object")
 assert(isNonEmptyString(profile?.site?.id), "site.id is required")
@@ -131,44 +153,37 @@ if (profile.experience !== undefined) {
   if (profile.experience.pages !== undefined) {
     assert(profile.experience.pages && typeof profile.experience.pages === "object" && !Array.isArray(profile.experience.pages), "experience.pages must be an object")
 
-    const allowedSectionTypes = new Set([
-      "hero",
-      "categories",
-      "insights",
-      "featured-products",
-      "catalog-header",
-      "catalog-controls",
-      "product-grid",
-      "product-media",
-      "product-purchase",
-      "product-details",
-      "cart-items",
-      "cart-summary",
-      "checkout-form",
-      "checkout-summary",
-      "order-recovery",
-      "content-list",
-      "content-article",
-      "account-auth",
-      "account-overview",
-      "password-reset",
-      "support-assurance"
-    ])
-
     for (const [pageKey, pageConfig] of Object.entries(profile.experience.pages)) {
+      assert(allowedPageKeys.has(pageKey), `experience.pages.${pageKey} is not a known page contract`)
       assert(pageConfig && typeof pageConfig === "object" && !Array.isArray(pageConfig), `experience.pages.${pageKey} must be an object`)
 
       const sections = pageConfig.sections
       if (sections !== undefined) {
         assert(Array.isArray(sections), `experience.pages.${pageKey}.sections must be an array`)
+        assert(sections.length > 0, `experience.pages.${pageKey}.sections must include at least one section`)
+
+        let enabledSectionCount = 0
 
         for (const [index, section] of sections.entries()) {
           assert(section && typeof section === "object" && !Array.isArray(section), `experience.pages.${pageKey}.sections[${index}] must be an object`)
-          assert(allowedSectionTypes.has(section.type), `experience.pages.${pageKey}.sections[${index}].type is invalid`)
+          const sectionType = normalizeSectionType(section.type)
+          assert(allowedSectionTypes.has(sectionType), `experience.pages.${pageKey}.sections[${index}].type is invalid`)
+          assert(pageSectionTypes.get(pageKey)?.has(sectionType), `experience.pages.${pageKey}.sections[${index}].type is not supported by this page`)
+          if (section.enabled !== undefined) {
+            assert(typeof section.enabled === "boolean", `experience.pages.${pageKey}.sections[${index}].enabled must be a boolean`)
+          }
           if (section.variant !== undefined) {
             assert(isNonEmptyString(section.variant), `experience.pages.${pageKey}.sections[${index}].variant must be a non-empty string`)
           }
+          if (section.goal !== undefined) {
+            assert(isNonEmptyString(section.goal), `experience.pages.${pageKey}.sections[${index}].goal must be a non-empty string`)
+          }
+          if (section.enabled !== false) {
+            enabledSectionCount += 1
+          }
         }
+
+        assert(enabledSectionCount > 0, `experience.pages.${pageKey}.sections must include at least one enabled section`)
       }
     }
   }

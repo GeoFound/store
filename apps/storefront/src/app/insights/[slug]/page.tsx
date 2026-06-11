@@ -15,7 +15,7 @@ type InsightPageProps = {
 export default async function InsightPage({ params }: InsightPageProps) {
   const { slug } = await params
   const siteConfig = getSiteConfig()
-  const entry = await retrieveContentEntry(slug)
+  const entry = await retrieveContentEntry(slug).catch(() => null)
 
   if (!entry) {
     notFound()

@@ -16,7 +16,7 @@ type ProductPageProps = {
 export default async function ProductPage({ params }: ProductPageProps) {
   const { handle } = await params
   const siteConfig = getSiteConfig()
-  const rawProduct = await retrieveProduct(handle)
+  const rawProduct = await retrieveProduct(handle).catch(() => null)
 
   if (!rawProduct) {
     notFound()

@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic"
 
 export default async function InsightsPage() {
   const siteConfig = getSiteConfig()
-  const entries = await listContentEntries({ limit: 24 })
+  const entries = await listContentEntries({ limit: 24 }).catch(() => [])
 
   return (
     <>

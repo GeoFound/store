@@ -220,6 +220,9 @@ function ProductsGridSection({
   section: SiteExperienceSectionConfig
   products: Product[]
 }) {
+  const productGridDensity =
+    section.variant === "compact-commerce-grid" ? "compact" : "standard"
+
   return (
     <section {...sectionAttributes(section)}>
       <div className="mb-6 grid gap-4">
@@ -227,7 +230,7 @@ function ProductsGridSection({
           <div key={entry.key}>{entry.node}</div>
         ))}
       </div>
-      <ProductGrid products={products} />
+      <ProductGrid products={products} density={productGridDensity} />
     </section>
   )
 }

@@ -91,11 +91,19 @@ function HomeHeroSection({
   const heroWordStyle = {
     "--store-copy-hero-word-scale": getHeroWordScale(heroWordSizer),
   } as CSSProperties
+  const heroSectionStyle = {
+    "--store-copy-hero-pattern": homeContent.heroPattern,
+  } as CSSProperties
+  const heroClassName =
+    section.variant === "instant-delivery-trust"
+      ? "theme-surface theme-border store-copy-hero store-copy-hero-compact border-b"
+      : "theme-surface theme-border store-copy-hero border-b"
 
   return (
     <section
       {...sectionAttributes(section)}
-      className="theme-surface theme-border store-copy-hero border-b"
+      className={heroClassName}
+      style={heroSectionStyle}
     >
       <div className="store-copy-hero-inner mx-auto flex flex-col items-center px-4 text-center sm:px-6">
         <h1
@@ -186,6 +194,12 @@ function HomeCategoriesSection({
     return null
   }
 
+  const compact = section.variant === "compact-commerce-links"
+  const gridClassName = compact
+    ? "grid gap-3 sm:grid-cols-2 lg:grid-cols-3"
+    : "grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+  const cardClassName = compact ? "theme-card group block p-4" : "theme-card group block p-5"
+
   return (
     <section
       {...sectionAttributes(section)}
@@ -201,12 +215,12 @@ function HomeCategoriesSection({
           </p>
         </div>
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className={gridClassName}>
         {categoryLinks.map((category) => (
           <Link
             key={category.href}
             href={category.href}
-            className="theme-card group block p-5"
+            className={cardClassName}
           >
             <div className="flex items-center justify-between gap-4">
               <div className="font-semibold">{category.label}</div>
@@ -311,6 +325,8 @@ function HomeFeaturedProductsSection({
   featuredProducts: Product[]
 }) {
   const homeContent = siteConfig.content.home
+  const productGridDensity =
+    section.variant === "compact-commerce-grid" ? "compact" : "standard"
 
   return (
     <section
@@ -333,7 +349,7 @@ function HomeFeaturedProductsSection({
           View all products
         </Link>
       </div>
-      <ProductGrid products={featuredProducts} />
+      <ProductGrid products={featuredProducts} density={productGridDensity} />
       <div className="mt-6 grid gap-4">
         {renderStorefrontExtensions("home.products.after", {}).map((entry) => (
           <div key={entry.key}>{entry.node}</div>

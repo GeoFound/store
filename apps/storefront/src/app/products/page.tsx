@@ -24,7 +24,7 @@ export default async function ProductsPage({ searchParams }: ProductsPageProps) 
   ensureStorefrontExtensionsRegistered()
   const siteConfig = getSiteConfig()
   const params = await searchParams
-  const rawProducts = await listProducts()
+  const rawProducts = await listProducts().catch(() => [])
   const products = applyProductDisplayConfig(
     rawProducts,
     siteConfig.content.catalog.productDisplay

@@ -36,6 +36,7 @@ const DEFAULT_CART_SECTIONS: SiteExperienceSectionConfig[] = [
 export function CartView({ sections = DEFAULT_CART_SECTIONS }: CartViewProps) {
   const [cart, setCart] = useState<Cart | null>(null)
   const [loading, setLoading] = useState(true)
+  const [updatingLineItemId, setUpdatingLineItemId] = useState("")
   const [error, setError] = useState("")
 
   useEffect(() => {
@@ -87,12 +88,21 @@ export function CartView({ sections = DEFAULT_CART_SECTIONS }: CartViewProps) {
       return
     }
 
-    if (quantity < 1) {
-      setCart(await deleteLineItem({ cartId: cart.id, lineItemId }))
-      return
-    }
+    setError("")
+    setUpdatingLineItemId(lineItemId)
 
-    setCart(await updateLineItem({ cartId: cart.id, lineItemId, quantity }))
+    try {
+      if (quantity < 1) {
+        setCart(await deleteLineItem({ cartId: cart.id, lineItemId }))
+        return
+      }
+
+      setCart(await updateLineItem({ cartId: cart.id, lineItemId, quantity }))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update cart.")
+    } finally {
+      setUpdatingLineItemId("")
+    }
   }
 
   if (loading) {
@@ -166,7 +176,8 @@ export function CartView({ sections = DEFAULT_CART_SECTIONS }: CartViewProps) {
                         onClick={() =>
                           changeQuantity(item.id, item.quantity - 1)
                         }
-                        className="h-full w-10 text-lg"
+                        disabled={updatingLineItemId === item.id}
+                        className="h-full w-10 text-lg disabled:opacity-50"
                         aria-label="Decrease quantity"
                       >
                         -
@@ -179,7 +190,8 @@ export function CartView({ sections = DEFAULT_CART_SECTIONS }: CartViewProps) {
                         onClick={() =>
                           changeQuantity(item.id, item.quantity + 1)
                         }
-                        className="h-full w-10 text-lg"
+                        disabled={updatingLineItemId === item.id}
+                        className="h-full w-10 text-lg disabled:opacity-50"
                         aria-label="Increase quantity"
                       >
                         +
@@ -188,7 +200,8 @@ export function CartView({ sections = DEFAULT_CART_SECTIONS }: CartViewProps) {
                     <button
                       type="button"
                       onClick={() => changeQuantity(item.id, 0)}
-                      className="text-sm font-semibold text-[var(--danger)]"
+                      disabled={updatingLineItemId === item.id}
+                      className="text-sm font-semibold text-[var(--danger)] disabled:opacity-50"
                     >
                       Remove
                     </button>
@@ -200,10 +213,15 @@ export function CartView({ sections = DEFAULT_CART_SECTIONS }: CartViewProps) {
         }
 
         if (section.type === "cart-summary") {
+          const summaryClassName =
+            section.variant === "inline-summary"
+              ? "theme-panel h-fit p-6 shadow-[var(--shadow-card)]"
+              : "theme-panel h-fit p-6 shadow-[var(--shadow-card)] lg:sticky lg:top-24"
+
           return (
             <aside
               {...sectionAttributes(section)}
-              className="theme-panel h-fit p-6 shadow-[var(--shadow-card)] lg:sticky lg:top-24"
+              className={summaryClassName}
             >
               <h2 className="text-lg font-semibold">Order summary</h2>
               <div className="theme-border mt-5 flex items-center justify-between border-t pt-5">

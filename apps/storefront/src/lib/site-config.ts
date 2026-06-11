@@ -1,6 +1,14 @@
 import fs from "node:fs"
 import path from "node:path"
 import { cache } from "react"
+import {
+  allowedExperienceSectionsForPage,
+  isExperiencePageKey,
+  isExperienceSectionAllowedForPage,
+  isExperienceSectionType,
+  normalizeExperienceContractSectionType,
+  STOREFRONT_EXPERIENCE_PAGE_KEYS,
+} from "./storefront-experience-contract"
 
 export type SiteThemeConfig = {
   id: string
@@ -840,44 +848,6 @@ function normalizeSiteConfig(
   }
 }
 
-const STOREFRONT_EXPERIENCE_PAGE_KEYS: SiteExperiencePageKey[] = [
-  "home",
-  "products",
-  "product-detail",
-  "cart",
-  "checkout",
-  "orders",
-  "insights",
-  "insight-detail",
-  "account",
-  "account-login",
-  "account-reset-password",
-]
-
-const EXPERIENCE_SECTION_TYPES = new Set<SiteExperienceSectionType>([
-  "hero",
-  "categories",
-  "insights",
-  "featured-products",
-  "catalog-header",
-  "catalog-controls",
-  "product-grid",
-  "product-media",
-  "product-purchase",
-  "product-details",
-  "cart-items",
-  "cart-summary",
-  "checkout-form",
-  "checkout-summary",
-  "order-recovery",
-  "content-list",
-  "content-article",
-  "account-auth",
-  "account-overview",
-  "password-reset",
-  "support-assurance",
-])
-
 function normalizeSiteExperienceConfig(
   input: SiteExperienceConfigInput | undefined,
   fallback: SiteExperienceConfig
@@ -902,66 +872,119 @@ function normalizeExperiencePages(
   inputPages: SiteExperienceConfigInput["pages"],
   fallbackPages: SiteExperienceConfig["pages"]
 ) {
-  return STOREFRONT_EXPERIENCE_PAGE_KEYS.reduce<SiteExperienceConfig["pages"]>(
-    (acc, key) => {
-      acc[key] = normalizeExperiencePage(inputPages?.[key], fallbackPages[key])
-      return acc
-    },
-    {} as SiteExperienceConfig["pages"]
-  )
+  const pages = {} as SiteExperienceConfig["pages"]
+
+  for (const key of STOREFRONT_EXPERIENCE_PAGE_KEYS as SiteExperiencePageKey[]) {
+    pages[key] = normalizeExperiencePage(
+      key,
+      inputPages?.[key],
+      fallbackPages[key]
+    )
+  }
+
+  return pages
 }
 
 function normalizeExperiencePage(
+  pageKey: SiteExperiencePageKey,
   input: SiteExperiencePageConfigInput | undefined,
   fallback: SiteExperiencePageConfig
 ): SiteExperiencePageConfig {
   return {
     intent: toOptionalString(input?.intent) || fallback.intent,
     layout: toOptionalString(input?.layout) || fallback.layout,
-    sections: toExperienceSectionArray(input?.sections) ?? fallback.sections,
+    sections:
+      toExperienceSectionArray(input?.sections, pageKey) ?? fallback.sections,
   }
 }
 
-function toExperienceSectionArray(value: unknown) {
-  if (!Array.isArray(value)) {
+function toExperienceSectionArray(
+  value: unknown,
+  pageKey: SiteExperiencePageKey
+) {
+  if (typeof value === "undefined") {
     return undefined
   }
 
-  const sections = value
-    .map((item): SiteExperienceSectionConfig | null => {
-      if (!item || typeof item !== "object") {
-        return null
-      }
+  if (!Array.isArray(value)) {
+    throw new Error(`experience.pages.${pageKey}.sections must be an array`)
+  }
 
-      const source = item as Record<string, unknown>
-      const type = normalizeExperienceSectionType(source.type)
+  if (!value.length) {
+    throw new Error(
+      `experience.pages.${pageKey}.sections must include at least one section`
+    )
+  }
 
-      if (!type) {
-        return null
-      }
+  const sections = value.map((item, index) =>
+    normalizeExperienceSectionConfig(item, pageKey, index)
+  )
 
-      const section: SiteExperienceSectionConfig = {
-        type,
-        variant: toOptionalString(source.variant) || "default",
-        enabled: source.enabled !== false,
-      }
+  if (!sections.some((section) => section.enabled)) {
+    throw new Error(
+      `experience.pages.${pageKey}.sections must include at least one enabled section`
+    )
+  }
 
-      const goal = toOptionalString(source.goal)
-      if (goal) {
-        section.goal = goal
-      }
+  return sections
+}
 
-      return section
-    })
-    .filter((item): item is SiteExperienceSectionConfig => Boolean(item))
+function normalizeExperienceSectionConfig(
+  item: unknown,
+  pageKey: SiteExperiencePageKey,
+  index: number
+): SiteExperienceSectionConfig {
+  const field = `experience.pages.${pageKey}.sections[${index}]`
 
-  return sections.length ? sections : undefined
+  if (!item || typeof item !== "object" || Array.isArray(item)) {
+    throw new Error(`${field} must be an object`)
+  }
+
+  const source = item as Record<string, unknown>
+  const type = normalizeExperienceSectionType(source.type)
+
+  if (!type) {
+    throw new Error(`${field}.type is invalid`)
+  }
+
+  if (!isExperienceSectionAllowedForPage(pageKey, type)) {
+    throw new Error(
+      `${field}.type must be one of: ${allowedExperienceSectionsForPage(
+        pageKey
+      ).join(", ")}`
+    )
+  }
+
+  if (source.enabled !== undefined && typeof source.enabled !== "boolean") {
+    throw new Error(`${field}.enabled must be a boolean`)
+  }
+
+  if (source.variant !== undefined && !toOptionalString(source.variant)) {
+    throw new Error(`${field}.variant must be a non-empty string`)
+  }
+
+  if (source.goal !== undefined && !toOptionalString(source.goal)) {
+    throw new Error(`${field}.goal must be a non-empty string`)
+  }
+
+  const section: SiteExperienceSectionConfig = {
+    type,
+    variant: toOptionalString(source.variant) || "default",
+    enabled: source.enabled !== false,
+  }
+
+  const goal = toOptionalString(source.goal)
+  if (goal) {
+    section.goal = goal
+  }
+
+  return section
 }
 
 function normalizeExperienceSectionType(value: unknown) {
-  const normalized = toOptionalString(value).toLowerCase().replace(/_/g, "-")
+  const normalized = normalizeExperienceContractSectionType(value)
 
-  return EXPERIENCE_SECTION_TYPES.has(normalized as SiteExperienceSectionType)
+  return isExperienceSectionType(normalized)
     ? (normalized as SiteExperienceSectionType)
     : undefined
 }
@@ -1292,21 +1315,95 @@ function validateSiteConfigInput(
         continue
       }
 
+      if (!isExperiencePageKey(pageKey)) {
+        throw new Error(
+          `experience.pages.${pageKey} is not a known page contract in ${context.filePath}`
+        )
+      }
+
       assertPlainObject(
         pageConfig,
         `experience.pages.${pageKey}`,
         context.filePath
       )
 
-      if (
-        typeof pageConfig.sections !== "undefined" &&
-        !Array.isArray(pageConfig.sections)
-      ) {
-        throw new Error(
-          `experience.pages.${pageKey}.sections must be an array in ${context.filePath}`
-        )
-      }
+      validateExperiencePageSections(
+        pageKey,
+        pageConfig.sections,
+        context.filePath
+      )
     }
+  }
+}
+
+function validateExperiencePageSections(
+  pageKey: string,
+  value: unknown,
+  filePath: string
+) {
+  if (typeof value === "undefined") {
+    return
+  }
+
+  const field = `experience.pages.${pageKey}.sections`
+
+  if (!Array.isArray(value)) {
+    throw new Error(`${field} must be an array in ${filePath}`)
+  }
+
+  if (!value.length) {
+    throw new Error(`${field} must include at least one section in ${filePath}`)
+  }
+
+  let enabledSectionCount = 0
+
+  for (const [index, section] of value.entries()) {
+    const sectionField = `${field}[${index}]`
+
+    if (!section || typeof section !== "object" || Array.isArray(section)) {
+      throw new Error(`${sectionField} must be an object in ${filePath}`)
+    }
+
+    const source = section as Record<string, unknown>
+    const type = normalizeExperienceSectionType(source.type)
+
+    if (!type) {
+      throw new Error(`${sectionField}.type is invalid in ${filePath}`)
+    }
+
+    if (!isExperienceSectionAllowedForPage(pageKey, type)) {
+      throw new Error(
+        `${sectionField}.type must be one of: ${allowedExperienceSectionsForPage(
+          pageKey
+        ).join(", ")} in ${filePath}`
+      )
+    }
+
+    if (source.enabled !== undefined && typeof source.enabled !== "boolean") {
+      throw new Error(`${sectionField}.enabled must be a boolean in ${filePath}`)
+    }
+
+    if (source.variant !== undefined && !toOptionalString(source.variant)) {
+      throw new Error(
+        `${sectionField}.variant must be a non-empty string in ${filePath}`
+      )
+    }
+
+    if (source.goal !== undefined && !toOptionalString(source.goal)) {
+      throw new Error(
+        `${sectionField}.goal must be a non-empty string in ${filePath}`
+      )
+    }
+
+    if (source.enabled !== false) {
+      enabledSectionCount += 1
+    }
+  }
+
+  if (enabledSectionCount === 0) {
+    throw new Error(
+      `${field} must include at least one enabled section in ${filePath}`
+    )
   }
 }
 

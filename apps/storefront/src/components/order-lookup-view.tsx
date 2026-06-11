@@ -1,6 +1,6 @@
 "use client"
 
-import { FormEvent, useEffect, useMemo, useState } from "react"
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import {
   confirmDelivery,
@@ -36,7 +36,9 @@ type LookupState =
 
 export function OrderLookupView() {
   const searchParams = useSearchParams()
-  const [accessToken, setAccessToken] = useState(readInitialOrderAccessToken)
+  const [initialAccessToken] = useState(readInitialOrderAccessToken)
+  const [accessToken, setAccessToken] = useState(initialAccessToken)
+  const autoLoadedTokenRef = useRef("")
   const [lookup, setLookup] = useState<LookupState | null>(null)
   const [loading, setLoading] = useState(false)
   const [confirmingDeliveryId, setConfirmingDeliveryId] = useState("")
@@ -66,16 +68,33 @@ export function OrderLookupView() {
     afterSaleDeliveryId || orderDeliveries[0]?.delivery.id || ""
 
   useEffect(() => {
-    consumeOrderAccessTokenFromUrl()
+    const tokenInUrl = consumeOrderAccessTokenFromUrl()
+
+    if (tokenInUrl) {
+      const syncTokenFromUrl = () => {
+        setAccessToken(tokenInUrl)
+
+        if (autoLoadedTokenRef.current !== tokenInUrl) {
+          autoLoadedTokenRef.current = tokenInUrl
+          void loadLookup(tokenInUrl)
+        }
+      }
+
+      syncTokenFromUrl()
+    }
   }, [searchParams])
 
   useEffect(() => {
-    if (!accessToken || lookup) {
+    if (
+      !initialAccessToken ||
+      autoLoadedTokenRef.current === initialAccessToken
+    ) {
       return
     }
 
-    void loadLookup(accessToken)
-  }, [accessToken, lookup, searchParams])
+    autoLoadedTokenRef.current = initialAccessToken
+    void loadLookup(initialAccessToken)
+  }, [initialAccessToken])
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -234,7 +253,9 @@ export function OrderLookupView() {
           <input
             id="access-token"
             value={accessToken}
-            onChange={(event) => setAccessToken(event.target.value)}
+            onChange={(event) => {
+              setAccessToken(event.target.value)
+            }}
             required
             className="theme-input mt-2 w-full px-3 py-3 font-mono text-sm"
             placeholder="ord_... or dlv_..."

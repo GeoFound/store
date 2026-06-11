@@ -55,6 +55,52 @@
     "account-login",
     "account-reset-password"
   ],
+  "pageSectionTypes": {
+    "home": [
+      "hero",
+      "categories",
+      "insights",
+      "featured-products"
+    ],
+    "products": [
+      "catalog-header",
+      "catalog-controls",
+      "product-grid"
+    ],
+    "product-detail": [
+      "product-media",
+      "product-purchase",
+      "product-details"
+    ],
+    "cart": [
+      "cart-items",
+      "cart-summary"
+    ],
+    "checkout": [
+      "checkout-form",
+      "checkout-summary"
+    ],
+    "orders": [
+      "order-recovery",
+      "support-assurance"
+    ],
+    "insights": [
+      "content-list"
+    ],
+    "insight-detail": [
+      "content-article",
+      "featured-products"
+    ],
+    "account": [
+      "account-overview"
+    ],
+    "account-login": [
+      "account-auth"
+    ],
+    "account-reset-password": [
+      "password-reset"
+    ]
+  },
   "sharedFoundationOwns": [
     "site header and footer behavior",
     "catalog and product detail routes",

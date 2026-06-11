@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
   isPrivacyBannerEnabled,
   setAnalyticsConsent,
@@ -13,9 +13,18 @@ type PrivacyConsentBannerProps = {
 
 export function PrivacyConsentBanner(props: PrivacyConsentBannerProps) {
   const hasDecision = useAnalyticsConsentDecision()
+  const [hydrated, setHydrated] = useState(false)
   const [dismissed, setDismissed] = useState(false)
 
-  if (!isPrivacyBannerEnabled() || hasDecision || dismissed) {
+  useEffect(() => {
+    const markHydrated = () => {
+      setHydrated(true)
+    }
+
+    markHydrated()
+  }, [])
+
+  if (!hydrated || !isPrivacyBannerEnabled() || hasDecision || dismissed) {
     return null
   }
 

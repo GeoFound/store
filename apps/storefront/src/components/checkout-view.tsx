@@ -120,19 +120,21 @@ export function CheckoutView({
         }
 
         if (pendingPaymentState.instructions) {
-          setInstructions(
-            JSON.parse(pendingPaymentState.instructions) as ManualPaymentInstructions
-          )
+          setInstructions(parsePendingPaymentInstructions(pendingPaymentState.instructions))
         }
 
         if (pendingPaymentState.attemptId) {
-          const { attempt } = await retrievePaymentAttempt(
-            pendingPaymentState.attemptId
-          )
-          setPaymentAttempt(attempt)
-          setResolvedMarketing(
-            normalizeResolvedMarketing(attempt.marketing_context)
-          )
+          try {
+            const { attempt } = await retrievePaymentAttempt(
+              pendingPaymentState.attemptId
+            )
+            setPaymentAttempt(attempt)
+            setResolvedMarketing(
+              normalizeResolvedMarketing(attempt.marketing_context)
+            )
+          } catch {
+            setInstructions(null)
+          }
         }
 
         if (pendingPaymentState.claimToken) {
@@ -516,10 +518,15 @@ export function CheckoutView({
         }
 
         if (section.type === "checkout-summary") {
+          const summaryClassName =
+            section.variant === "persistent-order-summary"
+              ? "theme-panel h-fit p-6 shadow-[var(--shadow-card)] lg:sticky lg:top-24"
+              : "theme-panel h-fit p-6 shadow-[var(--shadow-card)]"
+
           return (
             <aside
               {...sectionAttributes(section)}
-              className="theme-panel h-fit p-6 shadow-[var(--shadow-card)] lg:sticky lg:top-24"
+              className={summaryClassName}
             >
               <h2 className="text-lg font-semibold">Order summary</h2>
               <div className="mt-4 space-y-3">
@@ -554,6 +561,14 @@ export function CheckoutView({
       })}
     </div>
   )
+}
+
+function parsePendingPaymentInstructions(value: string) {
+  try {
+    return JSON.parse(value) as ManualPaymentInstructions
+  } catch {
+    return null
+  }
 }
 
 function normalizeResolvedMarketing(value: unknown): MarketingResolvedContext | null {

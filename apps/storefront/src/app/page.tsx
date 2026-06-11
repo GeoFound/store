@@ -15,7 +15,7 @@ export default async function Home() {
   const siteConfig = getSiteConfig()
   const homeContent = siteConfig.content.home
   const [rawProducts, insights] = await Promise.all([
-    listProducts(),
+    listProducts().catch(() => []),
     listContentEntries({ limit: 3 }),
   ])
   const products = applyProductDisplayConfig(
