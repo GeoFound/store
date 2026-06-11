@@ -218,6 +218,13 @@
       "verification": ["pnpm ai:inventory", "pnpm ai:doctor"]
     },
     {
+      "id": "obligation-governance",
+      "kind": "automation-system",
+      "path": ".ai/obligations-policy.json",
+      "owns": ["repository-derived proof obligations", "diff-aware new surface metadata requirements", "cross-policy evidence coverage"],
+      "verification": ["pnpm ai:obligations", "pnpm ai:doctor", "pnpm ai:evidence"]
+    },
+    {
       "id": "admin-control-panel-policy",
       "kind": "governance-policy",
       "path": ".ai/admin-control-panel-policy.json",
@@ -257,7 +264,7 @@
     {
       "id": "ai-maintenance",
       "from": "ai-operating-system",
-      "through": ["backend-platform-core", "backend-platform-adapters", "profile-system", "site-lifecycle-governance", "config-surface", "ops-control", "production-readiness-governance", "architecture-governance", "repository-inventory-governance"],
+      "through": ["backend-platform-core", "backend-platform-adapters", "profile-system", "site-lifecycle-governance", "config-surface", "ops-control", "production-readiness-governance", "architecture-governance", "repository-inventory-governance", "obligation-governance"],
       "to": "repository",
       "evidence": ["pnpm ai:evidence:full", ".github/workflows/ai-maintenance.yml"]
     },
@@ -305,6 +312,10 @@
     {
       "id": "repository-surface-changes-must-be-registered",
       "enforcedBy": ["pnpm ai:inventory", ".ai/inventory-baseline.json", "scripts/ai/inventory.mjs"]
+    },
+    {
+      "id": "repository-surface-changes-create-proof-obligations",
+      "enforcedBy": ["pnpm ai:obligations", ".ai/obligations-policy.json", "scripts/ai/obligations.mjs"]
     }
   ]
 }

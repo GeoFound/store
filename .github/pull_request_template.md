@@ -1,6 +1,7 @@
 ## Machine Evidence
 
 - [ ] `pnpm ai:doctor`
+- [ ] `pnpm ai:obligations`
 - [ ] `pnpm ai:production`
 - [ ] `pnpm check:ci`
 - [ ] `pnpm profile:validate:all` when profiles, env, tenancy, or deployment behavior changed
@@ -14,6 +15,7 @@
 ## Surface Changes
 
 - [ ] New/removed modules, routes, workflows, jobs, storefront entrypoints, site profiles, or AI scripts are registered in `.ai/inventory-baseline.json`
+- [ ] Repository-derived proof obligations from `pnpm ai:obligations` are satisfied
 - [ ] Runtime env reads are registered in `.ai/config-surface.json`
 - [ ] API contract, body validation, schema migration, and production config changes are registered in `.ai/production-readiness.json`
 - [ ] Architecture debt was fixed or reduced; no new routine-work baseline debt was added

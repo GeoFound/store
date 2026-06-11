@@ -1,0 +1,27 @@
+{
+  "id": "ADR-0010",
+  "status": "accepted",
+  "date": "2026-06-11",
+  "title": "Derive proof obligations from repository facts",
+  "context": "The repository already tracks cold start context, inventory, architecture, config, production readiness, site lifecycle, and control panel policy. The remaining gap is that some review expectations still live as guidance or prose and can be missed when the product expands.",
+  "decision": "Add .ai/obligations-policy.json and pnpm ai:obligations as an executable layer that derives proof obligations from inventory, production readiness, config surface, system map, admin control panel policy, evidence policy, package scripts, and git compare-ref state. CI and evidence reports must run this layer so future surface additions require explicit owner, verification, risk, and obligation metadata.",
+  "consequences": [
+    "New AI governance rules are expressed as executable checks instead of longer prompts.",
+    "Backend modules, API routes, config keys, production surfaces, system flows, and AI scripts are cross-checked across existing machine-readable maps.",
+    "PR-added inventory baseline entries must declare risk and obligations when AI_BASELINE_COMPARE_REF is available.",
+    "The existing warning for missing actual production env files remains a go-live gate because real production secret files cannot be synthesized inside the repository."
+  ],
+  "evidence": [
+    ".ai/obligations-policy.json",
+    "scripts/ai/obligations.mjs",
+    ".ai/evidence-policy.json",
+    ".ai/system.json",
+    ".ai/system-map.json",
+    ".ai/inventory-baseline.json",
+    "scripts/ai/doctor.mjs",
+    "scripts/ai/evidence.mjs",
+    "package.json",
+    "pnpm ai:obligations",
+    "pnpm check:ci"
+  ]
+}

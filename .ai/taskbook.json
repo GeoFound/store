@@ -6,8 +6,8 @@
       "goal": "Build a current repository and product context bundle before making changes.",
       "owner": "ai",
       "trigger": "new AI session, context compaction, or uncertain repo state",
-      "commands": ["pnpm ai:context", "pnpm ai:doctor", "pnpm ai:architecture", "pnpm ai:inventory", "pnpm ai:config", "pnpm ai:production", "pnpm ai:status"],
-      "evidence": ["JSON context output", "doctor ok=true", "architecture report has no unbaselined debt", "inventory has no unregistered surface changes", "config surface ok=true", "production readiness ok=true", "status ok=true"]
+      "commands": ["pnpm ai:context", "pnpm ai:doctor", "pnpm ai:architecture", "pnpm ai:inventory", "pnpm ai:obligations", "pnpm ai:config", "pnpm ai:production", "pnpm ai:status"],
+      "evidence": ["JSON context output", "doctor ok=true", "architecture report has no unbaselined debt", "inventory has no unregistered surface changes", "obligations ok=true", "config surface ok=true", "production readiness ok=true", "status ok=true"]
     },
     {
       "id": "routine-implementation",
@@ -15,39 +15,39 @@
       "owner": "ai",
       "trigger": "user asks for implementation, fix, refactor, or extension",
       "commands": ["pnpm check:ci"],
-      "evidence": ["tests passed", "typecheck passed", "lint passed", "architecture and inventory gates passed", "git status reviewed"]
+      "evidence": ["tests passed", "typecheck passed", "lint passed", "architecture, inventory, and obligation gates passed", "git status reviewed"]
     },
     {
       "id": "architecture-boundary-review",
       "goal": "Detect platform/module coupling, weak adapter boundaries, and handler overreach.",
       "owner": "ai",
       "trigger": "new module, new provider, refactor, or decoupling review",
-      "commands": ["pnpm ai:architecture", "pnpm ai:inventory", "pnpm ai:doctor", "pnpm --dir apps/backend test:unit"],
-      "evidence": ["no unbaselined architecture warnings", "repository surface changes registered", "platform boundary scan clean", "backend unit tests passed"]
+      "commands": ["pnpm ai:architecture", "pnpm ai:inventory", "pnpm ai:obligations", "pnpm ai:doctor", "pnpm --dir apps/backend test:unit"],
+      "evidence": ["no unbaselined architecture warnings", "repository surface changes registered", "proof obligations satisfied", "platform boundary scan clean", "backend unit tests passed"]
     },
     {
       "id": "production-readiness",
       "goal": "Prove the repository can support production deployment for the selected site profile.",
       "owner": "ai-with-human-decision",
       "trigger": "before go-live, provider change, domain change, or deploy pipeline change",
-      "commands": ["pnpm ai:production", "pnpm site:validate:all", "pnpm site:evidence -- --site-id <id> --site-env staging", "pnpm site:gate -- --site-id <id> --site-env production", "pnpm ai:evidence:full"],
-      "evidence": ["production readiness ok=true", "site lifecycle contract valid", "staging evidence report written", "production gate ready_for_promotion=true", "API contract snapshot passed", "schema migration baseline passed", "production config template coverage passed", "CI passed", "profile validation passed", "health gate passed", "DNS preflight passed", "edge preflight passed", "Cloudflare WAF preflight passed", "admin edge protection passed", "rate-limit smoke passed", "regression smoke passed"]
+      "commands": ["pnpm ai:production", "pnpm ai:obligations", "pnpm site:validate:all", "pnpm site:evidence -- --site-id <id> --site-env staging", "pnpm site:gate -- --site-id <id> --site-env production", "pnpm ai:evidence:full"],
+      "evidence": ["production readiness ok=true", "obligations ok=true", "site lifecycle contract valid", "staging evidence report written", "production gate ready_for_promotion=true", "API contract snapshot passed", "schema migration baseline passed", "production config template coverage passed", "CI passed", "profile validation passed", "health gate passed", "DNS preflight passed", "edge preflight passed", "Cloudflare WAF passed", "admin edge protection passed", "rate-limit smoke passed", "regression smoke passed"]
     },
     {
       "id": "multi-site-evolution",
       "goal": "Evolve a site from dedicated toward pooled or sharded runtime without weakening tenant isolation.",
       "owner": "ai-with-human-decision",
       "trigger": "new site, shared backend proposal, data-plane migration, or tenant boundary refactor",
-      "commands": ["pnpm ai:inventory", "pnpm ai:config", "pnpm ai:production", "pnpm profile:validate:all", "pnpm site:validate:all", "pnpm check:ci"],
-      "evidence": ["site/profile surface registered", "development/staging/production lifecycle profiles present", "tenant profile modes valid", "runtime config surface clean", "production route/config/schema surface clean", "tenant isolation tests passed", "human approval for shared data-plane risk"]
+      "commands": ["pnpm ai:inventory", "pnpm ai:obligations", "pnpm ai:config", "pnpm ai:production", "pnpm profile:validate:all", "pnpm site:validate:all", "pnpm check:ci"],
+      "evidence": ["site/profile surface registered", "proof obligations satisfied", "development/staging/production lifecycle profiles present", "tenant profile modes valid", "runtime config surface clean", "production route/config/schema surface clean", "tenant isolation tests passed", "human approval for shared data-plane risk"]
     },
     {
       "id": "runtime-maintenance",
       "goal": "Keep long-lived repo health visible through objective checks.",
       "owner": "ai",
       "trigger": "periodic maintenance or user asks to maintain repository",
-      "commands": ["pnpm ai:status", "pnpm ai:architecture", "pnpm ai:inventory", "pnpm ai:production", "pnpm ai:evidence", "pnpm check:ci"],
-      "evidence": ["machine-readable status report", "machine-readable architecture report", "machine-readable inventory report", "machine-readable production readiness report", "machine-readable evidence report", "issues listed with next action"]
+      "commands": ["pnpm ai:status", "pnpm ai:architecture", "pnpm ai:inventory", "pnpm ai:obligations", "pnpm ai:production", "pnpm ai:evidence", "pnpm check:ci"],
+      "evidence": ["machine-readable status report", "machine-readable architecture report", "machine-readable inventory report", "machine-readable obligation report", "machine-readable production readiness report", "machine-readable evidence report", "issues listed with next action"]
     }
   ]
 }

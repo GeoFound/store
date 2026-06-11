@@ -3,6 +3,7 @@ import path from "node:path"
 import { spawnSync } from "node:child_process"
 import { fileURLToPath } from "node:url"
 import { createInventoryReport } from "./inventory.mjs"
+import { createObligationsReport } from "./obligations.mjs"
 import { createProductionReadinessReport } from "./production-readiness.mjs"
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
@@ -50,6 +51,7 @@ const decisionRecords = readJsonFiles(".ai/decision-records")
 const reviewChecklists = readJsonFiles(".ai/review-checklists")
 const packageJson = readJson("package.json")
 const inventoryReport = createInventoryReport()
+const obligationsReport = createObligationsReport()
 const productionReadinessReport = createProductionReadinessReport()
 const gitHead = run("git", ["rev-parse", "--short", "HEAD"])
 const gitBranch = run("git", ["branch", "--show-current"])
@@ -94,6 +96,12 @@ const context = {
     ok: inventoryReport.ok,
     summary: inventoryReport.summary,
     systemMapCoverage: inventoryReport.systemMapCoverage,
+  },
+  obligations: {
+    ok: obligationsReport.ok,
+    summary: obligationsReport.summary,
+    issueCount: obligationsReport.issueCount,
+    warningCount: obligationsReport.warningCount,
   },
   productionReadiness: {
     ok: productionReadinessReport.ok,

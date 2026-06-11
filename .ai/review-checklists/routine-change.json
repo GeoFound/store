@@ -23,13 +23,13 @@
       "id": "machine-context-current",
       "checkType": "command",
       "command": ["pnpm", "ai:doctor"],
-      "evidenceRequired": "AI governance and boundary checks passed."
+      "evidenceRequired": "AI governance, obligations, and boundary checks passed."
     },
     {
       "id": "surface-and-debt-gates",
       "checkType": "command",
       "command": ["pnpm", "ai:evidence"],
-      "evidenceRequired": "Architecture baseline, inventory baseline, config surface, production readiness, status, and git state were captured."
+      "evidenceRequired": "Architecture baseline, inventory baseline, obligations, config surface, production readiness, status, and git state were captured."
     }
   ],
   "humanGate": false

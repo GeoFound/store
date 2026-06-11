@@ -1141,6 +1141,22 @@
         "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
       },
       {
+        "path": "scripts/ai/obligations.mjs",
+        "owner": "ai-operating-system",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:obligations",
+          "pnpm ai:doctor"
+        ],
+        "risk": "routine",
+        "obligations": [
+          "derive proof obligations from inventory, production readiness, config, system map, admin policy, evidence policy, and compare-ref state",
+          "fail CI on unsatisfied obligation issues",
+          "avoid adding duplicate go-live-only warnings for production env files"
+        ],
+        "rationale": "Executable obligation gate turns review prompts into repository-derived proof requirements for future surface expansion."
+      },
+      {
         "path": "scripts/ai/production-readiness.mjs",
         "owner": "ai-operating-system",
         "verification": [

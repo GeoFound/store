@@ -4,6 +4,7 @@ import { spawnSync } from "node:child_process"
 import { fileURLToPath } from "node:url"
 import { createDoctorReport } from "./doctor.mjs"
 import { createInventoryReport } from "./inventory.mjs"
+import { createObligationsReport } from "./obligations.mjs"
 import { createProductionReadinessReport } from "./production-readiness.mjs"
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
@@ -67,6 +68,7 @@ export async function createStatusReport(options = {}) {
   const taskbook = readJson(".ai/taskbook.json")
   const doctor = await createDoctorReport()
   const inventory = createInventoryReport()
+  const obligations = createObligationsReport()
   const production = createProductionReadinessReport()
   const gitStatus = run("git", ["status", "--short"])
   const evidenceReports = listEvidenceReports()
@@ -80,6 +82,10 @@ export async function createStatusReport(options = {}) {
 
   if (!inventory.ok) {
     nextActions.push("Run pnpm ai:inventory and register or remove changed repository surface.")
+  }
+
+  if (!obligations.ok) {
+    nextActions.push("Run pnpm ai:obligations and satisfy the generated proof obligations.")
   }
 
   if (!production.ok) {
@@ -118,6 +124,13 @@ export async function createStatusReport(options = {}) {
       ok: inventory.ok,
       summary: inventory.summary,
       systemMapCoverage: inventory.systemMapCoverage,
+    },
+    obligations: {
+      ok: obligations.ok,
+      issueCount: obligations.issueCount,
+      warningCount: obligations.warningCount,
+      obligationCount: obligations.obligationCount,
+      summary: obligations.summary,
     },
     productionReadiness: {
       ok: production.ok,

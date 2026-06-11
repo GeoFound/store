@@ -1,0 +1,62 @@
+{
+  "version": "1.0.0",
+  "purpose": "Derive executable proof obligations from repository facts so new product and governance surface cannot rely on frozen prompts or human review alone.",
+  "principles": [
+    "Repository facts create proof obligations.",
+    "Review checklists are guidance; executable commands are acceptance gates.",
+    "New surface must declare owner, verification, risk, and obligations before CI accepts it.",
+    "Production-significant surface must map to admin control panel visibility, site lifecycle evidence, runtime config, or executable evidence commands.",
+    "Accepted debt must be explicit, expiring, and non-growing."
+  ],
+  "requiredPackageScripts": [
+    "ai:obligations"
+  ],
+  "requiredColdStartFiles": [
+    ".ai/obligations-policy.json"
+  ],
+  "rules": [
+    {
+      "id": "inventory-surface-creates-obligations",
+      "subject": "inventory tracked entities",
+      "enforcedBy": ["pnpm ai:obligations", "pnpm ai:inventory"]
+    },
+    {
+      "id": "backend-module-must-be-system-mapped",
+      "subject": "backend modules",
+      "enforcedBy": ["pnpm ai:obligations", "pnpm ai:inventory"]
+    },
+    {
+      "id": "api-route-must-have-production-contract",
+      "subject": "backend API routes",
+      "enforcedBy": ["pnpm ai:obligations", "pnpm ai:production"]
+    },
+    {
+      "id": "body-reading-route-must-be-validated",
+      "subject": "API routes and body-reading helpers",
+      "enforcedBy": ["pnpm ai:obligations", "pnpm ai:production"]
+    },
+    {
+      "id": "production-config-must-map-to-control-panel",
+      "subject": "production-required runtime config",
+      "enforcedBy": ["pnpm ai:obligations", "pnpm ai:doctor"]
+    },
+    {
+      "id": "system-flow-must-declare-evidence",
+      "subject": "system-map flows",
+      "enforcedBy": ["pnpm ai:obligations", "pnpm ai:doctor"]
+    },
+    {
+      "id": "new-inventory-baseline-entry-must-declare-risk",
+      "subject": "PR-added inventory baseline entries",
+      "enforcedBy": ["AI_BASELINE_COMPARE_REF pnpm ai:obligations"]
+    }
+  ],
+  "limits": {
+    "maxAcceptedBodyValidationDebt": 0
+  },
+  "diff": {
+    "compareRefEnv": "AI_BASELINE_COMPARE_REF",
+    "newInventoryEntryRequiredFields": ["owner", "verification", "rationale", "risk", "obligations"]
+  },
+  "riskLevels": ["routine", "production", "security", "revenue", "customer-data", "external-provider"]
+}

@@ -26,6 +26,12 @@
       "evidenceRequired": "New modules, routes, workflows, jobs, storefront entrypoints, site profiles, and AI scripts are registered in the inventory baseline."
     },
     {
+      "id": "proof-obligations-satisfied",
+      "checkType": "command",
+      "command": ["pnpm", "ai:obligations"],
+      "evidenceRequired": "Repository-derived proof obligations are satisfied for changed product and governance surface."
+    },
+    {
       "id": "capability-scope-limited",
       "checkType": "source-inspection",
       "paths": ["apps/backend/src/platform-adapters/backend-context.ts"],

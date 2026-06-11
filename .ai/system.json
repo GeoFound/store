@@ -108,6 +108,7 @@
       ".ai/system-map.json",
       ".ai/taskbook.json",
       ".ai/evidence-policy.json",
+      ".ai/obligations-policy.json",
       ".ai/architecture-rules.json",
       ".ai/architecture-baseline.json",
       ".ai/config-surface.json",
@@ -122,7 +123,7 @@
       "docs/ops/production-runbook.md",
       "docs/ops/site-lifecycle.md"
     ],
-    "runFirst": ["pnpm ai:context", "pnpm ai:doctor", "pnpm ai:architecture", "pnpm ai:inventory", "pnpm ai:config", "pnpm ai:production"],
+    "runFirst": ["pnpm ai:context", "pnpm ai:doctor", "pnpm ai:architecture", "pnpm ai:inventory", "pnpm ai:obligations", "pnpm ai:config", "pnpm ai:production"],
     "runBeforeCommit": ["pnpm check:ci"],
     "runBeforeProduction": ["pnpm ai:evidence:full"]
   },
@@ -132,6 +133,7 @@
       "ai:architecture",
       "ai:config",
       "ai:inventory",
+      "ai:obligations",
       "ai:production",
       "ai:doctor",
       "ai:status",

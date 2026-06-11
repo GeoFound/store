@@ -18,12 +18,13 @@ Then run the focused checks that match the task:
 
 - Architecture or refactor work: `pnpm ai:architecture`
 - Repository/product surface changes: `pnpm ai:inventory`
+- Repository-derived proof obligations: `pnpm ai:obligations`
 - Runtime configuration or profile work: `pnpm ai:config` and `pnpm profile:validate:all`
 - Production contract/schema/config work: `pnpm ai:production`
 - Routine implementation: `pnpm check:ci`
 - Production-readiness work: `pnpm ai:evidence:full`
 
-Read `.ai/system.json`, `.ai/system-map.json`, `.ai/taskbook.json`, `.ai/architecture-rules.json`, `.ai/architecture-baseline.json`, `.ai/config-surface.json`, `.ai/production-readiness.json`, and `.ai/inventory-baseline.json` before making broad changes.
+Read `.ai/system.json`, `.ai/system-map.json`, `.ai/taskbook.json`, `.ai/obligations-policy.json`, `.ai/architecture-rules.json`, `.ai/architecture-baseline.json`, `.ai/config-surface.json`, `.ai/production-readiness.json`, and `.ai/inventory-baseline.json` before making broad changes.
 
 ## Decision Gates
 
@@ -45,6 +46,8 @@ Existing architecture warnings are only acceptable if `.ai/architecture-baseline
 
 Use `pnpm ai:inventory` whenever a change adds or removes modules, API routes, workflows, jobs, storefront entrypoints, site profiles, or AI scripts. Every tracked surface entry must be an object with owner and verification commands. Backend modules must also be represented in `.ai/system-map.json`, or have an explicit expiring unmapped-module baseline.
 
+Use `pnpm ai:obligations` whenever a change affects product surface, governance files, production readiness, config, admin control panel policy, evidence policy, or AI scripts. This check derives proof obligations from the repository instead of relying on review prompts. When `AI_BASELINE_COMPARE_REF` is set, new inventory baseline entries must declare `risk` and `obligations` metadata in addition to owner, verification, and rationale.
+
 Default direction:
 
 - Platform core in `apps/backend/src/platform` owns contracts and runtime APIs only.
@@ -58,6 +61,7 @@ Default direction:
 - Model changes must add migration evidence before updating schema fingerprints. PR CI blocks schema fingerprint changes that do not add a migration file.
 - Actual go-live env files must be checked with `AI_BACKEND_PRODUCTION_ENV_FILE`, `AI_STOREFRONT_PRODUCTION_ENV_FILE`, and `AI_SERVICES_PRODUCTION_ENV_FILE` set before treating production config as proven.
 - New repository/product surface must be registered in `.ai/inventory-baseline.json`.
+- New repository/product surface must satisfy `pnpm ai:obligations`; do not add prose-only review requirements when the expectation can be represented as an executable obligation.
 - New product/site expansion must update profiles, system map, evidence commands, and tests as needed.
 
 ## Change Flow
@@ -67,7 +71,7 @@ For new features or refactors:
 1. Use `pnpm ai:context` output to identify the owning node and verification commands.
 2. Prefer existing platform ports, module services, workflows, and adapters over new cross-module imports.
 3. Do not add architecture baseline fingerprints during routine work. Fix the boundary or reduce the hotspot; PR CI blocks new baseline fingerprints against the base commit.
-4. Update `.ai/system-map.json`, `.ai/taskbook.json`, `.ai/inventory-baseline.json`, `.ai/production-readiness.json`, or `.ai/architecture-rules.json` when the repository shape changes.
+4. Update `.ai/system-map.json`, `.ai/taskbook.json`, `.ai/inventory-baseline.json`, `.ai/obligations-policy.json`, `.ai/production-readiness.json`, or `.ai/architecture-rules.json` when the repository shape changes.
 5. Run focused tests first, then `pnpm check:ci` when the change can affect shared behavior.
 
 ## Review Output

@@ -23,6 +23,11 @@
       "required": true
     },
     {
+      "id": "ai-obligations",
+      "command": ["pnpm", "ai:obligations"],
+      "required": true
+    },
+    {
       "id": "ai-production",
       "command": ["pnpm", "ai:production"],
       "required": true
@@ -101,6 +106,7 @@
   "acceptanceRules": [
     "A task is not complete just because prose was updated.",
     "If a check cannot run, the evidence report must say why and what external action is needed.",
-    "Human approval is a decision input, not a substitute for runtime evidence."
+    "Human approval is a decision input, not a substitute for runtime evidence.",
+    "Repository surface changes create proof obligations that must be satisfied by pnpm ai:obligations."
   ]
 }

@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url"
 import { createArchitectureReport } from "./architecture.mjs"
 import { createConfigSurfaceReport } from "./config-surface.mjs"
 import { createInventoryReport } from "./inventory.mjs"
+import { createObligationsReport } from "./obligations.mjs"
 import { createProductionReadinessReport } from "./production-readiness.mjs"
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
@@ -84,6 +85,7 @@ const system = readJson(".ai/system.json")
 const taskbook = readJson(".ai/taskbook.json")
 const evidencePolicy = readJson(".ai/evidence-policy.json")
 const systemMap = readJson(".ai/system-map.json")
+readJson(".ai/obligations-policy.json")
 const adminControlPanelPolicy = readJson(".ai/admin-control-panel-policy.json")
 const siteLifecyclePolicy = readJson(".ai/site-lifecycle-policy.json")
 const configSurfacePolicy = readJson(".ai/config-surface.json")
@@ -505,6 +507,21 @@ for (const warning of productionReport.warnings || []) {
       owner: warning.owner,
       expiresAt: warning.expiresAt,
     },
+  })
+}
+
+const obligationsReport = createObligationsReport()
+assert(obligationsReport.ok, {
+  id: "obligations.failed",
+  message: "Machine-readable obligation validation failed.",
+  issues: obligationsReport.issues,
+})
+
+for (const warning of obligationsReport.warnings || []) {
+  warnings.push({
+    id: `obligations.${warning.id}`,
+    message: warning.message,
+    details: warning.details || {},
   })
 }
 
