@@ -220,6 +220,108 @@ function entryByTrackedValue(entries) {
   return new Map((entries || []).map((entry) => [trackedValue(entry), entry]))
 }
 
+function readPatchedDependencies() {
+  const workspacePath = path.join(root, "pnpm-workspace.yaml")
+
+  if (!fs.existsSync(workspacePath)) {
+    return []
+  }
+
+  const lines = fs.readFileSync(workspacePath, "utf8").split(/\r?\n/)
+  const entries = []
+  let inPatchedDependencies = false
+
+  for (const line of lines) {
+    if (/^\S/.test(line)) {
+      inPatchedDependencies = line.trim() === "patchedDependencies:"
+      continue
+    }
+
+    if (!inPatchedDependencies) {
+      continue
+    }
+
+    const match = line.match(/^\s{2}['"]?([^'":]+)['"]?:\s+(.+)$/)
+
+    if (!match) {
+      continue
+    }
+
+    entries.push({
+      dependency: match[1].trim(),
+      patchPath: match[2].trim().replace(/^['"]|['"]$/g, ""),
+    })
+  }
+
+  return entries
+}
+
+function validateUnifiedPatch(relativePath) {
+  const absolutePath = path.join(root, relativePath)
+
+  if (!fs.existsSync(absolutePath)) {
+    return {
+      exists: false,
+      hunkCount: 0,
+      invalidHunks: [],
+    }
+  }
+
+  const lines = fs.readFileSync(absolutePath, "utf8").split(/\r?\n/)
+  const invalidHunks = []
+  let currentHunk = null
+  let hunkCount = 0
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index]
+
+    if (line.startsWith("diff --git ")) {
+      currentHunk = null
+      continue
+    }
+
+    const header = line.match(/^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/)
+
+    if (header) {
+      currentHunk = {
+        line: index + 1,
+        oldExpected: header[2] ? Number(header[2]) : 1,
+        newExpected: header[4] ? Number(header[4]) : 1,
+        oldActual: 0,
+        newActual: 0,
+      }
+      hunkCount += 1
+      invalidHunks.push(currentHunk)
+      continue
+    }
+
+    if (!currentHunk || line.startsWith("\\ No newline")) {
+      continue
+    }
+
+    const marker = line[0]
+
+    if (marker === " ") {
+      currentHunk.oldActual += 1
+      currentHunk.newActual += 1
+    } else if (marker === "-") {
+      currentHunk.oldActual += 1
+    } else if (marker === "+") {
+      currentHunk.newActual += 1
+    }
+  }
+
+  return {
+    exists: true,
+    hunkCount,
+    invalidHunks: invalidHunks.filter(
+      (hunk) =>
+        hunk.oldExpected !== hunk.oldActual ||
+        hunk.newExpected !== hunk.newActual
+    ),
+  }
+}
+
 function validatePolicy(policy, packageJson, obligations, issues, warnings) {
   add(obligations, issues, warnings, {
     id: "obligations.policy-version-present",
@@ -266,6 +368,37 @@ function validatePolicy(policy, packageJson, obligations, issues, warnings) {
       message: "Every obligation rule must declare executable enforcement.",
     })
     validateCommandList(rule.enforcedBy || [], `obligation rule ${rule.id}`, packageJson, obligations, issues, warnings)
+  }
+}
+
+function validatePatchObligations(input) {
+  const { obligations, issues, warnings } = input
+  const patchedDependencies = readPatchedDependencies()
+
+  for (const entry of patchedDependencies) {
+    const result = validateUnifiedPatch(entry.patchPath)
+
+    add(obligations, issues, warnings, {
+      id: "obligations.patched-dependency-file-present",
+      subject: entry.dependency,
+      ok: result.exists,
+      evidence: ["pnpm-workspace.yaml", entry.patchPath],
+      message: "Patched dependency must point to an existing patch file.",
+      details: { patchPath: entry.patchPath },
+    })
+
+    add(obligations, issues, warnings, {
+      id: "obligations.patch-hunk-header-integrity",
+      subject: entry.patchPath,
+      ok: result.exists && result.hunkCount > 0 && result.invalidHunks.length === 0,
+      evidence: [entry.patchPath, "pnpm install --frozen-lockfile"],
+      message: "Patch hunk headers must match actual old and new line counts so clean installs can apply patched dependencies.",
+      details: {
+        dependency: entry.dependency,
+        hunkCount: result.hunkCount,
+        invalidHunks: result.invalidHunks,
+      },
+    })
   }
 }
 
@@ -611,6 +744,11 @@ export function createObligationsReport() {
 
   validatePolicy(policy, packageJson, obligations, issues, warnings)
   validateCommandList(system.coldStart?.runFirst || [], "cold start runFirst", packageJson, obligations, issues, warnings)
+  validatePatchObligations({
+    obligations,
+    issues,
+    warnings,
+  })
   validateInventoryObligations({
     baseline,
     inventoryReport,

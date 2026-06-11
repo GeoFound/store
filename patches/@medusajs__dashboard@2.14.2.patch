@@ -64,7 +64,7 @@ index ed9a8e0153971d23cc29f2aae5e610c2c1c4964e..336f2acf9b6d5040d5907e6f27dee731
            /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(UtilitySection, {})
          ] }),
          /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("div", { className: "bg-ui-bg-subtle sticky bottom-0", children: /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(UserSection, {}) })
-@@ -107788,152 +107813,244 @@ var init_main_layout = __esm({
+@@ -107788,152 +107813,251 @@ var init_main_layout = __esm({
          ] })
        ] }) });
      };
@@ -455,7 +455,7 @@ index 939abb4e15c5b88acf6f0a14695e2c3aaeadb893..8d45c2264390e10a3ecc4147526e5f8c
        /* @__PURE__ */ jsx13(UtilitySection, {})
      ] }),
      /* @__PURE__ */ jsx13("div", { className: "bg-ui-bg-subtle sticky bottom-0", children: /* @__PURE__ */ jsx13(UserSection, {}) })
-@@ -102755,152 +102752,244 @@ var Header = () => {
+@@ -102755,152 +102752,251 @@ var Header = () => {
      ] })
    ] }) });
  };
@@ -914,7 +914,7 @@ index c554883a355b95afb80139346ac38859029b155d..3a20315bcfad58747cdaa4fd9014e91a
            </div>
            <UtilitySection />
          </div>
-@@ -176,186 +172,300 @@ const Header = () => {
+@@ -176,186 +172,307 @@ const Header = () => {
    )
  }
  

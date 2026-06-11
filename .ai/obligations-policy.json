@@ -46,6 +46,11 @@
       "enforcedBy": ["pnpm ai:obligations", "pnpm ai:doctor"]
     },
     {
+      "id": "patched-dependency-patches-must-be-installable",
+      "subject": "pnpm patchedDependencies patch files",
+      "enforcedBy": ["pnpm ai:obligations"]
+    },
+    {
       "id": "new-inventory-baseline-entry-must-declare-risk",
       "subject": "PR-added inventory baseline entries",
       "enforcedBy": ["AI_BASELINE_COMPARE_REF pnpm ai:obligations"]
