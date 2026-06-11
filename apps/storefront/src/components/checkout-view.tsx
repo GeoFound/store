@@ -16,6 +16,7 @@ import {
   getCheckoutAnalyticsContext,
   minorToDecimal,
 } from "@/lib/analytics"
+import type { SiteExperienceSectionConfig } from "@/lib/site-config"
 import type {
   Cart,
   MarketingResolvedContext,
@@ -29,10 +30,30 @@ import {
 } from "./checkout-pending-payment-storage"
 import { readInitialOrderAccessToken } from "./order-access-token-storage"
 import { useCheckoutPaymentClaim } from "./use-checkout-payment-claim"
+import { renderConfiguredSections, sectionAttributes } from "@/sections/shared"
 
 const CART_ID_KEY = "store_cart_id"
 
-export function CheckoutView() {
+type CheckoutViewProps = {
+  sections?: SiteExperienceSectionConfig[]
+}
+
+const DEFAULT_CHECKOUT_SECTIONS: SiteExperienceSectionConfig[] = [
+  {
+    type: "checkout-form",
+    variant: "guest-first",
+    enabled: true,
+  },
+  {
+    type: "checkout-summary",
+    variant: "persistent-order-summary",
+    enabled: true,
+  },
+]
+
+export function CheckoutView({
+  sections = DEFAULT_CHECKOUT_SECTIONS,
+}: CheckoutViewProps) {
   const [cart, setCart] = useState<Cart | null>(null)
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([])
   const [email, setEmail] = useState("")
@@ -262,10 +283,14 @@ export function CheckoutView() {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-      <form
-        onSubmit={handleSubmit}
-        className="theme-panel space-y-7 p-6 shadow-[var(--shadow-card)]"
-      >
+      {renderConfiguredSections(sections, (section) => {
+        if (section.type === "checkout-form") {
+          return (
+            <form
+              {...sectionAttributes(section)}
+              onSubmit={handleSubmit}
+              className="theme-panel space-y-7 p-6 shadow-[var(--shadow-card)]"
+            >
         <section>
           <div className="flex items-center gap-3">
             <span className="theme-accent-action flex h-8 w-8 items-center justify-center text-sm font-semibold">
@@ -486,32 +511,47 @@ export function CheckoutView() {
             </Link>
           </section>
         ) : null}
-      </form>
+            </form>
+          )
+        }
 
-      <aside className="theme-panel h-fit p-6 shadow-[var(--shadow-card)] lg:sticky lg:top-24">
-        <h2 className="text-lg font-semibold">Order summary</h2>
-        <div className="mt-4 space-y-3">
-          {cart.items.map((item) => (
-            <div key={item.id} className="flex justify-between gap-4 text-sm leading-6">
-              <span>
-                {item.title} x {item.quantity}
-              </span>
-              <span>
-                {formatMoney(
-                  item.total ?? item.unit_price * item.quantity,
-                  cart.currency_code
-                )}
-              </span>
-            </div>
-          ))}
-        </div>
-        <div className="theme-border mt-5 flex items-center justify-between border-t pt-5">
-          <span>Total</span>
-          <span className="font-semibold">
-            {formatMoney(cart.total, cart.currency_code)}
-          </span>
-        </div>
-      </aside>
+        if (section.type === "checkout-summary") {
+          return (
+            <aside
+              {...sectionAttributes(section)}
+              className="theme-panel h-fit p-6 shadow-[var(--shadow-card)] lg:sticky lg:top-24"
+            >
+              <h2 className="text-lg font-semibold">Order summary</h2>
+              <div className="mt-4 space-y-3">
+                {cart.items?.map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex justify-between gap-4 text-sm leading-6"
+                  >
+                    <span>
+                      {item.title} x {item.quantity}
+                    </span>
+                    <span>
+                      {formatMoney(
+                        item.total ?? item.unit_price * item.quantity,
+                        cart.currency_code
+                      )}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="theme-border mt-5 flex items-center justify-between border-t pt-5">
+                <span>Total</span>
+                <span className="font-semibold">
+                  {formatMoney(cart.total, cart.currency_code)}
+                </span>
+              </div>
+            </aside>
+          )
+        }
+
+        return null
+      })}
     </div>
   )
 }

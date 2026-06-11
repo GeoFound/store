@@ -1,0 +1,185 @@
+{
+  "version": "1.2.0",
+  "id": "storefront-experience-policy",
+  "owner": "storefront-ui",
+  "purpose": "Define the shared multi-site storefront experience foundation so AI can evolve site-specific frontend design without rewriting core commerce UX.",
+  "principles": [
+    "Use one shared storefront code foundation for routing, cart, checkout, order lookup, account access, analytics, privacy consent, responsive behavior, and accessibility basics.",
+    "Keep site personality in profile-level theme, content, and experience configuration.",
+    "Use semantic sections instead of arbitrary visual slicing. AI may change section order, variants, and copy through profiles before adding one-off page code.",
+    "Target stable 80-point product design: clear, trustworthy, modern, and usable before award-level visual novelty.",
+    "Preserve purchase-to-delivery and order-recovery paths when changing visual design.",
+    "Every current and future storefront page should have an experience contract before it receives site-specific layout behavior."
+  ],
+  "currentImplementation": {
+    "siteConfigType": "apps/storefront/src/lib/site-config.ts",
+    "activeRenderers": {
+      "home": "apps/storefront/src/sections/home.tsx",
+      "products": "apps/storefront/src/sections/products.tsx",
+      "product-detail": "apps/storefront/src/sections/product-detail.tsx",
+      "cart": "apps/storefront/src/components/cart-view.tsx",
+      "checkout": "apps/storefront/src/components/checkout-view.tsx",
+      "orders": "apps/storefront/src/sections/orders.tsx",
+      "insights": "apps/storefront/src/sections/insights.tsx",
+      "insight-detail": "apps/storefront/src/sections/insights.tsx",
+      "account": "apps/storefront/src/sections/account.tsx",
+      "account-login": "apps/storefront/src/sections/account.tsx",
+      "account-reset-password": "apps/storefront/src/sections/account.tsx"
+    },
+    "profileRoot": "profiles/sites",
+    "profileFieldPattern": "experience.pages.<page>.sections",
+    "rendererStatus": {
+      "home": "active",
+      "products": "active",
+      "product-detail": "active",
+      "cart": "active",
+      "checkout": "active",
+      "orders": "active",
+      "insights": "active",
+      "insight-detail": "active",
+      "account": "active",
+      "account-login": "active",
+      "account-reset-password": "active"
+    }
+  },
+  "pageContracts": [
+    "home",
+    "products",
+    "product-detail",
+    "cart",
+    "checkout",
+    "orders",
+    "insights",
+    "insight-detail",
+    "account",
+    "account-login",
+    "account-reset-password"
+  ],
+  "sharedFoundationOwns": [
+    "site header and footer behavior",
+    "catalog and product detail routes",
+    "cart, checkout, payment attempt, and order access UX",
+    "guest-first order recovery",
+    "commerce data port in apps/storefront/src/lib/commerce.ts",
+    "theme token injection",
+    "extension slots",
+    "baseline responsive and accessibility behavior"
+  ],
+  "sitePersonalizationOwns": [
+    "brand name, locale, currency, timezone, and domains",
+    "theme colors, density, radius, and future typography tokens",
+    "navigation labels and page copy",
+    "page intent, layout strategy, section order, and section variants",
+    "product display overrides",
+    "content seed entries and editorial tone"
+  ],
+  "sectionTypes": [
+    {
+      "type": "hero",
+      "purpose": "State the site promise and expose primary product and order lookup actions."
+    },
+    {
+      "type": "categories",
+      "purpose": "Expose configured or derived product groups."
+    },
+    {
+      "type": "featured-products",
+      "purpose": "Show purchasable products using the shared product card system."
+    },
+    {
+      "type": "insights",
+      "purpose": "Use public content to support trust, education, and discovery when content exists."
+    },
+    {
+      "type": "catalog-header",
+      "purpose": "State catalog scope and buyer expectations."
+    },
+    {
+      "type": "catalog-controls",
+      "purpose": "Support category filtering and sort."
+    },
+    {
+      "type": "product-grid",
+      "purpose": "Render browsable products."
+    },
+    {
+      "type": "product-media",
+      "purpose": "Show product imagery or fallback identity."
+    },
+    {
+      "type": "product-purchase",
+      "purpose": "Show price, availability, delivery facts, and add-to-cart action."
+    },
+    {
+      "type": "product-details",
+      "purpose": "Explain product and fulfillment details."
+    },
+    {
+      "type": "cart-items",
+      "purpose": "Show cart lines."
+    },
+    {
+      "type": "cart-summary",
+      "purpose": "Summarize totals and expose checkout action."
+    },
+    {
+      "type": "checkout-form",
+      "purpose": "Collect checkout inputs with clear errors."
+    },
+    {
+      "type": "checkout-summary",
+      "purpose": "Keep order totals and payment state visible."
+    },
+    {
+      "type": "order-recovery",
+      "purpose": "Recover guest order access."
+    },
+    {
+      "type": "content-list",
+      "purpose": "List published content entries."
+    },
+    {
+      "type": "content-article",
+      "purpose": "Render one readable content entry."
+    },
+    {
+      "type": "account-auth",
+      "purpose": "Support optional account login and registration."
+    },
+    {
+      "type": "account-overview",
+      "purpose": "Show optional account profile and order links."
+    },
+    {
+      "type": "password-reset",
+      "purpose": "Recover optional account access."
+    },
+    {
+      "type": "support-assurance",
+      "purpose": "Explain delivery, recovery, or support expectations."
+    }
+  ],
+  "aiChangePolicy": {
+    "preferredFirstMoves": [
+      "change profile experience page intent, layout, section order, or section variant names",
+      "adjust profile theme and content copy",
+      "add a reusable section variant",
+      "connect an existing page to the shared section renderer contract",
+      "add a new semantic section type only when existing sections cannot express the page goal"
+    ],
+    "doNotDoWithoutExplicitReason": [
+      "fork the storefront per site",
+      "rewrite checkout or order lookup for visual reasons",
+      "hard-code site-specific copy in shared components",
+      "add decorative sections that do not support discovery, trust, checkout, support, or content strategy",
+      "copy an external site's protected visual design"
+    ]
+  },
+  "verification": [
+    "pnpm profile:validate:all",
+    "pnpm site:validate:all",
+    "pnpm --dir apps/storefront test",
+    "pnpm --dir apps/storefront lint",
+    "pnpm typecheck"
+  ]
+}

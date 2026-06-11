@@ -55,6 +55,64 @@ export type SiteProductDisplayConfig = {
   hideVariantSelector: boolean
 }
 
+export type SiteExperiencePageKey =
+  | "home"
+  | "products"
+  | "product-detail"
+  | "cart"
+  | "checkout"
+  | "orders"
+  | "insights"
+  | "insight-detail"
+  | "account"
+  | "account-login"
+  | "account-reset-password"
+
+export type SiteExperienceSectionType =
+  | "hero"
+  | "categories"
+  | "insights"
+  | "featured-products"
+  | "catalog-header"
+  | "catalog-controls"
+  | "product-grid"
+  | "product-media"
+  | "product-purchase"
+  | "product-details"
+  | "cart-items"
+  | "cart-summary"
+  | "checkout-form"
+  | "checkout-summary"
+  | "order-recovery"
+  | "content-list"
+  | "content-article"
+  | "account-auth"
+  | "account-overview"
+  | "password-reset"
+  | "support-assurance"
+
+export type SiteExperienceSectionConfig = {
+  type: SiteExperienceSectionType
+  variant: string
+  enabled: boolean
+  goal?: string
+}
+
+export type SiteExperiencePageConfig = {
+  intent: string
+  layout: string
+  sections: SiteExperienceSectionConfig[]
+}
+
+export type SiteExperienceConfig = {
+  foundation: string
+  designTier: string
+  strategy: string
+  personality: string[]
+  guardrails: string[]
+  pages: Record<SiteExperiencePageKey, SiteExperiencePageConfig>
+}
+
 export type SiteContentConfig = {
   navigation: {
     insights: string
@@ -120,12 +178,29 @@ export type SiteConfig = {
   }
   theme: SiteThemeConfig
   content: SiteContentConfig
+  experience: SiteExperienceConfig
   platform: {
     enabledPlugins: string[]
     disabledPlugins: string[]
     enabledContracts: Record<string, string[]>
     disabledContracts: Record<string, string[]>
   }
+}
+
+type SiteExperienceConfigInput = Partial<
+  Omit<SiteExperienceConfig, "designTier" | "personality" | "guardrails" | "pages">
+> & {
+  designTier?: unknown
+  design_tier?: unknown
+  personality?: unknown
+  guardrails?: unknown
+  pages?: Partial<Record<SiteExperiencePageKey, SiteExperiencePageConfigInput>>
+}
+
+type SiteExperiencePageConfigInput = {
+  intent?: unknown
+  layout?: unknown
+  sections?: unknown
 }
 
 type SiteConfigInput = Partial<SiteConfig> & {
@@ -169,6 +244,7 @@ type SiteConfigInput = Partial<SiteConfig> & {
       seed_entries?: unknown
     }
   }
+  experience?: SiteExperienceConfigInput
   platform?: {
     enabled_plugins?: unknown
     disabled_plugins?: unknown
@@ -256,6 +332,218 @@ const BASE_SITE_CONFIG: SiteConfig = {
       relatedProductsLabel: "Related products",
       publishedLabel: "Published",
       seedEntries: [],
+    },
+  },
+  experience: {
+    foundation: "storefront-core",
+    designTier: "80-point",
+    strategy: "digital-goods-commerce",
+    personality: ["clear", "trustworthy", "fast"],
+    guardrails: [
+      "preserve cart, checkout, order lookup, and delivery access flows",
+      "prefer semantic sections over arbitrary visual slicing",
+      "keep site personality in profile configuration and shared UX in code",
+      "verify desktop and mobile storefront states before production promotion",
+    ],
+    pages: {
+      home: {
+        intent: "Introduce the site promise and route buyers into product discovery, content, or order lookup.",
+        layout: "profile-section-stack",
+        sections: [
+          {
+            type: "hero",
+            variant: "adaptive-trust",
+            enabled: true,
+            goal: "State the site promise and route buyers to catalog or order lookup.",
+          },
+          {
+            type: "categories",
+            variant: "commerce-links",
+            enabled: true,
+            goal: "Expose configured or derived product groups.",
+          },
+          {
+            type: "insights",
+            variant: "editorial-rail",
+            enabled: true,
+            goal: "Use content to build trust and discovery.",
+          },
+          {
+            type: "featured-products",
+            variant: "commerce-grid",
+            enabled: true,
+            goal: "Show purchasable products using the shared product card system.",
+          },
+        ],
+      },
+      products: {
+        intent: "Help buyers scan, filter, sort, and enter product detail pages.",
+        layout: "catalog-page",
+        sections: [
+          {
+            type: "catalog-header",
+            variant: "standard",
+            enabled: true,
+            goal: "State catalog scope and buyer expectations.",
+          },
+          {
+            type: "catalog-controls",
+            variant: "category-sort",
+            enabled: true,
+            goal: "Support category filtering and sort without hiding products.",
+          },
+          {
+            type: "product-grid",
+            variant: "commerce-grid",
+            enabled: true,
+            goal: "Render products through the shared product card system.",
+          },
+        ],
+      },
+      "product-detail": {
+        intent: "Help buyers evaluate one product and add the right variant to cart.",
+        layout: "product-detail-page",
+        sections: [
+          {
+            type: "product-media",
+            variant: "stable-frame",
+            enabled: true,
+            goal: "Show product imagery or fallback identity without layout shift.",
+          },
+          {
+            type: "product-purchase",
+            variant: "digital-delivery",
+            enabled: true,
+            goal: "Show price, availability, delivery facts, and add-to-cart action.",
+          },
+          {
+            type: "product-details",
+            variant: "plain-language",
+            enabled: true,
+            goal: "Explain product details and fulfillment in buyer language.",
+          },
+        ],
+      },
+      cart: {
+        intent: "Let buyers review cart contents and proceed or return to catalog.",
+        layout: "cart-page",
+        sections: [
+          {
+            type: "cart-items",
+            variant: "editable-list",
+            enabled: true,
+            goal: "Show cart lines with quantities and prices.",
+          },
+          {
+            type: "cart-summary",
+            variant: "checkout-cta",
+            enabled: true,
+            goal: "Summarize totals and expose checkout action.",
+          },
+        ],
+      },
+      checkout: {
+        intent: "Complete guest checkout with minimal distraction and clear payment recovery.",
+        layout: "checkout-page",
+        sections: [
+          {
+            type: "checkout-form",
+            variant: "guest-first",
+            enabled: true,
+            goal: "Collect buyer email and payment method with clear errors.",
+          },
+          {
+            type: "checkout-summary",
+            variant: "persistent-order-summary",
+            enabled: true,
+            goal: "Keep order totals and payment state visible.",
+          },
+        ],
+      },
+      orders: {
+        intent: "Recover order access without requiring an account.",
+        layout: "order-recovery-page",
+        sections: [
+          {
+            type: "order-recovery",
+            variant: "guest-access",
+            enabled: true,
+            goal: "Guide buyers through email and recovery code based access.",
+          },
+          {
+            type: "support-assurance",
+            variant: "delivery-help",
+            enabled: true,
+            goal: "Explain how delivery and recovery work.",
+          },
+        ],
+      },
+      insights: {
+        intent: "Let visitors browse public content that supports trust and discovery.",
+        layout: "content-index-page",
+        sections: [
+          {
+            type: "content-list",
+            variant: "editorial-grid",
+            enabled: true,
+            goal: "Show published content entries for the current site.",
+          },
+        ],
+      },
+      "insight-detail": {
+        intent: "Present one content entry and route readers back to related discovery.",
+        layout: "content-article-page",
+        sections: [
+          {
+            type: "content-article",
+            variant: "readable-article",
+            enabled: true,
+            goal: "Render article content with readable hierarchy.",
+          },
+          {
+            type: "featured-products",
+            variant: "related-products",
+            enabled: true,
+            goal: "Show related products when content references them.",
+          },
+        ],
+      },
+      account: {
+        intent: "Provide lightweight optional account access without replacing guest recovery.",
+        layout: "account-page",
+        sections: [
+          {
+            type: "account-overview",
+            variant: "lightweight",
+            enabled: true,
+            goal: "Show basic profile and order access links when accounts are enabled.",
+          },
+        ],
+      },
+      "account-login": {
+        intent: "Let buyers sign in or register when optional accounts are enabled.",
+        layout: "account-auth-page",
+        sections: [
+          {
+            type: "account-auth",
+            variant: "email-first",
+            enabled: true,
+            goal: "Support login and registration without weakening guest checkout.",
+          },
+        ],
+      },
+      "account-reset-password": {
+        intent: "Recover optional account access with minimal friction.",
+        layout: "password-reset-page",
+        sections: [
+          {
+            type: "password-reset",
+            variant: "recovery-link",
+            enabled: true,
+            goal: "Request and confirm password reset through recovery links.",
+          },
+        ],
+      },
     },
   },
   platform: {
@@ -531,6 +819,10 @@ function normalizeSiteConfig(
           ) ?? fallback.content.insights.seedEntries,
       },
     },
+    experience: normalizeSiteExperienceConfig(
+      input?.experience,
+      fallback.experience
+    ),
     platform: {
       enabledPlugins: toStringArray(
         input?.platform?.enabledPlugins || input?.platform?.enabled_plugins
@@ -546,6 +838,132 @@ function normalizeSiteConfig(
       ),
     },
   }
+}
+
+const STOREFRONT_EXPERIENCE_PAGE_KEYS: SiteExperiencePageKey[] = [
+  "home",
+  "products",
+  "product-detail",
+  "cart",
+  "checkout",
+  "orders",
+  "insights",
+  "insight-detail",
+  "account",
+  "account-login",
+  "account-reset-password",
+]
+
+const EXPERIENCE_SECTION_TYPES = new Set<SiteExperienceSectionType>([
+  "hero",
+  "categories",
+  "insights",
+  "featured-products",
+  "catalog-header",
+  "catalog-controls",
+  "product-grid",
+  "product-media",
+  "product-purchase",
+  "product-details",
+  "cart-items",
+  "cart-summary",
+  "checkout-form",
+  "checkout-summary",
+  "order-recovery",
+  "content-list",
+  "content-article",
+  "account-auth",
+  "account-overview",
+  "password-reset",
+  "support-assurance",
+])
+
+function normalizeSiteExperienceConfig(
+  input: SiteExperienceConfigInput | undefined,
+  fallback: SiteExperienceConfig
+): SiteExperienceConfig {
+  const personality = toStringArray(input?.personality)
+  const guardrails = toStringArray(input?.guardrails)
+
+  return {
+    foundation: toOptionalString(input?.foundation) || fallback.foundation,
+    designTier:
+      toOptionalString(input?.designTier) ||
+      toOptionalString(input?.design_tier) ||
+      fallback.designTier,
+    strategy: toOptionalString(input?.strategy) || fallback.strategy,
+    personality: personality.length ? personality : fallback.personality,
+    guardrails: guardrails.length ? guardrails : fallback.guardrails,
+    pages: normalizeExperiencePages(input?.pages, fallback.pages),
+  }
+}
+
+function normalizeExperiencePages(
+  inputPages: SiteExperienceConfigInput["pages"],
+  fallbackPages: SiteExperienceConfig["pages"]
+) {
+  return STOREFRONT_EXPERIENCE_PAGE_KEYS.reduce<SiteExperienceConfig["pages"]>(
+    (acc, key) => {
+      acc[key] = normalizeExperiencePage(inputPages?.[key], fallbackPages[key])
+      return acc
+    },
+    {} as SiteExperienceConfig["pages"]
+  )
+}
+
+function normalizeExperiencePage(
+  input: SiteExperiencePageConfigInput | undefined,
+  fallback: SiteExperiencePageConfig
+): SiteExperiencePageConfig {
+  return {
+    intent: toOptionalString(input?.intent) || fallback.intent,
+    layout: toOptionalString(input?.layout) || fallback.layout,
+    sections: toExperienceSectionArray(input?.sections) ?? fallback.sections,
+  }
+}
+
+function toExperienceSectionArray(value: unknown) {
+  if (!Array.isArray(value)) {
+    return undefined
+  }
+
+  const sections = value
+    .map((item): SiteExperienceSectionConfig | null => {
+      if (!item || typeof item !== "object") {
+        return null
+      }
+
+      const source = item as Record<string, unknown>
+      const type = normalizeExperienceSectionType(source.type)
+
+      if (!type) {
+        return null
+      }
+
+      const section: SiteExperienceSectionConfig = {
+        type,
+        variant: toOptionalString(source.variant) || "default",
+        enabled: source.enabled !== false,
+      }
+
+      const goal = toOptionalString(source.goal)
+      if (goal) {
+        section.goal = goal
+      }
+
+      return section
+    })
+    .filter((item): item is SiteExperienceSectionConfig => Boolean(item))
+
+  return sections.length ? sections : undefined
+}
+
+function normalizeExperienceSectionType(value: unknown) {
+  const normalized = toOptionalString(value).toLowerCase().replace(/_/g, "-")
+
+  return EXPERIENCE_SECTION_TYPES.has(normalized as SiteExperienceSectionType)
+    ? (normalized as SiteExperienceSectionType)
+    : undefined
 }
 
 function toStringArray(value: unknown) {
@@ -846,6 +1264,49 @@ function validateSiteConfigInput(
     throw new Error(
       `content.insights.seed_entries must be an array in ${context.filePath}`
     )
+  }
+
+  if (typeof input.experience !== "undefined") {
+    assertPlainObject(input.experience, "experience", context.filePath)
+  }
+
+  if (
+    typeof input.experience?.personality !== "undefined" &&
+    !Array.isArray(input.experience.personality)
+  ) {
+    throw new Error(`experience.personality must be an array in ${context.filePath}`)
+  }
+
+  if (
+    typeof input.experience?.guardrails !== "undefined" &&
+    !Array.isArray(input.experience.guardrails)
+  ) {
+    throw new Error(`experience.guardrails must be an array in ${context.filePath}`)
+  }
+
+  if (typeof input.experience?.pages !== "undefined") {
+    assertPlainObject(input.experience.pages, "experience.pages", context.filePath)
+
+    for (const [pageKey, pageConfig] of Object.entries(input.experience.pages)) {
+      if (typeof pageConfig === "undefined") {
+        continue
+      }
+
+      assertPlainObject(
+        pageConfig,
+        `experience.pages.${pageKey}`,
+        context.filePath
+      )
+
+      if (
+        typeof pageConfig.sections !== "undefined" &&
+        !Array.isArray(pageConfig.sections)
+      ) {
+        throw new Error(
+          `experience.pages.${pageKey}.sections must be an array in ${context.filePath}`
+        )
+      }
+    }
   }
 }
 

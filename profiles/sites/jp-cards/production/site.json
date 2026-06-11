@@ -162,6 +162,47 @@
       "sort_newest_label": "新着順"
     }
   },
+  "experience": {
+    "foundation": "storefront-core",
+    "design_tier": "80-point",
+    "strategy": "conversion-led-digital-cards",
+    "personality": [
+      "compact",
+      "direct",
+      "trustworthy"
+    ],
+    "guardrails": [
+      "Keep checkout, cart, order lookup, and delivery access consistent with the shared storefront.",
+      "Prioritize product discovery and delivery confidence before editorial content.",
+      "Prefer profile-driven section order and variants before adding one-off page code."
+    ],
+    "pages": {
+      "home": {
+        "sections": [
+          {
+            "type": "hero",
+            "variant": "instant-delivery-trust",
+            "goal": "Show fast digital delivery and direct paths to products and order lookup."
+          },
+          {
+            "type": "categories",
+            "variant": "compact-commerce-links",
+            "goal": "Help buyers jump into card, account, and code categories."
+          },
+          {
+            "type": "featured-products",
+            "variant": "compact-commerce-grid",
+            "goal": "Move product inventory above editorial content for a commerce-first site."
+          },
+          {
+            "type": "insights",
+            "variant": "supporting-editorial-rail",
+            "goal": "Render only when this site has published guidance or support content."
+          }
+        ]
+      }
+    }
+  },
   "platform": {
     "enabled_plugins": [],
     "disabled_plugins": [],

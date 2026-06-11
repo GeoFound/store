@@ -1,7 +1,10 @@
 import { CartView } from "@/components/cart-view"
 import { SiteHeader } from "@/components/site-header"
+import { getSiteConfig } from "@/lib/site-config"
 
 export default function CartPage() {
+  const siteConfig = getSiteConfig()
+
   return (
     <>
       <SiteHeader />
@@ -13,7 +16,7 @@ export default function CartPage() {
               Review your digital goods before guest checkout.
             </p>
           </div>
-          <CartView />
+          <CartView sections={siteConfig.experience.pages.cart.sections} />
         </div>
       </main>
     </>

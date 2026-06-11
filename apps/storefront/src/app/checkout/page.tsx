@@ -1,7 +1,10 @@
 import { CheckoutView } from "@/components/checkout-view"
 import { SiteHeader } from "@/components/site-header"
+import { getSiteConfig } from "@/lib/site-config"
 
 export default function CheckoutPage() {
+  const siteConfig = getSiteConfig()
+
   return (
     <>
       <SiteHeader />
@@ -16,7 +19,7 @@ export default function CheckoutPage() {
               faster recovery and secure order access.
             </p>
           </div>
-          <CheckoutView />
+          <CheckoutView sections={siteConfig.experience.pages.checkout.sections} />
         </div>
       </main>
     </>

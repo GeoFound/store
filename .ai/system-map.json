@@ -171,15 +171,22 @@
       "id": "storefront-ui",
       "kind": "frontend-app",
       "path": "apps/storefront/src",
-      "owns": ["catalog", "cart", "checkout", "order lookup", "guest recovery UX", "public insights pages"],
+      "owns": ["catalog", "cart", "checkout", "order lookup", "guest recovery UX", "public insights pages", "storefront page experience contracts"],
       "mustNotOwn": ["database access", "credential decryption", "payment webhook handling"],
       "verification": ["pnpm --dir apps/storefront test", "pnpm --dir apps/storefront lint"]
+    },
+    {
+      "id": "storefront-experience-governance",
+      "kind": "frontend-governance-policy",
+      "path": ".ai/storefront-experience-policy.json",
+      "owns": ["multi-site storefront experience rules", "semantic section policy", "page experience contracts", "AI frontend change guardrails"],
+      "verification": ["pnpm profile:validate:all", "pnpm site:validate:all", "pnpm --dir apps/storefront test"]
     },
     {
       "id": "profile-system",
       "kind": "configuration-system",
       "path": "profiles/sites",
-      "owns": ["site environment profiles", "domain mapping", "runtime profile validation", "tenant deployment intent", "site lifecycle contract inputs"],
+      "owns": ["site environment profiles", "domain mapping", "runtime profile validation", "tenant deployment intent", "site lifecycle contract inputs", "storefront experience profile fields"],
       "verification": ["pnpm profile:validate:all", "pnpm site:validate:all"]
     },
     {

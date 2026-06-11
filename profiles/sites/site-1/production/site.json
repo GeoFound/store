@@ -273,6 +273,47 @@
       ]
     }
   },
+  "experience": {
+    "foundation": "storefront-core",
+    "design_tier": "80-point",
+    "strategy": "content-led-ai-commerce",
+    "personality": [
+      "clear",
+      "expert",
+      "practical"
+    ],
+    "guardrails": [
+      "Keep checkout, cart, order lookup, and delivery access consistent with the shared storefront.",
+      "Use content and product sections to support trust without turning the site into a marketing-only page.",
+      "Prefer profile-driven section order and variants before adding one-off page code."
+    ],
+    "pages": {
+      "home": {
+        "sections": [
+          {
+            "type": "hero",
+            "variant": "adaptive-trust",
+            "goal": "Explain the AI product promise and route users to catalog or order lookup."
+          },
+          {
+            "type": "categories",
+            "variant": "commerce-links",
+            "goal": "Expose important AI product groups."
+          },
+          {
+            "type": "insights",
+            "variant": "editorial-rail",
+            "goal": "Use articles and guides to build trust before product browsing."
+          },
+          {
+            "type": "featured-products",
+            "variant": "commerce-grid",
+            "goal": "Show purchasable AI products through the shared commerce card system."
+          }
+        ]
+      }
+    }
+  },
   "platform": {
     "enabled_plugins": [],
     "disabled_plugins": [],

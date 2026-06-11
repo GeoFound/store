@@ -117,6 +117,63 @@ if (profile.content?.categories?.links !== undefined) {
   }
 }
 
+if (profile.experience !== undefined) {
+  assert(profile.experience && typeof profile.experience === "object" && !Array.isArray(profile.experience), "experience must be an object")
+
+  if (profile.experience.personality !== undefined) {
+    assert(Array.isArray(profile.experience.personality), "experience.personality must be an array")
+  }
+
+  if (profile.experience.guardrails !== undefined) {
+    assert(Array.isArray(profile.experience.guardrails), "experience.guardrails must be an array")
+  }
+
+  if (profile.experience.pages !== undefined) {
+    assert(profile.experience.pages && typeof profile.experience.pages === "object" && !Array.isArray(profile.experience.pages), "experience.pages must be an object")
+
+    const allowedSectionTypes = new Set([
+      "hero",
+      "categories",
+      "insights",
+      "featured-products",
+      "catalog-header",
+      "catalog-controls",
+      "product-grid",
+      "product-media",
+      "product-purchase",
+      "product-details",
+      "cart-items",
+      "cart-summary",
+      "checkout-form",
+      "checkout-summary",
+      "order-recovery",
+      "content-list",
+      "content-article",
+      "account-auth",
+      "account-overview",
+      "password-reset",
+      "support-assurance"
+    ])
+
+    for (const [pageKey, pageConfig] of Object.entries(profile.experience.pages)) {
+      assert(pageConfig && typeof pageConfig === "object" && !Array.isArray(pageConfig), `experience.pages.${pageKey} must be an object`)
+
+      const sections = pageConfig.sections
+      if (sections !== undefined) {
+        assert(Array.isArray(sections), `experience.pages.${pageKey}.sections must be an array`)
+
+        for (const [index, section] of sections.entries()) {
+          assert(section && typeof section === "object" && !Array.isArray(section), `experience.pages.${pageKey}.sections[${index}] must be an object`)
+          assert(allowedSectionTypes.has(section.type), `experience.pages.${pageKey}.sections[${index}].type is invalid`)
+          if (section.variant !== undefined) {
+            assert(isNonEmptyString(section.variant), `experience.pages.${pageKey}.sections[${index}].variant must be a non-empty string`)
+          }
+        }
+      }
+    }
+  }
+}
+
 process.stdout.write(`profile ok: ${profile.site.id}\n`)
 NODE
 
