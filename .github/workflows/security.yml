@@ -17,6 +17,8 @@ jobs:
   codeql:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      NODE_OPTIONS: --max-old-space-size=8192
     strategy:
       fail-fast: false
       matrix:
@@ -46,6 +48,8 @@ jobs:
 
       - name: Build for analysis
         run: pnpm check:ci
+        env:
+          AI_BASELINE_COMPARE_REF: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || '' }}
 
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@v4

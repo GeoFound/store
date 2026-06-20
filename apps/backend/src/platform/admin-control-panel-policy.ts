@@ -277,7 +277,7 @@ export const ADMIN_CONTROL_PANEL_POLICY = {
         title: "Content",
         owner: "content-core",
         purpose:
-          "Site-scoped content drafts, review, publishing, and editorial metadata.",
+          "Site-scoped content drafts, revisions, publishing, storage-backed assets, audio, and provider-neutral AI task metadata.",
       },
       {
         route: "/app/marketing",

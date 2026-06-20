@@ -38,6 +38,18 @@
         "verification": ["pnpm ai:config", "pnpm --dir apps/backend test:unit"]
       },
       {
+        "path": "apps/backend/src/modules/ai-core/invoke.ts",
+        "owner": "ai-core",
+        "rationale": "AI invocation reads the provider-selected api_key_env to authenticate outbound provider calls; the key name comes from registered AI provider config and secret values are never returned.",
+        "verification": ["pnpm ai:config", "pnpm --dir apps/backend test:unit"]
+      },
+      {
+        "path": "apps/backend/src/modules/content-core/storage.ts",
+        "owner": "content-core",
+        "rationale": "Content storage providers reference arbitrary deployment-owned S3/R2 key env names; the module only checks presence and never returns secret values.",
+        "verification": ["pnpm ai:config", "pnpm --dir apps/backend test:unit"]
+      },
+      {
         "path": "apps/backend/src/modules/ops-control/service.ts",
         "owner": "ops-control",
         "rationale": "Ops-control renders a registered settings catalog through shared helpers; dynamic access is limited to keys declared in .ai/config-surface.json and never returns secret values.",
@@ -72,6 +84,10 @@
     "CLOUDFLARE_WAF_MANAGED_RULES_ENABLED": { "scope": "backend", "visibility": "internal", "owner": "ops-control", "requiredInProduction": false },
     "CLOUDFLARE_ZONE_ID": { "scope": "backend", "visibility": "internal", "owner": "ops-control", "requiredInProduction": false },
     "COOKIE_SECRET": { "scope": "backend", "visibility": "secret", "owner": "medusa-runtime", "requiredInProduction": true },
+    "CONTENT_STORAGE_DEFAULT_PROVIDER": { "scope": "backend", "visibility": "internal", "owner": "content-core", "requiredInProduction": false },
+    "CONTENT_STORAGE_LOCAL_ROOT": { "scope": "backend", "visibility": "internal", "owner": "content-core", "requiredInProduction": false },
+    "CONTENT_STORAGE_PROVIDERS_JSON": { "scope": "backend", "visibility": "secret", "owner": "content-core", "requiredInProduction": false },
+    "CONTENT_STORAGE_PUBLIC_BASE_URL": { "scope": "backend", "visibility": "public-origin", "owner": "content-core", "requiredInProduction": false },
     "CREDENTIAL_ENCRYPTION_KEY": { "scope": "backend", "visibility": "secret", "owner": "credential-inventory", "requiredInProduction": true },
     "CREDENTIAL_ENCRYPTION_KEY_PREVIOUS": { "scope": "backend", "visibility": "secret", "owner": "credential-inventory", "requiredInProduction": false },
     "CUSTOMER_ACCOUNT_MODE": { "scope": "shared", "visibility": "internal", "owner": "customer-account", "requiredInProduction": false },

@@ -109,6 +109,7 @@
       "runs": "暂无 AI 任务运行记录。"
     },
     "fields": {
+      "capabilities": "能力",
       "endpoint": "端点",
       "model": "模型",
       "plugin": "插件",
@@ -488,9 +489,37 @@
   "content": {
     "actions": {
       "archive": "归档",
+      "aiDraft": "AI 起草",
+      "createAsset": "创建资产",
       "publish": "发布",
-      "review": "送审"
+      "publishSnapshot": "发布快照",
+      "queueAiTask": "加入 AI 队列",
+      "registerAudio": "登记音频",
+      "review": "送审",
+      "tts": "朗读"
     },
+    "aiTaskCreateFailed": "加入 AI 任务失败。",
+    "aiTaskCreated": "AI 任务已加入队列。",
+    "aiTasks": {
+      "description": "为任意已配置 provider 或中转网关排队写作、可读性、SEO、翻译、TTS 和 STT 任务。",
+      "empty": "暂无内容 AI 任务。",
+      "recentDescription": "最近排队、运行、完成和需要人工审核的内容 AI 工作。",
+      "recentTitle": "最近 AI 任务",
+      "title": "内容 AI 任务"
+    },
+    "assetCreateFailed": "创建内容资产失败。",
+    "assetCreated": "内容资产已创建。",
+    "assets": {
+      "description": "登记文章封面、内嵌图片、音频、转录、来源文件和其他资产；存储可指向 S3、R2、本地或外部来源。",
+      "title": "内容资产"
+    },
+    "audio": {
+      "description": "音频记录连接文章、朗读音频资产、provider 元数据和转录状态。",
+      "empty": "暂无音频记录。",
+      "title": "文章音频"
+    },
+    "audioCreateFailed": "登记文章音频失败。",
+    "audioCreated": "文章音频已登记。",
     "create": {
       "description": "创建可复用的内容条目。后续 AI 插件也可以把草稿写入同一条发布流程。",
       "submit": "创建内容",
@@ -506,21 +535,45 @@
     "fields": {
       "actions": "操作",
       "aiAssisted": "AI 辅助",
+      "altText": "替代文本",
+      "asset": "资产",
+      "assetType": "资产类型",
       "author": "作者",
       "body": "正文。支持 Markdown 风格纯文本。",
+      "bucket": "Bucket",
+      "capability": "能力",
+      "coverImageUrl": "封面图 URL",
+      "entryId": "条目 ID",
       "excerpt": "短摘要",
+      "format": "格式",
+      "inputSummary": "输入摘要",
+      "language": "语言",
+      "media": "媒体",
+      "mimeType": "MIME 类型",
+      "model": "模型",
+      "objectKey": "对象 Key",
+      "provider": "Provider",
+      "providerCode": "Provider 代码",
+      "publicUrl": "公开 URL",
+      "reading": "阅读",
       "relatedProducts": "关联商品 handle，用英文逗号分隔",
       "siteId": "站点 ID",
       "slug": "Slug",
+      "storageProviderCode": "存储 provider 代码",
+      "strategy": "策略",
       "tags": "标签，用英文逗号分隔",
+      "taskType": "任务类型",
       "title": "标题",
       "topic": "主题",
-      "type": "类型"
+      "type": "类型",
+      "url": "URL"
     },
     "loadFailed": "加载内容条目失败。",
     "metrics": {
       "aiAssisted": "AI 辅助",
       "aiDetail": "标记为 AI 辅助的条目。",
+      "aiTasks": "AI 任务",
+      "aiTasksDetail": "已排队的内容 AI 工作。",
       "draftDetail": "等待编写的草稿条目。",
       "drafts": "草稿",
       "liveDetail": "读者可见的已发布条目。",
@@ -529,6 +582,19 @@
       "reviewDetail": "等待人工确认的条目。"
     },
     "no": "否",
+    "media": {
+      "audio": "音频",
+      "cover": "封面"
+    },
+    "reading": {
+      "minutes": "{{count}} 分钟",
+      "words": "{{count}} 字"
+    },
+    "revisionPublished": "版本已发布。",
+    "storage": {
+      "description": "对象存储保持厂商中立，可同时保留 S3、R2、本地和外部资产引用。",
+      "title": "存储 Provider"
+    },
     "title": "内容",
     "updateFailed": "更新内容条目失败。",
     "updated": "内容条目已更新。",

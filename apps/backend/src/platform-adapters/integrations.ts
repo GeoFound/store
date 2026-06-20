@@ -40,6 +40,10 @@ import {
   ensureOpsControlAITasksRegistered,
   resetOpsControlAITasksForTests,
 } from "../modules/ops-control/ai-task"
+import {
+  ensureContentAITasksRegistered,
+  resetContentAITasksForTests,
+} from "../modules/content-core/ai-tasks"
 
 let integrationsRegistered = false
 
@@ -60,6 +64,7 @@ export function ensurePlatformIntegrationsRegistered() {
     ensureNotificationResendHooksRegistered()
     ensureSupplierProductTemplatesRegistered()
     ensureOpsControlAITasksRegistered()
+    ensureContentAITasksRegistered()
   } catch (error) {
     integrationsRegistered = false
     throw error
@@ -80,6 +85,7 @@ export function resetPlatformIntegrationsForTests() {
   resetNotificationResendHooksForTests()
   resetSupplierProductTemplatesForTests()
   resetOpsControlAITasksForTests()
+  resetContentAITasksForTests()
 }
 
 installPlatformRuntimeBootstrap({
