@@ -12,6 +12,8 @@ jobs:
   evidence:
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    env:
+      NODE_OPTIONS: --max-old-space-size=8192
 
     steps:
       - name: Checkout
@@ -42,3 +44,4 @@ jobs:
           name: ai-trace
           path: .ai-trace
           if-no-files-found: error
+          include-hidden-files: true

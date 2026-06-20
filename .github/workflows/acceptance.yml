@@ -12,6 +12,7 @@ jobs:
     timeout-minutes: 45
 
     env:
+      NODE_OPTIONS: --max-old-space-size=8192
       JWT_SECRET: ci_local_acceptance_jwt_secret
       COOKIE_SECRET: ci_local_acceptance_cookie_secret
       MANUAL_WEBHOOK_SECRET: ci_local_acceptance_manual_webhook_secret

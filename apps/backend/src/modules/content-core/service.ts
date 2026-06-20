@@ -18,6 +18,7 @@ import {
   buildCreateAssetRecord,
   buildPatch,
   checksumText,
+  attachPublicAssetsForEntries,
   filterByTag,
   getReadabilitySnapshot,
   getReadingStats,
@@ -643,76 +644,7 @@ class ContentCoreModuleService extends MedusaService({
   }
 
   private async attachPublicAssets<T extends { id?: unknown }>(entries: T[]) {
-    const entryIds = entries
-      .map((entry) => String(entry.id || ""))
-      .filter(Boolean)
-
-    if (!entryIds.length) {
-      return entries
-    }
-
-    const [assets, audioRecords] = await Promise.all([
-      this.listContentAssets(
-        {
-          entry_id: entryIds,
-        },
-        {
-          take: Math.min(500, Math.max(50, entryIds.length * 8)),
-          order: {
-            created_at: "DESC",
-          },
-        }
-      ),
-      this.listContentAudioes(
-        {
-          entry_id: entryIds,
-          status: "ready",
-        },
-        {
-          take: Math.min(200, Math.max(50, entryIds.length * 3)),
-          order: {
-            created_at: "DESC",
-          },
-        }
-      ),
-    ])
-
-    return entries.map((entry) => {
-      const entryId = String(entry.id || "")
-      const record = entry as Record<string, unknown>
-      const coverAsset =
-        assets.find(
-          (asset) =>
-            String(asset.entry_id || "") === entryId &&
-            String(asset.asset_type || "") === "cover_image"
-        ) || null
-      const explicitAudioAsset = assets.find(
-        (asset) =>
-          String(asset.id || "") === String(record.audio_asset_id || "") &&
-          String(asset.public_url || "")
-      )
-      const latestAudioAsset = assets.find(
-        (asset) =>
-          String(asset.entry_id || "") === entryId &&
-          String(asset.asset_type || "") === "audio" &&
-          String(asset.public_url || "")
-      )
-      const audioAsset = explicitAudioAsset || latestAudioAsset || null
-      const audioRecord =
-        audioRecords.find((audio) => String(audio.entry_id || "") === entryId) ||
-        null
-
-      return {
-        ...record,
-        cover_asset: coverAsset,
-        audio_asset: audioAsset,
-        audio: audioRecord,
-        cover_image_url:
-          toNullableText(record.cover_image_url) ||
-          toNullableText(coverAsset?.public_url),
-        audio_url: toNullableText(audioAsset?.public_url),
-      }
-    })
+    return attachPublicAssetsForEntries(this, entries)
   }
 }
 

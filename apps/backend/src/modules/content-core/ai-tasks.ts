@@ -1,10 +1,34 @@
 import { registerAITaskPlugin, type AITaskRunInput } from "../../platform/ai"
-import { AI_CORE_MODULE } from "../ai-core"
-import type AiCoreModuleService from "../ai-core/service"
 import { buildContentTaskMessages, summarizeOutput } from "./ai-prompts"
 import { CONTENT_CORE_PLUGIN_MANIFEST } from "./plugin"
 
 let registered = false
+
+const AI_CORE_SERVICE_KEY = "aiCore"
+
+type ContentAIInvocationService = {
+  invokeForCapabilitySafe(input: {
+    capability: string
+    providerCode?: string | null
+    siteId?: string | null
+    model?: string | null
+    messages?: Array<{
+      role: string
+      content: string | Array<Record<string, unknown>>
+    }>
+    prompt?: string | null
+    input?: Record<string, unknown> | null
+    metadata?: Record<string, unknown> | null
+  }): Promise<{
+    provider_code: string
+    provider_protocol: string
+    capability: string
+    model: string | null
+    output_text: string | null
+    output: Record<string, unknown> | null
+    usage: Record<string, unknown> | null
+  }>
+}
 
 const CONTENT_AI_TASKS = [
   {
@@ -99,8 +123,8 @@ async function runContentTask(
   capability: string,
   input: AITaskRunInput
 ) {
-  const aiCore = input.scope?.resolve(AI_CORE_MODULE) as
-    | AiCoreModuleService
+  const aiCore = input.scope?.resolve(AI_CORE_SERVICE_KEY) as
+    | ContentAIInvocationService
     | undefined
 
   if (!aiCore) {

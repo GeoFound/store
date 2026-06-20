@@ -38,6 +38,12 @@
         "verification": ["pnpm ai:config", "pnpm --dir apps/backend test:unit"]
       },
       {
+        "path": "apps/backend/src/modules/ai-core/invoke.ts",
+        "owner": "ai-core",
+        "rationale": "AI invocation reads the provider-selected api_key_env to authenticate outbound provider calls; the key name comes from registered AI provider config and secret values are never returned.",
+        "verification": ["pnpm ai:config", "pnpm --dir apps/backend test:unit"]
+      },
+      {
         "path": "apps/backend/src/modules/content-core/storage.ts",
         "owner": "content-core",
         "rationale": "Content storage providers reference arbitrary deployment-owned S3/R2 key env names; the module only checks presence and never returns secret values.",

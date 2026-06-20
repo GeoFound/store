@@ -486,6 +486,93 @@ export function resolvePublishedAt(
   return date
 }
 
+type ContentAssetLookupService = {
+  listContentAssets(
+    filters: Record<string, unknown>,
+    config: Record<string, unknown>
+  ): Promise<Array<Record<string, unknown>>>
+  listContentAudioes(
+    filters: Record<string, unknown>,
+    config: Record<string, unknown>
+  ): Promise<Array<Record<string, unknown>>>
+}
+
+export async function attachPublicAssetsForEntries<T extends { id?: unknown }>(
+  service: ContentAssetLookupService,
+  entries: T[]
+) {
+  const entryIds = entries
+    .map((entry) => String(entry.id || ""))
+    .filter(Boolean)
+
+  if (!entryIds.length) {
+    return entries
+  }
+
+  const [assets, audioRecords] = await Promise.all([
+    service.listContentAssets(
+      {
+        entry_id: entryIds,
+      },
+      {
+        take: Math.min(500, Math.max(50, entryIds.length * 8)),
+        order: {
+          created_at: "DESC",
+        },
+      }
+    ),
+    service.listContentAudioes(
+      {
+        entry_id: entryIds,
+        status: "ready",
+      },
+      {
+        take: Math.min(200, Math.max(50, entryIds.length * 3)),
+        order: {
+          created_at: "DESC",
+        },
+      }
+    ),
+  ])
+
+  return entries.map((entry) => {
+    const entryId = String(entry.id || "")
+    const record = entry as Record<string, unknown>
+    const coverAsset =
+      assets.find(
+        (asset) =>
+          String(asset.entry_id || "") === entryId &&
+          String(asset.asset_type || "") === "cover_image"
+      ) || null
+    const explicitAudioAsset = assets.find(
+      (asset) =>
+        String(asset.id || "") === String(record.audio_asset_id || "") &&
+        String(asset.public_url || "")
+    )
+    const latestAudioAsset = assets.find(
+      (asset) =>
+        String(asset.entry_id || "") === entryId &&
+        String(asset.asset_type || "") === "audio" &&
+        String(asset.public_url || "")
+    )
+    const audioAsset = explicitAudioAsset || latestAudioAsset || null
+    const audioRecord =
+      audioRecords.find((audio) => String(audio.entry_id || "") === entryId) ||
+      null
+
+    return {
+      ...record,
+      cover_asset: coverAsset,
+      audio_asset: audioAsset,
+      audio: audioRecord,
+      cover_image_url:
+        toNullableText(record.cover_image_url) ||
+        toNullableText(coverAsset?.public_url),
+      audio_url: toNullableText(audioAsset?.public_url),
+    }
+  })
+}
+
 function normalizeTag(value: unknown) {
   if (typeof value !== "string") {
     return ""

@@ -251,6 +251,22 @@
         "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
       },
       {
+        "path": "apps/backend/src/api/admin/content/ai/run/route.ts",
+        "owner": "content-core",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "rationale": "Content AI execution endpoint that creates a run, invokes the registered content AI task plugin, and records review-gated output.",
+        "risk": "external-provider",
+        "obligations": [
+          "keep the admin mutation rate limit, origin guard, and body validation middleware registered",
+          "record all generated output as review-gated before publication",
+          "prove the route contract through pnpm ai:production and pnpm check:ci"
+        ]
+      },
+      {
         "path": "apps/backend/src/api/admin/content/ai/tasks/[id]/route.ts",
         "owner": "content-core",
         "verification": [
@@ -258,7 +274,13 @@
           "pnpm ai:production",
           "pnpm check:ci"
         ],
-        "rationale": "Content AI task update endpoint for provider-neutral article, TTS, STT, and review workflow state."
+        "rationale": "Content AI task update endpoint for provider-neutral article, TTS, STT, and review workflow state.",
+        "risk": "routine",
+        "obligations": [
+          "keep task-run mutation body validation registered",
+          "preserve review workflow state transitions for generated content",
+          "prove the route contract through pnpm ai:production and pnpm check:ci"
+        ]
       },
       {
         "path": "apps/backend/src/api/admin/content/ai/tasks/route.ts",
@@ -268,7 +290,13 @@
           "pnpm ai:production",
           "pnpm check:ci"
         ],
-        "rationale": "Content AI task queue endpoint for provider-neutral article generation, readability, SEO, translation, TTS, and STT work."
+        "rationale": "Content AI task queue endpoint for provider-neutral article generation, readability, SEO, translation, TTS, and STT work.",
+        "risk": "routine",
+        "obligations": [
+          "keep query and create-body validation registered",
+          "preserve provider-neutral task run metadata",
+          "prove the route contract through pnpm ai:production and pnpm check:ci"
+        ]
       },
       {
         "path": "apps/backend/src/api/admin/content/assets/route.ts",
@@ -278,7 +306,13 @@
           "pnpm ai:production",
           "pnpm check:ci"
         ],
-        "rationale": "Content asset endpoint for storage-backed cover, inline image, audio, transcript, source, and attachment records."
+        "rationale": "Content asset endpoint for storage-backed cover, inline image, audio, transcript, source, and attachment records.",
+        "risk": "routine",
+        "obligations": [
+          "keep content asset body validation registered",
+          "avoid exposing storage secrets through asset records",
+          "prove the route contract through pnpm ai:production and pnpm check:ci"
+        ]
       },
       {
         "path": "apps/backend/src/api/admin/content/assets/upload-policy/route.ts",
@@ -288,7 +322,13 @@
           "pnpm ai:production",
           "pnpm check:ci"
         ],
-        "rationale": "Content direct-upload policy endpoint for short-lived S3/R2-compatible asset PUT URLs without exposing storage secrets."
+        "rationale": "Content direct-upload policy endpoint for short-lived S3/R2-compatible asset PUT URLs without exposing storage secrets.",
+        "risk": "security",
+        "obligations": [
+          "keep upload-policy body validation and origin guard registered",
+          "issue only short-lived upload policies without returning storage secrets",
+          "prove the route contract through pnpm ai:production and pnpm check:ci"
+        ]
       },
       {
         "path": "apps/backend/src/api/admin/content/audio/route.ts",
@@ -298,7 +338,13 @@
           "pnpm ai:production",
           "pnpm check:ci"
         ],
-        "rationale": "Article audio endpoint for generated speech metadata, linked audio assets, provider codes, and transcript state."
+        "rationale": "Article audio endpoint for generated speech metadata, linked audio assets, provider codes, and transcript state.",
+        "risk": "routine",
+        "obligations": [
+          "keep content audio body validation registered",
+          "preserve generated audio and transcript review metadata",
+          "prove the route contract through pnpm ai:production and pnpm check:ci"
+        ]
       },
       {
         "path": "apps/backend/src/api/admin/content/entries/[id]/revisions/route.ts",
@@ -308,7 +354,13 @@
           "pnpm ai:production",
           "pnpm check:ci"
         ],
-        "rationale": "Content revision endpoint for durable draft, review, and publish snapshots."
+        "rationale": "Content revision endpoint for durable draft, review, and publish snapshots.",
+        "risk": "routine",
+        "obligations": [
+          "keep revision create body validation registered",
+          "preserve durable draft and review snapshots",
+          "prove the route contract through pnpm ai:production and pnpm check:ci"
+        ]
       },
       {
         "path": "apps/backend/src/api/admin/content/entries/[id]/route.ts",
@@ -338,7 +390,13 @@
           "pnpm ai:production",
           "pnpm check:ci"
         ],
-        "rationale": "Content revision publication endpoint that promotes reviewed snapshots to storefront-visible articles."
+        "rationale": "Content revision publication endpoint that promotes reviewed snapshots to storefront-visible articles.",
+        "risk": "routine",
+        "obligations": [
+          "keep publish body validation registered",
+          "promote only recorded revision snapshots to published entries",
+          "prove the route contract through pnpm ai:production and pnpm check:ci"
+        ]
       },
       {
         "path": "apps/backend/src/api/admin/content/storage/providers/route.ts",
@@ -348,7 +406,13 @@
           "pnpm ai:production",
           "pnpm check:ci"
         ],
-        "rationale": "Content storage provider readiness endpoint for local, S3, R2, and external asset references."
+        "rationale": "Content storage provider readiness endpoint for local, S3, R2, and external asset references.",
+        "risk": "routine",
+        "obligations": [
+          "return readiness metadata without exposing provider secrets",
+          "keep provider config coverage in the runtime configuration surface",
+          "prove the route contract through pnpm ai:production and pnpm check:ci"
+        ]
       },
       {
         "path": "apps/backend/src/api/admin/credential-inventory/batches/route.ts",
