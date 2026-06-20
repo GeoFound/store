@@ -12,6 +12,7 @@ export type AIProviderConfigSafe = {
   protocol: string
   base_url: string | null
   default_model: string | null
+  capabilities: string[]
   api_key_env: string | null
   api_key_configured: boolean
   requires_api_key: boolean
@@ -28,6 +29,20 @@ export type AIRuntimeConfig = {
   default_provider_code: string | null
   providers: AIProviderConfigSafe[]
   issues: string[]
+}
+
+export type AIInvokeSafeInput = {
+  capability: string
+  providerCode?: string | null
+  siteId?: string | null
+  model?: string | null
+  messages?: Array<{
+    role: string
+    content: string | Array<Record<string, unknown>>
+  }>
+  prompt?: string | null
+  input?: Record<string, unknown> | null
+  metadata?: Record<string, unknown> | null
 }
 
 export type AITaskRunSafe = {

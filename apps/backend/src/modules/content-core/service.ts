@@ -1,31 +1,149 @@
-import { MedusaError, MedusaService } from "@medusajs/framework/utils"
+import {
+  InjectTransactionManager,
+  MedusaContext,
+  MedusaError,
+  MedusaService,
+} from "@medusajs/framework/utils"
+import type { Context } from "@medusajs/framework/types"
+import { runAITaskPlugin } from "../../platform/ai"
+import ContentAITaskRun from "./models/content-ai-task-run"
+import ContentAsset from "./models/content-asset"
+import ContentAudio from "./models/content-audio"
 import ContentEntry from "./models/content-entry"
+import ContentPublication from "./models/content-publication"
+import ContentRevision from "./models/content-revision"
+import { createContentUploadPolicy, getContentStorageRuntimeConfig } from "./storage"
+import {
+  DEFAULT_SITE_ID,
+  buildCreateAssetRecord,
+  buildPatch,
+  checksumText,
+  attachPublicAssetsForEntries,
+  filterByTag,
+  getReadabilitySnapshot,
+  getReadingStats,
+  normalizeAIReviewStatus,
+  normalizeAITaskStatus,
+  normalizeAITaskType,
+  normalizeContentFormat,
+  normalizeContentType,
+  normalizeJsonLike,
+  normalizeLanguage,
+  normalizeLimit,
+  normalizeNullableNumber,
+  normalizePublicationChannel,
+  normalizeRecord,
+  normalizeRevisionStatus,
+  normalizeSiteId,
+  normalizeSlug,
+  normalizeStatus,
+  normalizeStringArray,
+  type PatchField,
+  requireText,
+  resolveOptionalDate,
+  resolvePublishedAt,
+  resolveVisibleSiteIds,
+  toNullableText,
+  toRecordList,
+} from "./service-helpers"
 import type {
   ContentEntryListInput,
   ContentEntryStatus,
-  ContentEntryType,
+  ContentFormat,
+  CreateContentAITaskRunInput,
+  CreateContentAssetInput,
+  CreateContentAudioInput,
   CreateContentEntryInput,
+  CreateContentRevisionInput,
+  CreateContentUploadPolicyInput,
+  PublishContentRevisionInput,
+  RunContentAITaskInput,
+  UpdateContentAITaskRunInput,
   UpdateContentEntryInput,
 } from "./types"
 
-const DEFAULT_SITE_ID = "global"
-const CONTENT_TYPES = new Set<ContentEntryType>([
-  "article",
-  "guide",
-  "report",
-  "review",
-  "resource",
-  "case_study",
-])
-const STATUSES = new Set<ContentEntryStatus>([
-  "draft",
-  "review",
-  "published",
-  "archived",
-])
+const ENTRY_PATCH_FIELDS: Array<PatchField<UpdateContentEntryInput>> = [
+  { key: "title", column: "title", map: (value) => requireText(value, "content title") },
+  { key: "excerpt", column: "excerpt", map: toNullableText },
+  {
+    key: "contentFormat",
+    column: "content_format",
+    map: (value) => normalizeContentFormat(value, "plain_text"),
+  },
+  {
+    key: "contentType",
+    column: "content_type",
+    map: (value) => normalizeContentType(value, "article"),
+  },
+  { key: "authorName", column: "author_name", map: toNullableText },
+  { key: "canonicalRevisionId", column: "canonical_revision_id", map: toNullableText },
+  { key: "coverAssetId", column: "cover_asset_id", map: toNullableText },
+  { key: "coverImageUrl", column: "cover_image_url", map: toNullableText },
+  { key: "audioAssetId", column: "audio_asset_id", map: toNullableText },
+  { key: "language", column: "language", map: normalizeLanguage },
+  { key: "topic", column: "topic", map: toNullableText },
+  { key: "tags", column: "tags_json", map: normalizeStringArray },
+  { key: "seo", column: "seo_json", map: normalizeRecord },
+  { key: "sourceRefs", column: "source_refs_json", map: normalizeJsonLike },
+  {
+    key: "relatedProductHandles",
+    column: "related_product_handles_json",
+    map: normalizeStringArray,
+  },
+  { key: "aiAssisted", column: "ai_assisted", map: (value) => Boolean(value) },
+  { key: "metadata", column: "metadata_json", map: normalizeRecord },
+]
+
+const AI_TASK_RUN_PATCH_FIELDS: Array<PatchField<UpdateContentAITaskRunInput>> = [
+  { key: "siteId", column: "site_id", map: normalizeSiteId },
+  { key: "entryId", column: "entry_id", map: toNullableText },
+  { key: "revisionId", column: "revision_id", map: toNullableText },
+  {
+    key: "taskType",
+    column: "task_type",
+    map: (value) => normalizeAITaskType(value, "custom"),
+  },
+  { key: "providerCode", column: "provider_code", map: toNullableText },
+  { key: "providerProtocol", column: "provider_protocol", map: toNullableText },
+  { key: "providerCapability", column: "provider_capability", map: toNullableText },
+  { key: "model", column: "model", map: toNullableText },
+  {
+    key: "status",
+    column: "status",
+    map: (value) => normalizeAITaskStatus(value, "queued"),
+  },
+  {
+    key: "reviewStatus",
+    column: "review_status",
+    map: (value) => normalizeAIReviewStatus(value, "pending"),
+  },
+  { key: "inputSummary", column: "input_summary", map: toNullableText },
+  { key: "outputSummary", column: "output_summary", map: toNullableText },
+  { key: "input", column: "input_json", map: normalizeRecord },
+  { key: "output", column: "output_json", map: normalizeRecord },
+  { key: "sourceRefs", column: "source_refs_json", map: normalizeJsonLike },
+  { key: "artifactRefs", column: "artifact_refs_json", map: normalizeJsonLike },
+  { key: "errorMessage", column: "error_message", map: toNullableText },
+  {
+    key: "startedAt",
+    column: "started_at",
+    map: (value) => resolveOptionalDate(value as string | Date | null | undefined),
+  },
+  {
+    key: "completedAt",
+    column: "completed_at",
+    map: (value) => resolveOptionalDate(value as string | Date | null | undefined),
+  },
+  { key: "metadata", column: "metadata_json", map: normalizeRecord },
+]
 
 class ContentCoreModuleService extends MedusaService({
+  ContentAITaskRun,
+  ContentAsset,
+  ContentAudio,
   ContentEntry,
+  ContentPublication,
+  ContentRevision,
 }) {
   async createEntrySafe(input: CreateContentEntryInput) {
     const siteId = normalizeSiteId(input.siteId)
@@ -35,17 +153,26 @@ class ContentCoreModuleService extends MedusaService({
 
     const status = normalizeStatus(input.status, "draft")
     const publishedAt = resolvePublishedAt(status, input.publishedAt)
+    const body = toNullableText(input.body)
+    const readingStats = getReadingStats(body)
 
     return this.createContentEntries({
       site_id: siteId,
       slug,
       title: requireText(input.title, "content title"),
       excerpt: toNullableText(input.excerpt),
-      body: toNullableText(input.body),
+      body,
+      content_format: normalizeContentFormat(input.contentFormat, "plain_text"),
       content_type: normalizeContentType(input.contentType, "article"),
       status,
       author_name: toNullableText(input.authorName),
+      canonical_revision_id: toNullableText(input.canonicalRevisionId),
+      cover_asset_id: toNullableText(input.coverAssetId),
       cover_image_url: toNullableText(input.coverImageUrl),
+      audio_asset_id: toNullableText(input.audioAssetId),
+      language: normalizeLanguage(input.language),
+      reading_time_minutes: readingStats.readingTimeMinutes,
+      word_count: readingStats.wordCount,
       topic: toNullableText(input.topic),
       tags_json: normalizeStringArray(input.tags),
       seo_json: normalizeRecord(input.seo),
@@ -84,55 +211,20 @@ class ContentCoreModuleService extends MedusaService({
           : null
         : resolvePublishedAt(nextStatus, input.publishedAt)
 
+    const body =
+      typeof input.body === "undefined" ? existing.body : toNullableText(input.body)
+    const readingStats = getReadingStats(body)
+
     return this.updateContentEntries({
       id,
       site_id: nextSiteId,
       slug: nextSlug,
-      ...(typeof input.title === "undefined"
-        ? {}
-        : { title: requireText(input.title, "content title") }),
-      ...(typeof input.excerpt === "undefined"
-        ? {}
-        : { excerpt: toNullableText(input.excerpt) }),
-      ...(typeof input.body === "undefined"
-        ? {}
-        : { body: toNullableText(input.body) }),
-      ...(typeof input.contentType === "undefined"
-        ? {}
-        : { content_type: normalizeContentType(input.contentType, "article") }),
       status: nextStatus,
-      ...(typeof input.authorName === "undefined"
-        ? {}
-        : { author_name: toNullableText(input.authorName) }),
-      ...(typeof input.coverImageUrl === "undefined"
-        ? {}
-        : { cover_image_url: toNullableText(input.coverImageUrl) }),
-      ...(typeof input.topic === "undefined"
-        ? {}
-        : { topic: toNullableText(input.topic) }),
-      ...(typeof input.tags === "undefined"
-        ? {}
-        : { tags_json: normalizeStringArray(input.tags) }),
-      ...(typeof input.seo === "undefined"
-        ? {}
-        : { seo_json: normalizeRecord(input.seo) }),
-      ...(typeof input.sourceRefs === "undefined"
-        ? {}
-        : { source_refs_json: normalizeJsonLike(input.sourceRefs) }),
-      ...(typeof input.relatedProductHandles === "undefined"
-        ? {}
-        : {
-            related_product_handles_json: normalizeStringArray(
-              input.relatedProductHandles
-            ),
-          }),
-      ...(typeof input.aiAssisted === "undefined"
-        ? {}
-        : { ai_assisted: Boolean(input.aiAssisted) }),
       published_at: publishedAt,
-      ...(typeof input.metadata === "undefined"
-        ? {}
-        : { metadata_json: normalizeRecord(input.metadata) }),
+      word_count: readingStats.wordCount,
+      reading_time_minutes: readingStats.readingTimeMinutes,
+      ...(typeof input.body === "undefined" ? {} : { body }),
+      ...buildPatch(input, ENTRY_PATCH_FIELDS),
     } as any)
   }
 
@@ -181,6 +273,14 @@ class ContentCoreModuleService extends MedusaService({
     return filterByTag(entries, input?.tag)
   }
 
+  async listPublishedEntriesWithAssetsSafe(
+    input?: Omit<ContentEntryListInput, "status">
+  ) {
+    const entries = await this.listPublishedEntriesSafe(input)
+
+    return this.attachPublicAssets(entries)
+  }
+
   async retrievePublishedEntryBySlugSafe(input: {
     slug: string
     siteId?: string | null
@@ -209,11 +309,320 @@ class ContentCoreModuleService extends MedusaService({
     )
   }
 
-  private async assertSlugIsUnique(
-    siteId: string,
-    slug: string,
-    ignoreEntryId?: string
+  async retrievePublishedEntryBySlugWithAssetsSafe(input: {
+    slug: string
+    siteId?: string | null
+  }) {
+    const entry = await this.retrievePublishedEntryBySlugSafe(input)
+
+    if (!entry) {
+      return null
+    }
+
+    const [enriched] = await this.attachPublicAssets([entry])
+
+    return enriched || entry
+  }
+
+  listStorageProvidersSafe() {
+    return getContentStorageRuntimeConfig()
+  }
+
+  createUploadPolicySafe(input: CreateContentUploadPolicyInput) {
+    return createContentUploadPolicy({
+      providerCode: input.storageProviderCode,
+      assetType: input.assetType,
+      entryId: input.entryId,
+      filename: input.filename,
+      mimeType: input.mimeType,
+      siteId: input.siteId,
+      expiresInSeconds: input.expiresInSeconds,
+    })
+  }
+
+  async createRevisionSafe(input: CreateContentRevisionInput) {
+    const entry = await this.retrieveContentEntry(
+      requireText(input.entryId, "content entry id")
+    )
+    const body =
+      typeof input.body === "undefined" ? toNullableText(entry.body) : toNullableText(input.body)
+    const readingStats = getReadingStats(body)
+    const revisions = await this.listContentRevisions(
+      {
+        entry_id: String(entry.id),
+      },
+      {
+        take: 200,
+        order: {
+          revision_number: "DESC",
+        },
+      }
+    )
+    const nextRevisionNumber =
+      revisions.reduce(
+        (max, revision) =>
+          Math.max(max, Number(revision.revision_number || 0)),
+        0
+      ) + 1
+
+    return this.createContentRevisions({
+      entry_id: String(entry.id),
+      site_id:
+        typeof input.siteId === "undefined"
+          ? String(entry.site_id || DEFAULT_SITE_ID)
+          : normalizeSiteId(input.siteId),
+      revision_number: nextRevisionNumber,
+      title:
+        typeof input.title === "undefined" || input.title === null
+          ? String(entry.title)
+          : requireText(input.title, "content title"),
+      excerpt:
+        typeof input.excerpt === "undefined"
+          ? toNullableText(entry.excerpt)
+          : toNullableText(input.excerpt),
+      body,
+      content_format: normalizeContentFormat(
+        input.contentFormat,
+        (entry.content_format as ContentFormat) || "plain_text"
+      ),
+      status: normalizeRevisionStatus(input.status, "draft"),
+      author_name:
+        typeof input.authorName === "undefined"
+          ? toNullableText(entry.author_name)
+          : toNullableText(input.authorName),
+      editor_name: toNullableText(input.editorName),
+      language:
+        typeof input.language === "undefined"
+          ? normalizeLanguage(entry.language)
+          : normalizeLanguage(input.language),
+      word_count: readingStats.wordCount,
+      reading_time_minutes: readingStats.readingTimeMinutes,
+      seo_json:
+        typeof input.seo === "undefined"
+          ? normalizeRecord(entry.seo_json)
+          : normalizeRecord(input.seo),
+      source_refs_json:
+        typeof input.sourceRefs === "undefined"
+          ? normalizeJsonLike(entry.source_refs_json)
+          : normalizeJsonLike(input.sourceRefs),
+      readability_json: getReadabilitySnapshot(body),
+      ai_task_run_id: toNullableText(input.aiTaskRunId),
+      checksum: checksumText(
+        [
+          input.title || entry.title,
+          input.excerpt || entry.excerpt || "",
+          body || "",
+        ].join("\n\n")
+      ),
+      change_note: toNullableText(input.changeNote),
+      metadata_json: normalizeRecord(input.metadata),
+    } as any)
+  }
+
+  @InjectTransactionManager()
+  async publishRevisionSafe(
+    input: PublishContentRevisionInput,
+    @MedusaContext() sharedContext: Context = {}
   ) {
+    const revision = await this.retrieveContentRevision(
+      requireText(input.revisionId, "content revision id"),
+      {},
+      sharedContext
+    )
+    const publishedAt = resolvePublishedAt("published", input.publishedAt)
+    const body = toNullableText(revision.body)
+    const readingStats = getReadingStats(body)
+
+    await this.updateContentEntries(
+      {
+        id: String(revision.entry_id),
+        site_id: normalizeSiteId(revision.site_id),
+        title: requireText(revision.title, "content title"),
+        excerpt: toNullableText(revision.excerpt),
+        body,
+        content_format: normalizeContentFormat(
+          revision.content_format,
+          "plain_text"
+        ),
+        status: "published",
+        author_name: toNullableText(revision.author_name),
+        canonical_revision_id: String(revision.id),
+        language: normalizeLanguage(revision.language),
+        word_count: readingStats.wordCount,
+        reading_time_minutes: readingStats.readingTimeMinutes,
+        seo_json: normalizeRecord(revision.seo_json),
+        source_refs_json: normalizeJsonLike(revision.source_refs_json),
+        published_at: publishedAt,
+      } as any,
+      sharedContext
+    )
+
+    await this.updateContentRevisions(
+      {
+        id: String(revision.id),
+        status: "published",
+      } as any,
+      sharedContext
+    )
+
+    const publication = await this.createContentPublications(
+      {
+        site_id: normalizeSiteId(revision.site_id),
+        entry_id: String(revision.entry_id),
+        revision_id: String(revision.id),
+        channel: normalizePublicationChannel(input.channel, "storefront"),
+        status: "published",
+        publish_at: publishedAt,
+        published_at: publishedAt,
+        metadata_json: normalizeRecord(input.metadata),
+      } as any,
+      sharedContext
+    )
+
+    return {
+      entry: await this.retrieveContentEntry(
+        String(revision.entry_id),
+        {},
+        sharedContext
+      ),
+      revision,
+      publication,
+    }
+  }
+
+  async createAssetSafe(input: CreateContentAssetInput) {
+    return this.createContentAssets(buildCreateAssetRecord(input) as any)
+  }
+
+  async createAudioSafe(input: CreateContentAudioInput) {
+    const siteId = normalizeSiteId(input.siteId)
+
+    return this.createContentAudioes({
+      site_id: siteId,
+      entry_id: requireText(input.entryId, "content entry id"),
+      revision_id: toNullableText(input.revisionId),
+      asset_id: toNullableText(input.assetId),
+      status:
+        input.status === "processing" ||
+        input.status === "ready" ||
+        input.status === "failed" ||
+        input.status === "archived"
+          ? input.status
+          : "queued",
+      provider_code: toNullableText(input.providerCode),
+      model: toNullableText(input.model),
+      voice: toNullableText(input.voice),
+      language: normalizeLanguage(input.language),
+      transcript: toNullableText(input.transcript),
+      duration_seconds: normalizeNullableNumber(input.durationSeconds),
+      error_message: toNullableText(input.errorMessage),
+      metadata_json: normalizeRecord(input.metadata),
+    } as any)
+  }
+
+  async createAITaskRunSafe(input: CreateContentAITaskRunInput) {
+    const status = normalizeAITaskStatus(input.status, "queued")
+
+    return this.createContentAITaskRuns({
+      site_id: normalizeSiteId(input.siteId),
+      entry_id: toNullableText(input.entryId),
+      revision_id: toNullableText(input.revisionId),
+      task_type: normalizeAITaskType(input.taskType, "custom"),
+      provider_code: toNullableText(input.providerCode),
+      provider_protocol: toNullableText(input.providerProtocol),
+      provider_capability: toNullableText(input.providerCapability),
+      model: toNullableText(input.model),
+      status,
+      review_status: normalizeAIReviewStatus(
+        input.reviewStatus,
+        status === "requires_review" ? "pending" : "not_required"
+      ),
+      input_summary: toNullableText(input.inputSummary),
+      output_summary: toNullableText(input.outputSummary),
+      input_json: normalizeRecord(input.input),
+      output_json: normalizeRecord(input.output),
+      source_refs_json: normalizeJsonLike(input.sourceRefs),
+      artifact_refs_json: normalizeJsonLike(input.artifactRefs),
+      error_message: toNullableText(input.errorMessage),
+      started_at: resolveOptionalDate(input.startedAt),
+      completed_at: resolveOptionalDate(input.completedAt),
+      metadata_json: normalizeRecord(input.metadata),
+    } as any)
+  }
+
+  async updateAITaskRunSafe(input: UpdateContentAITaskRunInput) {
+    const id = requireText(input.id, "content AI task run id")
+
+    return this.updateContentAITaskRuns({
+      id,
+      ...buildPatch(input, AI_TASK_RUN_PATCH_FIELDS),
+    } as any)
+  }
+
+  /**
+   * Persists an AI task run, executes the matching registered task plugin
+   * (which calls the AI runtime), and records the outcome. This is the single
+   * orchestrator that connects the content-core run ledger to the ai-core
+   * invocation seam — content AI output is always left in `requires_review`.
+   */
+  async runAITaskSafe(input: RunContentAITaskInput) {
+    const taskType = normalizeAITaskType(input.taskType, "custom")
+    const siteId = normalizeSiteId(input.siteId)
+    const pluginCode = `content.${taskType}`
+    const payload = normalizeRecord(input.input)
+    const metadata = normalizeRecord(input.metadata)
+
+    const run = await this.createAITaskRunSafe({
+      siteId,
+      entryId: input.entryId,
+      revisionId: input.revisionId,
+      taskType,
+      providerCode: input.providerCode,
+      model: input.model,
+      status: "running",
+      inputSummary: input.inputSummary,
+      input: payload,
+      sourceRefs: input.sourceRefs,
+      metadata: input.metadata,
+      startedAt: new Date(),
+    })
+
+    const outcome = await runAITaskPlugin(pluginCode, {
+      scope: input.scope,
+      providerCode: input.providerCode,
+      siteId,
+      input: payload || undefined,
+      sourceRefs: toRecordList(input.sourceRefs),
+      metadata: metadata || undefined,
+    })
+
+    const result = outcome.result
+    const output = normalizeRecord(result.output)
+    const providerInfo = output ? normalizeRecord(output.provider) : null
+    const reviewStatus =
+      result.status === "requires_review" ? "pending" : "not_required"
+
+    return this.updateAITaskRunSafe({
+      id: String(run.id),
+      status: result.status,
+      reviewStatus,
+      providerCode: providerInfo ? toNullableText(providerInfo.code) : undefined,
+      providerProtocol: providerInfo
+        ? toNullableText(providerInfo.protocol)
+        : undefined,
+      providerCapability: providerInfo
+        ? toNullableText(providerInfo.capability)
+        : undefined,
+      model: providerInfo ? toNullableText(providerInfo.model) : undefined,
+      output: result.output ?? null,
+      outputSummary: result.outputSummary ?? null,
+      artifactRefs: result.artifactRefs ?? null,
+      errorMessage: result.errorMessage ?? null,
+      completedAt: new Date(),
+    })
+  }
+
+  private async assertSlugIsUnique(siteId: string, slug: string, ignoreEntryId?: string) {
     const existing = await this.listContentEntries(
       {
         site_id: siteId,
@@ -233,167 +642,10 @@ class ContentCoreModuleService extends MedusaService({
       )
     }
   }
-}
 
-function filterByTag<T extends { tags_json?: unknown }>(entries: T[], tag?: string | null) {
-  const normalizedTag = normalizeTag(tag)
-
-  if (!normalizedTag) {
-    return entries
+  private async attachPublicAssets<T extends { id?: unknown }>(entries: T[]) {
+    return attachPublicAssetsForEntries(this, entries)
   }
-
-  return entries.filter((entry) => {
-    const tags = normalizeStringArray(entry.tags_json)
-    return Boolean(tags?.includes(normalizedTag))
-  })
-}
-
-function resolveVisibleSiteIds(siteId?: string | null) {
-  const normalized = normalizeSiteId(siteId)
-
-  if (normalized === DEFAULT_SITE_ID) {
-    return [DEFAULT_SITE_ID]
-  }
-
-  return [normalized, DEFAULT_SITE_ID]
-}
-
-function normalizeSiteId(value: unknown) {
-  const normalized = toText(value) || DEFAULT_SITE_ID
-
-  if (!/^[a-z0-9][a-z0-9_-]{0,63}$/.test(normalized)) {
-    throw new MedusaError(
-      MedusaError.Types.INVALID_DATA,
-      "site id must be 1-64 chars of a-z, 0-9, _, -"
-    )
-  }
-
-  return normalized
-}
-
-function normalizeSlug(value: unknown) {
-  const slug = toText(value)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-
-  if (!slug || slug.length < 2 || slug.length > 140) {
-    throw new MedusaError(
-      MedusaError.Types.INVALID_DATA,
-      "content slug must be 2-140 URL-safe characters"
-    )
-  }
-
-  return slug
-}
-
-function requireText(value: unknown, label: string) {
-  const normalized = toText(value)
-
-  if (!normalized) {
-    throw new MedusaError(MedusaError.Types.INVALID_DATA, `${label} is required`)
-  }
-
-  return normalized
-}
-
-function toText(value: unknown) {
-  return typeof value === "string" && value.trim() ? value.trim() : ""
-}
-
-function toNullableText(value: unknown) {
-  const text = toText(value)
-  return text || null
-}
-
-function normalizeStatus(value: unknown, fallback: ContentEntryStatus) {
-  return STATUSES.has(value as ContentEntryStatus)
-    ? (value as ContentEntryStatus)
-    : fallback
-}
-
-function normalizeContentType(value: unknown, fallback: ContentEntryType) {
-  return CONTENT_TYPES.has(value as ContentEntryType)
-    ? (value as ContentEntryType)
-    : fallback
-}
-
-function normalizeStringArray(value: unknown) {
-  const source = Array.isArray(value)
-    ? value
-    : typeof value === "string"
-      ? value.split(",")
-      : []
-
-  const values = source
-    .map((item) => normalizeTag(item))
-    .filter((item): item is string => Boolean(item))
-
-  return values.length ? Array.from(new Set(values)) : null
-}
-
-function normalizeTag(value: unknown) {
-  if (typeof value !== "string") {
-    return ""
-  }
-
-  return value.trim().toLowerCase().replace(/\s+/g, "-").slice(0, 64)
-}
-
-function normalizeRecord(value: unknown) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    return null
-  }
-
-  return value as Record<string, unknown>
-}
-
-function normalizeJsonLike(value: unknown) {
-  if (!value) {
-    return null
-  }
-
-  if (Array.isArray(value)) {
-    return value.length ? value : null
-  }
-
-  if (typeof value === "object") {
-    return value as Record<string, unknown>
-  }
-
-  return null
-}
-
-function normalizeLimit(value: unknown, fallback: number) {
-  const numberValue =
-    typeof value === "number" ? value : Number.parseInt(String(value || ""), 10)
-
-  if (!Number.isFinite(numberValue) || numberValue < 1) {
-    return fallback
-  }
-
-  return Math.min(Math.floor(numberValue), 200)
-}
-
-function resolvePublishedAt(
-  status: ContentEntryStatus,
-  value?: string | Date | null
-) {
-  if (value === null || status !== "published") {
-    return null
-  }
-
-  if (typeof value === "undefined") {
-    return status === "published" ? new Date() : null
-  }
-
-  const date = value instanceof Date ? value : new Date(value)
-
-  if (!Number.isFinite(date.getTime())) {
-    throw new MedusaError(MedusaError.Types.INVALID_DATA, "Invalid published date")
-  }
-
-  return date
 }
 
 export default ContentCoreModuleService

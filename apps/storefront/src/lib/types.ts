@@ -65,17 +65,40 @@ export type ContentEntry = {
   site_id: string
   slug: string
   title: string
-  excerpt: string
-  body: string
+  excerpt: string | null
+  body: string | null
+  content_format?: string | null
   content_type: string
   status: string
   author_name: string | null
+  cover_image_url?: string | null
+  audio_url?: string | null
+  language?: string | null
   topic: string | null
   tags_json: string[] | null
   related_product_handles_json: string[] | null
   ai_assisted: boolean
+  reading_time_minutes?: number | null
+  word_count?: number | null
   published_at: string | null
   created_at: string | null
+  cover_asset?: {
+    public_url?: string | null
+    alt_text?: string | null
+    caption?: string | null
+  } | null
+  audio_asset?: {
+    public_url?: string | null
+    mime_type?: string | null
+  } | null
+  audio?: {
+    status?: string | null
+    provider_code?: string | null
+    model?: string | null
+    voice?: string | null
+    language?: string | null
+    duration_seconds?: number | null
+  } | null
 }
 
 export type Region = {

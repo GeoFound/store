@@ -18,7 +18,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     limit?: number
   }
 
-  const entries = await content.listPublishedEntriesSafe({
+  const entries = await content.listPublishedEntriesWithAssetsSafe({
     siteId: query.site_id,
     contentType: query.content_type,
     topic: query.topic,

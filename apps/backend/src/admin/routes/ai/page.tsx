@@ -14,6 +14,7 @@ type AIProviderConfig = {
   protocol: string
   base_url: string | null
   default_model: string | null
+  capabilities: string[]
   api_key_env: string | null
   api_key_configured: boolean
   requires_api_key: boolean
@@ -35,6 +36,7 @@ type AITaskPlugin = {
   code: string
   task_type: string
   title: string
+  required_capabilities: string[]
   requires_human_review: boolean
   runnable: boolean
 }
@@ -202,6 +204,7 @@ const AIPage = () => {
               <Table.HeaderCell>{t("ai.fields.protocol")}</Table.HeaderCell>
               <Table.HeaderCell>{t("ai.fields.endpoint")}</Table.HeaderCell>
               <Table.HeaderCell>{t("ai.fields.model")}</Table.HeaderCell>
+              <Table.HeaderCell>{t("ai.fields.capabilities")}</Table.HeaderCell>
               <Table.HeaderCell>{t("ai.fields.secretRef")}</Table.HeaderCell>
               <Table.HeaderCell>{t("common.fields.status")}</Table.HeaderCell>
             </Table.Row>
@@ -228,6 +231,9 @@ const AIPage = () => {
                 </Table.Cell>
                 <Table.Cell className="max-w-[220px] truncate font-mono">
                   {provider.default_model || "-"}
+                </Table.Cell>
+                <Table.Cell className="max-w-[260px] text-xs">
+                  {provider.capabilities.length ? provider.capabilities.join(", ") : "-"}
                 </Table.Cell>
                 <Table.Cell>
                   <SecretReference provider={provider} />
@@ -261,6 +267,7 @@ const AIPage = () => {
               <Table.Row>
                 <Table.HeaderCell>{t("ai.fields.plugin")}</Table.HeaderCell>
                 <Table.HeaderCell>{t("ai.fields.taskType")}</Table.HeaderCell>
+                <Table.HeaderCell>{t("ai.fields.capabilities")}</Table.HeaderCell>
                 <Table.HeaderCell>{t("ai.fields.review")}</Table.HeaderCell>
                 <Table.HeaderCell>{t("common.fields.status")}</Table.HeaderCell>
               </Table.Row>
@@ -277,6 +284,11 @@ const AIPage = () => {
                     </div>
                   </Table.Cell>
                   <Table.Cell className="font-mono">{plugin.task_type}</Table.Cell>
+                  <Table.Cell className="max-w-[220px] text-xs">
+                    {plugin.required_capabilities.length
+                      ? plugin.required_capabilities.join(", ")
+                      : "-"}
+                  </Table.Cell>
                   <Table.Cell>
                     {plugin.requires_human_review
                       ? t("ai.review.required")

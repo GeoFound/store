@@ -3,12 +3,36 @@ import type {
   AIProviderStatus,
   AIRuntimeConfig,
 } from "./types"
+import {
+  ENV_NAME_PATTERN,
+  hasInlineSecret,
+  isRecord,
+  normalizeBaseUrl,
+  normalizeCode,
+  parseBoolean,
+  readBoolean,
+  readBooleanFromKeys,
+  readNumber,
+  readRecord,
+  readStringArray,
+  readText,
+  sanitizeMetadata,
+  text,
+} from "../../utils/provider-config"
 
 const DEFAULT_PROVIDER_KIND = "custom"
 const DEFAULT_PROTOCOL = "custom-http"
-const SECRET_FIELD_PATTERN = /secret|token|password|credential|api[_-]?key|key/i
-const ENV_NAME_PATTERN = /^[A-Z_][A-Z0-9_]*$/
-const CODE_PATTERN = /^[a-z0-9][a-z0-9_-]{0,62}$/
+const DEFAULT_TEXT_CAPABILITY = "text.generate"
+const AI_INLINE_SECRET_ALLOWLIST = [
+  "api_key_env",
+  "apiKeyEnv",
+  "key_env",
+  "secret_env",
+  // Legitimate non-secret config flags that nonetheless match the secret-key
+  // heuristic and must not be treated as inline credentials.
+  "requires_api_key",
+  "requiresApiKey",
+]
 
 export function getAIRuntimeConfig(
   env: Record<string, string | undefined> = process.env
@@ -84,6 +108,10 @@ function providerFromEntry(
   )
   const defaultModel =
     readText(source, ["default_model", "defaultModel", "model"]) || null
+  const capabilities = normalizeCapabilities(
+    readStringArray(source, ["capabilities", "capability_codes", "capabilityCodes"]),
+    protocol
+  )
   const apiKeyEnv =
     readText(source, ["api_key_env", "apiKeyEnv", "key_env", "secret_env"]) ||
     null
@@ -97,7 +125,7 @@ function providerFromEntry(
   const priority = readNumber(source, "priority", 0)
   const metadata = sanitizeMetadata(readRecord(source, "metadata"))
 
-  if (hasInlineSecret(source)) {
+  if (hasInlineSecret(source, AI_INLINE_SECRET_ALLOWLIST)) {
     issues.push(
       "Inline secret-like fields are ignored; use api_key_env to reference an environment variable"
     )
@@ -123,6 +151,7 @@ function providerFromEntry(
     protocol,
     base_url: baseUrl,
     default_model: defaultModel,
+    capabilities,
     api_key_env: apiKeyEnv,
     api_key_configured: apiKeyConfigured,
     requires_api_key: requiresApiKey,
@@ -161,174 +190,19 @@ function resolveStatus(input: {
   return "configured"
 }
 
-function normalizeCode(value: string, issues: string[]) {
-  const normalized = value.trim().toLowerCase().replace(/\s+/g, "-")
+function normalizeCapabilities(values: string[], protocol: string) {
+  const capabilities = values
+    .map((value) => value.trim().toLowerCase())
+    .filter((value) => /^[a-z][a-z0-9_.:-]{1,80}$/.test(value))
 
-  if (!CODE_PATTERN.test(normalized)) {
-    issues.push("Provider code must use lowercase letters, numbers, underscore, or hyphen")
+  if (capabilities.length) {
+    return Array.from(new Set(capabilities))
   }
 
-  return normalized || "provider"
-}
-
-function normalizeBaseUrl(value: string) {
-  const normalized = value.trim()
-
-  if (!normalized) {
-    return null
-  }
-
-  return normalized.replace(/\/+$/, "")
-}
-
-function parseBoolean(value: string | undefined, fallback: boolean) {
-  if (!value) {
-    return fallback
-  }
-
-  const normalized = value.trim().toLowerCase()
-
-  if (["1", "true", "yes", "on"].includes(normalized)) {
-    return true
-  }
-
-  if (["0", "false", "no", "off"].includes(normalized)) {
-    return false
-  }
-
-  return fallback
-}
-
-function readBoolean(
-  source: Record<string, unknown>,
-  key: string,
-  fallback: boolean
-) {
-  const value = source[key]
-
-  if (typeof value === "boolean") {
-    return value
-  }
-
-  if (typeof value === "string") {
-    return parseBoolean(value, fallback)
-  }
-
-  return fallback
-}
-
-function readBooleanFromKeys(
-  source: Record<string, unknown>,
-  keys: string[],
-  fallback: boolean
-) {
-  for (const key of keys) {
-    if (source[key] !== undefined) {
-      return readBoolean(source, key, fallback)
-    }
-  }
-
-  return fallback
-}
-
-function readNumber(
-  source: Record<string, unknown>,
-  key: string,
-  fallback: number
-) {
-  const value = source[key]
-  const parsed =
-    typeof value === "number"
-      ? value
-      : typeof value === "string"
-        ? Number(value)
-        : Number.NaN
-
-  return Number.isFinite(parsed) ? parsed : fallback
-}
-
-function readText(source: Record<string, unknown>, keys: string[]) {
-  for (const key of keys) {
-    const value = source[key]
-
-    if (typeof value === "string" && value.trim()) {
-      return value.trim()
-    }
-  }
-
-  return ""
-}
-
-function readStringArray(source: Record<string, unknown>, keys: string[]) {
-  for (const key of keys) {
-    const value = source[key]
-
-    if (Array.isArray(value)) {
-      return value
-        .map((entry) => (typeof entry === "string" ? entry.trim() : ""))
-        .filter(Boolean)
-    }
-
-    if (typeof value === "string") {
-      return value
-        .split(",")
-        .map((entry) => entry.trim())
-        .filter(Boolean)
-    }
+  if (["chat-completions", "responses", "messages", "custom-http"].includes(protocol)) {
+    return [DEFAULT_TEXT_CAPABILITY]
   }
 
   return []
 }
 
-function readRecord(source: Record<string, unknown>, key: string) {
-  const value = source[key]
-
-  return isRecord(value) ? value : null
-}
-
-function sanitizeMetadata(value: Record<string, unknown> | null) {
-  if (!value) {
-    return null
-  }
-
-  return sanitizeRecord(value)
-}
-
-function sanitizeRecord(source: Record<string, unknown>) {
-  return Object.fromEntries(
-    Object.entries(source).map(([key, value]) => [
-      key,
-      SECRET_FIELD_PATTERN.test(key) ? "[redacted]" : sanitizeValue(value),
-    ])
-  )
-}
-
-function sanitizeValue(value: unknown): unknown {
-  if (Array.isArray(value)) {
-    return value.map((entry) => sanitizeValue(entry))
-  }
-
-  if (isRecord(value)) {
-    return sanitizeRecord(value)
-  }
-
-  return value
-}
-
-function hasInlineSecret(source: Record<string, unknown>) {
-  return Object.keys(source).some((key) => {
-    if (["api_key_env", "apiKeyEnv", "key_env", "secret_env"].includes(key)) {
-      return false
-    }
-
-    return SECRET_FIELD_PATTERN.test(key)
-  })
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value)
-}
-
-function text(value: string | undefined) {
-  return value?.trim() || ""
-}

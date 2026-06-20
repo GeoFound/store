@@ -174,6 +174,178 @@
         ]
       },
       {
+        "path": "apps/backend/src/api/admin/content/ai/run/route.ts",
+        "route": "/admin/content/ai/run",
+        "surface": "admin",
+        "owner": "content-core",
+        "methods": [
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "middleware",
+            "matcher": "/admin/content/ai/run",
+            "owner": "content-core",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
+        "path": "apps/backend/src/api/admin/content/ai/tasks/[id]/route.ts",
+        "route": "/admin/content/ai/tasks/:id",
+        "surface": "admin",
+        "owner": "content-core",
+        "methods": [
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "middleware",
+            "matcher": "/admin/content/ai/tasks/:id",
+            "owner": "content-core",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
+        "path": "apps/backend/src/api/admin/content/ai/tasks/route.ts",
+        "route": "/admin/content/ai/tasks",
+        "surface": "admin",
+        "owner": "content-core",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "middleware",
+            "matcher": "/admin/content/ai/tasks",
+            "owner": "content-core",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
+        "path": "apps/backend/src/api/admin/content/assets/route.ts",
+        "route": "/admin/content/assets",
+        "surface": "admin",
+        "owner": "content-core",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "middleware",
+            "matcher": "/admin/content/assets",
+            "owner": "content-core",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
+        "path": "apps/backend/src/api/admin/content/assets/upload-policy/route.ts",
+        "route": "/admin/content/assets/upload-policy",
+        "surface": "admin",
+        "owner": "content-core",
+        "methods": [
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "middleware",
+            "matcher": "/admin/content/assets/upload-policy",
+            "owner": "content-core",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
+        "path": "apps/backend/src/api/admin/content/audio/route.ts",
+        "route": "/admin/content/audio",
+        "surface": "admin",
+        "owner": "content-core",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "middleware",
+            "matcher": "/admin/content/audio",
+            "owner": "content-core",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
+        "path": "apps/backend/src/api/admin/content/entries/[id]/revisions/route.ts",
+        "route": "/admin/content/entries/:id/revisions",
+        "surface": "admin",
+        "owner": "content-core",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "middleware",
+            "matcher": "/admin/content/entries/:id/revisions",
+            "owner": "content-core",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
         "path": "apps/backend/src/api/admin/content/entries/[id]/route.ts",
         "route": "/admin/content/entries/:id",
         "surface": "admin",
@@ -221,6 +393,43 @@
             ]
           }
         }
+      },
+      {
+        "path": "apps/backend/src/api/admin/content/revisions/[id]/publish/route.ts",
+        "route": "/admin/content/revisions/:id/publish",
+        "surface": "admin",
+        "owner": "content-core",
+        "methods": [
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "middleware",
+            "matcher": "/admin/content/revisions/:id/publish",
+            "owner": "content-core",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
+        "path": "apps/backend/src/api/admin/content/storage/providers/route.ts",
+        "route": "/admin/content/storage/providers",
+        "surface": "admin",
+        "owner": "content-core",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
       },
       {
         "path": "apps/backend/src/api/admin/credential-inventory/batches/route.ts",
@@ -1074,18 +1283,29 @@
         "path": "apps/backend/src/modules/content-core",
         "owner": "content-core",
         "modelFiles": [
-          "apps/backend/src/modules/content-core/models/content-entry.ts"
+          "apps/backend/src/modules/content-core/models/content-ai-task-run.ts",
+          "apps/backend/src/modules/content-core/models/content-asset.ts",
+          "apps/backend/src/modules/content-core/models/content-audio.ts",
+          "apps/backend/src/modules/content-core/models/content-entry.ts",
+          "apps/backend/src/modules/content-core/models/content-publication.ts",
+          "apps/backend/src/modules/content-core/models/content-revision.ts"
         ],
         "modelTables": [
-          "content_entry"
+          "content_ai_task_run",
+          "content_asset",
+          "content_audio",
+          "content_entry",
+          "content_publication",
+          "content_revision"
         ],
         "migrationFiles": [
-          "apps/backend/src/modules/content-core/migrations/Migration20260608054644.ts"
+          "apps/backend/src/modules/content-core/migrations/Migration20260608054644.ts",
+          "apps/backend/src/modules/content-core/migrations/Migration20260611104500.ts"
         ],
         "snapshotFiles": [
           "apps/backend/src/modules/content-core/migrations/.snapshot-content-core.json"
         ],
-        "schemaFingerprint": "sha256:90a016daae8ca3ffb2fb4c2395421698252acd99d9e143bc322c5cd69d28a6e7",
+        "schemaFingerprint": "sha256:db2e4d97b1a0e922f1851073dab08fd1ebd8b7ac8309ee9b60c0da185bf1e294",
         "verification": [
           "pnpm ai:production",
           "pnpm --dir apps/backend test:unit"

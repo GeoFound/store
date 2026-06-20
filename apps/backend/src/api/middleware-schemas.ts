@@ -132,6 +132,51 @@ const contentTypeSchema = z.enum([
   "case_study",
 ])
 const contentStatusSchema = z.enum(["draft", "review", "published", "archived"])
+const contentFormatSchema = z.enum(["plain_text", "markdown", "html", "portable_json"])
+const contentRevisionStatusSchema = z.enum([
+  "draft",
+  "review",
+  "published",
+  "superseded",
+  "archived",
+])
+const contentAssetTypeSchema = z.enum([
+  "cover_image",
+  "inline_image",
+  "audio",
+  "attachment",
+  "transcript",
+  "source",
+])
+const contentStorageProviderKindSchema = z.enum(["local", "s3", "r2", "external"])
+const contentAITaskTypeSchema = z.enum([
+  "article_outline",
+  "article_draft",
+  "article_rewrite",
+  "seo",
+  "summary",
+  "readability",
+  "fact_check",
+  "translation",
+  "tts",
+  "stt",
+  "custom",
+])
+const contentAITaskStatusSchema = z.enum([
+  "queued",
+  "running",
+  "succeeded",
+  "failed",
+  "canceled",
+  "requires_review",
+])
+const contentAIReviewStatusSchema = z.enum([
+  "pending",
+  "approved",
+  "rejected",
+  "needs_changes",
+  "not_required",
+])
 const contentStringListSchema = z
   .union([z.string(), z.array(z.string().trim().min(1))])
   .nullable()
@@ -152,10 +197,15 @@ export const createContentEntryBodySchema = z.object({
   title: z.string().trim().min(1).max(240),
   excerpt: z.string().trim().max(1000).nullable().optional(),
   body: z.string().trim().max(100000).nullable().optional(),
+  content_format: contentFormatSchema.optional(),
   content_type: contentTypeSchema.optional(),
   status: contentStatusSchema.optional(),
   author_name: z.string().trim().max(120).nullable().optional(),
+  canonical_revision_id: nullableTextSchema,
+  cover_asset_id: nullableTextSchema,
   cover_image_url: z.string().trim().max(2000).nullable().optional(),
+  audio_asset_id: nullableTextSchema,
+  language: z.string().trim().max(24).nullable().optional(),
   topic: z.string().trim().max(120).nullable().optional(),
   tags: contentStringListSchema,
   seo: nullableRecordSchema,
@@ -173,6 +223,117 @@ export const updateContentEntryBodySchema = createContentEntryBodySchema
     slug: z.string().trim().min(2).max(140).optional(),
     title: z.string().trim().min(1).max(240).optional(),
   })
+
+export const createContentRevisionBodySchema = z.object({
+  title: z.string().trim().min(1).max(240).nullable().optional(),
+  excerpt: z.string().trim().max(1000).nullable().optional(),
+  body: z.string().trim().max(200000).nullable().optional(),
+  content_format: contentFormatSchema.optional(),
+  status: contentRevisionStatusSchema.optional(),
+  author_name: z.string().trim().max(120).nullable().optional(),
+  editor_name: z.string().trim().max(120).nullable().optional(),
+  language: z.string().trim().max(24).nullable().optional(),
+  seo: nullableRecordSchema,
+  source_refs: z.union([z.array(z.unknown()), z.record(z.string(), z.unknown())]).nullable().optional(),
+  ai_task_run_id: nullableTextSchema,
+  change_note: z.string().trim().max(1000).nullable().optional(),
+  metadata: nullableRecordSchema,
+})
+
+export const publishContentRevisionBodySchema = z.object({
+  published_at: z.string().datetime().nullable().optional(),
+  channel: z.enum(["storefront", "rss", "sitemap", "api", "social"]).optional(),
+  metadata: nullableRecordSchema,
+})
+
+export const createContentAssetBodySchema = z.object({
+  site_id: optionalTextSchema,
+  entry_id: nullableTextSchema,
+  revision_id: nullableTextSchema,
+  asset_type: contentAssetTypeSchema.optional(),
+  storage_provider: contentStorageProviderKindSchema.optional(),
+  storage_provider_code: nullableTextSchema,
+  bucket: nullableTextSchema,
+  object_key: nullableTextSchema,
+  public_url: z.string().trim().max(3000).nullable().optional(),
+  mime_type: z.string().trim().max(160).nullable().optional(),
+  byte_size: z.coerce.number().int().min(0).nullable().optional(),
+  checksum: z.string().trim().max(160).nullable().optional(),
+  width: z.coerce.number().int().min(0).nullable().optional(),
+  height: z.coerce.number().int().min(0).nullable().optional(),
+  duration_seconds: z.coerce.number().min(0).nullable().optional(),
+  alt_text: z.string().trim().max(500).nullable().optional(),
+  caption: z.string().trim().max(1000).nullable().optional(),
+  metadata: nullableRecordSchema,
+})
+
+export const createContentUploadPolicyBodySchema = z.object({
+  site_id: optionalTextSchema,
+  entry_id: nullableTextSchema,
+  asset_type: contentAssetTypeSchema.optional(),
+  storage_provider_code: nullableTextSchema,
+  filename: z.string().trim().min(1).max(240).nullable().optional(),
+  mime_type: z.string().trim().max(160).nullable().optional(),
+  expires_in_seconds: z.coerce.number().int().min(60).max(3600).nullable().optional(),
+})
+
+export const createContentAudioBodySchema = z.object({
+  site_id: optionalTextSchema,
+  entry_id: z.string().trim().min(1),
+  revision_id: nullableTextSchema,
+  asset_id: nullableTextSchema,
+  status: z.enum(["queued", "processing", "ready", "failed", "archived"]).optional(),
+  provider_code: nullableTextSchema,
+  model: nullableTextSchema,
+  voice: nullableTextSchema,
+  language: z.string().trim().max(24).nullable().optional(),
+  transcript: z.string().trim().max(200000).nullable().optional(),
+  duration_seconds: z.coerce.number().min(0).nullable().optional(),
+  error_message: z.string().trim().max(2000).nullable().optional(),
+  metadata: nullableRecordSchema,
+})
+
+export const createContentAITaskRunBodySchema = z.object({
+  site_id: optionalTextSchema,
+  entry_id: nullableTextSchema,
+  revision_id: nullableTextSchema,
+  task_type: contentAITaskTypeSchema,
+  provider_code: nullableTextSchema,
+  provider_protocol: nullableTextSchema,
+  provider_capability: nullableTextSchema,
+  model: nullableTextSchema,
+  status: contentAITaskStatusSchema.optional(),
+  review_status: contentAIReviewStatusSchema.optional(),
+  input_summary: z.string().trim().max(2000).nullable().optional(),
+  output_summary: z.string().trim().max(2000).nullable().optional(),
+  input: nullableRecordSchema,
+  output: nullableRecordSchema,
+  source_refs: z.union([z.array(z.unknown()), z.record(z.string(), z.unknown())]).nullable().optional(),
+  artifact_refs: z.union([z.array(z.unknown()), z.record(z.string(), z.unknown())]).nullable().optional(),
+  error_message: z.string().trim().max(2000).nullable().optional(),
+  started_at: z.string().datetime().nullable().optional(),
+  completed_at: z.string().datetime().nullable().optional(),
+  metadata: nullableRecordSchema,
+})
+
+export const updateContentAITaskRunBodySchema =
+  createContentAITaskRunBodySchema.partial()
+
+export const runContentAITaskBodySchema = z.object({
+  site_id: optionalTextSchema,
+  entry_id: nullableTextSchema,
+  revision_id: nullableTextSchema,
+  task_type: contentAITaskTypeSchema,
+  provider_code: nullableTextSchema,
+  model: nullableTextSchema,
+  input_summary: z.string().trim().max(2000).nullable().optional(),
+  input: nullableRecordSchema,
+  source_refs: z
+    .union([z.array(z.unknown()), z.record(z.string(), z.unknown())])
+    .nullable()
+    .optional(),
+  metadata: nullableRecordSchema,
+})
 
 export const analyticsEventsQuerySchema = z.object({
   event_name: optionalTextSchema,

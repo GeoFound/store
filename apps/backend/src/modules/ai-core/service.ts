@@ -1,7 +1,8 @@
-import { listAIProviders, listAITaskPlugins } from "../../platform/ai"
+import { getAIProvider, listAIProviders, listAITaskPlugins } from "../../platform/ai"
 import { ADMIN_CONTROL_PANEL_POLICY } from "../../platform/admin-control-panel-policy"
 import { getAIRuntimeConfig } from "./config"
-import type { AITaskRunSafe } from "./types"
+import { invokeAIForCapability } from "./invoke"
+import type { AIInvokeSafeInput, AITaskRunSafe } from "./types"
 
 class AiCoreModuleService {
   listProviderConfigsSafe(input?: { siteId?: string | null }) {
@@ -34,22 +35,29 @@ class AiCoreModuleService {
       code: task.code,
       task_type: task.taskType,
       title: task.title || task.code,
+      required_capabilities: task.requiredCapabilities || [],
       requires_human_review: Boolean(task.requiresHumanReview),
       runnable: Boolean(task.run),
     }))
   }
 
-  listTaskRunsSafe(): AITaskRunSafe[] {
-    return []
+  async invokeForCapabilitySafe(input: AIInvokeSafeInput) {
+    return invokeAIForCapability({
+      ...input,
+      resolveRegisteredProvider: (code) => getAIProvider(code) ?? null,
+    })
   }
 
   getAdminControlPanelPolicy() {
     return ADMIN_CONTROL_PANEL_POLICY
   }
 
-  getDashboardSnapshot(input?: { siteId?: string | null }) {
+  getDashboardSnapshot(input?: {
+    siteId?: string | null
+    taskRuns?: AITaskRunSafe[]
+  }) {
     const runtime = this.listProviderConfigsSafe(input)
-    const taskRuns = this.listTaskRunsSafe()
+    const taskRuns = input?.taskRuns ?? []
     const providersNeedingAttention = runtime.providers.filter(
       (provider) =>
         provider.enabled &&
