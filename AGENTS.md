@@ -26,3 +26,20 @@ Primary machine entry points:
 - `pnpm ai:doctor`
 - `pnpm ai:evidence`
 - `pnpm ai:evidence:full`
+## menmery attachment
+
+This repository is one of the owner's attached workstreams. The `menmery` MCP
+server (configured in `.mcp.json` for Claude Code; globally in Codex config)
+connects it to the owner's single shared brain.
+
+- For stateful turns (long-lived state, current subject, prior decisions, open
+  loops, cross-project status — including "what is this repo / what's next"),
+  call `menmery.entry_turn(message=..., max_depth="auto")` FIRST, then layer
+  repo files on top.
+- Capture durable deltas (decisions, evidence, open loops, abandoned paths)
+  through `menmery.remember(...)`; runtime routes canonical vs. inbox staging.
+- Purely local code edits do not need a brain call.
+- Artifact truth beats any brain or caller claim: verify files/git/tests before
+  treating "completed" as done.
+- If the MCP server is unavailable, report the attachment gap; do not
+  substitute repo files for long-lived brain state.

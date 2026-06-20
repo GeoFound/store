@@ -18,10 +18,15 @@ type CreateContentEntryBody = {
   title?: string
   excerpt?: string | null
   body?: string | null
+  content_format?: "plain_text" | "markdown" | "html" | "portable_json"
   content_type?: ContentEntryType
   status?: ContentEntryStatus
   author_name?: string | null
+  canonical_revision_id?: string | null
+  cover_asset_id?: string | null
   cover_image_url?: string | null
+  audio_asset_id?: string | null
+  language?: string | null
   topic?: string | null
   tags?: string[] | string | null
   seo?: Record<string, unknown> | null
@@ -85,10 +90,15 @@ export const POST = async (
     title: body.title,
     excerpt: body.excerpt,
     body: body.body,
+    contentFormat: body.content_format,
     contentType: body.content_type,
     status: body.status,
     authorName: body.author_name,
+    canonicalRevisionId: body.canonical_revision_id,
+    coverAssetId: body.cover_asset_id,
     coverImageUrl: body.cover_image_url,
+    audioAssetId: body.audio_asset_id,
+    language: body.language,
     topic: body.topic,
     tags: body.tags,
     seo: body.seo,

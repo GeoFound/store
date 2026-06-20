@@ -14,7 +14,12 @@ import {
   analyticsEventsQuerySchema,
   claimOrderAccessBodySchema,
   contentEntriesQuerySchema,
+  createContentAITaskRunBodySchema,
+  createContentAssetBodySchema,
+  createContentAudioBodySchema,
   createContentEntryBodySchema,
+  createContentRevisionBodySchema,
+  createContentUploadPolicyBodySchema,
   createAfterSaleBodySchema,
   createCartPaymentBodySchema,
   createCredentialBatchBodySchema,
@@ -32,10 +37,13 @@ import {
   productAvailabilityQuerySchema,
   recoverOrderBodySchema,
   replayAnalyticsDispatchBodySchema,
+  publishContentRevisionBodySchema,
   reserveCredentialBodySchema,
+  runContentAITaskBodySchema,
   sellReservationBodySchema,
   simpleLimitQuerySchema,
   updateAfterSaleBodySchema,
+  updateContentAITaskRunBodySchema,
   updateContentEntryBodySchema,
   updatePaymentChannelBodySchema,
   upsertSupplierMappingBodySchema,
@@ -264,6 +272,130 @@ export default defineMiddlewares({
         }),
         createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
         validateAndTransformBody(updateContentEntryBodySchema),
+      ],
+    },
+    {
+      matcher: "/admin/content/entries/:id/revisions",
+      methods: ["GET"],
+      middlewares: [validateAndTransformSimpleQuery(simpleLimitQuerySchema.passthrough())],
+    },
+    {
+      matcher: "/admin/content/entries/:id/revisions",
+      methods: ["POST"],
+      middlewares: [
+        createRateLimitMiddleware(adminMutationRateLimit, {
+          action: "security.admin_mutation.rate_limited",
+          riskLevel: "medium",
+          keyParts: (req) => [getRequestPath(req)],
+        }),
+        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        validateAndTransformBody(createContentRevisionBodySchema),
+      ],
+    },
+    {
+      matcher: "/admin/content/revisions/:id/publish",
+      methods: ["POST"],
+      middlewares: [
+        createRateLimitMiddleware(adminMutationRateLimit, {
+          action: "security.admin_mutation.rate_limited",
+          riskLevel: "medium",
+          keyParts: (req) => [getRequestPath(req)],
+        }),
+        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        validateAndTransformBody(publishContentRevisionBodySchema),
+      ],
+    },
+    {
+      matcher: "/admin/content/assets",
+      methods: ["GET"],
+      middlewares: [validateAndTransformSimpleQuery(simpleLimitQuerySchema.passthrough())],
+    },
+    {
+      matcher: "/admin/content/assets",
+      methods: ["POST"],
+      middlewares: [
+        createRateLimitMiddleware(adminMutationRateLimit, {
+          action: "security.admin_mutation.rate_limited",
+          riskLevel: "medium",
+          keyParts: (req) => [getRequestPath(req)],
+        }),
+        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        validateAndTransformBody(createContentAssetBodySchema),
+      ],
+    },
+    {
+      matcher: "/admin/content/assets/upload-policy",
+      methods: ["POST"],
+      middlewares: [
+        createRateLimitMiddleware(adminMutationRateLimit, {
+          action: "security.admin_mutation.rate_limited",
+          riskLevel: "medium",
+          keyParts: (req) => [getRequestPath(req)],
+        }),
+        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        validateAndTransformBody(createContentUploadPolicyBodySchema),
+      ],
+    },
+    {
+      matcher: "/admin/content/audio",
+      methods: ["GET"],
+      middlewares: [validateAndTransformSimpleQuery(simpleLimitQuerySchema.passthrough())],
+    },
+    {
+      matcher: "/admin/content/audio",
+      methods: ["POST"],
+      middlewares: [
+        createRateLimitMiddleware(adminMutationRateLimit, {
+          action: "security.admin_mutation.rate_limited",
+          riskLevel: "medium",
+          keyParts: (req) => [getRequestPath(req)],
+        }),
+        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        validateAndTransformBody(createContentAudioBodySchema),
+      ],
+    },
+    {
+      matcher: "/admin/content/ai/tasks",
+      methods: ["GET"],
+      middlewares: [validateAndTransformSimpleQuery(simpleLimitQuerySchema.passthrough())],
+    },
+    {
+      matcher: "/admin/content/ai/tasks",
+      methods: ["POST"],
+      middlewares: [
+        createRateLimitMiddleware(adminMutationRateLimit, {
+          action: "security.admin_mutation.rate_limited",
+          riskLevel: "medium",
+          keyParts: (req) => [getRequestPath(req)],
+        }),
+        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        validateAndTransformBody(createContentAITaskRunBodySchema),
+      ],
+    },
+    {
+      matcher: "/admin/content/ai/tasks/:id",
+      methods: ["POST"],
+      middlewares: [
+        createRateLimitMiddleware(adminMutationRateLimit, {
+          action: "security.admin_mutation.rate_limited",
+          riskLevel: "medium",
+          keyParts: (req) => [getRequestPath(req)],
+        }),
+        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        validateAndTransformBody(updateContentAITaskRunBodySchema),
+      ],
+    },
+    {
+      matcher: "/admin/content/ai/run",
+      methods: ["POST"],
+      middlewares: [
+        createRateLimitMiddleware(adminMutationRateLimit, {
+          action: "security.admin_mutation.rate_limited",
+          riskLevel: "high",
+          keyParts: (req) => [getRequestPath(req)],
+        }),
+        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        validateAndTransformBody(runContentAITaskBodySchema),
       ],
     },
     {

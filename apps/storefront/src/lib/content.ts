@@ -55,16 +55,41 @@ function seedEntriesToContentEntries(
     title: entry.title,
     excerpt: entry.excerpt,
     body: entry.body,
+    content_format: "markdown",
     content_type: entry.contentType,
     status: "published",
     author_name: entry.authorName || null,
+    cover_image_url: null,
+    audio_url: null,
+    language: null,
     topic: entry.topic || null,
     tags_json: entry.tags.length ? entry.tags : null,
     related_product_handles_json: entry.relatedProductHandles.length
       ? entry.relatedProductHandles
       : null,
     ai_assisted: false,
+    reading_time_minutes: estimateReadingMinutes(entry.body),
+    word_count: estimateWords(entry.body),
     published_at: entry.publishedAt || null,
     created_at: entry.publishedAt || null,
+    cover_asset: null,
+    audio_asset: null,
+    audio: null,
   }))
+}
+
+// NOTE: Mirrors the backend heuristic in
+// apps/backend/src/modules/content-core/service-helpers.ts (getReadingStats) so
+// seed entries report the same reading time as persisted ones. Keep in sync.
+function estimateWords(value: string) {
+  const latinWords = value.match(/[A-Za-z0-9]+(?:[-'][A-Za-z0-9]+)*/g) || []
+  const cjk = value.match(/[\u3040-\u30ff\u3400-\u9fff]/g) || []
+
+  return latinWords.length + cjk.length
+}
+
+function estimateReadingMinutes(value: string) {
+  const words = estimateWords(value)
+
+  return words ? Math.max(1, Math.ceil(words / 220)) : null
 }

@@ -1,0 +1,21 @@
+# capabilities.yaml — 本项目能力声明（platform 跨项目复用机制用）
+# 由 `ai-cap add <tag>` 自动维护。标签为 "动词.对象"，语义同职责即同标签。
+# 见 ~/ai-workspace/platform/CONTRACT.md
+project: store
+capabilities:
+  - store.sql
+  - cache.redis
+  - db.migrate
+  - api.rest
+  - schema.validate
+  - ratelimit
+  - auth.token
+  - secret.load
+  - llm.chat
+  - llm.route
+  - payment.charge
+  - email.send
+  - metrics.emit
+  - commerce.fulfillment
+  - commerce.procurement
+  - commerce.marketing

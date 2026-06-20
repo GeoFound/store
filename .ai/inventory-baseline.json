@@ -251,6 +251,66 @@
         "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
       },
       {
+        "path": "apps/backend/src/api/admin/content/ai/tasks/[id]/route.ts",
+        "owner": "content-core",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "rationale": "Content AI task update endpoint for provider-neutral article, TTS, STT, and review workflow state."
+      },
+      {
+        "path": "apps/backend/src/api/admin/content/ai/tasks/route.ts",
+        "owner": "content-core",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "rationale": "Content AI task queue endpoint for provider-neutral article generation, readability, SEO, translation, TTS, and STT work."
+      },
+      {
+        "path": "apps/backend/src/api/admin/content/assets/route.ts",
+        "owner": "content-core",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "rationale": "Content asset endpoint for storage-backed cover, inline image, audio, transcript, source, and attachment records."
+      },
+      {
+        "path": "apps/backend/src/api/admin/content/assets/upload-policy/route.ts",
+        "owner": "content-core",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "rationale": "Content direct-upload policy endpoint for short-lived S3/R2-compatible asset PUT URLs without exposing storage secrets."
+      },
+      {
+        "path": "apps/backend/src/api/admin/content/audio/route.ts",
+        "owner": "content-core",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "rationale": "Article audio endpoint for generated speech metadata, linked audio assets, provider codes, and transcript state."
+      },
+      {
+        "path": "apps/backend/src/api/admin/content/entries/[id]/revisions/route.ts",
+        "owner": "content-core",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "rationale": "Content revision endpoint for durable draft, review, and publish snapshots."
+      },
+      {
         "path": "apps/backend/src/api/admin/content/entries/[id]/route.ts",
         "owner": "content-core",
         "verification": [
@@ -269,6 +329,26 @@
           "pnpm check:ci"
         ],
         "rationale": "Content admin listing and creation endpoint for the backend publishing panel."
+      },
+      {
+        "path": "apps/backend/src/api/admin/content/revisions/[id]/publish/route.ts",
+        "owner": "content-core",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "rationale": "Content revision publication endpoint that promotes reviewed snapshots to storefront-visible articles."
+      },
+      {
+        "path": "apps/backend/src/api/admin/content/storage/providers/route.ts",
+        "owner": "content-core",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "rationale": "Content storage provider readiness endpoint for local, S3, R2, and external asset references."
       },
       {
         "path": "apps/backend/src/api/admin/credential-inventory/batches/route.ts",

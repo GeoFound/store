@@ -28,6 +28,7 @@ describe("ai core config", () => {
           base_url: "https://openrouter.ai/api/v1",
           api_key_env: "OPENROUTER_API_KEY",
           api_key_configured: true,
+          capabilities: ["text.generate"],
           default_model: "provider/model",
           status: "configured",
         },
@@ -78,6 +79,26 @@ describe("ai core config", () => {
     expect(config.providers[0]).toMatchObject({
       status: "missing_secret",
       api_key_configured: false,
+    })
+  })
+
+  it("accepts provider-neutral capability declarations", () => {
+    const config = getAIRuntimeConfig({
+      AI_PROVIDER_CONFIGS_JSON: JSON.stringify([
+        {
+          code: "relay",
+          protocol: "custom-http",
+          api_key_env: "AI_RELAY_KEY",
+          capabilities: "text.generate, speech.tts, speech.stt",
+        },
+      ]),
+      AI_RELAY_KEY: "secret",
+    })
+
+    expect(config.providers[0]).toMatchObject({
+      code: "relay",
+      capabilities: ["text.generate", "speech.tts", "speech.stt"],
+      status: "configured",
     })
   })
 })

@@ -13,7 +13,7 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
   const query = (req.validatedQuery || req.query) as {
     site_id?: string
   }
-  const entry = await content.retrievePublishedEntryBySlugSafe({
+  const entry = await content.retrievePublishedEntryBySlugWithAssetsSafe({
     slug: String(req.params.slug),
     siteId: query.site_id,
   })

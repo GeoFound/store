@@ -109,6 +109,7 @@
       "runs": "No AI task runs found."
     },
     "fields": {
+      "capabilities": "Capabilities",
       "endpoint": "Endpoint",
       "model": "Model",
       "plugin": "Plugin",
@@ -488,9 +489,37 @@
   "content": {
     "actions": {
       "archive": "Archive",
+      "aiDraft": "AI draft",
+      "createAsset": "Create asset",
       "publish": "Publish",
-      "review": "Send to review"
+      "publishSnapshot": "Publish snapshot",
+      "queueAiTask": "Queue AI task",
+      "registerAudio": "Register audio",
+      "review": "Send to review",
+      "tts": "TTS"
     },
+    "aiTaskCreateFailed": "Failed to queue AI task.",
+    "aiTaskCreated": "AI task queued.",
+    "aiTasks": {
+      "description": "Queue provider-neutral writing, readability, SEO, translation, TTS, and STT work for any configured provider or relay.",
+      "empty": "No content AI tasks found.",
+      "recentDescription": "Recent queued, running, completed, and review-required content AI work.",
+      "recentTitle": "Recent AI Tasks",
+      "title": "Content AI Tasks"
+    },
+    "assetCreateFailed": "Failed to create content asset.",
+    "assetCreated": "Content asset created.",
+    "assets": {
+      "description": "Register cover images, inline images, audio, transcripts, source files, and other article assets against S3, R2, local, or external storage.",
+      "title": "Content Assets"
+    },
+    "audio": {
+      "description": "Audio records connect article entries, generated speech assets, provider metadata, and transcript state.",
+      "empty": "No audio records found.",
+      "title": "Article Audio"
+    },
+    "audioCreateFailed": "Failed to register article audio.",
+    "audioCreated": "Article audio registered.",
     "create": {
       "description": "Create reusable editorial entries. AI plugins can later write drafts into the same workflow.",
       "submit": "Create content",
@@ -506,21 +535,45 @@
     "fields": {
       "actions": "Actions",
       "aiAssisted": "AI assisted",
+      "altText": "Alt text",
+      "asset": "Asset",
+      "assetType": "Asset type",
       "author": "Author",
       "body": "Body. Markdown-style plain text is supported.",
+      "bucket": "Bucket",
+      "capability": "Capability",
+      "coverImageUrl": "Cover image URL",
+      "entryId": "Entry ID",
       "excerpt": "Short excerpt",
+      "format": "Format",
+      "inputSummary": "Input summary",
+      "language": "Language",
+      "media": "Media",
+      "mimeType": "MIME type",
+      "model": "Model",
+      "objectKey": "Object key",
+      "provider": "Provider",
+      "providerCode": "Provider code",
+      "publicUrl": "Public URL",
+      "reading": "Reading",
       "relatedProducts": "Related product handles, comma-separated",
       "siteId": "Site ID",
       "slug": "Slug",
+      "storageProviderCode": "Storage provider code",
+      "strategy": "Strategy",
       "tags": "Tags, comma-separated",
+      "taskType": "Task type",
       "title": "Title",
       "topic": "Topic",
-      "type": "Type"
+      "type": "Type",
+      "url": "URL"
     },
     "loadFailed": "Failed to load content entries.",
     "metrics": {
       "aiAssisted": "AI assisted",
       "aiDetail": "Entries marked as AI-assisted.",
+      "aiTasks": "AI tasks",
+      "aiTasksDetail": "Queued content AI jobs.",
       "draftDetail": "Draft entries waiting for writing.",
       "drafts": "Drafts",
       "liveDetail": "Published entries visible to readers.",
@@ -529,6 +582,19 @@
       "reviewDetail": "Entries waiting for human approval."
     },
     "no": "No",
+    "media": {
+      "audio": "Audio",
+      "cover": "Cover"
+    },
+    "reading": {
+      "minutes": "{{count}} min",
+      "words": "{{count}} words"
+    },
+    "revisionPublished": "Revision published.",
+    "storage": {
+      "description": "Object storage is provider-neutral and can keep S3, R2, local, and external asset references side by side.",
+      "title": "Storage Providers"
+    },
     "title": "Content",
     "updateFailed": "Failed to update content entry.",
     "updated": "Content entry updated.",

@@ -17,6 +17,7 @@ export type AIProviderConfigSnapshot = {
   protocol?: string
   baseUrl?: string | null
   defaultModel?: string | null
+  capabilities?: string[]
   apiKeyEnv?: string | null
   siteIds?: string[]
   metadata?: Record<string, unknown> | null
@@ -67,6 +68,7 @@ export interface AITaskPlugin {
   code: string
   taskType: string
   title?: string
+  requiredCapabilities?: string[]
   requiresHumanReview?: boolean
   run?(input: AITaskRunInput): Promise<AITaskRunResult> | AITaskRunResult
 }
@@ -163,6 +165,84 @@ export function registerAITaskPlugin(
     },
     input.pluginId
   )
+}
+
+export function getAITaskPlugin(
+  code: string,
+  context?: PlatformResolutionContext
+) {
+  return getPlatformRuntime().resolveContract<AITaskPlugin>(
+    "ai-task-plugin",
+    code,
+    context
+  )
+}
+
+export type AITaskPluginMetadata = {
+  code: string
+  taskType: string
+  requiresHumanReview: boolean
+}
+
+export type RunAITaskPluginOutcome = {
+  plugin: AITaskPluginMetadata | null
+  result: AITaskRunResult
+}
+
+/**
+ * Resolves a registered AI task plugin by code and executes its `run`
+ * implementation, normalizing missing plugins and thrown errors into a
+ * `failed` result. This is the single executor that turns a registered
+ * `AITaskPlugin` contract into an actual run.
+ */
+export async function runAITaskPlugin(
+  code: string,
+  input: AITaskRunInput,
+  context?: PlatformResolutionContext
+): Promise<RunAITaskPluginOutcome> {
+  const plugin = getAITaskPlugin(code, context)
+
+  if (!plugin) {
+    return {
+      plugin: null,
+      result: {
+        status: "failed",
+        errorMessage: `AI task plugin "${code}" is not registered or is disabled.`,
+      },
+    }
+  }
+
+  const metadata: AITaskPluginMetadata = {
+    code: plugin.code,
+    taskType: plugin.taskType,
+    requiresHumanReview: Boolean(plugin.requiresHumanReview),
+  }
+
+  if (!plugin.run) {
+    return {
+      plugin: metadata,
+      result: {
+        status: "failed",
+        errorMessage: `AI task plugin "${code}" does not implement an executable run step.`,
+      },
+    }
+  }
+
+  try {
+    const result = await plugin.run(input)
+    return { plugin: metadata, result }
+  } catch (error) {
+    return {
+      plugin: metadata,
+      result: {
+        status: "failed",
+        errorMessage:
+          error instanceof Error
+            ? error.message
+            : "AI task plugin execution failed.",
+      },
+    }
+  }
 }
 
 export function listAITaskPlugins(context?: PlatformResolutionContext) {
