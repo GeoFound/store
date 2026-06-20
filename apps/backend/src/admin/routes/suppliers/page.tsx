@@ -1,5 +1,5 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk"
-import { Badge, Button, Heading, Input, Table, Text, Textarea } from "@medusajs/ui"
+import { Badge, Button, Input, Table, Text, Textarea } from "@medusajs/ui"
 import { FormEvent, useEffect, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { AdminSection } from "../../components/admin-section"

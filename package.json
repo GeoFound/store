@@ -58,7 +58,7 @@
     "profile:export-overrides": "bash scripts/profile/export-env-overrides.sh",
     "acceptance": "pnpm acceptance:build && pnpm acceptance:live",
     "lint": "pnpm -r lint",
-    "typecheck": "pnpm --dir apps/backend exec tsc --noEmit && pnpm --dir apps/storefront exec tsc --noEmit",
+    "typecheck": "pnpm --dir apps/backend exec tsc --noEmit && pnpm --dir apps/backend exec tsc --noEmit --project src/admin/tsconfig.json && pnpm --dir apps/storefront exec tsc --noEmit",
     "test:unit": "pnpm --dir apps/backend test:unit",
     "check:ci": "pnpm ai:doctor && pnpm ai:obligations && pnpm ai:production && pnpm test:unit && pnpm --dir apps/storefront test && pnpm typecheck && pnpm --dir apps/storefront lint",
     "test": "pnpm --dir apps/backend test && pnpm --dir apps/storefront test"
@@ -69,6 +69,6 @@
   "packageManager": "pnpm@10.32.1",
   "devDependencies": {
     "dependency-cruiser": "^17.4.3",
-    "typescript": "6.0.3"
+    "typescript": "5.9.3"
   }
 }
