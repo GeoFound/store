@@ -3,8 +3,10 @@ import { PrivacyConsentBanner } from "@/components/privacy-consent-banner"
 import { SiteFooter } from "@/components/site-footer"
 import { ensureStorefrontExtensionsRegistered } from "@/extensions/defaults"
 import { renderStorefrontExtensions } from "@/extensions/registry"
+import { JsonLd } from "@/components/json-ld"
 import { getSiteConfig } from "@/lib/site-config"
 import { getSiteUrl, isIndexingEnabled } from "@/lib/seo"
+import { organizationJsonLd, websiteJsonLd } from "@/lib/structured-data"
 import { getStorefrontThemeAttributes } from "@/theme/storefront-theme"
 import "./globals.css"
 
@@ -42,6 +44,7 @@ export default function RootLayout({
   const htmlLang = locale.split("-")[0] || locale
   ensureStorefrontExtensionsRegistered()
   const theme = getStorefrontThemeAttributes(siteConfig.theme)
+  const indexable = isIndexingEnabled()
 
   return (
     <html
@@ -54,6 +57,9 @@ export default function RootLayout({
         data-site-id={siteConfig.site.id}
         data-theme-id={theme.id}
       >
+        {indexable ? (
+          <JsonLd data={[organizationJsonLd(), websiteJsonLd()]} />
+        ) : null}
         {children}
         <SiteFooter />
         <PrivacyConsentBanner siteName={siteConfig.site.name} />
