@@ -419,6 +419,19 @@
         }
       },
       {
+        "path": "apps/backend/src/api/admin/content/seo/audit/route.ts",
+        "route": "/admin/content/seo/audit",
+        "surface": "admin",
+        "owner": "content-core",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
         "path": "apps/backend/src/api/admin/content/seo/route.ts",
         "route": "/admin/content/seo",
         "surface": "admin",
