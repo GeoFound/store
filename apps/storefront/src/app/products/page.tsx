@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { SiteHeader } from "@/components/site-header"
 import { ensureStorefrontExtensionsRegistered } from "@/extensions/defaults"
 import {
@@ -7,11 +8,23 @@ import {
   sortProducts,
 } from "@/lib/catalog"
 import { listProducts } from "@/lib/commerce"
+import { buildPageMetadata } from "@/lib/seo"
 import { getSiteConfig } from "@/lib/site-config"
 import { applyProductDisplayConfig } from "@/lib/site-products"
 import { ProductsSections, resolveCategoryFilters } from "@/sections/products"
 
 export const dynamic = "force-dynamic"
+
+export async function generateMetadata(): Promise<Metadata> {
+  const siteConfig = getSiteConfig()
+
+  return buildPageMetadata({
+    title: siteConfig.content.catalog.title,
+    description: siteConfig.content.catalog.description,
+    path: "/products",
+    type: "website",
+  })
+}
 
 type ProductsPageProps = {
   searchParams?: Promise<{
