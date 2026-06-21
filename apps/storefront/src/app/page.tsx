@@ -1,14 +1,26 @@
+import type { Metadata } from "next"
 import { SiteHeader } from "@/components/site-header"
 import { ensureStorefrontExtensionsRegistered } from "@/extensions/defaults"
 import { buildProductsHref, listProductCategories } from "@/lib/catalog"
 import { listProducts } from "@/lib/commerce"
 import { listContentEntries } from "@/lib/content"
+import { buildPageMetadata } from "@/lib/seo"
 import { getSiteConfig, type SiteCategoryLinkConfig } from "@/lib/site-config"
 import { applyProductDisplayConfig } from "@/lib/site-products"
 import type { Product } from "@/lib/types"
 import { HomeSections } from "@/sections/home"
 
 export const dynamic = "force-dynamic"
+
+export async function generateMetadata(): Promise<Metadata> {
+  const siteConfig = getSiteConfig()
+
+  return buildPageMetadata({
+    description: siteConfig.site.description,
+    path: "/",
+    type: "website",
+  })
+}
 
 export default async function Home() {
   ensureStorefrontExtensionsRegistered()

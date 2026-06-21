@@ -4,15 +4,31 @@ import { SiteFooter } from "@/components/site-footer"
 import { ensureStorefrontExtensionsRegistered } from "@/extensions/defaults"
 import { renderStorefrontExtensions } from "@/extensions/registry"
 import { getSiteConfig } from "@/lib/site-config"
+import { getSiteUrl, isIndexingEnabled } from "@/lib/seo"
 import { getStorefrontThemeAttributes } from "@/theme/storefront-theme"
 import "./globals.css"
 
 export async function generateMetadata(): Promise<Metadata> {
   const siteConfig = getSiteConfig()
+  const indexable = isIndexingEnabled()
 
   return {
-    title: siteConfig.site.name,
+    metadataBase: new URL(getSiteUrl()),
+    title: {
+      default: siteConfig.site.name,
+      template: `%s · ${siteConfig.site.name}`,
+    },
     description: siteConfig.site.description,
+    applicationName: siteConfig.site.name,
+    robots: indexable
+      ? { index: true, follow: true }
+      : { index: false, follow: false },
+    openGraph: {
+      siteName: siteConfig.site.name,
+      locale: (siteConfig.site.locale || "en-US").replace("-", "_"),
+      type: "website",
+    },
+    twitter: { card: "summary_large_image" },
   }
 }
 
