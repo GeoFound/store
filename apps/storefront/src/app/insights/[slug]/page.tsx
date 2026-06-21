@@ -3,9 +3,14 @@ import { notFound } from "next/navigation"
 import { JsonLd } from "@/components/json-ld"
 import { SiteHeader } from "@/components/site-header"
 import { retrieveContentEntry } from "@/lib/content"
+import { resolveContentSeo } from "@/lib/content-seo"
 import { buildPageMetadata, isIndexingEnabled } from "@/lib/seo"
 import { getSiteConfig } from "@/lib/site-config"
-import { articleJsonLd, breadcrumbJsonLd } from "@/lib/structured-data"
+import {
+  articleJsonLd,
+  breadcrumbJsonLd,
+  faqPageJsonLd,
+} from "@/lib/structured-data"
 import { InsightDetailSections } from "@/sections/insights"
 
 export const dynamic = "force-dynamic"
@@ -26,12 +31,15 @@ export async function generateMetadata({
     return {}
   }
 
-  const image = entry.cover_image_url || entry.cover_asset?.public_url || null
+  const seo = resolveContentSeo(entry)
+  const image =
+    seo.ogImage || entry.cover_image_url || entry.cover_asset?.public_url || null
 
   return buildPageMetadata({
-    title: entry.title,
-    description: entry.excerpt,
+    title: seo.metaTitle || entry.title,
+    description: seo.metaDescription || entry.excerpt,
     path: `/insights/${entry.slug}`,
+    canonicalUrl: seo.canonicalUrl,
     image,
     type: "article",
     publishedTime: entry.published_at,
@@ -47,6 +55,8 @@ export default async function InsightPage({ params }: InsightPageProps) {
     notFound()
   }
 
+  const faqPage = faqPageJsonLd(resolveContentSeo(entry).faq)
+
   return (
     <>
       {isIndexingEnabled() ? (
@@ -57,6 +67,7 @@ export default async function InsightPage({ params }: InsightPageProps) {
               { name: siteConfig.content.navigation.insights, path: "/insights" },
               { name: entry.title, path: `/insights/${entry.slug}` },
             ]),
+            ...(faqPage ? [faqPage] : []),
           ]}
         />
       ) : null}

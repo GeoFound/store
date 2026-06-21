@@ -68,6 +68,7 @@ function seedEntriesToContentEntries(
       ? entry.relatedProductHandles
       : null,
     ai_assisted: false,
+    seo_json: null,
     reading_time_minutes: estimateReadingMinutes(entry.body),
     word_count: estimateWords(entry.body),
     published_at: entry.publishedAt || null,

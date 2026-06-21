@@ -80,6 +80,7 @@ type PageMetadataInput = {
   title?: string | null
   description?: string | null
   path: string
+  canonicalUrl?: string | null
   image?: string | null
   type?: "website" | "article"
   publishedTime?: string | null
@@ -91,7 +92,7 @@ type PageMetadataInput = {
  */
 export function buildPageMetadata(input: PageMetadataInput): Metadata {
   const siteConfig = getSiteConfig()
-  const url = absoluteUrl(input.path)
+  const url = absoluteUrl(input.canonicalUrl?.trim() || input.path)
   const title = input.title?.trim() || undefined
   const description = input.description?.trim() || siteConfig.site.description
   const ogLocale = (siteConfig.site.locale || "en-US").replace("-", "_")

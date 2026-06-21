@@ -78,6 +78,7 @@ export type ContentEntry = {
   tags_json: string[] | null
   related_product_handles_json: string[] | null
   ai_assisted: boolean
+  seo_json?: Record<string, unknown> | null
   reading_time_minutes?: number | null
   word_count?: number | null
   published_at: string | null
