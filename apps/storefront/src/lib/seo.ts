@@ -23,8 +23,9 @@ export const AI_CRAWLERS = [
   "CCBot",
 ]
 
-function envFlag(name: string, fallback: boolean): boolean {
-  const value = process.env[name]
+// Parses a boolean-ish env value. Static `process.env.X` reads at the call
+// sites keep every key auditable in .ai/config-surface.json (no dynamic access).
+function parseFlag(value: string | undefined, fallback: boolean): boolean {
   if (value === undefined || value.trim() === "") {
     return fallback
   }
@@ -33,7 +34,7 @@ function envFlag(name: string, fallback: boolean): boolean {
 
 /** Master capability switch (default on). */
 export function isSeoEnabled(): boolean {
-  return envFlag("SEO_ENABLED", true)
+  return parseFlag(process.env.SEO_ENABLED, true)
 }
 
 /**
@@ -41,12 +42,12 @@ export function isSeoEnabled(): boolean {
  * SEO_INDEXING_ENABLED=false to force a global noindex.
  */
 export function isIndexingEnabled(): boolean {
-  return isSeoEnabled() && envFlag("SEO_INDEXING_ENABLED", true)
+  return isSeoEnabled() && parseFlag(process.env.SEO_INDEXING_ENABLED, true)
 }
 
 /** Whether generative/answer-engine crawlers may access the site (default on). */
 export function aiCrawlersAllowed(): boolean {
-  return envFlag("SEO_AI_CRAWLERS_ALLOWED", true)
+  return parseFlag(process.env.SEO_AI_CRAWLERS_ALLOWED, true)
 }
 
 function ensureScheme(value: string): string {
