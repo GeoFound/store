@@ -1,10 +1,12 @@
 import type { Metadata } from "next"
 import { notFound } from "next/navigation"
+import { JsonLd } from "@/components/json-ld"
 import { SiteHeader } from "@/components/site-header"
 import { retrieveProduct } from "@/lib/commerce"
-import { buildPageMetadata } from "@/lib/seo"
+import { buildPageMetadata, isIndexingEnabled } from "@/lib/seo"
 import { getSiteConfig } from "@/lib/site-config"
 import { applyProductDisplayEntry } from "@/lib/site-products"
+import { breadcrumbJsonLd, productJsonLd } from "@/lib/structured-data"
 import { ProductDetailSections } from "@/sections/product-detail"
 
 export const dynamic = "force-dynamic"
@@ -52,6 +54,17 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   return (
     <>
+      {isIndexingEnabled() ? (
+        <JsonLd
+          data={[
+            productJsonLd(product),
+            breadcrumbJsonLd([
+              { name: siteConfig.content.navigation.products, path: "/products" },
+              { name: product.title, path: `/products/${product.handle}` },
+            ]),
+          ]}
+        />
+      ) : null}
       <SiteHeader />
       <main className="theme-subtle-grid flex-1">
         <ProductDetailSections siteConfig={siteConfig} product={product} />
