@@ -125,6 +125,33 @@ export function buildPatch<I extends object>(
   return patch
 }
 
+const SEO_ENTITY_TYPES = new Set([
+  "product",
+  "content_entry",
+  "collection",
+  "page",
+  "site",
+])
+const SEO_STATUSES = new Set(["draft", "review", "published", "archived"])
+const SEO_SOURCES = new Set(["human", "ai", "mixed"])
+
+export function normalizeSeoEntityType(value: unknown, fallback: string) {
+  return SEO_ENTITY_TYPES.has(value as string) ? (value as string) : fallback
+}
+
+export function normalizeSeoStatus(value: unknown, fallback: string) {
+  return SEO_STATUSES.has(value as string) ? (value as string) : fallback
+}
+
+export function normalizeSeoSource(value: unknown, fallback: string) {
+  return SEO_SOURCES.has(value as string) ? (value as string) : fallback
+}
+
+/** SEO documents key on language; "*" means "applies to all languages". */
+export function normalizeSeoLanguage(value: unknown) {
+  return normalizeLanguage(value) || "*"
+}
+
 export function filterByTag<T extends { tags_json?: unknown }>(
   entries: T[],
   tag?: string | null

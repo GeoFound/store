@@ -12,6 +12,12 @@ import ContentAudio from "./models/content-audio"
 import ContentEntry from "./models/content-entry"
 import ContentPublication from "./models/content-publication"
 import ContentRevision from "./models/content-revision"
+import ContentSeoDocument from "./models/content-seo-document"
+import {
+  listContentSeoDocumentsFor,
+  retrieveContentSeoDocument,
+  upsertContentSeoDocument,
+} from "./seo-document"
 import { createContentUploadPolicy, getContentStorageRuntimeConfig } from "./storage"
 import {
   DEFAULT_SITE_ID,
@@ -56,10 +62,13 @@ import type {
   CreateContentEntryInput,
   CreateContentRevisionInput,
   CreateContentUploadPolicyInput,
+  ContentSeoDocumentListInput,
   PublishContentRevisionInput,
+  RetrieveContentSeoDocumentInput,
   RunContentAITaskInput,
   UpdateContentAITaskRunInput,
   UpdateContentEntryInput,
+  UpsertContentSeoDocumentInput,
 } from "./types"
 
 const ENTRY_PATCH_FIELDS: Array<PatchField<UpdateContentEntryInput>> = [
@@ -144,6 +153,7 @@ class ContentCoreModuleService extends MedusaService({
   ContentEntry,
   ContentPublication,
   ContentRevision,
+  ContentSeoDocument,
 }) {
   async createEntrySafe(input: CreateContentEntryInput) {
     const siteId = normalizeSiteId(input.siteId)
@@ -620,6 +630,18 @@ class ContentCoreModuleService extends MedusaService({
       errorMessage: result.errorMessage ?? null,
       completedAt: new Date(),
     })
+  }
+
+  async upsertContentSeoDocumentSafe(input: UpsertContentSeoDocumentInput) {
+    return upsertContentSeoDocument(this as never, input)
+  }
+
+  async retrieveContentSeoDocumentSafe(input: RetrieveContentSeoDocumentInput) {
+    return retrieveContentSeoDocument(this as never, input)
+  }
+
+  async listContentSeoDocumentsSafe(input?: ContentSeoDocumentListInput) {
+    return listContentSeoDocumentsFor(this as never, input)
   }
 
   private async assertSlugIsUnique(siteId: string, slug: string, ignoreEntryId?: string) {

@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "createdAt": "2026-06-09",
+  "createdAt": "2026-06-21",
   "principles": [
     "Public API contract changes must be visible in machine-readable route entries.",
     "Routes that read request bodies must use validateAndTransformBody or carry expiring accepted debt.",
@@ -410,6 +410,31 @@
           "POST": {
             "kind": "middleware",
             "matcher": "/admin/content/revisions/:id/publish",
+            "owner": "content-core",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
+        "path": "apps/backend/src/api/admin/content/seo/route.ts",
+        "route": "/admin/content/seo",
+        "surface": "admin",
+        "owner": "content-core",
+        "methods": [
+          "GET",
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "middleware",
+            "matcher": "/admin/content/seo",
             "owner": "content-core",
             "verification": [
               "pnpm ai:production",
@@ -999,6 +1024,19 @@
         ]
       },
       {
+        "path": "apps/backend/src/api/store/content/seo/route.ts",
+        "route": "/store/content/seo",
+        "surface": "store",
+        "owner": "content-core",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
         "path": "apps/backend/src/api/store/custom/route.ts",
         "route": "/store/custom",
         "surface": "store",
@@ -1288,7 +1326,8 @@
           "apps/backend/src/modules/content-core/models/content-audio.ts",
           "apps/backend/src/modules/content-core/models/content-entry.ts",
           "apps/backend/src/modules/content-core/models/content-publication.ts",
-          "apps/backend/src/modules/content-core/models/content-revision.ts"
+          "apps/backend/src/modules/content-core/models/content-revision.ts",
+          "apps/backend/src/modules/content-core/models/content-seo-document.ts"
         ],
         "modelTables": [
           "content_ai_task_run",
@@ -1296,16 +1335,18 @@
           "content_audio",
           "content_entry",
           "content_publication",
-          "content_revision"
+          "content_revision",
+          "content_seo_document"
         ],
         "migrationFiles": [
           "apps/backend/src/modules/content-core/migrations/Migration20260608054644.ts",
-          "apps/backend/src/modules/content-core/migrations/Migration20260611104500.ts"
+          "apps/backend/src/modules/content-core/migrations/Migration20260611104500.ts",
+          "apps/backend/src/modules/content-core/migrations/Migration20260621120000.ts"
         ],
         "snapshotFiles": [
           "apps/backend/src/modules/content-core/migrations/.snapshot-content-core.json"
         ],
-        "schemaFingerprint": "sha256:db2e4d97b1a0e922f1851073dab08fd1ebd8b7ac8309ee9b60c0da185bf1e294",
+        "schemaFingerprint": "sha256:0d5c650e9332880a5085d7871b40461f3fad6b674eb60ac877e05228de3172d1",
         "verification": [
           "pnpm ai:production",
           "pnpm --dir apps/backend test:unit"

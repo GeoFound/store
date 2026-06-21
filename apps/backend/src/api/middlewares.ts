@@ -42,9 +42,11 @@ import {
   runContentAITaskBodySchema,
   sellReservationBodySchema,
   simpleLimitQuerySchema,
+  storeContentSeoQuerySchema,
   updateAfterSaleBodySchema,
   updateContentAITaskRunBodySchema,
   updateContentEntryBodySchema,
+  upsertContentSeoDocumentBodySchema,
   updatePaymentChannelBodySchema,
   upsertSupplierMappingBodySchema,
   verifyRecoverBodySchema,
@@ -399,6 +401,24 @@ export default defineMiddlewares({
       ],
     },
     {
+      matcher: "/admin/content/seo",
+      methods: ["GET"],
+      middlewares: [validateAndTransformSimpleQuery(simpleLimitQuerySchema.passthrough())],
+    },
+    {
+      matcher: "/admin/content/seo",
+      methods: ["POST"],
+      middlewares: [
+        createRateLimitMiddleware(adminMutationRateLimit, {
+          action: "security.admin_mutation.rate_limited",
+          riskLevel: "medium",
+          keyParts: (req) => [getRequestPath(req)],
+        }),
+        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        validateAndTransformBody(upsertContentSeoDocumentBodySchema),
+      ],
+    },
+    {
       matcher: "/admin/analytics/events",
       methods: ["GET"],
       middlewares: [validateAndTransformSimpleQuery(analyticsEventsQuerySchema)],
@@ -510,6 +530,11 @@ export default defineMiddlewares({
       matcher: "/store/content/entries/:slug",
       methods: ["GET"],
       middlewares: [validateAndTransformSimpleQuery(contentEntriesQuerySchema)],
+    },
+    {
+      matcher: "/store/content/seo",
+      methods: ["GET"],
+      middlewares: [validateAndTransformSimpleQuery(storeContentSeoQuerySchema)],
     },
     {
       matcher: "/store/deliveries/:access_token/after-sales",
