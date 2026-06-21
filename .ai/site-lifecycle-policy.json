@@ -66,6 +66,7 @@
     "last_customer_access_ref",
     "last_notification_ref",
     "last_analytics_privacy_ref",
+    "last_discoverability_readiness_ref",
     "last_regression_ref",
     "last_backup_ref",
     "last_restore_test_ref",
