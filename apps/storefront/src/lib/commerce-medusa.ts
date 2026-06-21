@@ -23,6 +23,7 @@ import type {
   MarketingResolvedContext,
   Product,
   Region,
+  SeoDocument,
 } from "./types"
 
 type FetchOptions = {
@@ -179,6 +180,27 @@ export async function retrieveContentEntry(input: {
   )
 
   return data.entry || null
+}
+
+export async function retrieveSeoDocument(input: {
+  entityType: string
+  entityId: string
+  siteId: string
+  language?: string
+}): Promise<SeoDocument | null> {
+  const query = new URLSearchParams({
+    entity_type: input.entityType,
+    entity_id: input.entityId,
+    site_id: input.siteId,
+  })
+  if (input.language) {
+    query.set("language", input.language)
+  }
+  const data = await medusaFetch<{ seo?: SeoDocument | null }>(
+    `/store/content/seo?${query.toString()}`
+  )
+
+  return data.seo || null
 }
 
 export async function listRegions(): Promise<Region[]> {

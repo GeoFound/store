@@ -102,6 +102,36 @@ export type ContentEntry = {
   } | null
 }
 
+export type SeoDocument = {
+  id?: string
+  entity_type?: string
+  entity_id?: string
+  site_id?: string
+  language?: string
+  meta_title?: string | null
+  meta_description?: string | null
+  canonical_url?: string | null
+  og_title?: string | null
+  og_description?: string | null
+  og_image_url?: string | null
+  keywords_json?: string[] | null
+  schema_type?: string | null
+  schema_json?: Record<string, unknown> | null
+  summary_tldr?: string | null
+  faq_json?: unknown
+  key_facts_json?: string[] | null
+  entities_json?: unknown
+  answer_target?: string | null
+  status?: string
+}
+
+export type SeoDocumentQuery = {
+  entityType: "product" | "content_entry" | "collection" | "page" | "site"
+  entityId: string
+  siteId: string
+  language?: string
+}
+
 export type Region = {
   id: string
   name: string

@@ -13,6 +13,7 @@ import type {
   PaymentMethod,
   Product,
   Region,
+  SeoDocument,
 } from "./types"
 
 export type CommerceBackend = {
@@ -26,6 +27,12 @@ export type CommerceBackend = {
     siteId: string
     slug: string
   }): Promise<ContentEntry | null>
+  retrieveSeoDocument(input: {
+    entityType: string
+    entityId: string
+    siteId: string
+    language?: string
+  }): Promise<SeoDocument | null>
   listRegions(): Promise<Region[]>
   getDefaultRegionId(): Promise<string>
   createCart(): Promise<Cart>
@@ -177,6 +184,15 @@ export async function retrievePublishedContentEntry(input: {
   slug: string
 }) {
   return (await getCommerceBackend()).retrieveContentEntry(input)
+}
+
+export async function retrieveSeoDocument(input: {
+  entityType: string
+  entityId: string
+  siteId: string
+  language?: string
+}) {
+  return (await getCommerceBackend()).retrieveSeoDocument(input)
 }
 
 export async function listRegions() {

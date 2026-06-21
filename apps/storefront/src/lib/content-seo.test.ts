@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest"
-import type { ContentEntry } from "@/lib/types"
-import { resolveContentSeo } from "@/lib/content-seo"
+import type { ContentEntry, SeoDocument } from "@/lib/types"
+import {
+  resolveContentSeo,
+  resolveSeoDocumentOverrides,
+} from "@/lib/content-seo"
 import { faqPageJsonLd } from "@/lib/structured-data"
 
 function entryWithSeo(seo: Record<string, unknown> | null): ContentEntry {
@@ -43,6 +46,44 @@ describe("resolveContentSeo", () => {
       ogImage: null,
       faq: [],
       keyFacts: [],
+    })
+  })
+})
+
+describe("resolveSeoDocumentOverrides", () => {
+  it("maps canonical seo document fields to overrides", () => {
+    const doc: SeoDocument = {
+      meta_title: "Doc title",
+      meta_description: "Doc description",
+      canonical_url: "https://shop.example.com/products/x",
+      og_image_url: "https://cdn.example.com/x.png",
+      key_facts_json: ["fact a", "fact b"],
+      faq_json: [{ question: "Q?", answer: "A" }],
+      schema_json: { "@type": "Product", brand: "Atlas" },
+    }
+    const seo = resolveSeoDocumentOverrides(doc)
+
+    expect(seo.metaTitle).toBe("Doc title")
+    expect(seo.metaDescription).toBe("Doc description")
+    expect(seo.canonicalUrl).toBe("https://shop.example.com/products/x")
+    expect(seo.ogImage).toBe("https://cdn.example.com/x.png")
+    expect(seo.keyFacts).toEqual(["fact a", "fact b"])
+    expect(seo.faq).toEqual([{ question: "Q?", answer: "A" }])
+    expect(seo.schemaJson).toEqual({ "@type": "Product", brand: "Atlas" })
+  })
+
+  it("falls back to summary_tldr for description and empties for missing", () => {
+    expect(resolveSeoDocumentOverrides({ summary_tldr: "tldr" }).metaDescription).toBe(
+      "tldr"
+    )
+    expect(resolveSeoDocumentOverrides(null)).toEqual({
+      metaTitle: null,
+      metaDescription: null,
+      canonicalUrl: null,
+      ogImage: null,
+      faq: [],
+      keyFacts: [],
+      schemaJson: null,
     })
   })
 })
