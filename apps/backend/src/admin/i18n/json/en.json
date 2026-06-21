@@ -3,6 +3,7 @@
     "actions": {
       "cancel": "Cancel",
       "clear": "Clear",
+      "edit": "Edit",
       "filter": "Filter",
       "refresh": "Refresh",
       "retry": "Retry",
@@ -65,6 +66,7 @@
     "ops": "Operations",
     "payments": "Payments",
     "productPublishing": "Product Publishing",
+    "seo": "SEO",
     "suppliers": "Suppliers"
   },
   "adminNav": {
@@ -83,6 +85,7 @@
       "payments": "Payments",
       "productPublishing": "Publishing",
       "productTemplates": "Product templates",
+      "seo": "SEO",
       "suppliers": "Suppliers"
     },
     "sections": {
@@ -599,6 +602,50 @@
     "updateFailed": "Failed to update content entry.",
     "updated": "Content entry updated.",
     "yes": "Yes"
+  },
+  "seo": {
+    "title": "SEO & discoverability",
+    "description": "Author and review per-entity SEO/AEO/GEO documents for products, content, collections, and pages.",
+    "refreshing": "Refreshing…",
+    "loadFailed": "Failed to load SEO documents.",
+    "saved": "SEO document saved.",
+    "saveFailed": "Failed to save the SEO document.",
+    "metrics": {
+      "total": "Documents",
+      "published": "Published",
+      "drafts": "Drafts"
+    },
+    "form": {
+      "title": "Upsert document",
+      "description": "Create or update the discoverability document for an entity. Documents stay review-gated until published.",
+      "submit": "Save document",
+      "entityType": "Entity type",
+      "entityId": "Entity ID",
+      "siteId": "Site",
+      "language": "Language",
+      "metaTitle": "Meta title",
+      "metaDescription": "Meta description",
+      "canonicalUrl": "Canonical URL",
+      "ogImageUrl": "OG image URL"
+    },
+    "documents": {
+      "title": "Documents",
+      "description": "Existing discoverability documents.",
+      "empty": "No SEO documents yet."
+    },
+    "fields": {
+      "entity": "Entity",
+      "scope": "Scope",
+      "metaTitle": "Meta title",
+      "updated": "Updated"
+    },
+    "entityTypes": {
+      "product": "Product",
+      "content_entry": "Content entry",
+      "collection": "Collection",
+      "page": "Page",
+      "site": "Site"
+    }
   },
   "productPublishing": {
     "actions": {

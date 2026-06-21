@@ -3,6 +3,7 @@
     "actions": {
       "cancel": "取消",
       "clear": "清空",
+      "edit": "编辑",
       "filter": "筛选",
       "refresh": "刷新",
       "retry": "重试",
@@ -65,6 +66,7 @@
     "ops": "运维",
     "payments": "支付",
     "productPublishing": "商品发布",
+    "seo": "SEO",
     "suppliers": "供应商"
   },
   "adminNav": {
@@ -83,6 +85,7 @@
       "payments": "支付",
       "productPublishing": "发布检查",
       "productTemplates": "商品模板",
+      "seo": "SEO",
       "suppliers": "供应商"
     },
     "sections": {
@@ -599,6 +602,50 @@
     "updateFailed": "更新内容条目失败。",
     "updated": "内容条目已更新。",
     "yes": "是"
+  },
+  "seo": {
+    "title": "SEO 与可发现性",
+    "description": "为商品、内容、集合和页面撰写并复核逐实体的 SEO/AEO/GEO 文档。",
+    "refreshing": "刷新中…",
+    "loadFailed": "加载 SEO 文档失败。",
+    "saved": "SEO 文档已保存。",
+    "saveFailed": "保存 SEO 文档失败。",
+    "metrics": {
+      "total": "文档数",
+      "published": "已发布",
+      "drafts": "草稿"
+    },
+    "form": {
+      "title": "新增/更新文档",
+      "description": "为实体创建或更新可发现性文档。文档在发布前始终需人工复核。",
+      "submit": "保存文档",
+      "entityType": "实体类型",
+      "entityId": "实体 ID",
+      "siteId": "站点",
+      "language": "语言",
+      "metaTitle": "Meta 标题",
+      "metaDescription": "Meta 描述",
+      "canonicalUrl": "Canonical URL",
+      "ogImageUrl": "OG 图片 URL"
+    },
+    "documents": {
+      "title": "文档",
+      "description": "已有的可发现性文档。",
+      "empty": "暂无 SEO 文档。"
+    },
+    "fields": {
+      "entity": "实体",
+      "scope": "范围",
+      "metaTitle": "Meta 标题",
+      "updated": "更新时间"
+    },
+    "entityTypes": {
+      "product": "商品",
+      "content_entry": "内容条目",
+      "collection": "集合",
+      "page": "页面",
+      "site": "站点"
+    }
   },
   "productPublishing": {
     "actions": {
