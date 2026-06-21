@@ -335,6 +335,55 @@ export const runContentAITaskBodySchema = z.object({
   metadata: nullableRecordSchema,
 })
 
+const contentSeoEntityTypeSchema = z.enum([
+  "product",
+  "content_entry",
+  "collection",
+  "page",
+  "site",
+])
+const contentSeoStatusSchema = z.enum(["draft", "review", "published", "archived"])
+const contentSeoSourceSchema = z.enum(["human", "ai", "mixed"])
+const jsonListOrRecordSchema = z
+  .union([z.array(z.unknown()), z.record(z.string(), z.unknown())])
+  .nullable()
+  .optional()
+
+export const upsertContentSeoDocumentBodySchema = z.object({
+  entity_type: contentSeoEntityTypeSchema,
+  entity_id: z.string().trim().min(1).max(255),
+  site_id: optionalTextSchema,
+  language: nullableTextSchema,
+  meta_title: z.string().trim().max(300).nullable().optional(),
+  meta_description: z.string().trim().max(1000).nullable().optional(),
+  canonical_url: z.string().trim().max(2048).nullable().optional(),
+  slug: nullableTextSchema,
+  robots: nullableRecordSchema,
+  og_title: z.string().trim().max(300).nullable().optional(),
+  og_description: z.string().trim().max(1000).nullable().optional(),
+  og_image_url: z.string().trim().max(2048).nullable().optional(),
+  keywords: contentStringListSchema.nullable().optional(),
+  schema_type: nullableTextSchema,
+  schema: nullableRecordSchema,
+  summary_tldr: z.string().trim().max(2000).nullable().optional(),
+  faq: jsonListOrRecordSchema,
+  key_facts: contentStringListSchema.nullable().optional(),
+  entities: jsonListOrRecordSchema,
+  answer_target: z.string().trim().max(500).nullable().optional(),
+  status: contentSeoStatusSchema.optional(),
+  review_status: contentAIReviewStatusSchema.optional(),
+  source: contentSeoSourceSchema.optional(),
+  ai_task_run_id: nullableTextSchema,
+  metadata: nullableRecordSchema,
+})
+
+export const storeContentSeoQuerySchema = z.object({
+  entity_type: contentSeoEntityTypeSchema,
+  entity_id: z.string().trim().min(1).max(255),
+  site_id: optionalTextSchema,
+  language: optionalTextSchema,
+})
+
 export const analyticsEventsQuerySchema = z.object({
   event_name: optionalTextSchema,
   source: z.enum(["backend_hook", "storefront", "system"]).optional(),

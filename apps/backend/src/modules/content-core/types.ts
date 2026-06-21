@@ -204,6 +204,61 @@ export type RunContentAITaskInput = {
   metadata?: Record<string, unknown> | null
 }
 
+export type ContentSeoEntityType =
+  | "product"
+  | "content_entry"
+  | "collection"
+  | "page"
+  | "site"
+
+export type ContentSeoStatus = "draft" | "review" | "published" | "archived"
+
+export type ContentSeoSource = "human" | "ai" | "mixed"
+
+export type UpsertContentSeoDocumentInput = {
+  entityType: ContentSeoEntityType
+  entityId: string
+  siteId?: string | null
+  language?: string | null
+  metaTitle?: string | null
+  metaDescription?: string | null
+  canonicalUrl?: string | null
+  slug?: string | null
+  robots?: Record<string, unknown> | null
+  ogTitle?: string | null
+  ogDescription?: string | null
+  ogImageUrl?: string | null
+  keywords?: string[] | string | null
+  schemaType?: string | null
+  schema?: Record<string, unknown> | null
+  summaryTldr?: string | null
+  faq?: unknown[] | Record<string, unknown> | null
+  keyFacts?: string[] | string | null
+  entities?: unknown[] | Record<string, unknown> | null
+  answerTarget?: string | null
+  status?: ContentSeoStatus
+  reviewStatus?: ContentAIReviewStatus
+  source?: ContentSeoSource
+  aiTaskRunId?: string | null
+  metadata?: Record<string, unknown> | null
+}
+
+export type RetrieveContentSeoDocumentInput = {
+  entityType: ContentSeoEntityType
+  entityId: string
+  siteId?: string | null
+  language?: string | null
+}
+
+export type ContentSeoDocumentListInput = {
+  entityType?: ContentSeoEntityType | string
+  entityId?: string | null
+  siteId?: string | null
+  language?: string | null
+  status?: ContentSeoStatus | string
+  limit?: number
+}
+
 export type CreateContentAudioInput = {
   siteId?: string | null
   entryId: string

@@ -1,6 +1,10 @@
 import {
   buildPatch,
   getReadingStats,
+  normalizeSeoEntityType,
+  normalizeSeoLanguage,
+  normalizeSeoSource,
+  normalizeSeoStatus,
   toRecordList,
   type PatchField,
 } from "../service-helpers"
@@ -61,5 +65,26 @@ describe("getReadingStats", () => {
       readingTimeMinutes: null,
       wordCount: null,
     })
+  })
+})
+
+describe("seo document normalizers", () => {
+  it("normalizes entity type with a fallback", () => {
+    expect(normalizeSeoEntityType("product", "page")).toBe("product")
+    expect(normalizeSeoEntityType("bogus", "page")).toBe("page")
+  })
+
+  it("normalizes status and source with fallbacks", () => {
+    expect(normalizeSeoStatus("published", "draft")).toBe("published")
+    expect(normalizeSeoStatus("nope", "draft")).toBe("draft")
+    expect(normalizeSeoSource("ai", "human")).toBe("ai")
+    expect(normalizeSeoSource("nope", "human")).toBe("human")
+  })
+
+  it("defaults language to the all-languages sentinel", () => {
+    expect(normalizeSeoLanguage("en")).toBe("en")
+    expect(normalizeSeoLanguage("zh-CN")).toBe("zh-cn")
+    expect(normalizeSeoLanguage(null)).toBe("*")
+    expect(normalizeSeoLanguage("not a language")).toBe("*")
   })
 })
