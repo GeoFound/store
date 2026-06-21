@@ -1,5 +1,5 @@
 export const ADMIN_CONTROL_PANEL_POLICY = {
-  version: "1.2.0",
+  version: "1.3.0",
   purpose:
     "Define which product and platform capabilities require a human-usable backend control panel surface, production gate mapping, and machine evidence.",
   productionControlRule:
@@ -278,6 +278,14 @@ export const ADMIN_CONTROL_PANEL_POLICY = {
         owner: "content-core",
         purpose:
           "Site-scoped content drafts, revisions, publishing, storage-backed assets, audio, and provider-neutral AI task metadata.",
+      },
+      {
+        route: "/app/seo",
+        section: "growth",
+        title: "SEO & discoverability",
+        owner: "content-core",
+        purpose:
+          "Platform-wide, per-site SEO/AEO/GEO governance: enablement, indexability and AI-crawler policy, structured-data identity, language/hreflang scope, canonical domain, sitemap and llms.txt settings, and discoverability health. Per-entity metadata is edited in the content/product editors, not here.",
       },
       {
         route: "/app/marketing",
@@ -569,6 +577,26 @@ export const ADMIN_CONTROL_PANEL_POLICY = {
         "GA4_ENABLED",
         "NEXT_PUBLIC_ANALYTICS_REQUIRE_CONSENT",
         "NEXT_PUBLIC_PRIVACY_BANNER_ENABLED",
+      ],
+    },
+    {
+      id: "discoverability-readiness",
+      title: "SEO, AEO, and GEO discoverability",
+      owner: "content-core",
+      backendPanelRequired: true,
+      productionGateRequired: true,
+      humanChoiceRequired: true,
+      adminRoute: "/app/seo",
+      controlPanelSection: "growth",
+      profileControls: ["backend_control_panel_required"],
+      evidenceFields: ["last_discoverability_readiness_ref"],
+      runtimeCommands: ["pnpm check:ci"],
+      configKeys: [
+        "SEO_ENABLED",
+        "SEO_INDEXING_ENABLED",
+        "SEO_AI_CRAWLERS_ALLOWED",
+        "SITE_CANONICAL_URL",
+        "SEO_LANGUAGES",
       ],
     },
     {
