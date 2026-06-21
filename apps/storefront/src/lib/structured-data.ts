@@ -51,7 +51,10 @@ export function breadcrumbJsonLd(
   }
 }
 
-export function productJsonLd(product: Product): JsonLdObject {
+export function productJsonLd(
+  product: Product,
+  schemaOverride?: Record<string, unknown> | null
+): JsonLdObject {
   const url = absoluteUrl(`/products/${product.handle}`)
   const variants = product.variants || []
   const prices = variants
@@ -102,7 +105,9 @@ export function productJsonLd(product: Product): JsonLdObject {
           }
   }
 
-  return data
+  // A human/AI-authored schema_json from the canonical seo document wins over
+  // the derived fields it specifies.
+  return schemaOverride ? { ...data, ...schemaOverride } : data
 }
 
 export function articleJsonLd(entry: ContentEntry): JsonLdObject {

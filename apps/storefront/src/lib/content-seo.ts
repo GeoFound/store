@@ -1,4 +1,4 @@
-import type { ContentEntry } from "@/lib/types"
+import type { ContentEntry, SeoDocument } from "@/lib/types"
 
 /**
  * Normalizes the freeform `seo_json` stored on a content entry (written by
@@ -31,13 +31,44 @@ export function resolveContentSeo(entry: ContentEntry): ContentSeoOverrides {
     ]),
     canonicalUrl: readText(seo, ["canonical_url", "canonicalUrl", "canonical"]),
     ogImage: readText(seo, ["og_image", "ogImage", "image", "social_image"]),
-    faq: readFaq(seo),
+    faq: parseFaqList(seo.faq ?? seo.faqs ?? seo.questions),
     keyFacts: readStringList(seo, ["key_facts", "keyFacts", "facts"]),
   }
 }
 
-function readFaq(seo: Record<string, unknown>): ContentFaqItem[] {
-  const raw = seo.faq ?? seo.faqs ?? seo.questions
+/**
+ * Typed overrides resolved from a canonical content_seo_document (the uniform
+ * record covering products/collections, served by /store/content/seo). Same
+ * precedence rule as resolveContentSeo: a present field overrides the derived
+ * default.
+ */
+export type SeoDocumentOverrides = {
+  metaTitle: string | null
+  metaDescription: string | null
+  canonicalUrl: string | null
+  ogImage: string | null
+  faq: ContentFaqItem[]
+  keyFacts: string[]
+  schemaJson: Record<string, unknown> | null
+}
+
+export function resolveSeoDocumentOverrides(
+  doc: SeoDocument | null | undefined
+): SeoDocumentOverrides {
+  const d = isRecord(doc) ? (doc as Record<string, unknown>) : {}
+
+  return {
+    metaTitle: readText(d, ["meta_title"]),
+    metaDescription: readText(d, ["meta_description", "summary_tldr"]),
+    canonicalUrl: readText(d, ["canonical_url"]),
+    ogImage: readText(d, ["og_image_url"]),
+    faq: parseFaqList(d.faq_json),
+    keyFacts: readStringList(d, ["key_facts_json"]),
+    schemaJson: isRecord(d.schema_json) ? d.schema_json : null,
+  }
+}
+
+function parseFaqList(raw: unknown): ContentFaqItem[] {
   if (!Array.isArray(raw)) {
     return []
   }

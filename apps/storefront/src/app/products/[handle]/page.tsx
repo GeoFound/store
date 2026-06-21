@@ -2,11 +2,17 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { JsonLd } from "@/components/json-ld"
 import { SiteHeader } from "@/components/site-header"
-import { retrieveProduct } from "@/lib/commerce"
+import { retrieveProduct, retrieveSeoDocument } from "@/lib/commerce"
+import { resolveSeoDocumentOverrides } from "@/lib/content-seo"
 import { buildPageMetadata, isIndexingEnabled } from "@/lib/seo"
 import { getSiteConfig } from "@/lib/site-config"
 import { applyProductDisplayEntry } from "@/lib/site-products"
-import { breadcrumbJsonLd, productJsonLd } from "@/lib/structured-data"
+import {
+  breadcrumbJsonLd,
+  faqPageJsonLd,
+  productJsonLd,
+} from "@/lib/structured-data"
+import type { Product } from "@/lib/types"
 import { ProductDetailSections } from "@/sections/product-detail"
 
 export const dynamic = "force-dynamic"
@@ -15,6 +21,14 @@ type ProductPageProps = {
   params: Promise<{
     handle: string
   }>
+}
+
+function productSeoDocument(product: Product, siteId: string) {
+  return retrieveSeoDocument({
+    entityType: "product",
+    entityId: product.id,
+    siteId,
+  }).catch(() => null)
 }
 
 export async function generateMetadata({
@@ -27,11 +41,16 @@ export async function generateMetadata({
     return {}
   }
 
+  const seo = resolveSeoDocumentOverrides(
+    await productSeoDocument(product, getSiteConfig().site.id)
+  )
+
   return buildPageMetadata({
-    title: product.title,
-    description: product.description,
+    title: seo.metaTitle || product.title,
+    description: seo.metaDescription || product.description,
     path: `/products/${product.handle}`,
-    image: product.thumbnail,
+    canonicalUrl: seo.canonicalUrl,
+    image: seo.ogImage || product.thumbnail,
     type: "website",
   })
 }
@@ -52,16 +71,22 @@ export default async function ProductPage({ params }: ProductPageProps) {
     )
   )
 
+  const seo = resolveSeoDocumentOverrides(
+    await productSeoDocument(product, siteConfig.site.id)
+  )
+  const faqPage = faqPageJsonLd(seo.faq)
+
   return (
     <>
       {isIndexingEnabled() ? (
         <JsonLd
           data={[
-            productJsonLd(product),
+            productJsonLd(product, seo.schemaJson),
             breadcrumbJsonLd([
               { name: siteConfig.content.navigation.products, path: "/products" },
               { name: product.title, path: `/products/${product.handle}` },
             ]),
+            ...(faqPage ? [faqPage] : []),
           ]}
         />
       ) : null}
