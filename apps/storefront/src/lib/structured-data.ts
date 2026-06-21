@@ -1,3 +1,4 @@
+import { resolveContentSeo, type ContentFaqItem } from "@/lib/content-seo"
 import { absoluteUrl, getSiteUrl } from "@/lib/seo"
 import { getSiteConfig } from "@/lib/site-config"
 import type { ContentEntry, Product } from "@/lib/types"
@@ -106,18 +107,22 @@ export function productJsonLd(product: Product): JsonLdObject {
 
 export function articleJsonLd(entry: ContentEntry): JsonLdObject {
   const { site } = getSiteConfig()
+  const seo = resolveContentSeo(entry)
   const url = absoluteUrl(`/insights/${entry.slug}`)
-  const image = entry.cover_image_url || entry.cover_asset?.public_url || null
+  const headline = seo.metaTitle || entry.title
+  const description = seo.metaDescription || entry.excerpt
+  const image =
+    seo.ogImage || entry.cover_image_url || entry.cover_asset?.public_url || null
   const published = entry.published_at || entry.created_at || null
 
   return {
     "@context": SCHEMA_CONTEXT,
     "@type": "Article",
-    headline: entry.title,
+    headline,
     url,
     mainEntityOfPage: url,
     inLanguage: entry.language || site.locale,
-    ...(entry.excerpt ? { description: entry.excerpt } : {}),
+    ...(description ? { description } : {}),
     ...(image ? { image: absoluteUrl(image) } : {}),
     ...(entry.author_name
       ? { author: { "@type": "Person", name: entry.author_name } }
@@ -128,5 +133,25 @@ export function articleJsonLd(entry: ContentEntry): JsonLdObject {
       name: site.name,
       url: getSiteUrl(),
     },
+  }
+}
+
+/** FAQPage from human/AI-authored Q&A — feeds answer engines and rich results. */
+export function faqPageJsonLd(faq: ContentFaqItem[]): JsonLdObject | null {
+  if (!faq.length) {
+    return null
+  }
+
+  return {
+    "@context": SCHEMA_CONTEXT,
+    "@type": "FAQPage",
+    mainEntity: faq.map((item) => ({
+      "@type": "Question",
+      name: item.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: item.answer,
+      },
+    })),
   }
 }
