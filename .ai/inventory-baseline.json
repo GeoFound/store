@@ -741,7 +741,13 @@
           "pnpm ai:production",
           "pnpm check:ci"
         ],
-        "rationale": "Public read endpoint that resolves the published content_seo_document for an entity so the storefront can apply SEO/AEO/GEO overrides."
+        "rationale": "Public read endpoint that resolves the published content_seo_document for an entity so the storefront can apply SEO/AEO/GEO overrides.",
+        "risk": "routine",
+        "obligations": [
+          "only expose documents whose status is published",
+          "keep the store query validation middleware registered",
+          "prove the route contract through pnpm ai:production and pnpm check:ci"
+        ]
       },
       {
         "path": "apps/backend/src/api/store/deliveries/[access_token]/after-sales/route.ts",
