@@ -446,6 +446,22 @@
         ]
       },
       {
+        "path": "apps/backend/src/api/admin/content/seo/suggest/route.ts",
+        "owner": "content-core",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "rationale": "Admin endpoint that turns deterministic SEO audit findings into AI-generated, review-gated improvement suggestions; persists a requires_review run and never auto-publishes.",
+        "risk": "human-review",
+        "obligations": [
+          "keep the admin mutation rate limit, origin guard, and body validation middleware registered",
+          "persist suggestions as review-gated runs and never auto-publish",
+          "prove the route contract through pnpm ai:production and pnpm check:ci"
+        ]
+      },
+      {
         "path": "apps/backend/src/api/admin/content/storage/providers/route.ts",
         "owner": "content-core",
         "verification": [

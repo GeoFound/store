@@ -470,6 +470,30 @@
         }
       },
       {
+        "path": "apps/backend/src/api/admin/content/seo/suggest/route.ts",
+        "route": "/admin/content/seo/suggest",
+        "surface": "admin",
+        "owner": "content-core",
+        "methods": [
+          "POST"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "bodyValidation": {
+          "POST": {
+            "kind": "middleware",
+            "matcher": "/admin/content/seo/suggest",
+            "owner": "content-core",
+            "verification": [
+              "pnpm ai:production",
+              "pnpm check:ci"
+            ]
+          }
+        }
+      },
+      {
         "path": "apps/backend/src/api/admin/content/storage/providers/route.ts",
         "route": "/admin/content/storage/providers",
         "surface": "admin",
