@@ -1,3 +1,4 @@
+import type { SeoAnalyticsRow } from "./seo-analytics"
 import { normalizeSeoEntityType, normalizeSiteId } from "./service-helpers"
 import type { ContentSeoDocumentListInput } from "./types"
 
@@ -18,6 +19,13 @@ export type SeoAuditFinding = {
   message: string
 }
 
+export type SeoAuditPerformance = {
+  clicks: number
+  impressions: number
+  ctr: number
+  position: number
+}
+
 export type SeoAuditResult = {
   id: string
   entity_type: string
@@ -27,7 +35,13 @@ export type SeoAuditResult = {
   status: string
   score: number
   findings: SeoAuditFinding[]
+  performance: SeoAuditPerformance | null
 }
+
+// Pages with at least this many impressions but a CTR below the threshold are
+// flagged as under-performing titles/descriptions.
+const LOW_CTR_MIN_IMPRESSIONS = 50
+const LOW_CTR_THRESHOLD = 0.01
 
 const SEVERITY_PENALTY: Record<SeoAuditSeverity, number> = {
   critical: 25,
@@ -41,7 +55,8 @@ const META_DESCRIPTION_MIN = 50
 const META_DESCRIPTION_MAX = 165
 
 export function auditSeoDocumentFields(
-  doc: Record<string, unknown>
+  doc: Record<string, unknown>,
+  performance?: SeoAuditPerformance | null
 ): SeoAuditFinding[] {
   const findings: SeoAuditFinding[] = []
   const metaTitle = text(doc.meta_title)
@@ -111,6 +126,32 @@ export function auditSeoDocumentFields(
     findings.push(finding("not-published", "info", "status", "Document is not published yet."))
   }
 
+  // Search Console performance signals (only when joined to a GSC page).
+  if (performance) {
+    if (performance.impressions === 0) {
+      findings.push(
+        finding(
+          "no-impressions",
+          "info",
+          "performance",
+          "No Search Console impressions in the window — not yet surfaced in search."
+        )
+      )
+    } else if (
+      performance.impressions >= LOW_CTR_MIN_IMPRESSIONS &&
+      performance.ctr < LOW_CTR_THRESHOLD
+    ) {
+      findings.push(
+        finding(
+          "low-ctr",
+          "warning",
+          "performance",
+          `Low click-through rate (${(performance.ctr * 100).toFixed(2)}% over ${performance.impressions} impressions) — revisit the title and meta description.`
+        )
+      )
+    }
+  }
+
   return findings
 }
 
@@ -142,7 +183,8 @@ export type SeoAuditReport = {
 
 export async function auditContentSeo(
   repo: SeoAuditRepo,
-  input?: ContentSeoDocumentListInput
+  input?: ContentSeoDocumentListInput,
+  performance?: SeoAnalyticsRow[]
 ): Promise<SeoAuditReport> {
   const docs = await repo.listContentSeoDocuments(
     {
@@ -157,7 +199,8 @@ export async function auditContentSeo(
     }
   )
 
-  const results = docs.map(toAuditResult)
+  const performanceByUrl = buildPerformanceMap(performance)
+  const results = docs.map((doc) => toAuditResult(doc, performanceByUrl))
   const counts = { critical: 0, warning: 0, info: 0 }
   for (const result of results) {
     for (const item of result.findings) {
@@ -182,8 +225,13 @@ export async function auditContentSeo(
   }
 }
 
-function toAuditResult(doc: Record<string, unknown>): SeoAuditResult {
-  const findings = auditSeoDocumentFields(doc)
+function toAuditResult(
+  doc: Record<string, unknown>,
+  performanceByUrl: Map<string, SeoAuditPerformance>
+): SeoAuditResult {
+  const canonical = normalizeUrl(text(doc.canonical_url))
+  const performance = canonical ? performanceByUrl.get(canonical) || null : null
+  const findings = auditSeoDocumentFields(doc, performance)
   return {
     id: String(doc.id || ""),
     entity_type: String(doc.entity_type || ""),
@@ -193,7 +241,31 @@ function toAuditResult(doc: Record<string, unknown>): SeoAuditResult {
     status: String(doc.status || ""),
     score: scoreSeoFindings(findings),
     findings,
+    performance,
   }
+}
+
+function buildPerformanceMap(
+  rows?: SeoAnalyticsRow[]
+): Map<string, SeoAuditPerformance> {
+  const map = new Map<string, SeoAuditPerformance>()
+  for (const row of rows || []) {
+    const url = normalizeUrl(row.key)
+    if (!url) {
+      continue
+    }
+    map.set(url, {
+      clicks: row.clicks,
+      impressions: row.impressions,
+      ctr: row.ctr,
+      position: row.position,
+    })
+  }
+  return map
+}
+
+function normalizeUrl(value: string): string {
+  return value.trim().replace(/\/+$/, "").toLowerCase()
 }
 
 function finding(
