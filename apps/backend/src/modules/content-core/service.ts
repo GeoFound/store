@@ -13,7 +13,11 @@ import ContentEntry from "./models/content-entry"
 import ContentPublication from "./models/content-publication"
 import ContentRevision from "./models/content-revision"
 import ContentSeoDocument from "./models/content-seo-document"
-import { getSeoAnalyticsConfig, querySearchAnalytics } from "./seo-analytics"
+import {
+  getSeoAnalyticsConfig,
+  querySearchAnalytics,
+  type SeoAnalyticsRow,
+} from "./seo-analytics"
 import { auditContentSeo } from "./seo-audit"
 import {
   listContentSeoDocumentsFor,
@@ -646,8 +650,11 @@ class ContentCoreModuleService extends MedusaService({
     return listContentSeoDocumentsFor(this as never, input)
   }
 
-  async auditContentSeoSafe(input?: ContentSeoDocumentListInput) {
-    return auditContentSeo(this as never, input)
+  async auditContentSeoSafe(
+    input?: ContentSeoDocumentListInput,
+    performance?: SeoAnalyticsRow[]
+  ) {
+    return auditContentSeo(this as never, input, performance)
   }
 
   getSeoAnalyticsConfigSafe() {

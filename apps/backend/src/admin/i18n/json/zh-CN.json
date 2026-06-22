@@ -645,6 +645,17 @@
       "collection": "集合",
       "page": "页面",
       "site": "站点"
+    },
+    "audit": {
+      "title": "审计",
+      "description": "基于规则的完整度/质量审计;配置 Search Console 后按真实表现重排优先级。",
+      "score": "平均分",
+      "critical": "严重",
+      "warning": "警告",
+      "info": "提示",
+      "findings": "发现项",
+      "empty": "无发现项 —— 所有文档均健康。",
+      "performanceJoined": "已将 Search Console 表现并入本次审计。"
     }
   },
   "productPublishing": {

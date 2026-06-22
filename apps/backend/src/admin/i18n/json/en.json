@@ -645,6 +645,17 @@
       "collection": "Collection",
       "page": "Page",
       "site": "Site"
+    },
+    "audit": {
+      "title": "Audit",
+      "description": "Deterministic completeness/quality audit, reprioritized by Search Console performance when configured.",
+      "score": "Avg. score",
+      "critical": "Critical",
+      "warning": "Warning",
+      "info": "Info",
+      "findings": "Findings",
+      "empty": "No findings — every document looks healthy.",
+      "performanceJoined": "Search Console performance joined into this audit."
     }
   },
   "productPublishing": {

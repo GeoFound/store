@@ -107,5 +107,64 @@ describe("auditContentSeo", () => {
     expect(report.summary.critical).toBeGreaterThan(0)
     expect(report.results).toHaveLength(2)
     expect(report.summary.average_score).toBeLessThan(100)
+    expect(report.results[0].performance).toBeNull()
+  })
+
+  it("joins Search Console performance by canonical URL and flags low CTR", async () => {
+    const repo = {
+      listContentSeoDocuments: async () => [
+        {
+          id: "1",
+          entity_type: "product",
+          entity_id: "p1",
+          site_id: "global",
+          language: "*",
+          meta_title: "A perfectly reasonable product title here",
+          meta_description:
+            "A meta description of an appropriate length that comfortably sits within the recommended range for search snippets.",
+          schema_type: "Product",
+          faq_json: [{ question: "Q?", answer: "A" }],
+          summary_tldr: "tldr",
+          canonical_url: "https://shop.example.com/products/x",
+          og_image_url: "i",
+          status: "published",
+        },
+      ],
+    }
+
+    const report = await auditContentSeo(repo, undefined, [
+      {
+        key: "https://shop.example.com/products/x/",
+        clicks: 1,
+        impressions: 400,
+        ctr: 0.0025,
+        position: 18,
+      },
+    ])
+
+    expect(report.results[0].performance).toMatchObject({ impressions: 400 })
+    expect(report.results[0].findings.map((f) => f.id)).toContain("low-ctr")
+  })
+})
+
+describe("performance findings", () => {
+  it("flags no-impressions and low-ctr from performance", () => {
+    expect(
+      auditSeoDocumentFields({ status: "published" }, {
+        clicks: 0,
+        impressions: 0,
+        ctr: 0,
+        position: 0,
+      }).map((f) => f.id)
+    ).toContain("no-impressions")
+
+    expect(
+      auditSeoDocumentFields({ status: "published" }, {
+        clicks: 1,
+        impressions: 200,
+        ctr: 0.005,
+        position: 12,
+      }).map((f) => f.id)
+    ).toContain("low-ctr")
   })
 })

@@ -66,9 +66,36 @@ const EMPTY_FORM: SeoForm = {
   status: "draft",
 }
 
+type SeoAuditFinding = { id: string; severity: string; field: string; message: string }
+type SeoAuditResult = {
+  id: string
+  entity_type: string
+  entity_id: string
+  score: number
+  findings: SeoAuditFinding[]
+}
+type SeoAuditReport = {
+  summary: {
+    documents: number
+    critical: number
+    warning: number
+    info: number
+    average_score: number
+  }
+  results: SeoAuditResult[]
+  performance_joined?: boolean
+}
+
+const EMPTY_AUDIT: SeoAuditReport = {
+  summary: { documents: 0, critical: 0, warning: 0, info: 0, average_score: 100 },
+  results: [],
+  performance_joined: false,
+}
+
 const SeoPage = () => {
   const { t } = useTranslation()
   const [documents, setDocuments] = useState<SeoDocument[]>([])
+  const [audit, setAudit] = useState<SeoAuditReport>(EMPTY_AUDIT)
   const [form, setForm] = useState<SeoForm>(EMPTY_FORM)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -94,10 +121,12 @@ const SeoPage = () => {
     setLoading(true)
 
     try {
-      const data = await adminApi<{ documents: SeoDocument[] }>(
-        "/admin/content/seo?limit=200"
-      )
+      const [data, auditData] = await Promise.all([
+        adminApi<{ documents: SeoDocument[] }>("/admin/content/seo?limit=200"),
+        adminApi<SeoAuditReport>("/admin/content/seo/audit").catch(() => EMPTY_AUDIT),
+      ])
       setDocuments(data.documents || [])
+      setAudit(auditData || EMPTY_AUDIT)
     } catch (err) {
       setError(err instanceof Error ? err.message : t("seo.loadFailed"))
     } finally {
@@ -293,6 +322,77 @@ const SeoPage = () => {
         </form>
       </AdminSection>
 
+      <AdminSection title={t("seo.audit.title")} description={t("seo.audit.description")}>
+        <div className="mb-4 grid gap-4 md:grid-cols-4">
+          {[
+            { label: t("seo.audit.score"), value: audit.summary.average_score },
+            { label: t("seo.audit.critical"), value: audit.summary.critical },
+            { label: t("seo.audit.warning"), value: audit.summary.warning },
+            { label: t("seo.audit.info"), value: audit.summary.info },
+          ].map((stat) => (
+            <Container key={stat.label} className="p-0">
+              <div className="px-4 py-3">
+                <Text className="text-ui-fg-subtle">{stat.label}</Text>
+                <Heading level="h2" className="mt-1">
+                  {stat.value}
+                </Heading>
+              </div>
+            </Container>
+          ))}
+        </div>
+        {audit.performance_joined ? (
+          <Text size="small" className="mb-3 text-ui-fg-subtle">
+            {t("seo.audit.performanceJoined")}
+          </Text>
+        ) : null}
+        {audit.results.filter((result) => result.findings.length).length === 0 ? (
+          <Text className="text-ui-fg-subtle">{t("seo.audit.empty")}</Text>
+        ) : (
+          <Table>
+            <Table.Header>
+              <Table.Row>
+                <Table.HeaderCell>{t("seo.fields.entity")}</Table.HeaderCell>
+                <Table.HeaderCell>{t("seo.audit.score")}</Table.HeaderCell>
+                <Table.HeaderCell>{t("seo.audit.findings")}</Table.HeaderCell>
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
+              {audit.results
+                .filter((result) => result.findings.length)
+                .map((result) => (
+                  <Table.Row key={result.id}>
+                    <Table.Cell>
+                      <div className="min-w-0">
+                        <Text className="truncate" weight="plus">
+                          {t(`seo.entityTypes.${result.entity_type}`, result.entity_type)}
+                        </Text>
+                        <Text className="font-mono text-xs text-ui-fg-subtle">
+                          {result.entity_id}
+                        </Text>
+                      </div>
+                    </Table.Cell>
+                    <Table.Cell>{result.score}</Table.Cell>
+                    <Table.Cell>
+                      <div className="flex flex-col gap-1">
+                        {result.findings.map((item) => (
+                          <div key={item.id} className="flex items-center gap-2">
+                            <Badge size="2xsmall" color={severityColor(item.severity)}>
+                              {item.severity}
+                            </Badge>
+                            <Text size="small" className="text-ui-fg-subtle">
+                              {item.message}
+                            </Text>
+                          </div>
+                        ))}
+                      </div>
+                    </Table.Cell>
+                  </Table.Row>
+                ))}
+            </Table.Body>
+          </Table>
+        )}
+      </AdminSection>
+
       <AdminSection
         title={t("seo.documents.title")}
         description={t("seo.documents.description")}
@@ -353,6 +453,16 @@ const SeoPage = () => {
       </AdminSection>
     </div>
   )
+}
+
+function severityColor(severity: string): "red" | "orange" | "grey" {
+  if (severity === "critical") {
+    return "red"
+  }
+  if (severity === "warning") {
+    return "orange"
+  }
+  return "grey"
 }
 
 function Field(props: { label: string; children: React.ReactNode }) {
