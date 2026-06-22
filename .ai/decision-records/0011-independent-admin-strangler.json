@@ -1,0 +1,20 @@
+{
+  "id": "ADR-0011",
+  "status": "accepted",
+  "date": "2026-06-22",
+  "title": "Move product admin to an independent strangler app",
+  "context": "The built-in Medusa dashboard remains available as a fallback during the strangler migration, but the product admin UX is moving to an independent Next app that calls Medusa through a same-origin BFF. The legacy backend admin extension still depends on @medusajs/ui and React 18 types, while the storefront and new admin app use Next 16 and React 19.",
+  "decision": "Create apps/admin as the new product admin surface, keep Medusa as a headless /admin/* API engine, and route browser traffic through the Next admin BFF with httpOnly admin JWT cookies. Default CI typechecking covers backend API code, storefront, and apps/admin. The legacy Medusa dashboard extension typecheck remains visible as typecheck:legacy-admin but is no longer part of the default typecheck/check:ci path because that surface is being strangled and carries the known @medusajs/ui React 18 boundary.",
+  "evidence": [
+    "apps/admin/package.json",
+    "apps/admin/src/app/api/admin/[...path]/route.ts",
+    "apps/admin/src/lib/origin.test.ts",
+    "package.json:typecheck",
+    "package.json:typecheck:legacy-admin"
+  ],
+  "consequences": [
+    "New admin work must land in apps/admin and use the BFF for /admin/* calls.",
+    "Browser code must not call Medusa directly or receive the admin JWT.",
+    "Legacy dashboard regressions remain observable through typecheck:legacy-admin while migration is in progress, but they do not block the new admin CI path."
+  ]
+}
