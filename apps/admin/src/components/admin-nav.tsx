@@ -15,6 +15,8 @@ const NAV_GROUPS = [
       { label: "营销", href: "/dashboard/marketing" },
       { label: "供应商", href: "/dashboard/suppliers" },
       { label: "支付", href: "/dashboard/payments" },
+      { label: "凭证库存", href: "/dashboard/credentials" },
+      { label: "数字交付", href: "/dashboard/deliveries" },
     ],
   },
   {
@@ -23,7 +25,6 @@ const NAV_GROUPS = [
       { label: "商品", href: null },
       { label: "内容", href: null },
       { label: "订单", href: null },
-      { label: "凭证", href: null },
       { label: "售后", href: null },
       { label: "SEO", href: null },
       { label: "系统设置", href: null },
