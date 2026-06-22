@@ -415,6 +415,21 @@
         ]
       },
       {
+        "path": "apps/backend/src/api/admin/content/seo/audit/route.ts",
+        "owner": "content-core",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "rationale": "Admin read endpoint that runs the deterministic SEO/AEO/GEO completeness audit over content_seo_document records and returns prioritized findings.",
+        "risk": "routine",
+        "obligations": [
+          "keep the audit deterministic and side-effect free",
+          "prove the route contract through pnpm ai:production and pnpm check:ci"
+        ]
+      },
+      {
         "path": "apps/backend/src/api/admin/content/storage/providers/route.ts",
         "owner": "content-core",
         "verification": [

@@ -13,6 +13,7 @@ import ContentEntry from "./models/content-entry"
 import ContentPublication from "./models/content-publication"
 import ContentRevision from "./models/content-revision"
 import ContentSeoDocument from "./models/content-seo-document"
+import { auditContentSeo } from "./seo-audit"
 import {
   listContentSeoDocumentsFor,
   retrieveContentSeoDocument,
@@ -642,6 +643,10 @@ class ContentCoreModuleService extends MedusaService({
 
   async listContentSeoDocumentsSafe(input?: ContentSeoDocumentListInput) {
     return listContentSeoDocumentsFor(this as never, input)
+  }
+
+  async auditContentSeoSafe(input?: ContentSeoDocumentListInput) {
+    return auditContentSeo(this as never, input)
   }
 
   private async assertSlugIsUnique(siteId: string, slug: string, ignoreEntryId?: string) {
