@@ -108,6 +108,50 @@ describe("ops control service", () => {
     expect(JSON.stringify(dashboard)).not.toContain("secret-cloudflare-token")
   })
 
+  it("flags an accidental production no-index as a critical discoverability finding", () => {
+    const service = new OpsControlModuleService()
+    const dashboard = service.getDashboardSnapshot({
+      env: {
+        NODE_ENV: "production",
+        SITE_ID: "jp-cards",
+        SITE_ENV: "production",
+        STOREFRONT_PUBLIC_URL: "https://jp.example.com",
+        SEO_INDEXING_ENABLED: "false",
+      },
+    })
+
+    const finding = dashboard.launch_readiness.findings.find(
+      (item) => item.id === "launch.seo-indexing-disabled"
+    )
+    expect(finding).toBeTruthy()
+    expect(finding?.severity).toBe("critical")
+    expect(dashboard.launch_readiness.settings).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ key: "SEO_INDEXING_ENABLED", status: "warning" }),
+      ])
+    )
+  })
+
+  it("does not flag discoverability when indexing is enabled in production", () => {
+    const service = new OpsControlModuleService()
+    const dashboard = service.getDashboardSnapshot({
+      env: {
+        NODE_ENV: "production",
+        SITE_ID: "jp-cards",
+        SITE_ENV: "production",
+        STOREFRONT_PUBLIC_URL: "https://jp.example.com",
+        SEO_ENABLED: "true",
+        SEO_INDEXING_ENABLED: "true",
+        SITE_CANONICAL_URL: "https://jp.example.com",
+      },
+    })
+
+    const ids = dashboard.launch_readiness.findings.map((item) => item.id)
+    expect(ids).not.toContain("launch.seo-indexing-disabled")
+    expect(ids).not.toContain("launch.seo-disabled")
+    expect(ids).not.toContain("launch.seo-canonical-missing")
+  })
+
   it("flags Cloudflare managed WAF as a human-gated security finding", () => {
     const service = new OpsControlModuleService()
     const snapshot = service.getSecuritySnapshot({

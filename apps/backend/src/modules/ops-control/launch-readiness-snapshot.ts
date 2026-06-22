@@ -57,6 +57,30 @@ export function createLaunchReadinessSnapshot(input?: { env?: Env }): OpsControl
       scope: "deploy",
       recommended: null,
     }),
+    boolSetting("SEO_ENABLED", env.SEO_ENABLED, {
+      label: "SEO/discoverability enabled",
+      owner: "content-core",
+      scope: "deploy",
+      recommended: true,
+    }),
+    boolSetting("SEO_INDEXING_ENABLED", env.SEO_INDEXING_ENABLED, {
+      label: "Search indexing enabled",
+      owner: "content-core",
+      scope: "deploy",
+      recommended: true,
+    }),
+    boolSetting("SEO_AI_CRAWLERS_ALLOWED", env.SEO_AI_CRAWLERS_ALLOWED, {
+      label: "AI crawlers allowed",
+      owner: "content-core",
+      scope: "deploy",
+      recommended: true,
+    }),
+    valueSetting("SITE_CANONICAL_URL", env.SITE_CANONICAL_URL, {
+      label: "Canonical site URL",
+      owner: "content-core",
+      scope: "deploy",
+      recommended: null,
+    }),
     boolSetting("EXPECT_CLOUDFLARE", env.EXPECT_CLOUDFLARE, {
       label: "Expect Cloudflare edge",
       owner: "ops-control",
@@ -233,7 +257,53 @@ function createLaunchFindings(env: Env): OpsControlFinding[] {
     }))
   }
 
+  // discoverability-readiness: never let a production storefront go live
+  // accidentally non-indexable, and prompt explicit SEO/canonical config.
+  if (production && explicitlyDisabled(env.SEO_INDEXING_ENABLED)) {
+    findings.push(finding({
+      id: "launch.seo-indexing-disabled",
+      severity: "critical",
+      owner: "content-core",
+      title: "Production storefront is set to no-index",
+      detail: "SEO_INDEXING_ENABLED is false, so robots and page metadata will block search and AI engines from indexing production.",
+      recommended_action: "Set SEO_INDEXING_ENABLED=true for the production site, or confirm this deployment must stay non-indexable.",
+      human_gate: true,
+    }))
+  }
+
+  if (production && explicitlyDisabled(env.SEO_ENABLED)) {
+    findings.push(finding({
+      id: "launch.seo-disabled",
+      severity: "warning",
+      owner: "content-core",
+      title: "SEO/discoverability is disabled",
+      detail: "SEO_ENABLED is false, so metadata, structured data, sitemap, and robots are suppressed in production.",
+      recommended_action: "Set SEO_ENABLED=true unless this site intentionally ships without discoverability.",
+      human_gate: true,
+    }))
+  }
+
+  if (
+    production &&
+    !configured(env.SITE_CANONICAL_URL) &&
+    !configured(env.STOREFRONT_PUBLIC_URL)
+  ) {
+    findings.push(finding({
+      id: "launch.seo-canonical-missing",
+      severity: "warning",
+      owner: "content-core",
+      title: "No canonical site URL for SEO",
+      detail: "Without SITE_CANONICAL_URL or STOREFRONT_PUBLIC_URL, canonical tags, sitemap, and Open Graph URLs cannot be absolute.",
+      recommended_action: "Set SITE_CANONICAL_URL (or STOREFRONT_PUBLIC_URL) to the production HTTPS origin.",
+      human_gate: true,
+    }))
+  }
+
   return findings
+}
+
+function explicitlyDisabled(raw: string | undefined): boolean {
+  return configured(raw) && !truthy(raw)
 }
 
 function valueSetting(
