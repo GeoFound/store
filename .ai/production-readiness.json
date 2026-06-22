@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "createdAt": "2026-06-21",
+  "createdAt": "2026-06-22",
   "principles": [
     "Public API contract changes must be visible in machine-readable route entries.",
     "Routes that read request bodies must use validateAndTransformBody or carry expiring accepted debt.",
@@ -421,6 +421,19 @@
       {
         "path": "apps/backend/src/api/admin/content/seo/audit/route.ts",
         "route": "/admin/content/seo/audit",
+        "surface": "admin",
+        "owner": "content-core",
+        "methods": [
+          "GET"
+        ],
+        "verification": [
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ]
+      },
+      {
+        "path": "apps/backend/src/api/admin/content/seo/performance/route.ts",
+        "route": "/admin/content/seo/performance",
         "surface": "admin",
         "owner": "content-core",
         "methods": [
