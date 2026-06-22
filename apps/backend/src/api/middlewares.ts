@@ -411,6 +411,11 @@ export default defineMiddlewares({
       middlewares: [validateAndTransformSimpleQuery(simpleLimitQuerySchema.passthrough())],
     },
     {
+      matcher: "/admin/content/seo/performance",
+      methods: ["GET"],
+      middlewares: [validateAndTransformSimpleQuery(simpleLimitQuerySchema.passthrough())],
+    },
+    {
       matcher: "/admin/content/seo",
       methods: ["POST"],
       middlewares: [

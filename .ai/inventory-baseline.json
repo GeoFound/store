@@ -430,6 +430,22 @@
         ]
       },
       {
+        "path": "apps/backend/src/api/admin/content/seo/performance/route.ts",
+        "owner": "content-core",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:production",
+          "pnpm check:ci"
+        ],
+        "rationale": "Admin read endpoint that ingests Google Search Console performance for the configured property; degrades gracefully when GSC is not configured.",
+        "risk": "external-provider",
+        "obligations": [
+          "reference the service account by env only and never expose it",
+          "degrade gracefully when Search Console is not configured",
+          "prove the route contract through pnpm ai:production and pnpm check:ci"
+        ]
+      },
+      {
         "path": "apps/backend/src/api/admin/content/storage/providers/route.ts",
         "owner": "content-core",
         "verification": [
