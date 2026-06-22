@@ -43,6 +43,7 @@ import {
   sellReservationBodySchema,
   simpleLimitQuerySchema,
   storeContentSeoQuerySchema,
+  suggestSeoFixesBodySchema,
   updateAfterSaleBodySchema,
   updateContentAITaskRunBodySchema,
   updateContentEntryBodySchema,
@@ -426,6 +427,19 @@ export default defineMiddlewares({
         }),
         createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
         validateAndTransformBody(upsertContentSeoDocumentBodySchema),
+      ],
+    },
+    {
+      matcher: "/admin/content/seo/suggest",
+      methods: ["POST"],
+      middlewares: [
+        createRateLimitMiddleware(adminMutationRateLimit, {
+          action: "security.admin_mutation.rate_limited",
+          riskLevel: "high",
+          keyParts: (req) => [getRequestPath(req)],
+        }),
+        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        validateAndTransformBody(suggestSeoFixesBodySchema),
       ],
     },
     {

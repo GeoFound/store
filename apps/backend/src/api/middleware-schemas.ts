@@ -384,6 +384,15 @@ export const storeContentSeoQuerySchema = z.object({
   language: optionalTextSchema,
 })
 
+export const suggestSeoFixesBodySchema = z.object({
+  entity_type: contentSeoEntityTypeSchema,
+  entity_id: z.string().trim().min(1).max(255),
+  site_id: optionalTextSchema,
+  language: optionalTextSchema,
+  provider_code: nullableTextSchema,
+  model: nullableTextSchema,
+})
+
 export const analyticsEventsQuerySchema = z.object({
   event_name: optionalTextSchema,
   source: z.enum(["backend_hook", "storefront", "system"]).optional(),
