@@ -11,6 +11,7 @@
     "db:migrate": "pnpm --dir apps/backend exec medusa db:migrate",
     "dev:backend": "pnpm --dir apps/backend dev",
     "dev:storefront": "pnpm --dir apps/storefront dev",
+    "dev:admin": "pnpm --dir apps/admin dev",
     "dev": "pnpm -r --parallel dev",
     "dev:check": "bash scripts/dev-check.sh",
     "dev:check:quick": "bash scripts/dev-check.sh --quick",
@@ -58,10 +59,14 @@
     "profile:export-overrides": "bash scripts/profile/export-env-overrides.sh",
     "acceptance": "pnpm acceptance:build && pnpm acceptance:live",
     "lint": "pnpm -r lint",
-    "typecheck": "pnpm --dir apps/backend exec tsc --noEmit && pnpm --dir apps/backend exec tsc --noEmit --project src/admin/tsconfig.json && pnpm --dir apps/storefront exec tsc --noEmit",
+    "typecheck:backend": "pnpm --dir apps/backend exec tsc --noEmit",
+    "typecheck:legacy-admin": "pnpm --dir apps/backend exec tsc --noEmit --project src/admin/tsconfig.json",
+    "typecheck:storefront": "pnpm --dir apps/storefront exec tsc --noEmit",
+    "typecheck:admin": "pnpm --dir apps/admin exec tsc --noEmit",
+    "typecheck": "pnpm typecheck:backend && pnpm typecheck:storefront && pnpm typecheck:admin",
     "test:unit": "pnpm --dir apps/backend test:unit",
-    "check:ci": "pnpm ai:doctor && pnpm ai:obligations && pnpm ai:production && pnpm test:unit && pnpm --dir apps/storefront test && pnpm typecheck && pnpm --dir apps/storefront lint",
-    "test": "pnpm --dir apps/backend test && pnpm --dir apps/storefront test"
+    "check:ci": "pnpm ai:doctor && pnpm ai:obligations && pnpm ai:production && pnpm test:unit && pnpm --dir apps/storefront test && pnpm --dir apps/admin test && pnpm typecheck && pnpm --dir apps/storefront lint && pnpm --dir apps/admin lint",
+    "test": "pnpm --dir apps/backend test && pnpm --dir apps/storefront test && pnpm --dir apps/admin test"
   },
   "engines": {
     "node": ">=26"
