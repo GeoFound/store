@@ -84,8 +84,13 @@ export function AIView() {
     queryFn: () =>
       adminApi<{ policy: AIPolicy }>("/admin/ai/control-panel-policy"),
   })
+  const runsQuery = useQuery({
+    queryKey: ["ai-runs"],
+    queryFn: () => adminApi<{ runs: AITaskRun[] }>("/admin/ai/runs?limit=50"),
+  })
   const state = providersQuery.data
   const policy = policyQuery.data?.policy
+  const taskRuns = runsQuery.data?.runs || state?.task_runs || []
 
   return (
     <main className="px-5 py-5">
@@ -98,6 +103,7 @@ export function AIView() {
             onClick={() => {
               void providersQuery.refetch()
               void policyQuery.refetch()
+              void runsQuery.refetch()
             }}
             className="h-9 border border-[var(--border)] bg-white px-3 text-sm font-medium hover:bg-[var(--surface-muted)]"
           >
@@ -109,6 +115,11 @@ export function AIView() {
       {providersQuery.error ? (
         <div className="mb-4">
           <Message tone="error">{providersQuery.error.message}</Message>
+        </div>
+      ) : null}
+      {runsQuery.error ? (
+        <div className="mb-4">
+          <Message tone="error">{runsQuery.error.message}</Message>
         </div>
       ) : null}
 
@@ -130,8 +141,12 @@ export function AIView() {
         />
         <MetricCard
           label="Review run"
-          value={state?.summary.review_run_count || 0}
-          detail="人工复核任务"
+          value={
+            taskRuns.filter((run) =>
+              ["requires_review", "pending_review"].includes(run.status),
+            ).length || state?.summary.review_run_count || 0
+          }
+          detail={`${taskRuns.length} recent runs`}
         />
       </section>
 
@@ -215,8 +230,9 @@ export function AIView() {
         </Panel>
 
         <Panel title="最近运行">
+          {runsQuery.isLoading ? <Message tone="info">加载中</Message> : null}
           <div className="grid gap-2">
-            {(state?.task_runs || []).slice(0, 12).map((run) => (
+            {taskRuns.slice(0, 12).map((run) => (
               <div key={run.id} className="rounded-[8px] border border-[var(--border)] p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -235,7 +251,7 @@ export function AIView() {
                 ) : null}
               </div>
             ))}
-            {!providersQuery.isLoading && !state?.task_runs.length ? (
+            {!runsQuery.isLoading && !taskRuns.length ? (
               <Message tone="info">暂无运行记录</Message>
             ) : null}
           </div>

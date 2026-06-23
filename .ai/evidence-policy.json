@@ -4,42 +4,67 @@
   "defaultChecks": [
     {
       "id": "ai-doctor",
-      "command": ["pnpm", "ai:doctor"],
+      "command": [
+        "pnpm",
+        "ai:doctor"
+      ],
       "required": true
     },
     {
       "id": "ai-architecture",
-      "command": ["pnpm", "ai:architecture"],
+      "command": [
+        "pnpm",
+        "ai:architecture"
+      ],
       "required": true
     },
     {
       "id": "ai-config",
-      "command": ["pnpm", "ai:config"],
+      "command": [
+        "pnpm",
+        "ai:config"
+      ],
       "required": true
     },
     {
       "id": "ai-inventory",
-      "command": ["pnpm", "ai:inventory"],
+      "command": [
+        "pnpm",
+        "ai:inventory"
+      ],
       "required": true
     },
     {
       "id": "ai-obligations",
-      "command": ["pnpm", "ai:obligations"],
+      "command": [
+        "pnpm",
+        "ai:obligations"
+      ],
       "required": true
     },
     {
       "id": "ai-production",
-      "command": ["pnpm", "ai:production"],
+      "command": [
+        "pnpm",
+        "ai:production"
+      ],
       "required": true
     },
     {
       "id": "ai-status",
-      "command": ["pnpm", "ai:status"],
+      "command": [
+        "pnpm",
+        "ai:status"
+      ],
       "required": true
     },
     {
       "id": "git-status",
-      "command": ["git", "status", "--short"],
+      "command": [
+        "git",
+        "status",
+        "--short"
+      ],
       "required": true,
       "allowOutput": true
     }
@@ -47,59 +72,100 @@
   "fullChecks": [
     {
       "id": "ci",
-      "command": ["pnpm", "check:ci"],
+      "command": [
+        "pnpm",
+        "check:ci"
+      ],
       "required": true
     },
     {
       "id": "profile-validate-all",
-      "command": ["pnpm", "profile:validate:all"],
+      "command": [
+        "pnpm",
+        "profile:validate:all"
+      ],
       "required": true
     },
     {
       "id": "site-validate-all",
-      "command": ["pnpm", "site:validate:all"],
+      "command": [
+        "pnpm",
+        "site:validate:all"
+      ],
       "required": true
     }
   ],
   "productionChecks": [
     {
       "id": "deploy-health",
-      "command": ["pnpm", "deploy:health"],
+      "command": [
+        "pnpm",
+        "deploy:health"
+      ],
       "requiresRuntime": true
     },
     {
       "id": "deploy-dns",
-      "command": ["pnpm", "deploy:dns"],
+      "command": [
+        "pnpm",
+        "deploy:dns"
+      ],
       "requiresRuntime": true
     },
     {
       "id": "deploy-edge",
-      "command": ["pnpm", "deploy:edge"],
+      "command": [
+        "pnpm",
+        "deploy:edge"
+      ],
       "requiresRuntime": true
     },
     {
       "id": "deploy-waf",
-      "command": ["pnpm", "deploy:waf"],
+      "command": [
+        "pnpm",
+        "deploy:waf"
+      ],
       "requiresRuntime": true
     },
     {
       "id": "deploy-admin-edge",
-      "command": ["pnpm", "deploy:admin-edge"],
+      "command": [
+        "pnpm",
+        "deploy:admin-edge"
+      ],
+      "requiresRuntime": true
+    },
+    {
+      "id": "admin-bff-smoke",
+      "command": [
+        "pnpm",
+        "smoke:admin"
+      ],
       "requiresRuntime": true
     },
     {
       "id": "deploy-rate-limit",
-      "command": ["pnpm", "deploy:rate-limit"],
+      "command": [
+        "pnpm",
+        "deploy:rate-limit"
+      ],
       "requiresRuntime": true
     },
     {
       "id": "deploy-regression",
-      "command": ["pnpm", "deploy:regression"],
+      "command": [
+        "pnpm",
+        "deploy:regression"
+      ],
       "requiresRuntime": true
     },
     {
       "id": "deploy-vps-doctor",
-      "command": ["pnpm", "deploy:vps-doctor"],
+      "command": [
+        "pnpm",
+        "deploy:vps-doctor"
+      ],
       "requiresRuntime": true
     }
   ],

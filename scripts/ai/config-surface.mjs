@@ -313,7 +313,7 @@ function envFileKeys(relativePath) {
 function validateConfigSurface(config) {
   const entries = config?.entries || {}
   const entryKeys = Object.keys(entries)
-  const scopes = new Set(["backend", "storefront", "shared", "infrastructure"])
+  const scopes = new Set(["backend", "storefront", "admin", "shared", "infrastructure"])
   const visibility = new Set(["internal", "public", "public-origin", "secret"])
 
   if (!config || typeof config !== "object") {
@@ -509,6 +509,8 @@ function validateEnvExamples(config) {
   const backendProduction = envFileKeys("ops/env/backend.production.env.example")
   const storefrontLocal = envFileKeys("apps/storefront/.env.example")
   const storefrontProduction = envFileKeys("ops/env/storefront.production.env.example")
+  const adminLocal = envFileKeys("apps/admin/.env.example")
+  const adminProduction = envFileKeys("ops/env/admin.production.env.example")
 
   for (const [key, entry] of Object.entries(entries)) {
     if (entry.requiredInProduction !== true) {
@@ -533,6 +535,14 @@ function validateEnvExamples(config) {
       })
     }
 
+    if (scope === "admin" && !adminProduction.has(key)) {
+      issues.push({
+        id: "config-surface.production-admin-example-missing",
+        key,
+        message: "Production-required admin config is missing from ops admin env example.",
+      })
+    }
+
     if ((scope === "backend" || scope === "shared") && !backendLocal.has(key)) {
       warnings.push({
         id: "config-surface.local-backend-example-missing",
@@ -546,6 +556,14 @@ function validateEnvExamples(config) {
         id: "config-surface.local-storefront-example-missing",
         key,
         message: "Production-required storefront/shared config is missing from storefront local env example.",
+      })
+    }
+
+    if (scope === "admin" && !adminLocal.has(key)) {
+      warnings.push({
+        id: "config-surface.local-admin-example-missing",
+        key,
+        message: "Production-required admin config is missing from admin local env example.",
       })
     }
   }

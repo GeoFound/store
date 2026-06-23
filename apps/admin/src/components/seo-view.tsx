@@ -56,6 +56,20 @@ type SeoAuditReport = {
   performance_joined?: boolean
 }
 
+type SeoPerformance = {
+  config?: {
+    status?: string
+    site_url?: string | null
+  }
+  performance?: {
+    configured?: boolean
+    status?: string
+    site_url?: string
+    rows?: Array<Record<string, unknown>>
+  }
+  error?: string
+}
+
 const ENTITY_TYPES = [
   "product",
   "content_entry",
@@ -89,6 +103,15 @@ const EMPTY_FORM: SeoForm = {
   status: "draft",
 }
 
+const EMPTY_SUGGEST_FORM = {
+  entityType: "page",
+  entityId: "",
+  siteId: "global",
+  language: "",
+  providerCode: "",
+  model: "",
+}
+
 const EMPTY_AUDIT: SeoAuditReport = {
   summary: { documents: 0, critical: 0, warning: 0, info: 0, average_score: 100 },
   results: [],
@@ -110,10 +133,19 @@ async function loadSeo() {
 export function SeoView() {
   const queryClient = useQueryClient()
   const [form, setForm] = useState<SeoForm>(EMPTY_FORM)
+  const [suggestForm, setSuggestForm] = useState(EMPTY_SUGGEST_FORM)
+  const [suggestPreview, setSuggestPreview] = useState("")
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
 
   const seoQuery = useQuery({ queryKey: ["seo"], queryFn: loadSeo })
+  const performanceQuery = useQuery({
+    queryKey: ["seo-performance"],
+    queryFn: () =>
+      adminApi<SeoPerformance>(
+        "/admin/content/seo/performance?dimension=page&limit=25",
+      ),
+  })
   const documents = seoQuery.data?.documents || []
   const audit = seoQuery.data?.audit || EMPTY_AUDIT
 
@@ -147,6 +179,32 @@ export function SeoView() {
     onError: (err) => setError(errorMessage(err)),
   })
 
+  const suggestSeo = useMutation({
+    mutationFn: async () => {
+      if (!suggestForm.entityId.trim()) {
+        throw new Error("生成建议需要 entity_id。")
+      }
+
+      return adminApi<Record<string, unknown>>("/admin/content/seo/suggest", {
+        method: "POST",
+        body: {
+          entity_type: suggestForm.entityType,
+          entity_id: suggestForm.entityId.trim(),
+          site_id: suggestForm.siteId.trim() || null,
+          language: suggestForm.language.trim() || null,
+          provider_code: suggestForm.providerCode.trim() || null,
+          model: suggestForm.model.trim() || null,
+        },
+      })
+    },
+    onSuccess: (data) => {
+      setSuggestPreview(JSON.stringify(data, null, 2))
+      setMessage("SEO 建议已生成。")
+      setError("")
+    },
+    onError: (err) => setError(errorMessage(err)),
+  })
+
   function editDocument(doc: SeoDocument) {
     setMessage("")
     setError("")
@@ -165,6 +223,8 @@ export function SeoView() {
 
   const update = (patch: Partial<SeoForm>) =>
     setForm((current) => ({ ...current, ...patch }))
+  const updateSuggest = (patch: Partial<typeof EMPTY_SUGGEST_FORM>) =>
+    setSuggestForm((current) => ({ ...current, ...patch }))
 
   const auditFindings = audit.results.filter((result) => result.findings.length)
 
@@ -200,6 +260,9 @@ export function SeoView() {
         {message ? <Message tone="info">{message}</Message> : null}
         {seoQuery.error ? (
           <Message tone="error">{seoQuery.error.message}</Message>
+        ) : null}
+        {performanceQuery.error ? (
+          <Message tone="error">{performanceQuery.error.message}</Message>
         ) : null}
         {seoQuery.isLoading ? <Message tone="info">加载中</Message> : null}
       </div>
@@ -335,6 +398,114 @@ export function SeoView() {
             ))}
           </AdminTable>
         </Panel>
+
+        <div className="grid gap-4 xl:grid-cols-2">
+          <Panel
+            title="Search Console 性能"
+            description={
+              performanceQuery.data?.performance?.configured === false
+                ? "Search Console 未配置，性能联接会安全降级。"
+                : "最近页面维度性能数据。"
+            }
+          >
+            {performanceQuery.isLoading ? <Message tone="info">加载中</Message> : null}
+            {performanceQuery.data?.error ? (
+              <Message tone="error">{performanceQuery.data.error}</Message>
+            ) : null}
+            <AdminTable
+              headers={["维度", "点击", "展示", "CTR / Position"]}
+              empty={
+                !performanceQuery.isLoading &&
+                (performanceQuery.data?.performance?.rows?.length || 0) === 0
+              }
+            >
+              {(performanceQuery.data?.performance?.rows || []).map((row, index) => (
+                <tr key={index} className="align-top">
+                  <Cell>{String(row.keys || row.page || row.query || "-")}</Cell>
+                  <Cell>{String(row.clicks ?? "-")}</Cell>
+                  <Cell>{String(row.impressions ?? "-")}</Cell>
+                  <Cell>
+                    {String(row.ctr ?? "-")} / {String(row.position ?? "-")}
+                  </Cell>
+                </tr>
+              ))}
+            </AdminTable>
+          </Panel>
+
+          <Panel title="生成 SEO 建议">
+            <form
+              className="grid gap-3"
+              onSubmit={(event) => {
+                event.preventDefault()
+                setMessage("")
+                void suggestSeo.mutate()
+              }}
+            >
+              <div className="grid gap-3 md:grid-cols-2">
+                <Field label="entity_type">
+                  <SelectInput
+                    value={suggestForm.entityType}
+                    onChange={(event) =>
+                      updateSuggest({ entityType: event.target.value })
+                    }
+                  >
+                    {ENTITY_TYPES.map((option) => (
+                      <option key={option} value={option}>
+                        {option}
+                      </option>
+                    ))}
+                  </SelectInput>
+                </Field>
+                <Field label="entity_id">
+                  <TextInput
+                    value={suggestForm.entityId}
+                    onChange={(event) =>
+                      updateSuggest({ entityId: event.target.value })
+                    }
+                  />
+                </Field>
+                <Field label="site_id">
+                  <TextInput
+                    value={suggestForm.siteId}
+                    onChange={(event) =>
+                      updateSuggest({ siteId: event.target.value })
+                    }
+                  />
+                </Field>
+                <Field label="language">
+                  <TextInput
+                    value={suggestForm.language}
+                    onChange={(event) =>
+                      updateSuggest({ language: event.target.value })
+                    }
+                  />
+                </Field>
+                <Field label="provider_code">
+                  <TextInput
+                    value={suggestForm.providerCode}
+                    onChange={(event) =>
+                      updateSuggest({ providerCode: event.target.value })
+                    }
+                  />
+                </Field>
+                <Field label="model">
+                  <TextInput
+                    value={suggestForm.model}
+                    onChange={(event) => updateSuggest({ model: event.target.value })}
+                  />
+                </Field>
+              </div>
+              <PrimaryButton type="submit" disabled={suggestSeo.isPending}>
+                {suggestSeo.isPending ? "生成中" : "生成建议"}
+              </PrimaryButton>
+            </form>
+            {suggestPreview ? (
+              <pre className="mt-4 max-h-72 overflow-auto rounded-[8px] border border-[var(--border)] bg-[var(--surface-muted)] p-3 text-xs">
+                {suggestPreview}
+              </pre>
+            ) : null}
+          </Panel>
+        </div>
 
         <Panel title="SEO 文档">
           <AdminTable

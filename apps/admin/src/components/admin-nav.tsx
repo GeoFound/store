@@ -5,9 +5,12 @@ import { usePathname } from "next/navigation"
 
 const NAV_GROUPS = [
   {
-    title: "已迁移",
+    title: "后台",
     links: [
       { label: "运营看板", href: "/dashboard" },
+      { label: "商品", href: "/dashboard/products" },
+      { label: "订单", href: "/dashboard/orders" },
+      { label: "客户", href: "/dashboard/customers" },
       { label: "审计日志", href: "/dashboard/audit-logs" },
       { label: "分析事件", href: "/dashboard/analytics" },
       { label: "AI 状态", href: "/dashboard/ai" },
@@ -21,14 +24,7 @@ const NAV_GROUPS = [
       { label: "内容", href: "/dashboard/content" },
       { label: "商品发布", href: "/dashboard/product-publishing" },
       { label: "售后", href: "/dashboard/after-sales" },
-    ],
-  },
-  {
-    title: "待迁移",
-    links: [
-      { label: "商品", href: null },
-      { label: "订单", href: null },
-      { label: "系统设置", href: null },
+      { label: "系统设置", href: "/dashboard/system" },
     ],
   },
 ]
@@ -41,38 +37,29 @@ export function AdminNav() {
   const pathname = usePathname()
 
   return (
-    <nav className="grid gap-5 px-4 pb-5 lg:px-5">
+    <nav className="border-t border-[var(--border)] px-4 pb-4 pt-3 lg:grid lg:gap-5 lg:border-t-0 lg:px-5 lg:pt-0">
       {NAV_GROUPS.map((group) => (
         <section key={group.title} className="grid gap-2">
-          <h2 className="px-2 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">
+          <h2 className="sr-only px-2 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--muted)] lg:not-sr-only">
             {group.title}
           </h2>
-          <div className="grid gap-1">
-            {group.links.map((link) =>
-              link.href ? (
-                <Link
-                  key={link.label}
-                  href={link.href}
-                  aria-current={
-                    isActivePath(pathname, link.href) ? "page" : undefined
-                  }
-                  className={
-                    isActivePath(pathname, link.href)
-                      ? "rounded-[8px] bg-[var(--surface-muted)] px-2 py-2 text-sm font-semibold text-[var(--foreground)]"
-                      : "rounded-[8px] px-2 py-2 text-sm text-[var(--muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--foreground)]"
-                  }
-                >
-                  {link.label}
-                </Link>
-              ) : (
-                <span
-                  key={link.label}
-                  className="rounded-[8px] px-2 py-2 text-sm text-[var(--muted)] opacity-70"
-                >
-                  {link.label}
-                </span>
-              ),
-            )}
+          <div className="-mx-1 flex gap-1 overflow-x-auto pb-1 lg:mx-0 lg:grid lg:overflow-visible lg:pb-0">
+            {group.links.map((link) => (
+              <Link
+                key={link.label}
+                href={link.href}
+                aria-current={
+                  isActivePath(pathname, link.href) ? "page" : undefined
+                }
+                className={
+                  isActivePath(pathname, link.href)
+                    ? "shrink-0 whitespace-nowrap rounded-[8px] bg-[var(--surface-muted)] px-2.5 py-2 text-sm font-semibold text-[var(--foreground)] lg:whitespace-normal"
+                    : "shrink-0 whitespace-nowrap rounded-[8px] px-2.5 py-2 text-sm text-[var(--muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--foreground)] lg:whitespace-normal"
+                }
+              >
+                {link.label}
+              </Link>
+            ))}
           </div>
         </section>
       ))}

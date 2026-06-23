@@ -77,6 +77,21 @@ export function OpsView() {
     queryKey: ["ops-dashboard"],
     queryFn: () => adminApi<OpsDashboard>("/admin/ops-control/dashboard"),
   })
+  const securityQuery = useQuery({
+    queryKey: ["ops-security"],
+    queryFn: () =>
+      adminApi<{ security: OpsSection }>("/admin/ops-control/security"),
+  })
+  const maintenanceQuery = useQuery({
+    queryKey: ["ops-maintenance"],
+    queryFn: () =>
+      adminApi<{
+        maintenance: OpsSection
+        customer: OpsSection
+        commerce: OpsSection
+        ai_ops: OpsSection
+      }>("/admin/ops-control/maintenance"),
+  })
   const state = dashboardQuery.data
 
   return (
@@ -87,7 +102,11 @@ export function OpsView() {
         action={
           <button
             type="button"
-            onClick={() => void dashboardQuery.refetch()}
+            onClick={() => {
+              void dashboardQuery.refetch()
+              void securityQuery.refetch()
+              void maintenanceQuery.refetch()
+            }}
             className="h-9 border border-[var(--border)] bg-white px-3 text-sm font-medium hover:bg-[var(--surface-muted)]"
           >
             刷新
@@ -98,6 +117,16 @@ export function OpsView() {
       {dashboardQuery.error ? (
         <div className="mb-4">
           <Message tone="error">{dashboardQuery.error.message}</Message>
+        </div>
+      ) : null}
+      {securityQuery.error ? (
+        <div className="mb-4">
+          <Message tone="error">{securityQuery.error.message}</Message>
+        </div>
+      ) : null}
+      {maintenanceQuery.error ? (
+        <div className="mb-4">
+          <Message tone="error">{maintenanceQuery.error.message}</Message>
         </div>
       ) : null}
       {dashboardQuery.isLoading ? (
@@ -190,6 +219,51 @@ export function OpsView() {
             </Panel>
           )
         })}
+      </section>
+
+      <section className="mt-4 grid gap-4 xl:grid-cols-2">
+        <Panel
+          title="Security endpoint"
+          description="来自 /admin/ops-control/security 的独立安全快照。"
+        >
+          {securityQuery.isLoading ? <Message tone="info">加载中</Message> : null}
+          {securityQuery.data?.security ? (
+            <SettingsTable section={securityQuery.data.security} />
+          ) : (
+            <Message tone="info">暂无数据</Message>
+          )}
+        </Panel>
+        <Panel
+          title="Maintenance endpoint"
+          description="来自 /admin/ops-control/maintenance 的维护、客户、交易和 AI 运维快照。"
+        >
+          {maintenanceQuery.isLoading ? (
+            <Message tone="info">加载中</Message>
+          ) : null}
+          <div className="grid gap-3">
+            {maintenanceQuery.data ? (
+              Object.entries(maintenanceQuery.data).map(([key, section]) => (
+                <div
+                  key={key}
+                  className="rounded-[8px] border border-[var(--border)] p-3"
+                >
+                  <div className="mb-2 flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-medium">{key}</p>
+                      <p className="text-xs text-[var(--muted)]">
+                        {formatValue(section.summary)}
+                      </p>
+                    </div>
+                    <StatusBadge value={section.status} />
+                  </div>
+                  <SettingsTable section={section} />
+                </div>
+              ))
+            ) : (
+              <Message tone="info">暂无数据</Message>
+            )}
+          </div>
+        </Panel>
       </section>
     </main>
   )

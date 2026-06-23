@@ -6,323 +6,715 @@
       "kind": "product",
       "name": "Independent digital goods store",
       "goal": "Sell and fulfill digital goods with recoverable guest access, auditable delivery, and production-grade operations.",
-      "evidence": ["docs/independent-store-spec.md", ".ai/system.json"]
+      "evidence": [
+        "docs/independent-store-spec.md",
+        ".ai/system.json"
+      ]
     },
     {
       "id": "repository",
       "kind": "engineering-system",
       "name": "single-store-digital-goods",
       "goal": "Build, verify, deploy, and evolve the product through AI-first automation.",
-      "evidence": ["package.json", "AGENTS.md", ".ai/system.json"]
+      "evidence": [
+        "package.json",
+        "AGENTS.md",
+        ".ai/system.json"
+      ]
     },
     {
       "id": "production-deployment",
       "kind": "runtime-target",
       "path": "scripts/deploy",
-      "owns": ["VPS deployment execution", "Cloudflare DNS preflight", "Cloudflare edge preflight", "Cloudflare managed WAF preflight", "runtime health gates", "rollback execution"],
-      "verification": ["pnpm deploy:health", "pnpm deploy:dns", "pnpm deploy:edge", "pnpm deploy:waf", "pnpm deploy:admin-edge", "pnpm deploy:rate-limit", "pnpm deploy:regression", "pnpm deploy:vps-doctor", "pnpm site:gate"]
+      "owns": [
+        "VPS deployment execution",
+        "Cloudflare DNS preflight",
+        "Cloudflare edge preflight",
+        "Cloudflare managed WAF preflight",
+        "runtime health gates",
+        "rollback execution"
+      ],
+      "verification": [
+        "pnpm deploy:health",
+        "pnpm deploy:dns",
+        "pnpm deploy:edge",
+        "pnpm deploy:waf",
+        "pnpm deploy:admin-edge",
+        "pnpm deploy:rate-limit",
+        "pnpm deploy:regression",
+        "pnpm deploy:vps-doctor",
+        "pnpm site:gate"
+      ]
     },
     {
       "id": "backend-platform-core",
       "kind": "boundary",
       "path": "apps/backend/src/platform",
-      "owns": ["contracts", "events", "registry", "runtime APIs"],
-      "mustNotOwn": ["Medusa framework imports", "module implementation imports"],
-      "verification": ["pnpm ai:doctor", "pnpm --dir apps/backend test:unit"]
+      "owns": [
+        "contracts",
+        "events",
+        "registry",
+        "runtime APIs"
+      ],
+      "mustNotOwn": [
+        "Medusa framework imports",
+        "module implementation imports"
+      ],
+      "verification": [
+        "pnpm ai:doctor",
+        "pnpm --dir apps/backend test:unit"
+      ]
     },
     {
       "id": "backend-platform-adapters",
       "kind": "adapter-layer",
       "path": "apps/backend/src/platform-adapters",
-      "owns": ["built-in module registration", "Medusa service token adapters", "capability scopes"],
-      "verification": ["pnpm ai:doctor", "pnpm --dir apps/backend test:unit"]
+      "owns": [
+        "built-in module registration",
+        "Medusa service token adapters",
+        "capability scopes"
+      ],
+      "verification": [
+        "pnpm ai:doctor",
+        "pnpm --dir apps/backend test:unit"
+      ]
     },
     {
       "id": "payment-router",
       "kind": "backend-module",
       "path": "apps/backend/src/modules/payment-router",
-      "owns": ["payment attempts", "payment channels", "provider parsing", "webhook finalization entrypoints"],
-      "verification": ["pnpm --dir apps/backend test:unit", "pnpm deploy:regression"]
+      "owns": [
+        "payment attempts",
+        "payment channels",
+        "provider parsing",
+        "webhook finalization entrypoints"
+      ],
+      "verification": [
+        "pnpm --dir apps/backend test:unit",
+        "pnpm deploy:regression"
+      ]
     },
     {
       "id": "credential-inventory",
       "kind": "backend-module",
       "path": "apps/backend/src/modules/credential-inventory",
-      "owns": ["encrypted credentials", "reservation", "release", "sold and delivered state"],
-      "verification": ["pnpm --dir apps/backend test:unit", "pnpm acceptance:live"]
+      "owns": [
+        "encrypted credentials",
+        "reservation",
+        "release",
+        "sold and delivered state"
+      ],
+      "verification": [
+        "pnpm --dir apps/backend test:unit",
+        "pnpm acceptance:live"
+      ]
     },
     {
       "id": "digital-delivery",
       "kind": "backend-module",
       "path": "apps/backend/src/modules/digital-delivery",
-      "owns": ["delivery records", "delivery payload snapshots", "delivery access tokens"],
-      "verification": ["pnpm --dir apps/backend test:unit", "pnpm acceptance:live"]
+      "owns": [
+        "delivery records",
+        "delivery payload snapshots",
+        "delivery access tokens"
+      ],
+      "verification": [
+        "pnpm --dir apps/backend test:unit",
+        "pnpm acceptance:live"
+      ]
     },
     {
       "id": "guest-order-access",
       "kind": "backend-module",
       "path": "apps/backend/src/modules/guest-order-access",
-      "owns": ["guest order access tokens", "recovery codes", "token failure controls"],
-      "verification": ["pnpm --dir apps/backend test:unit", "pnpm smoke:recovery"]
+      "owns": [
+        "guest order access tokens",
+        "recovery codes",
+        "token failure controls"
+      ],
+      "verification": [
+        "pnpm --dir apps/backend test:unit",
+        "pnpm smoke:recovery"
+      ]
     },
     {
       "id": "supplier-procurement",
       "kind": "backend-module",
       "path": "apps/backend/src/modules/supplier-procurement",
-      "owns": ["supplier mappings", "procurement state", "retry scheduling", "prepared delivery payloads"],
-      "mustNotOwn": ["digital delivery record persistence"],
-      "verification": ["pnpm --dir apps/backend test:unit", "pnpm ai:doctor"]
+      "owns": [
+        "supplier mappings",
+        "procurement state",
+        "retry scheduling",
+        "prepared delivery payloads"
+      ],
+      "mustNotOwn": [
+        "digital delivery record persistence"
+      ],
+      "verification": [
+        "pnpm --dir apps/backend test:unit",
+        "pnpm ai:doctor"
+      ]
     },
     {
       "id": "ai-core",
       "kind": "backend-module",
       "path": "apps/backend/src/modules/ai-core",
-      "owns": ["provider-agnostic AI configuration", "AI task plugin contracts", "AI admin readiness surface"],
-      "mustNotOwn": ["provider-specific SDK implementations", "plaintext AI provider secrets", "article generation business workflow persistence"],
-      "verification": ["pnpm --dir apps/backend test:unit", "pnpm ai:config", "pnpm ai:inventory"]
+      "owns": [
+        "provider-agnostic AI configuration",
+        "AI task plugin contracts",
+        "AI admin readiness surface"
+      ],
+      "mustNotOwn": [
+        "provider-specific SDK implementations",
+        "plaintext AI provider secrets",
+        "article generation business workflow persistence"
+      ],
+      "verification": [
+        "pnpm --dir apps/backend test:unit",
+        "pnpm ai:config",
+        "pnpm ai:inventory"
+      ]
     },
     {
       "id": "ops-control",
       "kind": "backend-module",
       "path": "apps/backend/src/modules/ops-control",
-      "owns": ["operations control panel snapshots", "VPS posture evidence summary", "Cloudflare readiness summary", "backup and restore readiness summary", "AI operations review task registration"],
-      "mustNotOwn": ["plaintext infrastructure secrets", "unapproved host command execution", "security middleware enforcement", "AI provider invocation"],
-      "verification": ["pnpm --dir apps/backend test:unit", "pnpm ai:config", "pnpm ai:inventory", "pnpm ai:production"]
+      "owns": [
+        "operations control panel snapshots",
+        "VPS posture evidence summary",
+        "Cloudflare readiness summary",
+        "backup and restore readiness summary",
+        "AI operations review task registration"
+      ],
+      "mustNotOwn": [
+        "plaintext infrastructure secrets",
+        "unapproved host command execution",
+        "security middleware enforcement",
+        "AI provider invocation"
+      ],
+      "verification": [
+        "pnpm --dir apps/backend test:unit",
+        "pnpm ai:config",
+        "pnpm ai:inventory",
+        "pnpm ai:production"
+      ]
     },
     {
       "id": "content-core",
       "kind": "backend-module",
       "path": "apps/backend/src/modules/content-core",
-      "owns": ["site-scoped content entries", "publishing status", "editorial metadata", "public content read APIs", "content admin publishing surface"],
-      "mustNotOwn": ["AI provider invocation", "automatic publishing without human review", "commerce checkout"],
-      "verification": ["pnpm --dir apps/backend test:unit", "pnpm ai:production", "pnpm ai:inventory"]
+      "owns": [
+        "site-scoped content entries",
+        "publishing status",
+        "editorial metadata",
+        "public content read APIs",
+        "content admin publishing surface"
+      ],
+      "mustNotOwn": [
+        "AI provider invocation",
+        "automatic publishing without human review",
+        "commerce checkout"
+      ],
+      "verification": [
+        "pnpm --dir apps/backend test:unit",
+        "pnpm ai:production",
+        "pnpm ai:inventory"
+      ]
     },
     {
       "id": "analytics-core",
       "kind": "backend-module",
       "path": "apps/backend/src/modules/analytics-core",
-      "owns": ["analytics events", "dispatch queue", "destination registry contracts"],
-      "verification": ["pnpm --dir apps/backend test:unit", "pnpm ai:doctor"]
+      "owns": [
+        "analytics events",
+        "dispatch queue",
+        "destination registry contracts"
+      ],
+      "verification": [
+        "pnpm --dir apps/backend test:unit",
+        "pnpm ai:doctor"
+      ]
     },
     {
       "id": "analytics-ga4",
       "kind": "backend-module",
       "path": "apps/backend/src/modules/analytics-ga4",
-      "owns": ["GA4 destination configuration", "GA4 analytics hooks"],
-      "verification": ["pnpm --dir apps/backend test:unit", "pnpm ai:doctor"]
+      "owns": [
+        "GA4 destination configuration",
+        "GA4 analytics hooks"
+      ],
+      "verification": [
+        "pnpm --dir apps/backend test:unit",
+        "pnpm ai:doctor"
+      ]
     },
     {
       "id": "analytics-hotjar",
       "kind": "backend-module",
       "path": "apps/backend/src/modules/analytics-hotjar",
-      "owns": ["Hotjar analytics configuration", "Hotjar storefront integration metadata"],
-      "verification": ["pnpm --dir apps/backend test:unit", "pnpm --dir apps/storefront test"]
+      "owns": [
+        "Hotjar analytics configuration",
+        "Hotjar storefront integration metadata"
+      ],
+      "verification": [
+        "pnpm --dir apps/backend test:unit",
+        "pnpm --dir apps/storefront test"
+      ]
     },
     {
       "id": "marketing-engine",
       "kind": "backend-module",
       "path": "apps/backend/src/modules/marketing-engine",
-      "owns": ["campaigns", "offers", "coupons", "referral links", "marketing touchpoints"],
-      "verification": ["pnpm --dir apps/backend test:unit", "pnpm ai:doctor"]
+      "owns": [
+        "campaigns",
+        "offers",
+        "coupons",
+        "referral links",
+        "marketing touchpoints"
+      ],
+      "verification": [
+        "pnpm --dir apps/backend test:unit",
+        "pnpm ai:doctor"
+      ]
     },
     {
       "id": "notification-resend",
       "kind": "backend-module",
       "path": "apps/backend/src/modules/notification-resend",
-      "owns": ["Resend notification configuration", "notification dispatch hooks"],
-      "verification": ["pnpm --dir apps/backend test:unit", "pnpm ai:config"]
+      "owns": [
+        "Resend notification configuration",
+        "notification dispatch hooks"
+      ],
+      "verification": [
+        "pnpm --dir apps/backend test:unit",
+        "pnpm ai:config"
+      ]
     },
     {
       "id": "security-guard",
       "kind": "backend-module",
       "path": "apps/backend/src/modules/security-guard",
-      "owns": ["origin checks", "security headers", "rate limit policy"],
-      "verification": ["pnpm --dir apps/backend test:unit", "pnpm ai:config"]
+      "owns": [
+        "origin checks",
+        "security headers",
+        "rate limit policy"
+      ],
+      "verification": [
+        "pnpm --dir apps/backend test:unit",
+        "pnpm ai:config"
+      ]
     },
     {
       "id": "supplier-g2a",
       "kind": "backend-module",
       "path": "apps/backend/src/modules/supplier-g2a",
-      "owns": ["G2A supplier authentication", "G2A catalog and order provider mapping"],
-      "verification": ["pnpm --dir apps/backend test:unit", "pnpm ai:config"]
+      "owns": [
+        "G2A supplier authentication",
+        "G2A catalog and order provider mapping"
+      ],
+      "verification": [
+        "pnpm --dir apps/backend test:unit",
+        "pnpm ai:config"
+      ]
     },
     {
       "id": "supplier-reloadly",
       "kind": "backend-module",
       "path": "apps/backend/src/modules/supplier-reloadly",
-      "owns": ["Reloadly authentication", "Reloadly gift card and airtime provider mapping"],
-      "verification": ["pnpm --dir apps/backend test:unit", "pnpm ai:config"]
+      "owns": [
+        "Reloadly authentication",
+        "Reloadly gift card and airtime provider mapping"
+      ],
+      "verification": [
+        "pnpm --dir apps/backend test:unit",
+        "pnpm ai:config"
+      ]
     },
     {
       "id": "support-audit",
       "kind": "backend-module",
       "path": "apps/backend/src/modules/support-audit",
-      "owns": ["after-sales records", "audit log records", "support audit queries"],
-      "verification": ["pnpm --dir apps/backend test:unit", "pnpm ai:doctor"]
+      "owns": [
+        "after-sales records",
+        "audit log records",
+        "support audit queries"
+      ],
+      "verification": [
+        "pnpm --dir apps/backend test:unit",
+        "pnpm ai:doctor"
+      ]
     },
     {
       "id": "storefront-commerce-port",
       "kind": "frontend-port",
       "path": "apps/storefront/src/lib/commerce.ts",
-      "owns": ["backend-neutral commerce API used by UI"],
-      "verification": ["pnpm --dir apps/storefront test", "pnpm --dir apps/storefront lint"]
+      "owns": [
+        "backend-neutral commerce API used by UI"
+      ],
+      "verification": [
+        "pnpm --dir apps/storefront test",
+        "pnpm --dir apps/storefront lint"
+      ]
     },
     {
       "id": "storefront-ui",
       "kind": "frontend-app",
       "path": "apps/storefront/src",
-      "owns": ["catalog", "cart", "checkout", "order lookup", "guest recovery UX", "public insights pages", "storefront page experience contracts"],
-      "mustNotOwn": ["database access", "credential decryption", "payment webhook handling"],
-      "verification": ["pnpm --dir apps/storefront test", "pnpm --dir apps/storefront lint"]
+      "owns": [
+        "catalog",
+        "cart",
+        "checkout",
+        "order lookup",
+        "guest recovery UX",
+        "public insights pages",
+        "storefront page experience contracts"
+      ],
+      "mustNotOwn": [
+        "database access",
+        "credential decryption",
+        "payment webhook handling"
+      ],
+      "verification": [
+        "pnpm --dir apps/storefront test",
+        "pnpm --dir apps/storefront lint"
+      ]
+    },
+    {
+      "id": "admin-ui",
+      "kind": "frontend-app",
+      "path": "apps/admin/src",
+      "owns": [
+        "independent admin dashboard",
+        "admin BFF auth and proxy routes",
+        "httpOnly admin JWT session boundary",
+        "operator workflows for catalog, orders, fulfillment, content, analytics, AI, support, and system settings"
+      ],
+      "mustNotOwn": [
+        "plaintext admin JWT in browser JavaScript",
+        "Medusa dashboard patches",
+        "@medusajs/ui based dashboard extensions",
+        "database access"
+      ],
+      "verification": [
+        "pnpm --dir apps/admin test",
+        "pnpm --dir apps/admin lint",
+        "pnpm typecheck:admin",
+        "pnpm smoke:admin"
+      ]
     },
     {
       "id": "storefront-experience-governance",
       "kind": "frontend-governance-policy",
       "path": ".ai/storefront-experience-policy.json",
-      "owns": ["multi-site storefront experience rules", "semantic section policy", "page experience contracts", "AI frontend change guardrails"],
-      "verification": ["pnpm profile:validate:all", "pnpm site:validate:all", "pnpm --dir apps/storefront test"]
+      "owns": [
+        "multi-site storefront experience rules",
+        "semantic section policy",
+        "page experience contracts",
+        "AI frontend change guardrails"
+      ],
+      "verification": [
+        "pnpm profile:validate:all",
+        "pnpm site:validate:all",
+        "pnpm --dir apps/storefront test"
+      ]
     },
     {
       "id": "profile-system",
       "kind": "configuration-system",
       "path": "profiles/sites",
-      "owns": ["site environment profiles", "domain mapping", "runtime profile validation", "tenant deployment intent", "site lifecycle contract inputs", "storefront experience profile fields"],
-      "verification": ["pnpm profile:validate:all", "pnpm site:validate:all"]
+      "owns": [
+        "site environment profiles",
+        "domain mapping",
+        "runtime profile validation",
+        "tenant deployment intent",
+        "site lifecycle contract inputs",
+        "storefront experience profile fields"
+      ],
+      "verification": [
+        "pnpm profile:validate:all",
+        "pnpm site:validate:all"
+      ]
     },
     {
       "id": "site-lifecycle-governance",
       "kind": "automation-system",
       "path": ".ai/site-lifecycle-policy.json",
-      "owns": ["site launch contract", "staging and production promotion gates", "per-site lifecycle evidence reports", "graph production-write guardrails"],
-      "verification": ["pnpm site:validate:all", "pnpm site:evidence:all", "pnpm ai:evidence:full"]
+      "owns": [
+        "site launch contract",
+        "staging and production promotion gates",
+        "per-site lifecycle evidence reports",
+        "graph production-write guardrails"
+      ],
+      "verification": [
+        "pnpm site:validate:all",
+        "pnpm site:evidence:all",
+        "pnpm ai:evidence:full"
+      ]
     },
     {
       "id": "config-surface",
       "kind": "configuration-system",
       "path": ".ai/config-surface.json",
-      "owns": ["runtime configuration inventory", "configuration ownership", "production-required config declarations"],
-      "verification": ["pnpm ai:config", "pnpm ai:doctor"]
+      "owns": [
+        "runtime configuration inventory",
+        "configuration ownership",
+        "production-required config declarations"
+      ],
+      "verification": [
+        "pnpm ai:config",
+        "pnpm ai:doctor"
+      ]
     },
     {
       "id": "production-readiness-governance",
       "kind": "automation-system",
       "path": ".ai/production-readiness.json",
-      "owns": ["public API contract snapshot", "route body-validation coverage", "schema migration baseline", "production config template coverage", "actual production env placeholder checks"],
-      "verification": ["pnpm ai:production", "pnpm ai:doctor", "pnpm ai:evidence:full"]
+      "owns": [
+        "public API contract snapshot",
+        "route body-validation coverage",
+        "schema migration baseline",
+        "production config template coverage",
+        "actual production env placeholder checks"
+      ],
+      "verification": [
+        "pnpm ai:production",
+        "pnpm ai:doctor",
+        "pnpm ai:evidence:full"
+      ]
     },
     {
       "id": "architecture-governance",
       "kind": "automation-system",
       "path": ".ai/architecture-rules.json",
-      "owns": ["module boundary drift detection", "route complexity budgets", "storefront commerce-port guardrails", "repository maintainer skill"],
-      "verification": ["pnpm ai:architecture", "pnpm ai:doctor"]
+      "owns": [
+        "module boundary drift detection",
+        "route complexity budgets",
+        "storefront commerce-port guardrails",
+        "repository maintainer skill"
+      ],
+      "verification": [
+        "pnpm ai:architecture",
+        "pnpm ai:doctor"
+      ]
     },
     {
       "id": "repository-inventory-governance",
       "kind": "automation-system",
       "path": ".ai/inventory-baseline.json",
-      "owns": ["repository surface inventory", "new module registration", "new route registration", "site profile registration", "AI script registration"],
-      "verification": ["pnpm ai:inventory", "pnpm ai:doctor"]
+      "owns": [
+        "repository surface inventory",
+        "new module registration",
+        "new route registration",
+        "site profile registration",
+        "AI script registration"
+      ],
+      "verification": [
+        "pnpm ai:inventory",
+        "pnpm ai:doctor"
+      ]
     },
     {
       "id": "obligation-governance",
       "kind": "automation-system",
       "path": ".ai/obligations-policy.json",
-      "owns": ["repository-derived proof obligations", "diff-aware new surface metadata requirements", "cross-policy evidence coverage"],
-      "verification": ["pnpm ai:obligations", "pnpm ai:doctor", "pnpm ai:evidence"]
+      "owns": [
+        "repository-derived proof obligations",
+        "diff-aware new surface metadata requirements",
+        "cross-policy evidence coverage"
+      ],
+      "verification": [
+        "pnpm ai:obligations",
+        "pnpm ai:doctor",
+        "pnpm ai:evidence"
+      ]
     },
     {
       "id": "admin-control-panel-policy",
       "kind": "governance-policy",
       "path": ".ai/admin-control-panel-policy.json",
-      "owns": ["backend control panel admission criteria", "required human-usable admin surface expectations"],
-      "verification": ["pnpm --dir apps/backend test:unit", "pnpm ai:doctor"]
+      "owns": [
+        "backend control panel admission criteria",
+        "required human-usable admin surface expectations"
+      ],
+      "verification": [
+        "pnpm --dir apps/backend test:unit",
+        "pnpm ai:doctor"
+      ]
     },
     {
       "id": "ai-operating-system",
       "kind": "automation-system",
       "path": ".ai",
-      "owns": ["machine-readable context", "taskbook", "decision gates", "evidence policy", "review checklists", "repository AI skills"],
-      "verification": ["pnpm ai:doctor", "pnpm ai:status", "pnpm ai:evidence"]
+      "owns": [
+        "machine-readable context",
+        "taskbook",
+        "decision gates",
+        "evidence policy",
+        "review checklists",
+        "repository AI skills"
+      ],
+      "verification": [
+        "pnpm ai:doctor",
+        "pnpm ai:status",
+        "pnpm ai:evidence"
+      ]
     }
   ],
   "flows": [
     {
       "id": "purchase-to-delivery",
       "from": "storefront-ui",
-      "through": ["payment-router", "credential-inventory", "digital-delivery", "guest-order-access"],
+      "through": [
+        "payment-router",
+        "credential-inventory",
+        "digital-delivery",
+        "guest-order-access"
+      ],
       "to": "product",
-      "evidence": ["pnpm acceptance:live", "pnpm deploy:regression"]
+      "evidence": [
+        "pnpm acceptance:live",
+        "pnpm deploy:regression"
+      ]
     },
     {
       "id": "supplier-backed-fulfillment",
       "from": "storefront-ui",
-      "through": ["payment-router", "supplier-procurement", "digital-delivery"],
+      "through": [
+        "payment-router",
+        "supplier-procurement",
+        "digital-delivery"
+      ],
       "to": "product",
-      "evidence": ["pnpm --dir apps/backend test:unit", "pnpm ai:doctor"]
+      "evidence": [
+        "pnpm --dir apps/backend test:unit",
+        "pnpm ai:doctor"
+      ]
     },
     {
       "id": "content-to-product-discovery",
       "from": "content-core",
-      "through": ["storefront-ui", "profile-system"],
+      "through": [
+        "storefront-ui",
+        "profile-system"
+      ],
       "to": "product",
-      "evidence": ["pnpm ai:production", "pnpm --dir apps/storefront test"]
+      "evidence": [
+        "pnpm ai:production",
+        "pnpm --dir apps/storefront test"
+      ]
     },
     {
       "id": "ai-maintenance",
       "from": "ai-operating-system",
-      "through": ["backend-platform-core", "backend-platform-adapters", "profile-system", "site-lifecycle-governance", "config-surface", "ops-control", "production-readiness-governance", "architecture-governance", "repository-inventory-governance", "obligation-governance"],
+      "through": [
+        "backend-platform-core",
+        "backend-platform-adapters",
+        "profile-system",
+        "site-lifecycle-governance",
+        "config-surface",
+        "ops-control",
+        "production-readiness-governance",
+        "architecture-governance",
+        "repository-inventory-governance",
+        "obligation-governance"
+      ],
       "to": "repository",
-      "evidence": ["pnpm ai:evidence:full", ".github/workflows/ai-maintenance.yml"]
+      "evidence": [
+        "pnpm ai:evidence:full",
+        ".github/workflows/ai-maintenance.yml"
+      ]
     },
     {
       "id": "site-launch-lifecycle",
       "from": "profile-system",
-      "through": ["site-lifecycle-governance", "production-readiness-governance", "config-surface"],
+      "through": [
+        "site-lifecycle-governance",
+        "production-readiness-governance",
+        "config-surface"
+      ],
       "to": "production-deployment",
-      "evidence": ["pnpm site:validate:all", "pnpm site:evidence -- --site-id <id> --site-env staging", "pnpm site:gate -- --site-id <id> --site-env production"]
+      "evidence": [
+        "pnpm site:validate:all",
+        "pnpm site:evidence -- --site-id <id> --site-env staging",
+        "pnpm site:gate -- --site-id <id> --site-env production"
+      ]
     }
   ],
   "rules": [
     {
       "id": "platform-core-is-contract-only",
-      "enforcedBy": ["pnpm ai:doctor", "apps/backend/src/platform/__tests__/decoupling.unit.spec.ts"]
+      "enforcedBy": [
+        "pnpm ai:doctor",
+        "apps/backend/src/platform/__tests__/decoupling.unit.spec.ts"
+      ]
     },
     {
       "id": "human-review-is-not-evidence",
-      "enforcedBy": ["pnpm ai:doctor", ".ai/evidence-policy.json"]
+      "enforcedBy": [
+        "pnpm ai:doctor",
+        ".ai/evidence-policy.json"
+      ]
     },
     {
       "id": "production-needs-runtime-evidence",
-      "enforcedBy": ["pnpm ai:evidence:full", ".ai/evidence-policy.json"]
+      "enforcedBy": [
+        "pnpm ai:evidence:full",
+        ".ai/evidence-policy.json"
+      ]
     },
     {
       "id": "runtime-config-must-be-registered",
-      "enforcedBy": ["pnpm ai:config", "scripts/ai/config-surface.mjs"]
+      "enforcedBy": [
+        "pnpm ai:config",
+        "scripts/ai/config-surface.mjs"
+      ]
     },
     {
       "id": "admin-control-panel-admission-must-be-explicit",
-      "enforcedBy": [".ai/admin-control-panel-policy.json", "apps/backend/src/platform/__tests__/admin-control-panel-policy.unit.spec.ts"]
+      "enforcedBy": [
+        ".ai/admin-control-panel-policy.json",
+        "apps/backend/src/platform/__tests__/admin-control-panel-policy.unit.spec.ts"
+      ]
     },
     {
       "id": "production-readiness-must-have-offline-proxies",
-      "enforcedBy": ["pnpm ai:production", ".ai/production-readiness.json", "scripts/ai/production-readiness.mjs"]
+      "enforcedBy": [
+        "pnpm ai:production",
+        ".ai/production-readiness.json",
+        "scripts/ai/production-readiness.mjs"
+      ]
     },
     {
       "id": "site-production-promotion-must-have-lifecycle-evidence",
-      "enforcedBy": ["pnpm site:gate", ".ai/site-lifecycle-policy.json", "scripts/site/lifecycle.mjs"]
+      "enforcedBy": [
+        "pnpm site:gate",
+        ".ai/site-lifecycle-policy.json",
+        "scripts/site/lifecycle.mjs"
+      ]
     },
     {
       "id": "architecture-health-must-be-machine-readable",
-      "enforcedBy": ["pnpm ai:architecture", ".ai/architecture-rules.json", ".ai/skills/store-ai-maintainer/SKILL.md"]
+      "enforcedBy": [
+        "pnpm ai:architecture",
+        ".ai/architecture-rules.json",
+        ".ai/skills/store-ai-maintainer/SKILL.md"
+      ]
     },
     {
       "id": "repository-surface-changes-must-be-registered",
-      "enforcedBy": ["pnpm ai:inventory", ".ai/inventory-baseline.json", "scripts/ai/inventory.mjs"]
+      "enforcedBy": [
+        "pnpm ai:inventory",
+        ".ai/inventory-baseline.json",
+        "scripts/ai/inventory.mjs"
+      ]
     },
     {
       "id": "repository-surface-changes-create-proof-obligations",
-      "enforcedBy": ["pnpm ai:obligations", ".ai/obligations-policy.json", "scripts/ai/obligations.mjs"]
+      "enforcedBy": [
+        "pnpm ai:obligations",
+        ".ai/obligations-policy.json",
+        "scripts/ai/obligations.mjs"
+      ]
     }
   ]
 }

@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
 import { useMemo, type ReactNode } from "react"
 import { adminApi } from "@/lib/admin-api"
-import { medusaAdminUrl } from "@/lib/config"
 import { Message, MetricCard, PageHeader, Panel, TableShell } from "./admin-page"
 import { SecondaryButton } from "./admin-controls"
 import { StatusBadge } from "./status-badge"
@@ -84,17 +83,15 @@ export function ProductPublishingView() {
     <main className="px-5 py-5">
       <PageHeader
         title="商品发布"
-        description="按模板与库存就绪状态总览可售变体。商品本身仍在 Medusa 后台（迁移期兜底）。"
+        description="按模板、库存处理器和交付处理器总览可售变体；商品创建与状态管理已迁移到独立后台商品页。"
         action={
           <div className="flex flex-wrap gap-2">
-            <a
-              href={`${medusaAdminUrl}/products/create`}
-              target="_blank"
-              rel="noreferrer"
+            <Link
+              href="/dashboard/products"
               className="min-h-9 bg-[var(--accent)] px-3 text-sm font-semibold leading-9 text-white hover:bg-[var(--accent-strong)]"
             >
               新建商品
-            </a>
+            </Link>
             <SecondaryButton
               type="button"
               onClick={() => void publishingQuery.refetch()}
@@ -159,14 +156,12 @@ export function ProductPublishingView() {
                   <Cell>
                     <div className="flex flex-wrap justify-end gap-2">
                       {variant.product_id ? (
-                        <a
-                          href={`${medusaAdminUrl}/products/${variant.product_id}`}
-                          target="_blank"
-                          rel="noreferrer"
+                        <Link
+                          href={`/dashboard/products?product_id=${variant.product_id}`}
                           className="min-h-9 border border-[var(--border)] bg-white px-3 text-sm font-medium leading-9 hover:bg-[var(--surface-muted)]"
                         >
                           打开商品
-                        </a>
+                        </Link>
                       ) : null}
                       {variant.credential_inventory_supported ? (
                         <LinkButton href="/dashboard/credentials">补货</LinkButton>

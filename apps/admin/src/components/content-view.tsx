@@ -75,6 +75,7 @@ type ContentAITaskRun = {
   provider_code?: string | null
   provider_capability?: string | null
   status: string
+  review_status?: string | null
   created_at?: string | null
 }
 
@@ -151,6 +152,7 @@ const EMPTY_ASSET = {
   entryId: "",
   assetType: "cover_image",
   storageProviderCode: "",
+  filename: "",
   publicUrl: "",
   objectKey: "",
   mimeType: "",
@@ -207,6 +209,7 @@ export function ContentView() {
   const [entryForm, setEntryForm] = useState(EMPTY_ENTRY)
   const [assetForm, setAssetForm] = useState(EMPTY_ASSET)
   const [aiTaskForm, setAiTaskForm] = useState(EMPTY_AI_TASK)
+  const [uploadPolicyPreview, setUploadPolicyPreview] = useState("")
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
 
@@ -291,6 +294,32 @@ export function ContentView() {
     onError: (err) => setError(errorMessage(err)),
   })
 
+  const createUploadPolicy = useMutation({
+    mutationFn: async () => {
+      if (!assetForm.filename.trim() && !assetForm.objectKey.trim()) {
+        throw new Error("生成上传策略需要 filename 或 object_key。")
+      }
+
+      return adminApi<{ upload: unknown }>("/admin/content/assets/upload-policy", {
+        method: "POST",
+        body: {
+          site_id: assetForm.siteId.trim() || null,
+          entry_id: assetForm.entryId.trim() || null,
+          asset_type: assetForm.assetType,
+          storage_provider_code: assetForm.storageProviderCode.trim() || null,
+          filename: assetForm.filename.trim() || assetForm.objectKey.trim() || null,
+          mime_type: assetForm.mimeType.trim() || null,
+          expires_in_seconds: 900,
+        },
+      })
+    },
+    onSuccess: async (data) => {
+      setUploadPolicyPreview(JSON.stringify(data.upload, null, 2))
+      await ok("上传策略已生成。")
+    },
+    onError: (err) => setError(errorMessage(err)),
+  })
+
   const createAiTask = useMutation({
     mutationFn: async () =>
       adminApi("/admin/content/ai/tasks", {
@@ -318,6 +347,32 @@ export function ContentView() {
         model: aiTaskForm.model,
       })
       await ok("AI 任务已入队。")
+    },
+    onError: (err) => setError(errorMessage(err)),
+  })
+
+  const runContentAiTask = useMutation({
+    mutationFn: () =>
+      adminApi("/admin/content/ai/run", {
+        method: "POST",
+        body: {
+          site_id: aiTaskForm.siteId,
+          entry_id: aiTaskForm.entryId.trim() || null,
+          task_type: aiTaskForm.taskType,
+          provider_code: aiTaskForm.providerCode.trim() || null,
+          model: aiTaskForm.model.trim() || null,
+          input_summary: aiTaskForm.inputSummary.trim() || null,
+          input: { source: "admin_content_view" },
+        },
+      }),
+    onSuccess: async () => {
+      setAiTaskForm({
+        ...EMPTY_AI_TASK,
+        siteId: aiTaskForm.siteId,
+        providerCode: aiTaskForm.providerCode,
+        model: aiTaskForm.model,
+      })
+      await ok("AI 任务已运行。")
     },
     onError: (err) => setError(errorMessage(err)),
   })
@@ -396,13 +451,27 @@ export function ContentView() {
     onError: (err) => setError(errorMessage(err)),
   })
 
+  const updateTaskReview = useMutation({
+    mutationFn: (input: { taskId: string; reviewStatus: string }) =>
+      adminApi(`/admin/content/ai/tasks/${input.taskId}`, {
+        method: "POST",
+        body: {
+          review_status: input.reviewStatus,
+          output_summary: `Admin review marked ${input.reviewStatus}`,
+        },
+      }),
+    onSuccess: () => ok("AI 任务复核状态已更新。"),
+    onError: (err) => setError(errorMessage(err)),
+  })
+
   const entries = data?.entries || []
   const tasks = data?.tasks || []
   const rowBusy =
     updateStatus.isPending ||
     publishSnapshot.isPending ||
     queueEntryTask.isPending ||
-    registerAudio.isPending
+    registerAudio.isPending ||
+    updateTaskReview.isPending
 
   const setEntry = (patch: Partial<typeof EMPTY_ENTRY>) =>
     setEntryForm((current) => ({ ...current, ...patch }))
@@ -706,10 +775,20 @@ export function ContentView() {
                   }
                 />
               </Field>
-              <div>
+              <div className="flex flex-wrap gap-2">
                 <PrimaryButton type="submit" disabled={createAiTask.isPending}>
                   {createAiTask.isPending ? "入队中" : "入队任务"}
                 </PrimaryButton>
+                <SecondaryButton
+                  type="button"
+                  disabled={runContentAiTask.isPending}
+                  onClick={() => {
+                    setMessage("")
+                    void runContentAiTask.mutate()
+                  }}
+                >
+                  {runContentAiTask.isPending ? "运行中" : "立即运行"}
+                </SecondaryButton>
               </div>
             </form>
           </Panel>
@@ -757,6 +836,12 @@ export function ContentView() {
                   }
                 />
               </Field>
+              <Field label="filename">
+                <TextInput
+                  value={assetForm.filename}
+                  onChange={(event) => setAsset({ filename: event.target.value })}
+                />
+              </Field>
               <Field label="public_url">
                 <TextInput
                   value={assetForm.publicUrl}
@@ -782,12 +867,27 @@ export function ContentView() {
                 />
               </Field>
             </div>
-            <div>
+            <div className="flex flex-wrap gap-2">
               <PrimaryButton type="submit" disabled={createAsset.isPending}>
                 {createAsset.isPending ? "登记中" : "登记素材"}
               </PrimaryButton>
+              <SecondaryButton
+                type="button"
+                disabled={createUploadPolicy.isPending}
+                onClick={() => {
+                  setMessage("")
+                  void createUploadPolicy.mutate()
+                }}
+              >
+                {createUploadPolicy.isPending ? "生成中" : "生成上传策略"}
+              </SecondaryButton>
             </div>
           </form>
+          {uploadPolicyPreview ? (
+            <pre className="mb-4 max-h-56 overflow-auto rounded-[8px] border border-[var(--border)] bg-[var(--surface-muted)] p-3 text-xs">
+              {uploadPolicyPreview}
+            </pre>
+          ) : null}
           <AdminTable
             headers={["素材", "entry", "提供方", "URL / key", "操作"]}
             empty={!contentQuery.isLoading && (data?.assets.length || 0) === 0}
@@ -970,16 +1070,56 @@ export function ContentView() {
             />
           </Panel>
           <Panel title="最近 AI 任务">
-            <CompactRows
-              rows={tasks.map((task) => ({
-                id: task.id,
-                title: task.task_type,
-                detail: `${task.provider_capability || "-"} / ${task.provider_code || "-"}`,
-                status: task.status,
-                createdAt: task.created_at,
-              }))}
+            <AdminTable
+              headers={["任务", "状态", "复核", "创建", "操作"]}
               empty={!contentQuery.isLoading && tasks.length === 0}
-            />
+            >
+              {tasks.map((task) => (
+                <tr key={task.id} className="align-top">
+                  <Cell>
+                    <div className="font-medium">{task.task_type}</div>
+                    <div className="font-mono text-xs text-[var(--muted)]">
+                      {task.provider_capability || "-"} / {task.provider_code || "-"}
+                    </div>
+                  </Cell>
+                  <Cell>
+                    <StatusBadge value={task.status} />
+                  </Cell>
+                  <Cell>
+                    <StatusBadge value={task.review_status || "pending"} />
+                  </Cell>
+                  <Cell>{formatDate(task.created_at)}</Cell>
+                  <Cell>
+                    <div className="flex flex-wrap gap-2">
+                      <SecondaryButton
+                        type="button"
+                        disabled={rowBusy}
+                        onClick={() =>
+                          updateTaskReview.mutate({
+                            taskId: task.id,
+                            reviewStatus: "approved",
+                          })
+                        }
+                      >
+                        通过
+                      </SecondaryButton>
+                      <SecondaryButton
+                        type="button"
+                        disabled={rowBusy}
+                        onClick={() =>
+                          updateTaskReview.mutate({
+                            taskId: task.id,
+                            reviewStatus: "needs_changes",
+                          })
+                        }
+                      >
+                        需修改
+                      </SecondaryButton>
+                    </div>
+                  </Cell>
+                </tr>
+              ))}
+            </AdminTable>
           </Panel>
         </div>
       </div>

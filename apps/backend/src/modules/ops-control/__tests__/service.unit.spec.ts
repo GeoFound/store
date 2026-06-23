@@ -83,6 +83,7 @@ describe("ops control service", () => {
           runtime_commands: expect.arrayContaining([
             "pnpm deploy:waf",
             "pnpm deploy:admin-edge",
+            "pnpm smoke:admin",
           ]),
         }),
         expect.objectContaining({
@@ -96,11 +97,11 @@ describe("ops control service", () => {
     ).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          route: "/app/ops",
+          route: "/dashboard/ops",
           section: "risk_system",
         }),
         expect.objectContaining({
-          route: "/app/after-sales",
+          route: "/dashboard/after-sales",
           section: "customers_support",
         }),
       ])

@@ -5,7 +5,7 @@ import { LogoutButton } from "./logout-button"
 export function AdminShell({ children }: { children: ReactNode }) {
   return (
     <div className="grid min-h-screen grid-cols-1 bg-[var(--background)] lg:grid-cols-[16rem_1fr]">
-      <aside className="border-b border-[var(--border)] bg-[var(--surface)] lg:border-b-0 lg:border-r">
+      <aside className="border-b border-[var(--border)] bg-[var(--surface)] lg:sticky lg:top-0 lg:h-screen lg:overflow-y-auto lg:border-b-0 lg:border-r">
         <div className="flex h-16 items-center justify-between px-5 lg:h-auto lg:items-start lg:px-5 lg:py-5">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--muted)]">

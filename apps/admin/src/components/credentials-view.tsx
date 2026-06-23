@@ -94,6 +94,14 @@ export function CredentialsView() {
   const [productVariantId, setProductVariantId] = useState("")
   const [templateCode, setTemplateCode] = useState("credential")
   const [credentialsText, setCredentialsText] = useState(SAMPLE_IMPORT)
+  const [reservationForm, setReservationForm] = useState({
+    productVariantId: "",
+    quantity: "1",
+    reservationKey: "",
+    cartId: "",
+    orderId: "",
+    ttlSeconds: "900",
+  })
   const [message, setMessage] = useState("")
   const [error, setError] = useState("")
 
@@ -144,6 +152,88 @@ export function CredentialsView() {
     },
     onSuccess: async () => {
       setMessage("凭证已导入。")
+      setError("")
+      await queryClient.invalidateQueries({ queryKey: ["credentials"] })
+    },
+    onError: (err) => setError(errorMessage(err)),
+  })
+
+  const reserveCredentials = useMutation({
+    mutationFn: async () => {
+      if (!reservationForm.productVariantId.trim()) {
+        throw new Error("预约需要商品变体 ID。")
+      }
+      if (!reservationForm.reservationKey.trim()) {
+        throw new Error("预约需要 reservation_key。")
+      }
+
+      const body: Record<string, string | number> = {
+        product_variant_id: reservationForm.productVariantId.trim(),
+        quantity: Number(reservationForm.quantity) || 1,
+        reservation_key: reservationForm.reservationKey.trim(),
+        ttl_seconds: Number(reservationForm.ttlSeconds) || 900,
+      }
+      if (reservationForm.cartId.trim()) {
+        body.cart_id = reservationForm.cartId.trim()
+      }
+      if (reservationForm.orderId.trim()) {
+        body.order_id = reservationForm.orderId.trim()
+      }
+
+      return adminApi("/admin/credential-inventory/reservations", {
+        method: "POST",
+        body,
+      })
+    },
+    onSuccess: async () => {
+      setMessage("凭证已预约。")
+      setError("")
+      await queryClient.invalidateQueries({ queryKey: ["credentials"] })
+    },
+    onError: (err) => setError(errorMessage(err)),
+  })
+
+  const releaseReservation = useMutation({
+    mutationFn: () => {
+      if (!reservationForm.reservationKey.trim()) {
+        throw new Error("释放需要 reservation_key。")
+      }
+
+      return adminApi(
+        `/admin/credential-inventory/reservations/${encodeURIComponent(
+          reservationForm.reservationKey.trim(),
+        )}/release`,
+        { method: "POST" },
+      )
+    },
+    onSuccess: async () => {
+      setMessage("预约已释放。")
+      setError("")
+      await queryClient.invalidateQueries({ queryKey: ["credentials"] })
+    },
+    onError: (err) => setError(errorMessage(err)),
+  })
+
+  const sellReservation = useMutation({
+    mutationFn: () => {
+      if (!reservationForm.reservationKey.trim()) {
+        throw new Error("标记售出需要 reservation_key。")
+      }
+
+      return adminApi(
+        `/admin/credential-inventory/reservations/${encodeURIComponent(
+          reservationForm.reservationKey.trim(),
+        )}/sell`,
+        {
+          method: "POST",
+          body: reservationForm.orderId.trim()
+            ? { order_id: reservationForm.orderId.trim() }
+            : {},
+        },
+      )
+    },
+    onSuccess: async () => {
+      setMessage("预约已标记售出。")
       setError("")
       await queryClient.invalidateQueries({ queryKey: ["credentials"] })
     },
@@ -321,6 +411,146 @@ export function CredentialsView() {
               </tr>
             ))}
           </AdminTable>
+        </Panel>
+
+        <Panel
+          title="预约 / 释放 / 售出"
+          description="用于验证和处理凭证库存锁。释放和售出按 reservation_key 执行，避免误操作。"
+        >
+          <form
+            className="grid gap-3"
+            onSubmit={(event) => {
+              event.preventDefault()
+              setMessage("")
+              void reserveCredentials.mutate()
+            }}
+          >
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              <Field label="商品变体">
+                <SelectInput
+                  value={
+                    data?.variants.some(
+                      (variant) => variant.id === reservationForm.productVariantId,
+                    )
+                      ? reservationForm.productVariantId
+                      : ""
+                  }
+                  onChange={(event) =>
+                    setReservationForm((current) => ({
+                      ...current,
+                      productVariantId: event.target.value,
+                    }))
+                  }
+                >
+                  <option value="">选择商品变体</option>
+                  {data?.variants.map((variant) => (
+                    <option
+                      key={variant.id}
+                      value={variant.id}
+                      disabled={!variant.credential_inventory_supported}
+                    >
+                      {variantLabel(variant)}
+                    </option>
+                  ))}
+                </SelectInput>
+              </Field>
+              <Field label="变体 ID（手动）">
+                <TextInput
+                  value={reservationForm.productVariantId}
+                  onChange={(event) =>
+                    setReservationForm((current) => ({
+                      ...current,
+                      productVariantId: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="reservation_key">
+                <TextInput
+                  value={reservationForm.reservationKey}
+                  onChange={(event) =>
+                    setReservationForm((current) => ({
+                      ...current,
+                      reservationKey: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="quantity">
+                <TextInput
+                  type="number"
+                  min="1"
+                  value={reservationForm.quantity}
+                  onChange={(event) =>
+                    setReservationForm((current) => ({
+                      ...current,
+                      quantity: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="cart_id">
+                <TextInput
+                  value={reservationForm.cartId}
+                  onChange={(event) =>
+                    setReservationForm((current) => ({
+                      ...current,
+                      cartId: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="order_id">
+                <TextInput
+                  value={reservationForm.orderId}
+                  onChange={(event) =>
+                    setReservationForm((current) => ({
+                      ...current,
+                      orderId: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              <Field label="ttl_seconds">
+                <TextInput
+                  type="number"
+                  min="60"
+                  value={reservationForm.ttlSeconds}
+                  onChange={(event) =>
+                    setReservationForm((current) => ({
+                      ...current,
+                      ttlSeconds: event.target.value,
+                    }))
+                  }
+                />
+              </Field>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <PrimaryButton type="submit" disabled={reserveCredentials.isPending}>
+                {reserveCredentials.isPending ? "预约中" : "预约凭证"}
+              </PrimaryButton>
+              <SecondaryButton
+                type="button"
+                disabled={releaseReservation.isPending}
+                onClick={() => {
+                  setMessage("")
+                  void releaseReservation.mutate()
+                }}
+              >
+                {releaseReservation.isPending ? "释放中" : "释放预约"}
+              </SecondaryButton>
+              <SecondaryButton
+                type="button"
+                disabled={sellReservation.isPending}
+                onClick={() => {
+                  setMessage("")
+                  void sellReservation.mutate()
+                }}
+              >
+                {sellReservation.isPending ? "标记中" : "标记售出"}
+              </SecondaryButton>
+            </div>
+          </form>
         </Panel>
 
         <Panel title="凭证项">

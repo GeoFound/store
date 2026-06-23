@@ -79,6 +79,12 @@ module.exports = defineConfig({
       }),
     }
   },
+  // The product admin lives in the independent apps/admin app (BFF over /admin/*),
+  // so the built-in Medusa dashboard is disabled: its build deps (@medusajs/dashboard,
+  // react, react-dom, …) have been removed and `medusa build` must skip the frontend.
+  admin: {
+    disable: true,
+  },
   modules: [
     {
       resolve: "@medusajs/medusa/auth",
