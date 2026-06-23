@@ -2,8 +2,13 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState, type ReactNode } from "react"
-import { adminApi } from "@/lib/admin-api"
 import { formatDate } from "@/lib/format"
+import {
+  createManualPaymentChannel,
+  loadPaymentWorkspace,
+  markPaymentAttemptPaid,
+  togglePaymentChannel as toggleAdminPaymentChannel,
+} from "@/lib/product-admin-api"
 import {
   Field,
   PrimaryButton,
@@ -37,17 +42,10 @@ type PaymentAttempt = {
 }
 
 async function loadPayments() {
-  const [channelData, attemptData] = await Promise.all([
-    adminApi<{ channels: PaymentChannel[] }>("/admin/payment-channels"),
-    adminApi<{ attempts: PaymentAttempt[] }>(
-      "/admin/payment-attempts?limit=100",
-    ),
-  ])
-
-  return {
-    channels: channelData.channels || [],
-    attempts: attemptData.attempts || [],
-  }
+  return loadPaymentWorkspace() as Promise<{
+    channels: PaymentChannel[]
+    attempts: PaymentAttempt[]
+  }>
 }
 
 export function PaymentsView() {
@@ -75,16 +73,7 @@ export function PaymentsView() {
         throw new Error("渠道代码和显示名称必填。")
       }
 
-      return adminApi<{ channel: PaymentChannel }>("/admin/payment-channels", {
-        method: "POST",
-        body: {
-          code: channelForm.code.trim(),
-          name: channelForm.name.trim(),
-          display_name: channelForm.name.trim(),
-          type: "manual",
-          provider_code: channelForm.code.trim(),
-        },
-      })
+      return createManualPaymentChannel(channelForm)
     },
     onSuccess: async () => {
       setChannelForm({ code: "", name: "" })
@@ -97,15 +86,7 @@ export function PaymentsView() {
 
   const toggleChannel = useMutation({
     mutationFn: (channel: PaymentChannel) =>
-      adminApi<{ channel: PaymentChannel }>(
-        `/admin/payment-channels/${channel.id}`,
-        {
-          method: "POST",
-          body: {
-            enabled: !channel.enabled,
-          },
-        },
-      ),
+      toggleAdminPaymentChannel(channel),
     onSuccess: async () => {
       setMessage("支付渠道已更新。")
       setError("")
@@ -124,11 +105,9 @@ export function PaymentsView() {
         throw new Error("请输入 MARK_PAID 确认该高风险操作。")
       }
 
-      return adminApi(`/admin/payment-attempts/${markPaidForm.attemptId}/mark-paid`, {
-        method: "POST",
-        body: {
-          note: markPaidForm.note.trim() || null,
-        },
+      return markPaymentAttemptPaid({
+        attemptId: markPaidForm.attemptId,
+        note: markPaidForm.note,
       })
     },
     onSuccess: async () => {

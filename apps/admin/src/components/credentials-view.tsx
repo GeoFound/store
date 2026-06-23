@@ -2,8 +2,14 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useMemo, useState, type ReactNode } from "react"
-import { adminApi } from "@/lib/admin-api"
 import { formatDate } from "@/lib/format"
+import {
+  importCredentialBatch,
+  loadCredentialInventory,
+  releaseCredentialReservation,
+  reserveCredentials as reserveCredentialItems,
+  sellCredentialReservation,
+} from "@/lib/product-admin-api"
 import {
   Field,
   PrimaryButton,
@@ -73,19 +79,12 @@ demo2,secret2
 CARD-AAAA-BBBB-CCCC`
 
 async function loadCredentials() {
-  const [itemsData, batchesData, templateData, catalogData] = await Promise.all([
-    adminApi<{ items: AccountItem[] }>("/admin/credential-inventory/items"),
-    adminApi<{ batches: Batch[] }>("/admin/credential-inventory/batches"),
-    adminApi<{ templates: ProductTemplate[] }>("/admin/product-templates"),
-    adminApi<{ variants: CatalogVariant[] }>("/admin/catalog/variants"),
-  ])
-
-  return {
-    items: itemsData.items || [],
-    batches: batchesData.batches || [],
-    templates: templateData.templates || [],
-    variants: catalogData.variants || [],
-  }
+  return loadCredentialInventory() as Promise<{
+    items: AccountItem[]
+    batches: Batch[]
+    templates: ProductTemplate[]
+    variants: CatalogVariant[]
+  }>
 }
 
 export function CredentialsView() {
@@ -140,14 +139,11 @@ export function CredentialsView() {
 
       const items = parseCredentialLines(credentialsText)
 
-      return adminApi<{ batch: Batch }>("/admin/credential-inventory/batches", {
-        method: "POST",
-        body: {
-          name: name.trim() || "手动导入",
-          product_variant_id: normalizedVariant,
-          template_code: templateCode.trim(),
-          items,
-        },
+      return importCredentialBatch({
+        name,
+        productVariantId: normalizedVariant,
+        templateCode,
+        items,
       })
     },
     onSuccess: async () => {
@@ -167,23 +163,7 @@ export function CredentialsView() {
         throw new Error("预约需要 reservation_key。")
       }
 
-      const body: Record<string, string | number> = {
-        product_variant_id: reservationForm.productVariantId.trim(),
-        quantity: Number(reservationForm.quantity) || 1,
-        reservation_key: reservationForm.reservationKey.trim(),
-        ttl_seconds: Number(reservationForm.ttlSeconds) || 900,
-      }
-      if (reservationForm.cartId.trim()) {
-        body.cart_id = reservationForm.cartId.trim()
-      }
-      if (reservationForm.orderId.trim()) {
-        body.order_id = reservationForm.orderId.trim()
-      }
-
-      return adminApi("/admin/credential-inventory/reservations", {
-        method: "POST",
-        body,
-      })
+      return reserveCredentialItems(reservationForm)
     },
     onSuccess: async () => {
       setMessage("凭证已预约。")
@@ -199,12 +179,7 @@ export function CredentialsView() {
         throw new Error("释放需要 reservation_key。")
       }
 
-      return adminApi(
-        `/admin/credential-inventory/reservations/${encodeURIComponent(
-          reservationForm.reservationKey.trim(),
-        )}/release`,
-        { method: "POST" },
-      )
+      return releaseCredentialReservation(reservationForm.reservationKey)
     },
     onSuccess: async () => {
       setMessage("预约已释放。")
@@ -220,17 +195,10 @@ export function CredentialsView() {
         throw new Error("标记售出需要 reservation_key。")
       }
 
-      return adminApi(
-        `/admin/credential-inventory/reservations/${encodeURIComponent(
-          reservationForm.reservationKey.trim(),
-        )}/sell`,
-        {
-          method: "POST",
-          body: reservationForm.orderId.trim()
-            ? { order_id: reservationForm.orderId.trim() }
-            : {},
-        },
-      )
+      return sellCredentialReservation({
+        reservationKey: reservationForm.reservationKey,
+        orderId: reservationForm.orderId,
+      })
     },
     onSuccess: async () => {
       setMessage("预约已标记售出。")

@@ -1,8 +1,12 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { adminApi } from "@/lib/admin-api"
 import { formatDate } from "@/lib/format"
+import {
+  loadAnalyticsDispatches,
+  loadAnalyticsEvents,
+  replayAnalyticsDispatch,
+} from "@/lib/product-admin-api"
 import { MetricCard, Message, PageHeader, Panel, TableShell } from "./admin-page"
 import { SecondaryButton } from "./admin-controls"
 import { StatusBadge } from "./status-badge"
@@ -34,16 +38,14 @@ export function AnalyticsView() {
   const eventsQuery = useQuery({
     queryKey: ["analytics-events"],
     queryFn: () =>
-      adminApi<{ events: AnalyticsEvent[] }>(
-        "/admin/analytics/events?limit=100",
-      ),
+      loadAnalyticsEvents() as Promise<{ events: AnalyticsEvent[] }>,
   })
   const dispatchesQuery = useQuery({
     queryKey: ["analytics-dispatches"],
     queryFn: () =>
-      adminApi<{ dispatches: AnalyticsDispatch[] }>(
-        "/admin/analytics/dispatches?limit=100",
-      ),
+      loadAnalyticsDispatches() as Promise<{
+        dispatches: AnalyticsDispatch[]
+      }>,
   })
   const events = eventsQuery.data?.events || []
   const dispatches = dispatchesQuery.data?.dispatches || []
@@ -51,11 +53,7 @@ export function AnalyticsView() {
     ["failed", "dead"].includes(item.status),
   )
   const replayDispatch = useMutation({
-    mutationFn: (dispatchId: string) =>
-      adminApi("/admin/analytics/dispatches", {
-        method: "POST",
-        body: { dispatch_id: dispatchId },
-      }),
+    mutationFn: (dispatchId: string) => replayAnalyticsDispatch(dispatchId),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["analytics-dispatches"] }),
   })

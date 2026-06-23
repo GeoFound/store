@@ -2,8 +2,12 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
-import { adminApi } from "@/lib/admin-api"
 import { formatDate, formatValue } from "@/lib/format"
+import {
+  loadOrders as loadOrderList,
+  retrieveOrder as retrieveOrderDetail,
+  runOrderAction,
+} from "@/lib/product-admin-api"
 import {
   Field,
   PrimaryButton,
@@ -74,33 +78,11 @@ const EMPTY_ACTION_FORM: OrderActionForm = {
 }
 
 async function loadOrders(query: string) {
-  const params = new URLSearchParams({
-    limit: "50",
-    order: "-created_at",
-    fields:
-      "id,display_id,email,status,payment_status,fulfillment_status,total,currency_code,customer.*,items.*,payment_collections.*,fulfillments.*,created_at,updated_at",
-  })
-
-  if (query.trim()) {
-    params.set("q", query.trim())
-  }
-
-  const data = await adminApi<{ orders: Order[]; count?: number }>(
-    `/admin/orders?${params.toString()}`,
-  )
-
-  return {
-    orders: data.orders || [],
-    count: data.count || data.orders?.length || 0,
-  }
+  return loadOrderList(query) as Promise<{ orders: Order[]; count: number }>
 }
 
 async function retrieveOrder(orderId: string) {
-  const data = await adminApi<{ order: Order }>(
-    `/admin/orders/${orderId}?fields=id,display_id,email,status,payment_status,fulfillment_status,total,currency_code,customer.*,items.*,payment_collections.*,fulfillments.*,created_at,updated_at`,
-  )
-
-  return data.order
+  return retrieveOrderDetail(orderId) as Promise<Order>
 }
 
 export function OrdersView() {
@@ -136,14 +118,10 @@ export function OrdersView() {
         throw new Error("取消订单必须在确认框中输入完整订单 ID。")
       }
 
-      const noteBody =
-        actionForm.note.trim() && actionForm.action !== "archive"
-          ? { metadata: { operator_note: actionForm.note.trim() } }
-          : undefined
-
-      await adminApi(`/admin/orders/${orderId}/${actionForm.action}`, {
-        method: "POST",
-        ...(noteBody ? { body: noteBody } : {}),
+      await runOrderAction({
+        orderId,
+        action: actionForm.action,
+        note: actionForm.note,
       })
     },
     onSuccess: async () => {

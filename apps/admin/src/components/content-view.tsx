@@ -2,8 +2,20 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState, type ReactNode } from "react"
-import { adminApi } from "@/lib/admin-api"
 import { formatDate } from "@/lib/format"
+import {
+  createContentAiTask,
+  createContentAsset,
+  createContentEntry,
+  createContentUploadPolicy,
+  loadContentWorkspace,
+  publishContentEntrySnapshot,
+  queueContentEntryTask,
+  registerContentAudioFromAsset,
+  runContentAiTask as runProductContentAiTask,
+  updateContentEntryStatus,
+  updateContentTaskReview,
+} from "@/lib/product-admin-api"
 import {
   Field,
   PrimaryButton,
@@ -172,31 +184,13 @@ const EMPTY_AI_TASK = {
 type Filters = { siteId: string; status: string }
 
 async function loadContent(filters: Filters) {
-  const query = new URLSearchParams({ limit: "100" })
-  if (filters.siteId) {
-    query.set("site_id", filters.siteId)
-  }
-  if (filters.status) {
-    query.set("status", filters.status)
-  }
-
-  const [entries, storage, assets, audio, tasks] = await Promise.all([
-    adminApi<{ entries: ContentEntry[] }>(
-      `/admin/content/entries?${query.toString()}`,
-    ),
-    adminApi<StorageRuntime>("/admin/content/storage/providers"),
-    adminApi<{ assets: ContentAsset[] }>("/admin/content/assets?limit=25"),
-    adminApi<{ audio: ContentAudio[] }>("/admin/content/audio?limit=25"),
-    adminApi<{ tasks: ContentAITaskRun[] }>("/admin/content/ai/tasks?limit=25"),
-  ])
-
-  return {
-    entries: entries.entries || [],
-    storage: storage || { default_provider_code: "local", providers: [], issues: [] },
-    assets: assets.assets || [],
-    audio: audio.audio || [],
-    tasks: tasks.tasks || [],
-  }
+  return loadContentWorkspace(filters) as Promise<{
+    entries: ContentEntry[]
+    storage: StorageRuntime
+    assets: ContentAsset[]
+    audio: ContentAudio[]
+    tasks: ContentAITaskRun[]
+  }>
 }
 
 export function ContentView() {
@@ -234,26 +228,7 @@ export function ContentView() {
         throw new Error("标题必填。")
       }
 
-      return adminApi("/admin/content/entries", {
-        method: "POST",
-        body: {
-          site_id: entryForm.siteId,
-          title: entryForm.title.trim(),
-          slug: entryForm.slug.trim() || slugFromTitle(entryForm.title),
-          excerpt: entryForm.excerpt.trim() || null,
-          body: entryForm.body.trim() || null,
-          content_format: entryForm.contentFormat,
-          content_type: entryForm.contentType,
-          status: entryForm.status,
-          author_name: entryForm.authorName.trim() || null,
-          cover_image_url: entryForm.coverImageUrl.trim() || null,
-          language: entryForm.language.trim() || null,
-          topic: entryForm.topic.trim() || null,
-          tags: entryForm.tags,
-          related_product_handles: entryForm.relatedProductHandles,
-          ai_assisted: entryForm.aiAssisted,
-        },
-      })
+      return createContentEntry(entryForm)
     },
     onSuccess: async () => {
       setEntryForm({ ...EMPTY_ENTRY, siteId: entryForm.siteId })
@@ -268,19 +243,9 @@ export function ContentView() {
         (item) => item.code === assetForm.storageProviderCode,
       )
 
-      return adminApi("/admin/content/assets", {
-        method: "POST",
-        body: {
-          site_id: assetForm.siteId,
-          entry_id: assetForm.entryId.trim() || null,
-          asset_type: assetForm.assetType,
-          storage_provider: provider?.kind,
-          storage_provider_code: assetForm.storageProviderCode.trim() || null,
-          public_url: assetForm.publicUrl.trim() || null,
-          object_key: assetForm.objectKey.trim() || null,
-          mime_type: assetForm.mimeType.trim() || null,
-          alt_text: assetForm.altText.trim() || null,
-        },
+      return createContentAsset({
+        form: assetForm,
+        provider,
       })
     },
     onSuccess: async () => {
@@ -300,18 +265,7 @@ export function ContentView() {
         throw new Error("生成上传策略需要 filename 或 object_key。")
       }
 
-      return adminApi<{ upload: unknown }>("/admin/content/assets/upload-policy", {
-        method: "POST",
-        body: {
-          site_id: assetForm.siteId.trim() || null,
-          entry_id: assetForm.entryId.trim() || null,
-          asset_type: assetForm.assetType,
-          storage_provider_code: assetForm.storageProviderCode.trim() || null,
-          filename: assetForm.filename.trim() || assetForm.objectKey.trim() || null,
-          mime_type: assetForm.mimeType.trim() || null,
-          expires_in_seconds: 900,
-        },
-      })
+      return createContentUploadPolicy(assetForm)
     },
     onSuccess: async (data) => {
       setUploadPolicyPreview(JSON.stringify(data.upload, null, 2))
@@ -321,24 +275,7 @@ export function ContentView() {
   })
 
   const createAiTask = useMutation({
-    mutationFn: async () =>
-      adminApi("/admin/content/ai/tasks", {
-        method: "POST",
-        body: {
-          site_id: aiTaskForm.siteId,
-          entry_id: aiTaskForm.entryId.trim() || null,
-          task_type: aiTaskForm.taskType,
-          provider_code: aiTaskForm.providerCode.trim() || null,
-          provider_capability:
-            aiTaskForm.providerCapability.trim() ||
-            TASK_CAPABILITY_DEFAULTS[aiTaskForm.taskType] ||
-            "text.generate",
-          model: aiTaskForm.model.trim() || null,
-          status: "queued",
-          review_status: "pending",
-          input_summary: aiTaskForm.inputSummary.trim() || null,
-        },
-      }),
+    mutationFn: async () => createContentAiTask(aiTaskForm),
     onSuccess: async () => {
       setAiTaskForm({
         ...EMPTY_AI_TASK,
@@ -352,19 +289,7 @@ export function ContentView() {
   })
 
   const runContentAiTask = useMutation({
-    mutationFn: () =>
-      adminApi("/admin/content/ai/run", {
-        method: "POST",
-        body: {
-          site_id: aiTaskForm.siteId,
-          entry_id: aiTaskForm.entryId.trim() || null,
-          task_type: aiTaskForm.taskType,
-          provider_code: aiTaskForm.providerCode.trim() || null,
-          model: aiTaskForm.model.trim() || null,
-          input_summary: aiTaskForm.inputSummary.trim() || null,
-          input: { source: "admin_content_view" },
-        },
-      }),
+    mutationFn: () => runProductContentAiTask(aiTaskForm),
     onSuccess: async () => {
       setAiTaskForm({
         ...EMPTY_AI_TASK,
@@ -379,48 +304,20 @@ export function ContentView() {
 
   const updateStatus = useMutation({
     mutationFn: (input: { id: string; status: string }) =>
-      adminApi(`/admin/content/entries/${input.id}`, {
-        method: "POST",
-        body: { status: input.status },
-      }),
+      updateContentEntryStatus(input),
     onSuccess: () => ok("条目已更新。"),
     onError: (err) => setError(errorMessage(err)),
   })
 
   const publishSnapshot = useMutation({
-    mutationFn: async (entry: ContentEntry) => {
-      const data = await adminApi<{ revision: { id: string } }>(
-        `/admin/content/entries/${entry.id}/revisions`,
-        {
-          method: "POST",
-          body: { status: "review", change_note: "Admin publish snapshot" },
-        },
-      )
-
-      return adminApi(`/admin/content/revisions/${data.revision.id}/publish`, {
-        method: "POST",
-        body: { channel: "storefront" },
-      })
-    },
+    mutationFn: async (entry: ContentEntry) => publishContentEntrySnapshot(entry),
     onSuccess: () => ok("修订已发布。"),
     onError: (err) => setError(errorMessage(err)),
   })
 
   const queueEntryTask = useMutation({
     mutationFn: (input: { entry: ContentEntry; taskType: string }) =>
-      adminApi("/admin/content/ai/tasks", {
-        method: "POST",
-        body: {
-          site_id: input.entry.site_id,
-          entry_id: input.entry.id,
-          task_type: input.taskType,
-          provider_capability:
-            TASK_CAPABILITY_DEFAULTS[input.taskType] || "text.generate",
-          status: "queued",
-          review_status: "pending",
-          input_summary: `${input.taskType}: ${input.entry.title}`,
-        },
-      }),
+      queueContentEntryTask(input),
     onSuccess: () => ok("AI 任务已入队。"),
     onError: (err) => setError(errorMessage(err)),
   })
@@ -431,21 +328,7 @@ export function ContentView() {
         throw new Error("该素材未关联条目。")
       }
 
-      await adminApi("/admin/content/audio", {
-        method: "POST",
-        body: {
-          site_id: asset.site_id,
-          entry_id: asset.entry_id,
-          asset_id: asset.id,
-          status: "ready",
-          metadata: { source: "admin_asset_registration" },
-        },
-      })
-
-      return adminApi(`/admin/content/entries/${asset.entry_id}`, {
-        method: "POST",
-        body: { audio_asset_id: asset.id },
-      })
+      return registerContentAudioFromAsset(asset)
     },
     onSuccess: () => ok("音频已登记。"),
     onError: (err) => setError(errorMessage(err)),
@@ -453,13 +336,7 @@ export function ContentView() {
 
   const updateTaskReview = useMutation({
     mutationFn: (input: { taskId: string; reviewStatus: string }) =>
-      adminApi(`/admin/content/ai/tasks/${input.taskId}`, {
-        method: "POST",
-        body: {
-          review_status: input.reviewStatus,
-          output_summary: `Admin review marked ${input.reviewStatus}`,
-        },
-      }),
+      updateContentTaskReview(input),
     onSuccess: () => ok("AI 任务复核状态已更新。"),
     onError: (err) => setError(errorMessage(err)),
   })

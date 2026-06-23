@@ -2,8 +2,13 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState, type ReactNode } from "react"
-import { adminApi } from "@/lib/admin-api"
 import { formatDate } from "@/lib/format"
+import {
+  createMarketingCampaign,
+  createMarketingCoupon,
+  createMarketingReferral,
+  loadMarketingWorkspace,
+} from "@/lib/product-admin-api"
 import { Field, PrimaryButton, SecondaryButton, SelectInput, TextInput } from "./admin-controls"
 import { Message, MetricCard, PageHeader, Panel, TableShell } from "./admin-page"
 import { StatusBadge } from "./status-badge"
@@ -66,44 +71,13 @@ const CAMPAIGN_STATUSES = ["draft", "active", "paused", "archived"]
 const COUPON_STATUSES = ["active", "disabled", "expired"]
 
 async function loadMarketing() {
-  const [campaignData, offerData, couponData, referralData, touchpointData] =
-    await Promise.all([
-      adminApi<{ campaigns: MarketingCampaign[] }>(
-        "/admin/marketing/campaigns?limit=50",
-      ),
-      adminApi<{ offers: MarketingOffer[] }>("/admin/marketing/offers?limit=50"),
-      adminApi<{ coupons: MarketingCoupon[] }>(
-        "/admin/marketing/coupons?limit=50",
-      ),
-      adminApi<{ referral_links: MarketingReferralLink[] }>(
-        "/admin/marketing/referral-links?limit=50",
-      ),
-      adminApi<{ touchpoints: MarketingTouchpoint[] }>(
-        "/admin/marketing/touchpoints?limit=100",
-      ),
-    ])
-
-  return {
-    campaigns: campaignData.campaigns || [],
-    offers: offerData.offers || [],
-    coupons: couponData.coupons || [],
-    referralLinks: referralData.referral_links || [],
-    touchpoints: touchpointData.touchpoints || [],
-  }
-}
-
-function optionalNumber(value: string) {
-  if (!value.trim()) {
-    return null
-  }
-
-  const parsed = Number(value)
-
-  if (!Number.isFinite(parsed) || parsed < 0) {
-    throw new Error("请输入有效的非负数字。")
-  }
-
-  return parsed
+  return loadMarketingWorkspace() as Promise<{
+    campaigns: MarketingCampaign[]
+    offers: MarketingOffer[]
+    coupons: MarketingCoupon[]
+    referralLinks: MarketingReferralLink[]
+    touchpoints: MarketingTouchpoint[]
+  }>
 }
 
 export function MarketingView() {
@@ -137,17 +111,7 @@ export function MarketingView() {
         throw new Error("活动代码和名称必填。")
       }
 
-      return adminApi<{ campaign: MarketingCampaign }>(
-        "/admin/marketing/campaigns",
-        {
-          method: "POST",
-          body: {
-            code: campaignForm.code.trim(),
-            name: campaignForm.name.trim(),
-            status: campaignForm.status,
-          },
-        },
-      )
+      return createMarketingCampaign(campaignForm)
     },
     onSuccess: async () => {
       setCampaignForm({ code: "", name: "", status: "draft" })
@@ -164,14 +128,7 @@ export function MarketingView() {
         throw new Error("优惠码必填。")
       }
 
-      return adminApi<{ coupon: MarketingCoupon }>("/admin/marketing/coupons", {
-        method: "POST",
-        body: {
-          code: couponForm.code.trim(),
-          status: couponForm.status,
-          max_redemptions: optionalNumber(couponForm.maxRedemptions),
-        },
-      })
+      return createMarketingCoupon(couponForm)
     },
     onSuccess: async () => {
       setCouponForm({ code: "", status: "active", maxRedemptions: "" })
@@ -188,18 +145,7 @@ export function MarketingView() {
         throw new Error("推荐码必填。")
       }
 
-      return adminApi<{ referral_link: MarketingReferralLink }>(
-        "/admin/marketing/referral-links",
-        {
-          method: "POST",
-          body: {
-            code: referralForm.code.trim(),
-            referrer_email: referralForm.referrerEmail.trim() || null,
-            max_uses: optionalNumber(referralForm.maxUses),
-            status: "active",
-          },
-        },
-      )
+      return createMarketingReferral(referralForm)
     },
     onSuccess: async () => {
       setReferralForm({ code: "", referrerEmail: "", maxUses: "" })

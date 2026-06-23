@@ -2,8 +2,12 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useMemo, useState } from "react"
-import { adminApi } from "@/lib/admin-api"
 import { formatDate, formatValue } from "@/lib/format"
+import {
+  createSalesChannel as createAdminSalesChannel,
+  loadSystemSettings as loadProductAdminSystemSettings,
+  updateStoreName,
+} from "@/lib/product-admin-api"
 import {
   Field,
   PrimaryButton,
@@ -79,11 +83,6 @@ type PluginRecord = {
   options?: unknown
 }
 
-type FeatureFlagsResponse = {
-  feature_flags?: FeatureFlag[]
-  flags?: FeatureFlag[]
-}
-
 type StoreForm = {
   storeId: string
   name: string
@@ -103,47 +102,15 @@ const EMPTY_SALES_CHANNEL_FORM: SalesChannelForm = {
 }
 
 async function loadSystemSettings() {
-  const [
-    stores,
-    users,
-    regions,
-    salesChannels,
-    apiKeys,
-    featureFlags,
-    plugins,
-  ] = await Promise.all([
-    adminApi<{ stores: StoreRecord[] }>("/admin/stores?limit=20").catch(() => ({
-      stores: [],
-    })),
-    adminApi<{ users: AdminUser[] }>("/admin/users?limit=100").catch(() => ({
-      users: [],
-    })),
-    adminApi<{ regions: Region[] }>("/admin/regions?limit=100").catch(() => ({
-      regions: [],
-    })),
-    adminApi<{ sales_channels: SalesChannel[] }>(
-      "/admin/sales-channels?limit=100",
-    ).catch(() => ({ sales_channels: [] })),
-    adminApi<{ api_keys: ApiKey[] }>("/admin/api-keys?limit=100").catch(() => ({
-      api_keys: [],
-    })),
-    adminApi<FeatureFlagsResponse>("/admin/feature-flags").catch(
-      (): FeatureFlagsResponse => ({ feature_flags: [] }),
-    ),
-    adminApi<{ plugins?: PluginRecord[] }>("/admin/plugins").catch(() => ({
-      plugins: [],
-    })),
-  ])
-
-  return {
-    stores: stores.stores || [],
-    users: users.users || [],
-    regions: regions.regions || [],
-    salesChannels: salesChannels.sales_channels || [],
-    apiKeys: apiKeys.api_keys || [],
-    featureFlags: featureFlags.feature_flags || featureFlags.flags || [],
-    plugins: plugins.plugins || [],
-  }
+  return loadProductAdminSystemSettings() as Promise<{
+    stores: StoreRecord[]
+    users: AdminUser[]
+    regions: Region[]
+    salesChannels: SalesChannel[]
+    apiKeys: ApiKey[]
+    featureFlags: FeatureFlag[]
+    plugins: PluginRecord[]
+  }>
 }
 
 export function SystemSettingsView() {
@@ -173,17 +140,7 @@ export function SystemSettingsView() {
     mutationFn: () => {
       const storeId = storeForm.storeId || selectedStore?.id
 
-      if (!storeId) {
-        throw new Error("没有可更新的 store。")
-      }
-      if (!storeForm.name.trim()) {
-        throw new Error("store 名称必填。")
-      }
-
-      return adminApi(`/admin/stores/${storeId}`, {
-        method: "POST",
-        body: { name: storeForm.name.trim() },
-      })
+      return updateStoreName({ storeId: storeId ?? "", name: storeForm.name })
     },
     onSuccess: async () => {
       setMessage("store 已更新。")
@@ -196,18 +153,7 @@ export function SystemSettingsView() {
 
   const createSalesChannel = useMutation({
     mutationFn: () => {
-      if (!salesChannelForm.name.trim()) {
-        throw new Error("销售渠道名称必填。")
-      }
-
-      return adminApi("/admin/sales-channels", {
-        method: "POST",
-        body: {
-          name: salesChannelForm.name.trim(),
-          description: salesChannelForm.description.trim() || null,
-          is_disabled: salesChannelForm.isDisabled,
-        },
-      })
+      return createAdminSalesChannel(salesChannelForm)
     },
     onSuccess: async () => {
       setMessage("销售渠道已创建。")

@@ -2,8 +2,8 @@
 
 import { useQuery } from "@tanstack/react-query"
 import { useMemo, useState, type FormEvent } from "react"
-import { adminApi } from "@/lib/admin-api"
 import { formatDate } from "@/lib/format"
+import { loadAuditLogs } from "@/lib/product-admin-api"
 import { Message, PageHeader, Panel, TableShell } from "./admin-page"
 import { StatusBadge } from "./status-badge"
 
@@ -43,8 +43,7 @@ export function AuditLogsView() {
   }, [appliedFilters])
   const logsQuery = useQuery({
     queryKey: ["audit-logs", query],
-    queryFn: () =>
-      adminApi<{ audit_logs: AuditLog[] }>(`/admin/audit-logs?${query}`),
+    queryFn: () => loadAuditLogs(query) as Promise<{ audit_logs: AuditLog[] }>,
   })
   const logs = logsQuery.data?.audit_logs || []
 

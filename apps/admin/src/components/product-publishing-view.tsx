@@ -3,7 +3,7 @@
 import { useQuery } from "@tanstack/react-query"
 import Link from "next/link"
 import { useMemo, type ReactNode } from "react"
-import { adminApi } from "@/lib/admin-api"
+import { loadProductPublishingWorkspace } from "@/lib/product-admin-api"
 import { Message, MetricCard, PageHeader, Panel, TableShell } from "./admin-page"
 import { SecondaryButton } from "./admin-controls"
 import { StatusBadge } from "./status-badge"
@@ -39,15 +39,10 @@ type CatalogVariant = {
 type ReadinessState = "ready" | "needs_stock" | "external" | "manual" | "unknown"
 
 async function loadPublishing() {
-  const [templateData, variantData] = await Promise.all([
-    adminApi<{ templates: ProductTemplate[] }>("/admin/product-templates"),
-    adminApi<{ variants: CatalogVariant[] }>("/admin/catalog/variants"),
-  ])
-
-  return {
-    templates: templateData.templates || [],
-    variants: variantData.variants || [],
-  }
+  return loadProductPublishingWorkspace() as Promise<{
+    templates: ProductTemplate[]
+    variants: CatalogVariant[]
+  }>
 }
 
 export function ProductPublishingView() {

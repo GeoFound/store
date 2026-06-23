@@ -165,7 +165,12 @@ function scanRepository() {
     "apps/admin/src/components",
     "apps/admin/src/hooks",
   ])
-  const adminFiles = sourceFiles(["apps/admin/src"])
+  const adminUiFiles = sourceFiles([
+    "apps/admin/src/components",
+    "apps/admin/src/app/dashboard",
+    "apps/admin/src/app/login",
+    "apps/admin/src/app/page.tsx",
+  ])
   const storefrontFiles = sourceFiles(["apps/storefront/src"])
   const allowedStorefrontFetchFiles = new Set([
     "apps/storefront/src/lib/commerce-medusa.ts",
@@ -189,22 +194,27 @@ function scanRepository() {
     adminBrowserFiles,
     /ADMIN_MEDUSA_BACKEND_URL|NEXT_PUBLIC_MEDUSA|medusaBackendUrl|@\/lib\/medusa-admin/
   )
+  const adminDirectAdminApiUiFiles = filesMatching(
+    adminUiFiles,
+    /from\s+["']@\/lib\/admin-api["']|from\s+["']\.\.\/lib\/admin-api["']/
+  )
   const storefrontFetchViolations = filesMatching(storefrontFiles, /\bfetch\s*\(/)
     .filter((file) => !allowedStorefrontFetchFiles.has(file))
 
   return {
     platformForbiddenMatches,
     adminDirectMedusaBrowserFiles,
+    adminDirectAdminApiUiFiles,
     storefrontFetchViolations,
     backendMedusaImportFiles: filesMatching(backendFiles, /@medusajs\//),
     backendMedusaRequestResponseFiles: filesMatching(backendApiFiles, /MedusaRequest|MedusaResponse/),
     backendMedusaOrmFiles: filesMatching(backendModuleFiles, /model\.define|MedusaService|\bMigration\b/),
     adminMedusaRouteLiteralOccurrences: countMatches(
-      adminFiles,
+      adminUiFiles,
       /adminApi\s*\([\s\n]*[`'"]\/admin\//g
     ),
     adminMedusaRouteLiteralFiles: filesMatching(
-      adminFiles,
+      adminUiFiles,
       /adminApi\s*\([\s\n]*[`'"]\/admin\//
     ),
     storefrontMedusaEnvFiles: filesMatching(
@@ -275,6 +285,18 @@ export function createBackendDecouplingReadinessReport() {
     message: "Browser admin code must not read Medusa backend env, backend URL helpers, or server-only Medusa admin clients.",
     details: {
       files: sample(scan.adminDirectMedusaBrowserFiles),
+    },
+  })
+  addHardCheck({
+    checks,
+    issues,
+    id: "admin-ui-uses-product-admin-facade",
+    value: scan.adminDirectAdminApiUiFiles.length,
+    max: 0,
+    message:
+      "Admin browser UI must call the typed product-admin facade instead of importing the raw BFF helper.",
+    details: {
+      files: sample(scan.adminDirectAdminApiUiFiles),
     },
   })
   addHardCheck({

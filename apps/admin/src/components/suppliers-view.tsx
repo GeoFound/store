@@ -2,8 +2,12 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState, type ReactNode } from "react"
-import { adminApi } from "@/lib/admin-api"
 import { formatDate } from "@/lib/format"
+import {
+  loadSupplierWorkspace,
+  retrySupplierProcurement,
+  saveSupplierMapping,
+} from "@/lib/product-admin-api"
 import {
   Field,
   PrimaryButton,
@@ -49,21 +53,11 @@ type SupplierProcurement = {
 }
 
 async function loadSuppliers() {
-  const [providerData, mappingData, procurementData] = await Promise.all([
-    adminApi<{ providers: SupplierProvider[] }>("/admin/suppliers/providers"),
-    adminApi<{ mappings: SupplierMapping[] }>(
-      "/admin/suppliers/mappings?limit=100",
-    ),
-    adminApi<{ procurements: SupplierProcurement[] }>(
-      "/admin/suppliers/procurements?limit=100",
-    ),
-  ])
-
-  return {
-    providers: providerData.providers || [],
-    mappings: mappingData.mappings || [],
-    procurements: procurementData.procurements || [],
-  }
+  return loadSupplierWorkspace() as Promise<{
+    providers: SupplierProvider[]
+    mappings: SupplierMapping[]
+    procurements: SupplierProcurement[]
+  }>
 }
 
 export function SuppliersView() {
@@ -96,20 +90,7 @@ export function SuppliersView() {
         throw new Error("商品变体、供应商代码和供应商 SKU 必填。")
       }
 
-      return adminApi<{ mapping: SupplierMapping }>("/admin/suppliers/mappings", {
-        method: "POST",
-        body: {
-          product_variant_id: form.productVariantId.trim(),
-          provider_code: form.providerCode.trim(),
-          provider_sku: form.providerSku.trim(),
-          provider_product_id: form.providerProductId.trim() || undefined,
-          region_code: form.regionCode.trim() || undefined,
-          currency: form.currency.trim() || undefined,
-          enabled: true,
-          priority: optionalFiniteNumber(form.priority, 100),
-          metadata: parseOptionalJson(form.metadata),
-        },
-      })
+      return saveSupplierMapping(form) as Promise<{ mapping: SupplierMapping }>
     },
     onSuccess: async (result) => {
       setMessage(`供应商映射已保存：${result.mapping.id}`)
@@ -120,10 +101,7 @@ export function SuppliersView() {
   })
 
   const retryProcurement = useMutation({
-    mutationFn: (id: string) =>
-      adminApi(`/admin/suppliers/procurements/${id}/retry`, {
-        method: "POST",
-      }),
+    mutationFn: (id: string) => retrySupplierProcurement(id),
     onSuccess: async () => {
       setMessage("采购重试已提交。")
       setError("")
@@ -452,36 +430,6 @@ function Cell({
       {children}
     </td>
   )
-}
-
-function parseOptionalJson(value: string) {
-  const trimmed = value.trim()
-
-  if (!trimmed) {
-    return undefined
-  }
-
-  const parsed = JSON.parse(trimmed) as unknown
-
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    throw new Error("metadata 必须是 JSON object。")
-  }
-
-  return parsed as Record<string, unknown>
-}
-
-function optionalFiniteNumber(value: string, fallback: number) {
-  if (!value.trim()) {
-    return fallback
-  }
-
-  const parsed = Number(value)
-
-  if (!Number.isFinite(parsed)) {
-    throw new Error("priority 必须是有效数字。")
-  }
-
-  return parsed
 }
 
 function errorMessage(error: unknown) {

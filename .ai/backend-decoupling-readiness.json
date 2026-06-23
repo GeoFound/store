@@ -64,6 +64,11 @@
       "max": 0
     },
     {
+      "id": "admin-ui-uses-product-admin-facade",
+      "check": "adminDirectAdminApiUiFiles",
+      "max": 0
+    },
+    {
       "id": "storefront-no-fetch-outside-approved-adapters",
       "check": "storefrontFetchViolations",
       "max": 0
@@ -92,9 +97,9 @@
         "exit": "Domain state has export/import and a non-Medusa persistence contract before backend replacement."
       },
       "adminMedusaRouteLiteralOccurrences": {
-        "max": 24,
+        "max": 0,
         "target": 0,
-        "meaning": "Admin UI calls that still pass /admin/* Medusa route literals to the BFF helper.",
+        "meaning": "Admin browser UI calls that still pass /admin/* Medusa route literals to the BFF helper.",
         "exit": "Admin UI consumes typed product-admin operations instead of Medusa route strings."
       },
       "storefrontMedusaEnvFiles": {

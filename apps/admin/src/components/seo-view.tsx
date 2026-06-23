@@ -2,8 +2,13 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState, type ReactNode } from "react"
-import { adminApi } from "@/lib/admin-api"
 import { formatDate } from "@/lib/format"
+import {
+  loadSeoPerformance,
+  loadSeoWorkspace,
+  suggestSeoDocument,
+  upsertSeoDocument,
+} from "@/lib/product-admin-api"
 import {
   Field,
   PrimaryButton,
@@ -119,15 +124,10 @@ const EMPTY_AUDIT: SeoAuditReport = {
 }
 
 async function loadSeo() {
-  const [documentsData, auditData] = await Promise.all([
-    adminApi<{ documents: SeoDocument[] }>("/admin/content/seo?limit=200"),
-    adminApi<SeoAuditReport>("/admin/content/seo/audit").catch(() => EMPTY_AUDIT),
-  ])
-
-  return {
-    documents: documentsData.documents || [],
-    audit: auditData || EMPTY_AUDIT,
-  }
+  return loadSeoWorkspace() as Promise<{
+    documents: SeoDocument[]
+    audit: SeoAuditReport
+  }>
 }
 
 export function SeoView() {
@@ -141,10 +141,7 @@ export function SeoView() {
   const seoQuery = useQuery({ queryKey: ["seo"], queryFn: loadSeo })
   const performanceQuery = useQuery({
     queryKey: ["seo-performance"],
-    queryFn: () =>
-      adminApi<SeoPerformance>(
-        "/admin/content/seo/performance?dimension=page&limit=25",
-      ),
+    queryFn: () => loadSeoPerformance() as Promise<SeoPerformance>,
   })
   const documents = seoQuery.data?.documents || []
   const audit = seoQuery.data?.audit || EMPTY_AUDIT
@@ -155,20 +152,7 @@ export function SeoView() {
         throw new Error("entity_id 必填。")
       }
 
-      return adminApi("/admin/content/seo", {
-        method: "POST",
-        body: {
-          entity_type: form.entityType,
-          entity_id: form.entityId.trim(),
-          site_id: form.siteId.trim() || null,
-          language: form.language.trim() || null,
-          meta_title: form.metaTitle.trim() || null,
-          meta_description: form.metaDescription.trim() || null,
-          canonical_url: form.canonicalUrl.trim() || null,
-          og_image_url: form.ogImageUrl.trim() || null,
-          status: form.status,
-        },
-      })
+      return upsertSeoDocument(form)
     },
     onSuccess: async () => {
       setMessage("SEO 文档已保存。")
@@ -185,17 +169,7 @@ export function SeoView() {
         throw new Error("生成建议需要 entity_id。")
       }
 
-      return adminApi<Record<string, unknown>>("/admin/content/seo/suggest", {
-        method: "POST",
-        body: {
-          entity_type: suggestForm.entityType,
-          entity_id: suggestForm.entityId.trim(),
-          site_id: suggestForm.siteId.trim() || null,
-          language: suggestForm.language.trim() || null,
-          provider_code: suggestForm.providerCode.trim() || null,
-          model: suggestForm.model.trim() || null,
-        },
-      })
+      return suggestSeoDocument(suggestForm)
     },
     onSuccess: (data) => {
       setSuggestPreview(JSON.stringify(data, null, 2))

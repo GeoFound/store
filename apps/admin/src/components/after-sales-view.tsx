@@ -2,8 +2,11 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState, type ReactNode } from "react"
-import { adminApi } from "@/lib/admin-api"
 import { formatDate } from "@/lib/format"
+import {
+  loadAfterSales as loadAfterSalesWorkspace,
+  updateAfterSale,
+} from "@/lib/product-admin-api"
 import {
   Field,
   PrimaryButton,
@@ -42,8 +45,7 @@ const RESULT_OPTIONS = [
 ] as const
 
 async function loadAfterSales() {
-  const data = await adminApi<{ after_sales: AfterSale[] }>("/admin/after-sales")
-  return data.after_sales || []
+  return loadAfterSalesWorkspace() as Promise<AfterSale[]>
 }
 
 export function AfterSalesView() {
@@ -67,9 +69,11 @@ export function AfterSalesView() {
         throw new Error("请先选择一条售后请求。")
       }
 
-      return adminApi(`/admin/after-sales/${selected.id}`, {
-        method: "POST",
-        body: { status, result, admin_note: adminNote },
+      return updateAfterSale({
+        id: selected.id,
+        status,
+        result,
+        adminNote,
       })
     },
     onSuccess: async () => {

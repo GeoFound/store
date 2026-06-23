@@ -3,8 +3,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import Link from "next/link"
 import { useMemo, useState } from "react"
-import { adminApi } from "@/lib/admin-api"
 import { formatDate } from "@/lib/format"
+import {
+  createCatalogProduct,
+  loadProductCatalog,
+  updateCatalogProductStatus,
+} from "@/lib/product-admin-api"
 import {
   Field,
   PrimaryButton,
@@ -113,54 +117,24 @@ const PRODUCT_STATUSES: ProductStatus[] = [
   "rejected",
 ]
 
-async function loadProducts(query: string) {
-  const params = new URLSearchParams({
-    limit: "50",
-    fields:
-      "id,title,handle,status,thumbnail,variants.id,variants.title,variants.sku,variants.manage_inventory,variants.allow_backorder,variants.prices.*,sales_channels.id,sales_channels.name,created_at,updated_at",
-  })
-
-  if (query.trim()) {
-    params.set("q", query.trim())
-  }
-
-  const [
-    products,
-    categories,
-    collections,
-    productTypes,
-    tags,
-    salesChannels,
-  ] = await Promise.all([
-    adminApi<{ products: Product[]; count?: number }>(
-      `/admin/products?${params.toString()}`,
-    ),
-    adminApi<{ product_categories: ProductCategory[] }>(
-      "/admin/product-categories?limit=100",
-    ).catch(() => ({ product_categories: [] })),
-    adminApi<{ collections: ProductCollection[] }>(
-      "/admin/collections?limit=100",
-    ).catch(() => ({ collections: [] })),
-    adminApi<{ product_types: ProductType[] }>(
-      "/admin/product-types?limit=100",
-    ).catch(() => ({ product_types: [] })),
-    adminApi<{ product_tags: ProductTag[] }>(
-      "/admin/product-tags?limit=100",
-    ).catch(() => ({ product_tags: [] })),
-    adminApi<{ sales_channels: SalesChannel[] }>(
-      "/admin/sales-channels?limit=100",
-    ).catch(() => ({ sales_channels: [] })),
-  ])
-
-  return {
-    products: products.products || [],
-    count: products.count || products.products?.length || 0,
-    categories: categories.product_categories || [],
-    collections: collections.collections || [],
-    productTypes: productTypes.product_types || [],
-    tags: tags.product_tags || [],
-    salesChannels: salesChannels.sales_channels || [],
-  }
+async function loadProducts(query: string): Promise<{
+  products: Product[]
+  count: number
+  categories: ProductCategory[]
+  collections: ProductCollection[]
+  productTypes: ProductType[]
+  tags: ProductTag[]
+  salesChannels: SalesChannel[]
+}> {
+  return loadProductCatalog(query) as Promise<{
+    products: Product[]
+    count: number
+    categories: ProductCategory[]
+    collections: ProductCollection[]
+    productTypes: ProductType[]
+    tags: ProductTag[]
+    salesChannels: SalesChannel[]
+  }>
 }
 
 export function ProductsView() {
@@ -194,62 +168,7 @@ export function ProductsView() {
 
   const createProduct = useMutation({
     mutationFn: () => {
-      if (!form.title.trim()) {
-        throw new Error("商品标题必填。")
-      }
-
-      const payload: Record<string, unknown> = {
-        title: form.title.trim(),
-        description: form.description.trim() || null,
-        status: form.status,
-      }
-      const handle = form.handle.trim() || slugFromTitle(form.title)
-      const amount = Number(form.amount)
-
-      if (handle) {
-        payload.handle = handle
-      }
-      if (form.typeId) {
-        payload.type_id = form.typeId
-      }
-      if (form.collectionId) {
-        payload.collection_id = form.collectionId
-      }
-      if (form.categoryId) {
-        payload.categories = [{ id: form.categoryId }]
-      }
-      if (form.tagId) {
-        payload.tags = [{ id: form.tagId }]
-      }
-      if (form.salesChannelId) {
-        payload.sales_channels = [{ id: form.salesChannelId }]
-      }
-      if (form.variantTitle.trim() || form.sku.trim() || form.amount.trim()) {
-        if (!Number.isFinite(amount) || amount <= 0) {
-          throw new Error("创建变体时价格金额必须是大于 0 的数字。")
-        }
-
-        payload.options = [{ title: "Default", values: ["Default"] }]
-        payload.variants = [
-          {
-            title: form.variantTitle.trim() || "Default",
-            sku: form.sku.trim() || null,
-            manage_inventory: form.manageInventory,
-            options: { Default: "Default" },
-            prices: [
-              {
-                currency_code: form.currencyCode.trim().toLowerCase() || "usd",
-                amount,
-              },
-            ],
-          },
-        ]
-      }
-
-      return adminApi("/admin/products", {
-        method: "POST",
-        body: payload,
-      })
+      return createCatalogProduct(form)
     },
     onSuccess: async () => {
       setMessage("商品已创建。")
@@ -262,10 +181,7 @@ export function ProductsView() {
 
   const updateStatus = useMutation({
     mutationFn: (input: { id: string; status: ProductStatus }) =>
-      adminApi(`/admin/products/${input.id}`, {
-        method: "POST",
-        body: { status: input.status },
-      }),
+      updateCatalogProductStatus(input),
     onSuccess: async () => {
       setMessage("商品状态已更新。")
       setError("")
@@ -608,13 +524,4 @@ function priceLabel(variant: ProductVariant) {
   }
 
   return `${price.currency_code || "-"} ${price.amount}`
-}
-
-function slugFromTitle(title: string) {
-  return title
-    .trim()
-    .toLowerCase()
-    .replace(/['"]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
 }

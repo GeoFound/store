@@ -1,8 +1,12 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { adminApi } from "@/lib/admin-api"
 import { formatDate } from "@/lib/format"
+import {
+  loadAIPolicy,
+  loadAIProviders,
+  loadAIRuns,
+} from "@/lib/product-admin-api"
 import { MetricCard, Message, PageHeader, Panel, TableShell } from "./admin-page"
 import { StatusBadge } from "./status-badge"
 
@@ -77,16 +81,15 @@ type AIPolicy = {
 export function AIView() {
   const providersQuery = useQuery({
     queryKey: ["ai-providers"],
-    queryFn: () => adminApi<AIProvidersResponse>("/admin/ai/providers"),
+    queryFn: () => loadAIProviders() as Promise<AIProvidersResponse>,
   })
   const policyQuery = useQuery({
     queryKey: ["ai-policy"],
-    queryFn: () =>
-      adminApi<{ policy: AIPolicy }>("/admin/ai/control-panel-policy"),
+    queryFn: () => loadAIPolicy() as Promise<{ policy: AIPolicy }>,
   })
   const runsQuery = useQuery({
     queryKey: ["ai-runs"],
-    queryFn: () => adminApi<{ runs: AITaskRun[] }>("/admin/ai/runs?limit=50"),
+    queryFn: () => loadAIRuns() as Promise<{ runs: AITaskRun[] }>,
   })
   const state = providersQuery.data
   const policy = policyQuery.data?.policy

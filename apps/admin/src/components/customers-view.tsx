@@ -2,8 +2,11 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState } from "react"
-import { adminApi } from "@/lib/admin-api"
 import { formatDate } from "@/lib/format"
+import {
+  createCustomer as createAdminCustomer,
+  loadCustomers as loadCustomerWorkspace,
+} from "@/lib/product-admin-api"
 import { Field, PrimaryButton, SecondaryButton, TextInput } from "./admin-controls"
 import { Message, MetricCard, PageHeader, Panel } from "./admin-page"
 import { AdminTable, Cell, normalizeError } from "./admin-table"
@@ -42,30 +45,11 @@ const EMPTY_CUSTOMER_FORM: CustomerForm = {
 }
 
 async function loadCustomers(query: string) {
-  const params = new URLSearchParams({
-    limit: "100",
-    fields:
-      "id,email,first_name,last_name,phone,has_account,groups.id,groups.name,created_at,updated_at",
-  })
-
-  if (query.trim()) {
-    params.set("q", query.trim())
-  }
-
-  const [customers, groups] = await Promise.all([
-    adminApi<{ customers: Customer[]; count?: number }>(
-      `/admin/customers?${params.toString()}`,
-    ),
-    adminApi<{ customer_groups: CustomerGroup[] }>(
-      "/admin/customer-groups?limit=100",
-    ).catch(() => ({ customer_groups: [] })),
-  ])
-
-  return {
-    customers: customers.customers || [],
-    count: customers.count || customers.customers?.length || 0,
-    groups: groups.customer_groups || [],
-  }
+  return loadCustomerWorkspace(query) as Promise<{
+    customers: Customer[]
+    count: number
+    groups: CustomerGroup[]
+  }>
 }
 
 export function CustomersView() {
@@ -85,27 +69,7 @@ export function CustomersView() {
 
   const createCustomer = useMutation({
     mutationFn: () => {
-      if (!form.email.trim()) {
-        throw new Error("邮箱必填。")
-      }
-
-      const body: Record<string, string> = {
-        email: form.email.trim(),
-      }
-      if (form.firstName.trim()) {
-        body.first_name = form.firstName.trim()
-      }
-      if (form.lastName.trim()) {
-        body.last_name = form.lastName.trim()
-      }
-      if (form.phone.trim()) {
-        body.phone = form.phone.trim()
-      }
-
-      return adminApi("/admin/customers", {
-        method: "POST",
-        body,
-      })
+      return createAdminCustomer(form)
     },
     onSuccess: async () => {
       setMessage("客户已创建。")

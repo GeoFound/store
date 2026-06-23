@@ -2,8 +2,11 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState, type ReactNode } from "react"
-import { adminApi } from "@/lib/admin-api"
 import { formatDate } from "@/lib/format"
+import {
+  createDigitalDelivery,
+  loadDeliveryWorkspace,
+} from "@/lib/product-admin-api"
 import {
   Field,
   PrimaryButton,
@@ -61,15 +64,10 @@ const EMPTY_FORM: DeliveryForm = {
 }
 
 async function loadDeliveries() {
-  const [pendingData, deliveryData] = await Promise.all([
-    adminApi<{ items: PendingItem[] }>("/admin/digital-delivery/pending"),
-    adminApi<{ deliveries: Delivery[] }>("/admin/digital-delivery/deliveries"),
-  ])
-
-  return {
-    pending: pendingData.items || [],
-    deliveries: deliveryData.deliveries || [],
-  }
+  return loadDeliveryWorkspace() as Promise<{
+    pending: PendingItem[]
+    deliveries: Delivery[]
+  }>
 }
 
 export function DeliveriesView() {
@@ -91,22 +89,10 @@ export function DeliveriesView() {
         throw new Error("请先选择待交付项，或填写交付 ID / 凭证项 ID。")
       }
 
-      return adminApi<{ delivery: Delivery; accessToken: string | null }>(
-        "/admin/digital-delivery/deliveries",
-        {
-          method: "POST",
-          body: {
-            delivery_id: form.deliveryId.trim() || undefined,
-            account_item_id: form.accountItemId.trim() || undefined,
-            order_id: form.orderId.trim() || undefined,
-            cart_id: form.cartId.trim() || undefined,
-            payment_attempt_id: form.paymentAttemptId.trim() || undefined,
-            delivery_payload: parseDeliveryPayload(form.deliveryPayload),
-            delivered_by: form.deliveredBy.trim() || "admin",
-            delivery_note: form.deliveryNote.trim() || undefined,
-          },
-        },
-      )
+      return createDigitalDelivery({
+        ...form,
+        deliveryPayload: parseDeliveryPayload(form.deliveryPayload),
+      }) as Promise<{ delivery: Delivery; accessToken: string | null }>
     },
     onSuccess: async (result) => {
       setMessage(`交付已创建：${result.delivery.id}`)

@@ -1,8 +1,12 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { adminApi } from "@/lib/admin-api"
 import { formatDate, formatValue } from "@/lib/format"
+import {
+  loadOpsDashboard,
+  loadOpsMaintenance,
+  loadOpsSecurity,
+} from "@/lib/product-admin-api"
 import { MetricCard, Message, PageHeader, Panel, TableShell } from "./admin-page"
 import { StatusBadge } from "./status-badge"
 
@@ -75,22 +79,21 @@ const SECTION_KEYS: Array<{
 export function OpsView() {
   const dashboardQuery = useQuery({
     queryKey: ["ops-dashboard"],
-    queryFn: () => adminApi<OpsDashboard>("/admin/ops-control/dashboard"),
+    queryFn: () => loadOpsDashboard() as Promise<OpsDashboard>,
   })
   const securityQuery = useQuery({
     queryKey: ["ops-security"],
-    queryFn: () =>
-      adminApi<{ security: OpsSection }>("/admin/ops-control/security"),
+    queryFn: () => loadOpsSecurity() as Promise<{ security: OpsSection }>,
   })
   const maintenanceQuery = useQuery({
     queryKey: ["ops-maintenance"],
     queryFn: () =>
-      adminApi<{
+      loadOpsMaintenance() as Promise<{
         maintenance: OpsSection
         customer: OpsSection
         commerce: OpsSection
         ai_ops: OpsSection
-      }>("/admin/ops-control/maintenance"),
+      }>,
   })
   const state = dashboardQuery.data
 
