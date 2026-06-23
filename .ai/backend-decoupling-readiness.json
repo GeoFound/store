@@ -74,6 +74,11 @@
       "max": 0
     },
     {
+      "id": "admin-order-customer-domain-uses-product-dtos",
+      "check": "adminOrderCustomerDtoLeakFiles",
+      "max": 0
+    },
+    {
       "id": "storefront-no-fetch-outside-approved-adapters",
       "check": "storefrontFetchViolations",
       "max": 0

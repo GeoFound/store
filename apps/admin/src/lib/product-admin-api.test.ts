@@ -1,9 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import {
+  createCustomer,
   importCredentialBatch,
+  loadCustomers,
   loadCredentialInventory,
+  loadOrders,
   loadProductCatalog,
   loadProductPublishingWorkspace,
+  retrieveOrder,
 } from "./product-admin-api"
 
 const adminApiMock = vi.hoisted(() => vi.fn())
@@ -242,5 +246,163 @@ describe("product admin facade", () => {
         },
       },
     )
+  })
+
+  it("maps order list and detail responses to order DTOs", async () => {
+    const orderPayload = {
+      id: "order_1",
+      display_id: 101,
+      email: "buyer@example.com",
+      status: "pending",
+      payment_status: "captured",
+      fulfillment_status: "not_fulfilled",
+      total: 2599,
+      currency_code: "usd",
+      customer: {
+        id: "cus_1",
+        email: "buyer@example.com",
+        first_name: "Ada",
+        last_name: "Lovelace",
+      },
+      items: [
+        {
+          id: "item_1",
+          title: "Gift card",
+          subtitle: "Default",
+          quantity: 1,
+          unit_price: 2599,
+          total: 2599,
+        },
+      ],
+      payment_collections: [
+        { id: "paycol_1", status: "completed", amount: 2599 },
+      ],
+      fulfillments: [
+        {
+          id: "ful_1",
+          status: "pending",
+          delivered_at: null,
+        },
+      ],
+      created_at: "2026-06-03T00:00:00.000Z",
+      updated_at: "2026-06-04T00:00:00.000Z",
+    }
+    adminApiMock.mockImplementation(async (path: string) => {
+      if (path.startsWith("/admin/orders?")) {
+        return { orders: [orderPayload], count: 1 }
+      }
+
+      if (path.startsWith("/admin/orders/order_1?")) {
+        return { order: orderPayload }
+      }
+
+      throw new Error(`Unexpected path: ${path}`)
+    })
+
+    const list = await loadOrders("buyer")
+    const detail = await retrieveOrder("order_1")
+
+    expect(list.orders[0]).toMatchObject({
+      id: "order_1",
+      displayId: 101,
+      paymentStatus: "captured",
+      fulfillmentStatus: "not_fulfilled",
+      currencyCode: "usd",
+      customer: {
+        firstName: "Ada",
+        lastName: "Lovelace",
+      },
+      items: [{ unitPrice: 2599, total: 2599 }],
+      paymentCollections: [{ id: "paycol_1", amount: 2599 }],
+      fulfillments: [{ id: "ful_1", deliveredAt: null }],
+      createdAt: "2026-06-03T00:00:00.000Z",
+      updatedAt: "2026-06-04T00:00:00.000Z",
+    })
+    expect(detail).toEqual(list.orders[0])
+    expect(list.orders[0]).not.toHaveProperty("payment_status")
+    expect(list.orders[0].items[0]).not.toHaveProperty("unit_price")
+  })
+
+  it("maps customers to customer DTOs and keeps create input product-shaped", async () => {
+    adminApiMock.mockImplementation(async (path: string, options?: unknown) => {
+      if (path.startsWith("/admin/customers?")) {
+        return {
+          customers: [
+            {
+              id: "cus_1",
+              email: "buyer@example.com",
+              first_name: "Ada",
+              last_name: "Lovelace",
+              phone: "+15550100",
+              has_account: true,
+              groups: [{ id: "cgrp_1", name: "VIP" }],
+              created_at: "2026-06-03T00:00:00.000Z",
+              updated_at: "2026-06-04T00:00:00.000Z",
+            },
+          ],
+          count: 1,
+        }
+      }
+
+      if (path === "/admin/customer-groups?limit=100") {
+        return {
+          customer_groups: [
+            {
+              id: "cgrp_1",
+              name: "VIP",
+              created_at: "2026-06-01T00:00:00.000Z",
+            },
+          ],
+        }
+      }
+
+      if (path === "/admin/customers") {
+        return { customer: { id: "cus_2" }, options }
+      }
+
+      throw new Error(`Unexpected path: ${path}`)
+    })
+
+    const workspace = await loadCustomers("buyer")
+
+    expect(workspace.customers[0]).toEqual({
+      id: "cus_1",
+      email: "buyer@example.com",
+      firstName: "Ada",
+      lastName: "Lovelace",
+      phone: "+15550100",
+      hasAccount: true,
+      groups: [
+        {
+          id: "cgrp_1",
+          name: "VIP",
+          createdAt: null,
+        },
+      ],
+      createdAt: "2026-06-03T00:00:00.000Z",
+      updatedAt: "2026-06-04T00:00:00.000Z",
+    })
+    expect(workspace.groups[0]).toEqual({
+      id: "cgrp_1",
+      name: "VIP",
+      createdAt: "2026-06-01T00:00:00.000Z",
+    })
+
+    await createCustomer({
+      email: "new@example.com",
+      firstName: "Grace",
+      lastName: "Hopper",
+      phone: "+15550101",
+    })
+
+    expect(adminApiMock).toHaveBeenLastCalledWith("/admin/customers", {
+      method: "POST",
+      body: {
+        email: "new@example.com",
+        first_name: "Grace",
+        last_name: "Hopper",
+        phone: "+15550101",
+      },
+    })
   })
 })

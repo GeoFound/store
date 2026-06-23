@@ -130,6 +130,80 @@ export type CredentialInventoryWorkspace = {
   variants: ProductAdminCatalogVariant[]
 }
 
+export type ProductAdminOrderLineItem = {
+  id: string
+  title: string | null
+  subtitle: string | null
+  quantity: number | null
+  unitPrice: number | null
+  total: number | null
+}
+
+export type ProductAdminOrderCustomer = {
+  id: string | null
+  email: string | null
+  firstName: string | null
+  lastName: string | null
+}
+
+export type ProductAdminPaymentCollection = {
+  id: string
+  status: string | null
+  amount: number | null
+}
+
+export type ProductAdminFulfillment = {
+  id: string
+  status: string | null
+  deliveredAt: string | null
+}
+
+export type ProductAdminOrder = {
+  id: string
+  displayId: number | string | null
+  email: string | null
+  status: string | null
+  paymentStatus: string | null
+  fulfillmentStatus: string | null
+  total: number | null
+  currencyCode: string | null
+  customer: ProductAdminOrderCustomer | null
+  items: ProductAdminOrderLineItem[]
+  paymentCollections: ProductAdminPaymentCollection[]
+  fulfillments: ProductAdminFulfillment[]
+  createdAt: string | null
+  updatedAt: string | null
+}
+
+export type ProductAdminOrderList = {
+  orders: ProductAdminOrder[]
+  count: number
+}
+
+export type ProductAdminCustomer = {
+  id: string
+  email: string
+  firstName: string | null
+  lastName: string | null
+  phone: string | null
+  hasAccount: boolean
+  groups: ProductAdminCustomerGroup[]
+  createdAt: string | null
+  updatedAt: string | null
+}
+
+export type ProductAdminCustomerGroup = {
+  id: string
+  name: string
+  createdAt: string | null
+}
+
+export type ProductAdminCustomerWorkspace = {
+  customers: ProductAdminCustomer[]
+  count: number
+  groups: ProductAdminCustomerGroup[]
+}
+
 type CreateCatalogProductInput = {
   title: string
   handle: string
@@ -453,7 +527,7 @@ export function updateCatalogProductStatus(input: {
   })
 }
 
-export async function loadOrders(query: string) {
+export async function loadOrders(query: string): Promise<ProductAdminOrderList> {
   const params = new URLSearchParams({
     limit: "50",
     order: "-created_at",
@@ -469,17 +543,19 @@ export async function loadOrders(query: string) {
   )
 
   return {
-    orders: data.orders || [],
+    orders: arrayField(data.orders)
+      .map(toProductAdminOrder)
+      .filter((order) => order.id),
     count: data.count || data.orders?.length || 0,
   }
 }
 
-export async function retrieveOrder(orderId: string) {
+export async function retrieveOrder(orderId: string): Promise<ProductAdminOrder> {
   const data = await adminApi<{ order: unknown }>(
     `/admin/orders/${orderId}?fields=${ORDER_FIELDS}`,
   )
 
-  return data.order
+  return toProductAdminOrder(data.order)
 }
 
 export function runOrderAction(input: {
@@ -498,7 +574,9 @@ export function runOrderAction(input: {
   })
 }
 
-export async function loadCustomers(query: string) {
+export async function loadCustomers(
+  query: string,
+): Promise<ProductAdminCustomerWorkspace> {
   const params = new URLSearchParams({
     limit: "100",
     fields:
@@ -519,9 +597,13 @@ export async function loadCustomers(query: string) {
   ])
 
   return {
-    customers: customers.customers || [],
+    customers: arrayField(customers.customers)
+      .map(toProductAdminCustomer)
+      .filter((customer) => customer.id),
     count: customers.count || customers.customers?.length || 0,
-    groups: groups.customer_groups || [],
+    groups: arrayField(groups.customer_groups)
+      .map(toProductAdminCustomerGroup)
+      .filter((group) => group.id),
   }
 }
 
@@ -1410,6 +1492,114 @@ function toProductAdminCredentialBatch(
   }
 }
 
+function toProductAdminOrder(value: unknown): ProductAdminOrder {
+  const record = recordField(value)
+  const customer = record.customer ? toProductAdminOrderCustomer(record.customer) : null
+
+  return {
+    id: stringField(record.id),
+    displayId: displayIdField(record.display_id),
+    email: nullableStringField(record.email),
+    status: nullableStringField(record.status),
+    paymentStatus: nullableStringField(record.payment_status),
+    fulfillmentStatus: nullableStringField(record.fulfillment_status),
+    total: nullableNumberField(record.total),
+    currencyCode: nullableStringField(record.currency_code),
+    customer,
+    items: arrayField(record.items)
+      .map(toProductAdminOrderLineItem)
+      .filter((item) => item.id),
+    paymentCollections: arrayField(record.payment_collections)
+      .map(toProductAdminPaymentCollection)
+      .filter((collection) => collection.id),
+    fulfillments: arrayField(record.fulfillments)
+      .map(toProductAdminFulfillment)
+      .filter((fulfillment) => fulfillment.id),
+    createdAt: nullableStringField(record.created_at),
+    updatedAt: nullableStringField(record.updated_at),
+  }
+}
+
+function toProductAdminOrderLineItem(
+  value: unknown,
+): ProductAdminOrderLineItem {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    title: nullableStringField(record.title),
+    subtitle: nullableStringField(record.subtitle),
+    quantity: nullableNumberField(record.quantity),
+    unitPrice: nullableNumberField(record.unit_price),
+    total: nullableNumberField(record.total),
+  }
+}
+
+function toProductAdminOrderCustomer(
+  value: unknown,
+): ProductAdminOrderCustomer {
+  const record = recordField(value)
+
+  return {
+    id: nullableStringField(record.id),
+    email: nullableStringField(record.email),
+    firstName: nullableStringField(record.first_name),
+    lastName: nullableStringField(record.last_name),
+  }
+}
+
+function toProductAdminPaymentCollection(
+  value: unknown,
+): ProductAdminPaymentCollection {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    status: nullableStringField(record.status),
+    amount: nullableNumberField(record.amount),
+  }
+}
+
+function toProductAdminFulfillment(value: unknown): ProductAdminFulfillment {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    status: nullableStringField(record.status),
+    deliveredAt: nullableStringField(record.delivered_at),
+  }
+}
+
+function toProductAdminCustomer(value: unknown): ProductAdminCustomer {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    email: stringField(record.email),
+    firstName: nullableStringField(record.first_name),
+    lastName: nullableStringField(record.last_name),
+    phone: nullableStringField(record.phone),
+    hasAccount: booleanField(record.has_account),
+    groups: arrayField(record.groups)
+      .map(toProductAdminCustomerGroup)
+      .filter((group) => group.id),
+    createdAt: nullableStringField(record.created_at),
+    updatedAt: nullableStringField(record.updated_at),
+  }
+}
+
+function toProductAdminCustomerGroup(
+  value: unknown,
+): ProductAdminCustomerGroup {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    name: stringField(record.name, stringField(record.id)),
+    createdAt: nullableStringField(record.created_at),
+  }
+}
+
 function recordField(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return {}
@@ -1440,6 +1630,10 @@ function numberField(value: unknown, fallback = 0) {
 
 function nullableNumberField(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : null
+}
+
+function displayIdField(value: unknown) {
+  return typeof value === "string" || typeof value === "number" ? value : null
 }
 
 function emptyToNull(value: string) {

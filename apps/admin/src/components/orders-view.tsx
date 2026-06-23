@@ -7,6 +7,9 @@ import {
   loadOrders as loadOrderList,
   retrieveOrder as retrieveOrderDetail,
   runOrderAction,
+  type ProductAdminOrder,
+  type ProductAdminOrderAction,
+  type ProductAdminOrderCustomer,
 } from "@/lib/product-admin-api"
 import {
   Field,
@@ -20,52 +23,9 @@ import { Message, MetricCard, PageHeader, Panel } from "./admin-page"
 import { AdminTable, Cell, normalizeError } from "./admin-table"
 import { StatusBadge } from "./status-badge"
 
-type OrderLineItem = {
-  id: string
-  title?: string | null
-  subtitle?: string | null
-  quantity?: number | null
-  unit_price?: number | null
-  total?: number | null
-}
-
-type OrderCustomer = {
-  id?: string
-  email?: string | null
-  first_name?: string | null
-  last_name?: string | null
-}
-
-type Order = {
-  id: string
-  display_id?: number | string | null
-  email?: string | null
-  status?: string | null
-  payment_status?: string | null
-  fulfillment_status?: string | null
-  total?: number | null
-  currency_code?: string | null
-  customer?: OrderCustomer | null
-  items?: OrderLineItem[]
-  payment_collections?: Array<{
-    id: string
-    status?: string | null
-    amount?: number | null
-  }>
-  fulfillments?: Array<{
-    id: string
-    status?: string | null
-    delivered_at?: string | null
-  }>
-  created_at?: string | null
-  updated_at?: string | null
-}
-
-type OrderAction = "complete" | "archive" | "cancel"
-
 type OrderActionForm = {
   orderId: string
-  action: OrderAction
+  action: ProductAdminOrderAction
   confirmText: string
   note: string
 }
@@ -75,14 +35,6 @@ const EMPTY_ACTION_FORM: OrderActionForm = {
   action: "complete",
   confirmText: "",
   note: "",
-}
-
-async function loadOrders(query: string) {
-  return loadOrderList(query) as Promise<{ orders: Order[]; count: number }>
-}
-
-async function retrieveOrder(orderId: string) {
-  return retrieveOrderDetail(orderId) as Promise<Order>
 }
 
 export function OrdersView() {
@@ -97,11 +49,11 @@ export function OrdersView() {
 
   const ordersQuery = useQuery({
     queryKey: ["orders", query],
-    queryFn: () => loadOrders(query),
+    queryFn: () => loadOrderList(query),
   })
   const selectedOrderQuery = useQuery({
     queryKey: ["orders", "detail", selectedOrderId],
-    queryFn: () => retrieveOrder(selectedOrderId),
+    queryFn: () => retrieveOrderDetail(selectedOrderId),
     enabled: Boolean(selectedOrderId),
   })
   const orders = ordersQuery.data?.orders || []
@@ -237,7 +189,7 @@ export function OrdersView() {
                   onChange={(event) =>
                     setActionForm((current) => ({
                       ...current,
-                      action: event.target.value as OrderAction,
+                      action: event.target.value as ProductAdminOrderAction,
                     }))
                   }
                 >
@@ -286,7 +238,7 @@ export function OrdersView() {
             {orders.map((order) => (
               <tr key={order.id} className="align-top">
                 <Cell>
-                  <div className="font-medium">#{order.display_id || order.id}</div>
+                  <div className="font-medium">#{order.displayId || order.id}</div>
                   <div className="font-mono text-xs text-[var(--muted)]">
                     {order.id}
                   </div>
@@ -300,14 +252,14 @@ export function OrdersView() {
                     {customerName(order.customer)}
                   </div>
                 </Cell>
-                <Cell mono>{money(order.total, order.currency_code)}</Cell>
+                <Cell mono>{money(order.total, order.currencyCode)}</Cell>
                 <Cell>
-                  <StatusBadge value={order.payment_status} />
+                  <StatusBadge value={order.paymentStatus} />
                 </Cell>
                 <Cell>
-                  <StatusBadge value={order.fulfillment_status} />
+                  <StatusBadge value={order.fulfillmentStatus} />
                 </Cell>
-                <Cell>{formatDate(order.created_at)}</Cell>
+                <Cell>{formatDate(order.createdAt)}</Cell>
                 <Cell align="right">
                   <div className="flex flex-wrap justify-end gap-2">
                     <SecondaryButton
@@ -355,27 +307,27 @@ export function OrdersView() {
   )
 }
 
-function OrderDetail({ order }: { order: Order }) {
+function OrderDetail({ order }: { order: ProductAdminOrder }) {
   return (
     <div className="grid gap-4">
       <div className="grid gap-3 md:grid-cols-3">
         <MetricCard label="订单状态" value={order.status || "unknown"} detail={order.id} />
         <MetricCard
           label="支付"
-          value={order.payment_status || "unknown"}
-          detail={`${order.payment_collections?.length || 0} collections`}
+          value={order.paymentStatus || "unknown"}
+          detail={`${order.paymentCollections.length} collections`}
         />
         <MetricCard
           label="履约"
-          value={order.fulfillment_status || "unknown"}
-          detail={`${order.fulfillments?.length || 0} fulfillments`}
+          value={order.fulfillmentStatus || "unknown"}
+          detail={`${order.fulfillments.length} fulfillments`}
         />
       </div>
       <AdminTable
         headers={["商品", "数量", "单价", "小计"]}
-        empty={(order.items || []).length === 0}
+        empty={order.items.length === 0}
       >
-        {(order.items || []).map((item) => (
+        {order.items.map((item) => (
           <tr key={item.id} className="align-top">
             <Cell>
               <div className="font-medium">{item.title || item.id}</div>
@@ -384,8 +336,8 @@ function OrderDetail({ order }: { order: Order }) {
               </div>
             </Cell>
             <Cell>{formatValue(item.quantity)}</Cell>
-            <Cell mono>{money(item.unit_price, order.currency_code)}</Cell>
-            <Cell mono>{money(item.total, order.currency_code)}</Cell>
+            <Cell mono>{money(item.unitPrice, order.currencyCode)}</Cell>
+            <Cell mono>{money(item.total, order.currencyCode)}</Cell>
           </tr>
         ))}
       </AdminTable>
@@ -397,11 +349,11 @@ function OrderDetail({ order }: { order: Order }) {
           </div>
           <div>
             <span className="font-medium">创建：</span>
-            {formatDate(order.created_at)}
+            {formatDate(order.createdAt)}
           </div>
           <div>
             <span className="font-medium">更新：</span>
-            {formatDate(order.updated_at)}
+            {formatDate(order.updatedAt)}
           </div>
         </div>
       </div>
@@ -417,8 +369,8 @@ function money(value?: number | null, currency?: string | null) {
   return `${currency || ""} ${value}`
 }
 
-function customerName(customer?: OrderCustomer | null) {
-  const name = [customer?.first_name, customer?.last_name].filter(Boolean).join(" ")
+function customerName(customer?: ProductAdminOrderCustomer | null) {
+  const name = [customer?.firstName, customer?.lastName].filter(Boolean).join(" ")
 
   return name || customer?.id || ""
 }

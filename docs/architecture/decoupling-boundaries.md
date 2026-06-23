@@ -38,6 +38,8 @@ storefront UI, and backend adapters can evolve independently.
   product-admin DTOs. It must not read Medusa or backend snake_case response
   fields such as product variant IDs, template codes, handler codes, or stock
   counters directly.
+- Order and customer UI follows the same rule for order, payment, fulfillment,
+  customer account, and group fields.
 
 ## Rule Of Thumb
 

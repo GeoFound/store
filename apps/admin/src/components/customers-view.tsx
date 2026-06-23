@@ -11,25 +11,6 @@ import { Field, PrimaryButton, SecondaryButton, TextInput } from "./admin-contro
 import { Message, MetricCard, PageHeader, Panel } from "./admin-page"
 import { AdminTable, Cell, normalizeError } from "./admin-table"
 
-type Customer = {
-  id: string
-  email: string
-  first_name?: string | null
-  last_name?: string | null
-  phone?: string | null
-  has_account?: boolean | null
-  groups?: Array<{ id: string; name: string }>
-  created_at?: string | null
-  updated_at?: string | null
-}
-
-type CustomerGroup = {
-  id: string
-  name: string
-  customers?: Customer[]
-  created_at?: string | null
-}
-
 type CustomerForm = {
   email: string
   firstName: string
@@ -44,14 +25,6 @@ const EMPTY_CUSTOMER_FORM: CustomerForm = {
   phone: "",
 }
 
-async function loadCustomers(query: string) {
-  return loadCustomerWorkspace(query) as Promise<{
-    customers: Customer[]
-    count: number
-    groups: CustomerGroup[]
-  }>
-}
-
 export function CustomersView() {
   const queryClient = useQueryClient()
   const [query, setQuery] = useState("")
@@ -62,7 +35,7 @@ export function CustomersView() {
 
   const customersQuery = useQuery({
     queryKey: ["customers", query],
-    queryFn: () => loadCustomers(query),
+    queryFn: () => loadCustomerWorkspace(query),
   })
   const data = customersQuery.data
   const customers = data?.customers || []
@@ -102,8 +75,8 @@ export function CustomersView() {
         <MetricCard label="客户" value={customers.length} detail="当前查询" />
         <MetricCard
           label="有账号"
-          value={customers.filter((customer) => customer.has_account).length}
-          detail="has_account"
+          value={customers.filter((customer) => customer.hasAccount).length}
+          detail="has account"
         />
         <MetricCard label="客户组" value={data?.groups.length || 0} detail="groups" />
         <MetricCard
@@ -209,16 +182,16 @@ export function CustomersView() {
                 <Cell>
                   <div className="font-medium">{customer.email}</div>
                   <div className="text-xs text-[var(--muted)]">
-                    {[customer.first_name, customer.last_name].filter(Boolean).join(" ") ||
+                    {[customer.firstName, customer.lastName].filter(Boolean).join(" ") ||
                       customer.id}
                   </div>
                 </Cell>
-                <Cell>{customer.has_account ? "是" : "否"}</Cell>
+                <Cell>{customer.hasAccount ? "是" : "否"}</Cell>
                 <Cell>
-                  {customer.groups?.map((group) => group.name).join(", ") || "-"}
+                  {customer.groups.map((group) => group.name).join(", ") || "-"}
                 </Cell>
                 <Cell>{customer.phone || "-"}</Cell>
-                <Cell>{formatDate(customer.updated_at || customer.created_at)}</Cell>
+                <Cell>{formatDate(customer.updatedAt || customer.createdAt)}</Cell>
               </tr>
             ))}
           </AdminTable>
@@ -233,7 +206,7 @@ export function CustomersView() {
               <tr key={group.id} className="align-top">
                 <Cell>{group.name}</Cell>
                 <Cell mono>{group.id}</Cell>
-                <Cell>{formatDate(group.created_at)}</Cell>
+                <Cell>{formatDate(group.createdAt)}</Cell>
               </tr>
             ))}
           </AdminTable>
