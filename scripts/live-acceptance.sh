@@ -8,12 +8,17 @@ order_id=""
 smoke_log="$(mktemp)"
 backend_pid=""
 storefront_pid=""
+admin_pid=""
 BACKEND_URL="${BACKEND_URL:-http://127.0.0.1:9102}"
 STOREFRONT_URL="${STOREFRONT_URL:-http://127.0.0.1:8100}"
+ADMIN_APP_URL="${ADMIN_APP_URL:-http://127.0.0.1:8101}"
 BACKEND_ENV_FILE="${BACKEND_ENV_FILE:-$ROOT_DIR/apps/backend/.env}"
 STOREFRONT_ENV_FILE="${STOREFRONT_ENV_FILE:-$ROOT_DIR/apps/storefront/.env.local}"
 BACKEND_LOG="${BACKEND_LOG:-/tmp/store-backend-live-acceptance.log}"
 STOREFRONT_LOG="${STOREFRONT_LOG:-/tmp/store-storefront-live-acceptance.log}"
+ADMIN_LOG="${ADMIN_LOG:-/tmp/store-admin-live-acceptance.log}"
+ADMIN_SMOKE_EMAIL="${ADMIN_SMOKE_EMAIL:-admin-smoke@example.com}"
+ADMIN_SMOKE_PASSWORD="${ADMIN_SMOKE_PASSWORD:-Smoke-Admin-123!}"
 MANUAL_WEBHOOK_SECRET="${MANUAL_WEBHOOK_SECRET:-store_live_smoke_webhook_secret}"
 JWT_SECRET="${JWT_SECRET:-store_live_smoke_jwt_secret}"
 COOKIE_SECRET="${COOKIE_SECRET:-store_live_smoke_cookie_secret}"
@@ -114,6 +119,11 @@ cleanup() {
     wait "$storefront_pid" 2>/dev/null || true
   fi
 
+  if [[ -n "$admin_pid" ]] && kill -0 "$admin_pid" 2>/dev/null; then
+    kill "$admin_pid" 2>/dev/null || true
+    wait "$admin_pid" 2>/dev/null || true
+  fi
+
   BUYER_EMAIL="$BUYER_EMAIL" bash "$ROOT_DIR/scripts/cleanup-live-smoke-data.sh" >/dev/null 2>&1 || true
   rm -f "$smoke_log"
 }
@@ -151,6 +161,7 @@ process.stdout.write(parsed.protocol === "https:" ? "443" : "80");
 
 BACKEND_PORT="${BACKEND_PORT:-$(url_port "$BACKEND_URL")}"
 STOREFRONT_PORT="${STOREFRONT_PORT:-$(url_port "$STOREFRONT_URL")}"
+ADMIN_APP_PORT="${ADMIN_APP_PORT:-$(url_port "$ADMIN_APP_URL")}"
 
 wait_for_managed_url() {
   local url="$1"
@@ -270,5 +281,35 @@ NEXT_PUBLIC_SITE_ID="$NEXT_PUBLIC_SITE_ID" \
 NEXT_PUBLIC_SITE_ENV="$NEXT_PUBLIC_SITE_ENV" \
 SITE_PROFILES_ROOT="$SITE_PROFILES_ROOT" \
 bash "$ROOT_DIR/scripts/live-order-recovery-smoke.sh"
+
+echo "Seeding admin smoke user..."
+(
+  cd "$ROOT_DIR"
+  XDG_CONFIG_HOME="$XDG_CONFIG_HOME" \
+  JWT_SECRET="$JWT_SECRET" \
+  COOKIE_SECRET="$COOKIE_SECRET" \
+  SITE_ID="$SITE_ID" \
+  SITE_ENV="$SITE_ENV" \
+  SITE_PROFILES_ROOT="$SITE_PROFILES_ROOT" \
+    pnpm --dir apps/backend exec medusa user \
+      -e "$ADMIN_SMOKE_EMAIL" -p "$ADMIN_SMOKE_PASSWORD"
+) || echo "admin smoke user already exists (continuing)"
+
+echo "Starting admin BFF app..."
+(
+  cd "$ROOT_DIR"
+  ADMIN_MEDUSA_BACKEND_URL="$BACKEND_URL" \
+  ADMIN_TRUSTED_ORIGINS="$ADMIN_APP_URL" \
+    pnpm --dir apps/admin exec next start --port "$ADMIN_APP_PORT" --hostname 127.0.0.1 >"$ADMIN_LOG" 2>&1
+) &
+admin_pid="$!"
+
+wait_for_managed_url "$ADMIN_APP_URL/api/health" "$admin_pid" "admin" "$ADMIN_LOG"
+
+echo "Running admin BFF smoke..."
+ADMIN_APP_URL="$ADMIN_APP_URL" \
+ADMIN_SMOKE_EMAIL="$ADMIN_SMOKE_EMAIL" \
+ADMIN_SMOKE_PASSWORD="$ADMIN_SMOKE_PASSWORD" \
+  pnpm smoke:admin
 
 echo "Live acceptance passed"

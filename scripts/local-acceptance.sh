@@ -63,4 +63,6 @@ NEXT_PUBLIC_MEDUSA_BACKEND_URL="$BACKEND_URL" \
 SITE_PROFILES_ROOT="$SITE_PROFILES_ROOT" \
   pnpm --dir apps/storefront build
 
+pnpm --dir apps/admin build
+
 echo "local-acceptance: build-level checks passed"

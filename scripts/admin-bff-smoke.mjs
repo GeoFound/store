@@ -12,6 +12,44 @@ if (!email || !password) {
   )
 }
 
+class CookieJar {
+  #cookies = new Map()
+
+  capture(headers) {
+    for (const cookie of getSetCookies(headers)) {
+      const [pair] = cookie.split(";")
+      const separator = pair.indexOf("=")
+
+      if (separator === -1) {
+        continue
+      }
+
+      const name = pair.slice(0, separator).trim()
+      const value = pair.slice(separator + 1)
+
+      if (!name) {
+        continue
+      }
+
+      if (value === "") {
+        this.#cookies.delete(name)
+      } else {
+        this.#cookies.set(name, value)
+      }
+    }
+  }
+
+  has(name) {
+    return this.#cookies.has(name)
+  }
+
+  header() {
+    return Array.from(this.#cookies.entries())
+      .map(([name, value]) => `${name}=${value}`)
+      .join("; ")
+  }
+}
+
 const jar = new CookieJar()
 
 await expectStatus("unauthenticated admin proxy is rejected", () =>
@@ -130,44 +168,6 @@ function normalizeUrl(value) {
 function fail(message) {
   console.error(message)
   process.exit(1)
-}
-
-class CookieJar {
-  #cookies = new Map()
-
-  capture(headers) {
-    for (const cookie of getSetCookies(headers)) {
-      const [pair] = cookie.split(";")
-      const separator = pair.indexOf("=")
-
-      if (separator === -1) {
-        continue
-      }
-
-      const name = pair.slice(0, separator).trim()
-      const value = pair.slice(separator + 1)
-
-      if (!name) {
-        continue
-      }
-
-      if (value === "") {
-        this.#cookies.delete(name)
-      } else {
-        this.#cookies.set(name, value)
-      }
-    }
-  }
-
-  has(name) {
-    return this.#cookies.has(name)
-  }
-
-  header() {
-    return Array.from(this.#cookies.entries())
-      .map(([name, value]) => `${name}=${value}`)
-      .join("; ")
-  }
 }
 
 function getSetCookies(headers) {
