@@ -1,6 +1,6 @@
 packages:
   - "apps/*"
 packageExtensions:
-  '@medusajs/medusa@2.14.2':
+  '@medusajs/medusa@2.16.0':
     dependencies:
       zod: 4.2.0
