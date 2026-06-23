@@ -31,3 +31,16 @@ storefront UI, and backend adapters can evolve independently.
 
 Framework imports belong at the edges. Core contracts should describe what the
 store needs, not which framework currently implements it.
+
+## Backend Replacement Readiness
+
+- `.ai/backend-decoupling-readiness.json` is the machine-readable replacement
+  readiness policy. It treats Medusa as the current runtime adapter and records
+  no-growth budgets for existing Medusa binding.
+- `pnpm ai:backend-decoupling` enforces hard-zero boundaries for platform core,
+  browser admin direct coupling, and storefront raw fetch drift. It also fails
+  if baselined Medusa runtime coupling grows before a neutral facade or
+  application port replaces it.
+- Backend replacement should proceed by strangler slices: typed admin facade,
+  framework-neutral use cases, data portability, shadow backend compatibility,
+  then cutover gates. A big-bang rewrite is not the target path.

@@ -2,6 +2,7 @@ import fs from "node:fs"
 import path from "node:path"
 import { spawnSync } from "node:child_process"
 import { fileURLToPath } from "node:url"
+import { createBackendDecouplingReadinessReport } from "./backend-decoupling-readiness.mjs"
 import { createInventoryReport } from "./inventory.mjs"
 import { createObligationsReport } from "./obligations.mjs"
 import { createProductionReadinessReport } from "./production-readiness.mjs"
@@ -50,6 +51,7 @@ const systemMap = readJson(".ai/system-map.json")
 const decisionRecords = readJsonFiles(".ai/decision-records")
 const reviewChecklists = readJsonFiles(".ai/review-checklists")
 const packageJson = readJson("package.json")
+const backendDecouplingReport = createBackendDecouplingReadinessReport()
 const inventoryReport = createInventoryReport()
 const obligationsReport = createObligationsReport()
 const productionReadinessReport = createProductionReadinessReport()
@@ -102,6 +104,19 @@ const context = {
     summary: obligationsReport.summary,
     issueCount: obligationsReport.issueCount,
     warningCount: obligationsReport.warningCount,
+  },
+  backendDecoupling: {
+    ok: backendDecouplingReport.ok,
+    policy: backendDecouplingReport.policy,
+    summary: backendDecouplingReport.summary,
+    issueCount: backendDecouplingReport.issueCount,
+    warningCount: backendDecouplingReport.warningCount,
+    warnings: backendDecouplingReport.warnings?.map((warning) => ({
+      id: warning.id,
+      value: warning.value,
+      max: warning.max,
+      target: warning.target,
+    })) || [],
   },
   productionReadiness: {
     ok: productionReadinessReport.ok,

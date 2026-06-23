@@ -1,0 +1,188 @@
+{
+  "version": "1.0.0",
+  "createdAt": "2026-06-23",
+  "objective": "Keep Medusa as the current production-grade backend runtime while making future backend replacement or rewrite objectively possible through stable product contracts, bounded adapters, and migration gates.",
+  "currentBackend": {
+    "id": "medusa",
+    "role": "runtime-adapter",
+    "principle": "Use Medusa for commerce runtime, admin API, module loading, workflows, auth, and persistence today, but do not let product contracts require Medusa types or direct UI coupling."
+  },
+  "principles": [
+    {
+      "id": "medusa-is-adapter-not-product-contract",
+      "rule": "Medusa remains the implementation runtime. Product-facing contracts must describe store capabilities, not Medusa API or ORM shapes."
+    },
+    {
+      "id": "contract-first-replacement",
+      "rule": "A replacement backend must first satisfy storefront, admin, fulfillment, payment, inventory, recovery, audit, and migration contracts before any runtime cutover."
+    },
+    {
+      "id": "no-new-unbounded-coupling",
+      "rule": "Existing Medusa coupling is baselined. New work may move coupling toward adapters, but may not increase the approved coupling budget."
+    },
+    {
+      "id": "strangler-over-big-bang",
+      "rule": "Replace vertical slices behind compatible ports and shadow-read gates before considering a full backend rewrite."
+    },
+    {
+      "id": "data-portability-is-required",
+      "rule": "Backend replacement is not ready until export, import, reconciliation, and rollback evidence prove carts, orders, payments, deliveries, credentials, customers, content, marketing, analytics, and audit data can survive the change."
+    }
+  ],
+  "targetArchitecture": {
+    "frameworkNeutralCore": [
+      "apps/backend/src/platform",
+      "future apps/backend/src/application"
+    ],
+    "medusaRuntimeBoundary": [
+      "apps/backend/medusa-config.ts",
+      "apps/backend/src/api",
+      "apps/backend/src/workflows",
+      "apps/backend/src/modules",
+      "apps/backend/src/platform-adapters"
+    ],
+    "storefrontBoundary": {
+      "port": "apps/storefront/src/lib/commerce.ts",
+      "currentAdapter": "apps/storefront/src/lib/commerce-medusa.ts",
+      "rule": "Storefront UI must call the commerce port; Medusa URLs, publishable keys, and Store API paths stay in the adapter or server health probes."
+    },
+    "adminBoundary": {
+      "currentBff": "apps/admin/src/app/api/admin/[...path]/route.ts",
+      "nextTarget": "typed admin facade over the same-origin BFF",
+      "rule": "Browser admin code must never call the backend URL or handle Medusa auth tokens. Existing /admin/* literals are baselined and should be retired behind typed product-admin operations."
+    }
+  },
+  "hardRules": [
+    {
+      "id": "platform-core-no-medusa-imports",
+      "check": "platformCoreForbiddenMatches",
+      "max": 0
+    },
+    {
+      "id": "admin-browser-no-direct-medusa",
+      "check": "adminDirectMedusaBrowserFiles",
+      "max": 0
+    },
+    {
+      "id": "storefront-no-fetch-outside-approved-adapters",
+      "check": "storefrontFetchViolations",
+      "max": 0
+    }
+  ],
+  "baselines": {
+    "createdAt": "2026-06-23",
+    "scope": "Local-development baseline before cloud deployment or production operation.",
+    "budgets": {
+      "backendMedusaImportFiles": {
+        "max": 182,
+        "target": 0,
+        "meaning": "Backend runtime files that import @medusajs/* outside tests.",
+        "exit": "Product use cases move behind framework-neutral application ports; Medusa imports remain only in runtime adapters."
+      },
+      "backendMedusaRequestResponseFiles": {
+        "max": 80,
+        "target": 0,
+        "meaning": "Backend API files that use MedusaRequest or MedusaResponse outside tests.",
+        "exit": "HTTP handlers become thin Medusa adapters over framework-neutral use cases."
+      },
+      "backendMedusaOrmFiles": {
+        "max": 53,
+        "target": 0,
+        "meaning": "Backend module files that use Medusa ORM/service/migration primitives outside tests.",
+        "exit": "Domain state has export/import and a non-Medusa persistence contract before backend replacement."
+      },
+      "adminMedusaRouteLiteralOccurrences": {
+        "max": 24,
+        "target": 0,
+        "meaning": "Admin UI calls that still pass /admin/* Medusa route literals to the BFF helper.",
+        "exit": "Admin UI consumes typed product-admin operations instead of Medusa route strings."
+      },
+      "storefrontMedusaEnvFiles": {
+        "max": 3,
+        "target": 1,
+        "meaning": "Storefront files that reference Medusa env names or Medusa backend URL symbols.",
+        "exit": "Only the Medusa adapter references Medusa-specific storefront env names."
+      }
+    }
+  },
+  "maturityLevels": [
+    {
+      "level": 0,
+      "name": "embedded-runtime",
+      "description": "Product behavior directly depends on framework routes, models, and UI-facing shapes."
+    },
+    {
+      "level": 1,
+      "name": "edge-ports",
+      "description": "Storefront and selected backend capabilities use ports, but admin and most backend flows still expose framework shapes."
+    },
+    {
+      "level": 2,
+      "name": "adapter-governed-runtime",
+      "description": "Current Medusa coupling is explicitly baselined, platform core is clean, browser direct coupling is forbidden, and CI blocks coupling growth."
+    },
+    {
+      "level": 3,
+      "name": "contract-complete",
+      "description": "Storefront, admin, payment, inventory, delivery, recovery, content, marketing, analytics, and ops contracts have adapter-agnostic fixtures and compatibility tests."
+    },
+    {
+      "level": 4,
+      "name": "shadow-replaceable",
+      "description": "A second backend can satisfy contracts in shadow mode with export/import/reconciliation evidence and no UI change."
+    },
+    {
+      "level": 5,
+      "name": "cutover-ready",
+      "description": "Runtime cutover has passed parity, data migration, rollback, health, performance, security, and operator workflow gates."
+    }
+  ],
+  "currentMaturity": {
+    "level": 2,
+    "name": "adapter-governed-runtime",
+    "evidence": [
+      "pnpm ai:backend-decoupling",
+      "pnpm ai:architecture",
+      "pnpm ai:doctor"
+    ]
+  },
+  "phases": [
+    {
+      "id": "phase-1-freeze-coupling-growth",
+      "status": "active",
+      "goal": "Make backend replacement readiness executable before cloud deployment.",
+      "requiredEvidence": [
+        "pnpm ai:backend-decoupling",
+        "pnpm ai:doctor",
+        "pnpm check:ci"
+      ]
+    },
+    {
+      "id": "phase-2-admin-product-facade",
+      "status": "next",
+      "goal": "Move admin UI from Medusa route literals to typed product-admin operations over the existing BFF."
+    },
+    {
+      "id": "phase-3-application-use-cases",
+      "status": "next",
+      "goal": "Move payment, fulfillment, inventory, delivery, recovery, marketing, analytics, and content flows behind framework-neutral application use cases."
+    },
+    {
+      "id": "phase-4-data-portability",
+      "status": "next",
+      "goal": "Create export/import/reconciliation fixtures and rollback drills for all product-owned state."
+    },
+    {
+      "id": "phase-5-shadow-backend",
+      "status": "future",
+      "goal": "Run a candidate backend in shadow mode against the same product contracts before any rewrite or replacement cutover."
+    }
+  ],
+  "cutoverGates": [
+    "No browser app imports or reads Medusa backend URLs directly.",
+    "Storefront and admin compatibility suites pass against the current Medusa adapter and a candidate backend adapter.",
+    "Product-owned data export/import/reconciliation produces zero critical drift on seeded fixtures.",
+    "Payment, delivery, credential inventory, recovery, audit, and support flows pass rollback-safe smoke tests.",
+    "Production readiness, security, CI, profile validation, runtime health, backup, and rollback evidence are green."
+  ]
+}

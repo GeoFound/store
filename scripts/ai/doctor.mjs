@@ -2,6 +2,7 @@ import fs from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { createArchitectureReport } from "./architecture.mjs"
+import { createBackendDecouplingReadinessReport } from "./backend-decoupling-readiness.mjs"
 import { createConfigSurfaceReport } from "./config-surface.mjs"
 import { createInventoryReport } from "./inventory.mjs"
 import { createObligationsReport } from "./obligations.mjs"
@@ -86,6 +87,7 @@ const taskbook = readJson(".ai/taskbook.json")
 const evidencePolicy = readJson(".ai/evidence-policy.json")
 const systemMap = readJson(".ai/system-map.json")
 readJson(".ai/obligations-policy.json")
+readJson(".ai/backend-decoupling-readiness.json")
 const adminControlPanelPolicy = readJson(".ai/admin-control-panel-policy.json")
 const siteLifecyclePolicy = readJson(".ai/site-lifecycle-policy.json")
 const configSurfacePolicy = readJson(".ai/config-surface.json")
@@ -467,6 +469,27 @@ for (const warning of architectureReport.warnings || []) {
       maxLocalFunctions: warning.maxLocalFunctions,
       fromModule: warning.fromModule,
       toModule: warning.toModule,
+    },
+  })
+}
+
+const backendDecouplingReport = createBackendDecouplingReadinessReport()
+assert(backendDecouplingReport.ok, {
+  id: "backend-decoupling.failed",
+  message: "Machine-readable backend decoupling readiness validation failed.",
+  issues: backendDecouplingReport.issues,
+})
+
+for (const warning of backendDecouplingReport.warnings || []) {
+  warnings.push({
+    id: `backend-decoupling.${warning.id}`,
+    path: warning.path,
+    message: warning.message,
+    details: {
+      value: warning.value,
+      max: warning.max,
+      target: warning.target,
+      exit: warning.details?.exit,
     },
   })
 }

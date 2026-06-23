@@ -3,6 +3,7 @@ import path from "node:path"
 import { spawnSync } from "node:child_process"
 import { fileURLToPath } from "node:url"
 import { createArchitectureReport } from "./architecture.mjs"
+import { createBackendDecouplingReadinessReport } from "./backend-decoupling-readiness.mjs"
 import { createConfigSurfaceReport } from "./config-surface.mjs"
 import { createDoctorReport } from "./doctor.mjs"
 import { createInventoryReport } from "./inventory.mjs"
@@ -59,6 +60,8 @@ async function runInProcessCheck(check) {
   try {
     if (commandKey === "pnpm ai:doctor") {
       report = await createDoctorReport()
+    } else if (commandKey === "pnpm ai:backend-decoupling") {
+      report = createBackendDecouplingReadinessReport()
     } else if (commandKey === "pnpm ai:architecture") {
       report = await createArchitectureReport()
     } else if (commandKey === "pnpm ai:config") {
