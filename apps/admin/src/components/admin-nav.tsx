@@ -19,6 +19,8 @@ const NAV_GROUPS = [
       { label: "数字交付", href: "/dashboard/deliveries" },
       { label: "SEO", href: "/dashboard/seo" },
       { label: "内容", href: "/dashboard/content" },
+      { label: "商品发布", href: "/dashboard/product-publishing" },
+      { label: "售后", href: "/dashboard/after-sales" },
     ],
   },
   {
@@ -26,7 +28,6 @@ const NAV_GROUPS = [
     links: [
       { label: "商品", href: null },
       { label: "订单", href: null },
-      { label: "售后", href: null },
       { label: "系统设置", href: null },
     ],
   },
