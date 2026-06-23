@@ -89,6 +89,11 @@
       "max": 0
     },
     {
+      "id": "admin-seo-ops-domain-uses-product-dtos",
+      "check": "adminSeoOpsDtoLeakFiles",
+      "max": 0
+    },
+    {
       "id": "storefront-no-fetch-outside-approved-adapters",
       "check": "storefrontFetchViolations",
       "max": 0

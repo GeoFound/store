@@ -45,6 +45,8 @@ storefront UI, and backend adapters can evolve independently.
   and support request fields.
 - Supplier UI follows the same rule for provider capabilities, variant
   mappings, external provider order identifiers, and procurement records.
+- SEO UI follows the same rule for SEO documents, audit summaries, audit
+  results, and Search Console performance fields.
 
 ## Rule Of Thumb
 

@@ -11,10 +11,14 @@ import {
   loadPaymentWorkspace,
   loadProductCatalog,
   loadProductPublishingWorkspace,
+  loadSeoPerformance,
+  loadSeoWorkspace,
   loadSupplierWorkspace,
   retrieveOrder,
   saveSupplierMapping,
+  suggestSeoDocument,
   togglePaymentChannel,
+  upsertSeoDocument,
 } from "./product-admin-api"
 
 const adminApiMock = vi.hoisted(() => vi.fn())
@@ -789,6 +793,189 @@ describe("product admin facade", () => {
         metadata: {
           deliveryHint: "instant",
         },
+      },
+    })
+  })
+
+  it("maps SEO workspace responses to product-admin DTOs", async () => {
+    adminApiMock.mockImplementation(async (path: string) => {
+      if (path === "/admin/content/seo?limit=200") {
+        return {
+          documents: [
+            {
+              id: "seo_1",
+              entity_type: "product",
+              entity_id: "prod_1",
+              site_id: "global",
+              language: "en",
+              meta_title: "Gift card",
+              meta_description: "Buy gift cards",
+              canonical_url: "https://example.com/gift-card",
+              og_image_url: "https://example.com/og.png",
+              status: "published",
+              updated_at: "2026-06-09T00:00:00.000Z",
+            },
+          ],
+        }
+      }
+
+      if (path === "/admin/content/seo/audit") {
+        return {
+          summary: {
+            documents: 1,
+            critical: 0,
+            warning: 1,
+            info: 0,
+            average_score: 92,
+          },
+          results: [
+            {
+              id: "seo_1",
+              entity_type: "product",
+              entity_id: "prod_1",
+              score: 92,
+              findings: [
+                {
+                  id: "finding_1",
+                  severity: "warning",
+                  field: "metaTitle",
+                  message: "Short title",
+                },
+              ],
+            },
+          ],
+          performance_joined: true,
+        }
+      }
+
+      throw new Error(`Unexpected path: ${path}`)
+    })
+
+    const workspace = await loadSeoWorkspace()
+
+    expect(workspace.documents[0]).toEqual({
+      id: "seo_1",
+      entityType: "product",
+      entityId: "prod_1",
+      siteId: "global",
+      language: "en",
+      metaTitle: "Gift card",
+      metaDescription: "Buy gift cards",
+      canonicalUrl: "https://example.com/gift-card",
+      ogImageUrl: "https://example.com/og.png",
+      status: "published",
+      updatedAt: "2026-06-09T00:00:00.000Z",
+    })
+    expect(workspace.audit).toEqual({
+      summary: {
+        documents: 1,
+        critical: 0,
+        warning: 1,
+        info: 0,
+        averageScore: 92,
+      },
+      results: [
+        {
+          id: "seo_1",
+          entityType: "product",
+          entityId: "prod_1",
+          score: 92,
+          findings: [
+            {
+              id: "finding_1",
+              severity: "warning",
+              field: "metaTitle",
+              message: "Short title",
+            },
+          ],
+        },
+      ],
+      performanceJoined: true,
+    })
+    expect(workspace.documents[0]).not.toHaveProperty("entity_type")
+    expect(workspace.audit.summary).not.toHaveProperty("average_score")
+  })
+
+  it("maps SEO performance responses to product-admin DTOs", async () => {
+    adminApiMock.mockResolvedValue({
+      config: {
+        status: "configured",
+        site_url: "https://example.com",
+      },
+      performance: {
+        configured: true,
+        status: "ready",
+        site_url: "https://example.com",
+        rows: [{ page: "/gift-card", clicks: 10, impressions: 100 }],
+      },
+    })
+
+    const performance = await loadSeoPerformance()
+
+    expect(performance).toEqual({
+      config: {
+        status: "configured",
+        siteUrl: "https://example.com",
+      },
+      performance: {
+        configured: true,
+        status: "ready",
+        siteUrl: "https://example.com",
+        rows: [{ page: "/gift-card", clicks: 10, impressions: 100 }],
+      },
+    })
+    expect(performance.config).not.toHaveProperty("site_url")
+    expect(performance.performance).not.toHaveProperty("site_url")
+  })
+
+  it("maps SEO writes from product input to current backend bodies", async () => {
+    adminApiMock.mockResolvedValue({ document: { id: "seo_1" } })
+
+    await upsertSeoDocument({
+      entityType: "product",
+      entityId: "prod_1",
+      siteId: "global",
+      language: "en",
+      metaTitle: "Gift card",
+      metaDescription: "Buy gift cards",
+      canonicalUrl: "https://example.com/gift-card",
+      ogImageUrl: "https://example.com/og.png",
+      status: "published",
+    })
+
+    expect(adminApiMock).toHaveBeenCalledWith("/admin/content/seo", {
+      method: "POST",
+      body: {
+        entity_type: "product",
+        entity_id: "prod_1",
+        site_id: "global",
+        language: "en",
+        meta_title: "Gift card",
+        meta_description: "Buy gift cards",
+        canonical_url: "https://example.com/gift-card",
+        og_image_url: "https://example.com/og.png",
+        status: "published",
+      },
+    })
+
+    await suggestSeoDocument({
+      entityType: "product",
+      entityId: "prod_1",
+      siteId: "global",
+      language: "en",
+      providerCode: "openai",
+      model: "gpt-5.1",
+    })
+
+    expect(adminApiMock).toHaveBeenLastCalledWith("/admin/content/seo/suggest", {
+      method: "POST",
+      body: {
+        entity_type: "product",
+        entity_id: "prod_1",
+        site_id: "global",
+        language: "en",
+        provider_code: "openai",
+        model: "gpt-5.1",
       },
     })
   })

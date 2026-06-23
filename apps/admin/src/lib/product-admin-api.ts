@@ -312,6 +312,66 @@ export type ProductAdminSupplierWorkspace = {
   procurements: ProductAdminSupplierProcurement[]
 }
 
+export type ProductAdminSeoDocument = {
+  id: string
+  entityType: string
+  entityId: string
+  siteId: string
+  language: string
+  metaTitle: string | null
+  metaDescription: string | null
+  canonicalUrl: string | null
+  ogImageUrl: string | null
+  status: string
+  updatedAt: string | null
+}
+
+export type ProductAdminSeoAuditFinding = {
+  id: string
+  severity: string
+  field: string
+  message: string
+}
+
+export type ProductAdminSeoAuditResult = {
+  id: string
+  entityType: string
+  entityId: string
+  score: number
+  findings: ProductAdminSeoAuditFinding[]
+}
+
+export type ProductAdminSeoAuditReport = {
+  summary: {
+    documents: number
+    critical: number
+    warning: number
+    info: number
+    averageScore: number
+  }
+  results: ProductAdminSeoAuditResult[]
+  performanceJoined: boolean
+}
+
+export type ProductAdminSeoWorkspace = {
+  documents: ProductAdminSeoDocument[]
+  audit: ProductAdminSeoAuditReport
+}
+
+export type ProductAdminSeoPerformance = {
+  config?: {
+    status: string | null
+    siteUrl: string | null
+  }
+  performance?: {
+    configured: boolean | null
+    status: string | null
+    siteUrl: string | null
+    rows: Array<Record<string, unknown>>
+  }
+  error?: string
+}
+
 type CreateCatalogProductInput = {
   title: string
   handle: string
@@ -1044,35 +1104,39 @@ export function sellCredentialReservation(input: {
   )
 }
 
-export async function loadSeoWorkspace() {
+export async function loadSeoWorkspace(): Promise<ProductAdminSeoWorkspace> {
   const emptyAudit = {
     summary: {
       documents: 0,
       critical: 0,
       warning: 0,
       info: 0,
-      average_score: 100,
+      averageScore: 100,
     },
     results: [],
-    performance_joined: false,
+    performanceJoined: false,
   }
   const [documentsData, auditData] = await Promise.all([
     adminApi<{ documents: unknown[] }>("/admin/content/seo?limit=200"),
-    adminApi<typeof emptyAudit>("/admin/content/seo/audit").catch(
+    adminApi<unknown>("/admin/content/seo/audit").catch(
       () => emptyAudit,
     ),
   ])
 
   return {
-    documents: documentsData.documents || [],
-    audit: auditData || emptyAudit,
+    documents: arrayField(documentsData.documents)
+      .map(toProductAdminSeoDocument)
+      .filter((document) => document.id),
+    audit: toProductAdminSeoAuditReport(auditData || emptyAudit),
   }
 }
 
-export function loadSeoPerformance() {
-  return adminApi(
+export async function loadSeoPerformance(): Promise<ProductAdminSeoPerformance> {
+  const data = await adminApi(
     "/admin/content/seo/performance?dimension=page&limit=25",
   )
+
+  return toProductAdminSeoPerformance(data)
 }
 
 export function upsertSeoDocument(input: SeoDocumentInput) {
@@ -1873,6 +1937,109 @@ function toProductAdminSupplierProcurement(
     fulfilledAt: nullableStringField(record.fulfilled_at),
     createdAt: nullableStringField(record.created_at),
   }
+}
+
+function toProductAdminSeoDocument(value: unknown): ProductAdminSeoDocument {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    entityType: stringField(record.entity_type, stringField(record.entityType)),
+    entityId: stringField(record.entity_id, stringField(record.entityId)),
+    siteId: stringField(record.site_id, stringField(record.siteId, "global")),
+    language: stringField(record.language, "*"),
+    metaTitle: nullableStringField(record.meta_title ?? record.metaTitle),
+    metaDescription: nullableStringField(
+      record.meta_description ?? record.metaDescription,
+    ),
+    canonicalUrl: nullableStringField(record.canonical_url ?? record.canonicalUrl),
+    ogImageUrl: nullableStringField(record.og_image_url ?? record.ogImageUrl),
+    status: stringField(record.status, "draft"),
+    updatedAt: nullableStringField(record.updated_at ?? record.updatedAt),
+  }
+}
+
+function toProductAdminSeoAuditReport(
+  value: unknown,
+): ProductAdminSeoAuditReport {
+  const record = recordField(value)
+  const summary = recordField(record.summary)
+
+  return {
+    summary: {
+      documents: numberField(summary.documents),
+      critical: numberField(summary.critical),
+      warning: numberField(summary.warning),
+      info: numberField(summary.info),
+      averageScore: numberField(
+        summary.average_score ?? summary.averageScore,
+        100,
+      ),
+    },
+    results: arrayField(record.results).map(toProductAdminSeoAuditResult),
+    performanceJoined: booleanField(
+      record.performance_joined ?? record.performanceJoined,
+    ),
+  }
+}
+
+function toProductAdminSeoAuditResult(
+  value: unknown,
+): ProductAdminSeoAuditResult {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    entityType: stringField(record.entity_type, stringField(record.entityType)),
+    entityId: stringField(record.entity_id, stringField(record.entityId)),
+    score: numberField(record.score),
+    findings: arrayField(record.findings).map(toProductAdminSeoAuditFinding),
+  }
+}
+
+function toProductAdminSeoAuditFinding(
+  value: unknown,
+): ProductAdminSeoAuditFinding {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    severity: stringField(record.severity, "info"),
+    field: stringField(record.field),
+    message: stringField(record.message),
+  }
+}
+
+function toProductAdminSeoPerformance(
+  value: unknown,
+): ProductAdminSeoPerformance {
+  const record = recordField(value)
+  const config = record.config ? recordField(record.config) : null
+  const performance = record.performance ? recordField(record.performance) : null
+  const result: ProductAdminSeoPerformance = {}
+
+  if (config) {
+    result.config = {
+      status: nullableStringField(config.status),
+      siteUrl: nullableStringField(config.site_url ?? config.siteUrl),
+    }
+  }
+  if (performance) {
+    result.performance = {
+      configured:
+        typeof performance.configured === "boolean"
+          ? performance.configured
+          : null,
+      status: nullableStringField(performance.status),
+      siteUrl: nullableStringField(performance.site_url ?? performance.siteUrl),
+      rows: arrayField(performance.rows).map((row) => recordField(row)),
+    }
+  }
+  if (typeof record.error === "string") {
+    result.error = record.error
+  }
+
+  return result
 }
 
 function recordField(value: unknown): Record<string, unknown> {
