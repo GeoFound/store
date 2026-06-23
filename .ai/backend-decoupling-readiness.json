@@ -69,6 +69,11 @@
       "max": 0
     },
     {
+      "id": "admin-product-domain-uses-product-dtos",
+      "check": "adminProductDtoLeakFiles",
+      "max": 0
+    },
+    {
       "id": "storefront-no-fetch-outside-approved-adapters",
       "check": "storefrontFetchViolations",
       "max": 0
@@ -164,8 +169,8 @@
     },
     {
       "id": "phase-2-admin-product-facade",
-      "status": "next",
-      "goal": "Move admin UI from Medusa route literals to typed product-admin operations over the existing BFF."
+      "status": "active",
+      "goal": "Move admin UI from Medusa route literals and response shapes to typed product-admin operations and DTOs over the existing BFF."
     },
     {
       "id": "phase-3-application-use-cases",

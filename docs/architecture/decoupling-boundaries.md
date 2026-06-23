@@ -27,6 +27,18 @@ storefront UI, and backend adapters can evolve independently.
 - `commerce-medusa.ts` is the current adapter. Replacing the backend should
   replace or route this adapter, not require sweeping UI changes.
 
+## Admin Boundary
+
+- Browser admin components import product operations from
+  `apps/admin/src/lib/product-admin-api.ts`.
+- `product-admin-api.ts` is the anti-corruption facade over the current
+  same-origin Admin BFF. It owns `/admin/*` route strings, request body mapping,
+  and product DTO mapping from current backend response shapes to UI contracts.
+- Product, publishing, and credential inventory UI consumes camelCase
+  product-admin DTOs. It must not read Medusa or backend snake_case response
+  fields such as product variant IDs, template codes, handler codes, or stock
+  counters directly.
+
 ## Rule Of Thumb
 
 Framework imports belong at the edges. Core contracts should describe what the

@@ -7,6 +7,8 @@ import { formatDate } from "@/lib/format"
 import {
   createCatalogProduct,
   loadProductCatalog,
+  type ProductAdminProductVariant,
+  type ProductAdminStatus,
   updateCatalogProductStatus,
 } from "@/lib/product-admin-api"
 import {
@@ -21,66 +23,11 @@ import { Message, MetricCard, PageHeader, Panel } from "./admin-page"
 import { AdminTable, Cell, normalizeError } from "./admin-table"
 import { StatusBadge } from "./status-badge"
 
-type ProductStatus = "draft" | "proposed" | "published" | "rejected"
-
-type ProductVariant = {
-  id: string
-  title?: string | null
-  sku?: string | null
-  manage_inventory?: boolean | null
-  allow_backorder?: boolean | null
-  prices?: Array<{
-    currency_code?: string | null
-    amount?: number | null
-  }>
-}
-
-type Product = {
-  id: string
-  title: string
-  handle?: string | null
-  status?: ProductStatus | string | null
-  thumbnail?: string | null
-  variants?: ProductVariant[]
-  sales_channels?: Array<{ id: string; name: string }>
-  created_at?: string | null
-  updated_at?: string | null
-}
-
-type ProductCategory = {
-  id: string
-  name: string
-  handle?: string | null
-  is_active?: boolean | null
-}
-
-type ProductCollection = {
-  id: string
-  title: string
-  handle?: string | null
-}
-
-type ProductType = {
-  id: string
-  value: string
-}
-
-type ProductTag = {
-  id: string
-  value: string
-}
-
-type SalesChannel = {
-  id: string
-  name: string
-  is_disabled?: boolean | null
-}
-
 type ProductForm = {
   title: string
   handle: string
   description: string
-  status: ProductStatus
+  status: ProductAdminStatus
   typeId: string
   collectionId: string
   categoryId: string
@@ -110,32 +57,12 @@ const EMPTY_PRODUCT_FORM: ProductForm = {
   manageInventory: false,
 }
 
-const PRODUCT_STATUSES: ProductStatus[] = [
+const PRODUCT_STATUSES: ProductAdminStatus[] = [
   "draft",
   "proposed",
   "published",
   "rejected",
 ]
-
-async function loadProducts(query: string): Promise<{
-  products: Product[]
-  count: number
-  categories: ProductCategory[]
-  collections: ProductCollection[]
-  productTypes: ProductType[]
-  tags: ProductTag[]
-  salesChannels: SalesChannel[]
-}> {
-  return loadProductCatalog(query) as Promise<{
-    products: Product[]
-    count: number
-    categories: ProductCategory[]
-    collections: ProductCollection[]
-    productTypes: ProductType[]
-    tags: ProductTag[]
-    salesChannels: SalesChannel[]
-  }>
-}
 
 export function ProductsView() {
   const queryClient = useQueryClient()
@@ -147,7 +74,7 @@ export function ProductsView() {
 
   const productsQuery = useQuery({
     queryKey: ["products", query],
-    queryFn: () => loadProducts(query),
+    queryFn: () => loadProductCatalog(query),
   })
   const data = productsQuery.data
   const products = useMemo(() => data?.products || [], [data?.products])
@@ -180,7 +107,7 @@ export function ProductsView() {
   })
 
   const updateStatus = useMutation({
-    mutationFn: (input: { id: string; status: ProductStatus }) =>
+    mutationFn: (input: { id: string; status: ProductAdminStatus }) =>
       updateCatalogProductStatus(input),
     onSuccess: async () => {
       setMessage("商品状态已更新。")
@@ -288,7 +215,7 @@ export function ProductsView() {
                 <SelectInput
                   value={form.status}
                   onChange={(event) =>
-                    update({ status: event.target.value as ProductStatus })
+                    update({ status: event.target.value as ProductAdminStatus })
                   }
                 >
                   {PRODUCT_STATUSES.map((status) => (
@@ -451,7 +378,7 @@ export function ProductsView() {
                 </Cell>
                 <Cell>
                   <div className="grid gap-1">
-                    {(product.variants || []).slice(0, 3).map((variant) => (
+                    {product.variants.slice(0, 3).map((variant) => (
                       <div key={variant.id}>
                         <span className="font-medium">
                           {variant.title || variant.sku || variant.id}
@@ -461,18 +388,18 @@ export function ProductsView() {
                         </span>
                       </div>
                     ))}
-                    {(product.variants || []).length > 3 ? (
+                    {product.variants.length > 3 ? (
                       <span className="text-xs text-[var(--muted)]">
-                        +{(product.variants || []).length - 3} more
+                        +{product.variants.length - 3} more
                       </span>
                     ) : null}
                   </div>
                 </Cell>
                 <Cell>
-                  {(product.sales_channels || []).map((channel) => channel.name).join(", ") ||
+                  {product.salesChannels.map((channel) => channel.name).join(", ") ||
                     "-"}
                 </Cell>
-                <Cell>{formatDate(product.updated_at || product.created_at)}</Cell>
+                <Cell>{formatDate(product.updatedAt || product.createdAt)}</Cell>
                 <Cell align="right">
                   <div className="flex flex-wrap justify-end gap-2">
                     <Link
@@ -516,12 +443,12 @@ export function ProductsView() {
   )
 }
 
-function priceLabel(variant: ProductVariant) {
+function priceLabel(variant: ProductAdminProductVariant) {
   const price = variant.prices?.[0]
 
   if (!price || typeof price.amount !== "number") {
     return "无价格"
   }
 
-  return `${price.currency_code || "-"} ${price.amount}`
+  return `${price.currencyCode || "-"} ${price.amount}`
 }

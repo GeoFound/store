@@ -9,6 +9,8 @@ import {
   releaseCredentialReservation,
   reserveCredentials as reserveCredentialItems,
   sellCredentialReservation,
+  type ProductAdminCatalogVariant,
+  type ProductAdminCredentialBatch,
 } from "@/lib/product-admin-api"
 import {
   Field,
@@ -21,71 +23,15 @@ import {
 import { Message, MetricCard, PageHeader, Panel, TableShell } from "./admin-page"
 import { StatusBadge } from "./status-badge"
 
-type AccountItem = {
-  id: string
-  product_variant_id: string
-  status: string
-  display_label: string
-  account_identifier: string
-  order_id?: string | null
-  cart_id?: string | null
-  delivered_at?: string | null
-}
-
-type Batch = {
-  id: string
-  name: string
-  product_variant_id: string
-  status: string
-  total_count: number
-  available_count: number
-  reserved_count: number
-  sold_count: number
-}
-
-type ProductTemplate = {
-  code: string
-  title: string
-  description: string
-  productType: string
-}
-
-type CatalogVariant = {
-  id: string
-  title: string | null
-  sku: string | null
-  product_title: string | null
-  product_handle: string | null
-  product_id: string | null
-  template_code: string
-  template_title: string
-  inventory_handler_code: string
-  delivery_handler_code: string | null
-  credential_inventory_supported: boolean
-  available_count: number | null
-  reserved_count: number | null
-  sold_count: number | null
-  total_count: number | null
-}
-
 type ImportItem = {
-  account_identifier?: string
-  display_label?: string
+  accountIdentifier?: string
+  displayLabel?: string
   credential: Record<string, unknown> | string
 }
 
 const SAMPLE_IMPORT = `demo1----secret1
 demo2,secret2
 CARD-AAAA-BBBB-CCCC`
-
-async function loadCredentials() {
-  return loadCredentialInventory() as Promise<{
-    items: AccountItem[]
-    batches: Batch[]
-    templates: ProductTemplate[]
-    variants: CatalogVariant[]
-  }>
-}
 
 export function CredentialsView() {
   const queryClient = useQueryClient()
@@ -106,7 +52,7 @@ export function CredentialsView() {
 
   const credentialsQuery = useQuery({
     queryKey: ["credentials"],
-    queryFn: loadCredentials,
+    queryFn: loadCredentialInventory,
   })
   const data = credentialsQuery.data
 
@@ -120,8 +66,8 @@ export function CredentialsView() {
   function selectVariant(value: string) {
     setProductVariantId(value)
     const variant = data?.variants.find((item) => item.id === value.trim())
-    if (variant?.template_code) {
-      setTemplateCode(variant.template_code)
+    if (variant?.templateCode) {
+      setTemplateCode(variant.templateCode)
     }
   }
 
@@ -133,7 +79,7 @@ export function CredentialsView() {
         throw new Error("请选择或填写商品变体。")
       }
 
-      if (selectedVariant && !selectedVariant.credential_inventory_supported) {
+      if (selectedVariant && !selectedVariant.credentialInventorySupported) {
         throw new Error("该变体不支持凭证库存。")
       }
 
@@ -236,12 +182,12 @@ export function CredentialsView() {
         />
         <MetricCard
           label="可用"
-          value={sumField(data?.batches, "available_count")}
+          value={sumField(data?.batches, "availableCount")}
           detail="available"
         />
         <MetricCard
           label="已售"
-          value={sumField(data?.batches, "sold_count")}
+          value={sumField(data?.batches, "soldCount")}
           detail="sold"
         />
       </section>
@@ -286,7 +232,7 @@ export function CredentialsView() {
                     <option
                       key={variant.id}
                       value={variant.id}
-                      disabled={!variant.credential_inventory_supported}
+                      disabled={!variant.credentialInventorySupported}
                     >
                       {variantLabel(variant)}
                     </option>
@@ -300,7 +246,7 @@ export function CredentialsView() {
                   placeholder="variant_..."
                 />
               </Field>
-              <Field label="template_code">
+              <Field label="模板代码">
                 <TextInput
                   value={templateCode}
                   onChange={(event) => setTemplateCode(event.target.value)}
@@ -368,13 +314,13 @@ export function CredentialsView() {
             {data?.batches.map((batch) => (
               <tr key={batch.id} className="align-top">
                 <Cell>{batch.name}</Cell>
-                <Cell mono>{batch.product_variant_id}</Cell>
+                <Cell mono>{batch.productVariantId}</Cell>
                 <Cell>
                   <StatusBadge value={batch.status} />
                 </Cell>
                 <Cell>
-                  {batch.available_count} / {batch.reserved_count} /{" "}
-                  {batch.sold_count} / {batch.total_count}
+                  {batch.availableCount} / {batch.reservedCount} /{" "}
+                  {batch.soldCount} / {batch.totalCount}
                 </Cell>
               </tr>
             ))}
@@ -415,7 +361,7 @@ export function CredentialsView() {
                     <option
                       key={variant.id}
                       value={variant.id}
-                      disabled={!variant.credential_inventory_supported}
+                      disabled={!variant.credentialInventorySupported}
                     >
                       {variantLabel(variant)}
                     </option>
@@ -529,17 +475,17 @@ export function CredentialsView() {
             {data?.items.map((item) => (
               <tr key={item.id} className="align-top">
                 <Cell>
-                  <div className="font-medium">{item.display_label}</div>
+                  <div className="font-medium">{item.displayLabel}</div>
                   <div className="font-mono text-xs text-[var(--muted)]">
-                    {item.account_identifier}
+                    {item.accountIdentifier}
                   </div>
                 </Cell>
                 <Cell>
                   <StatusBadge value={item.status} />
                 </Cell>
-                <Cell mono>{item.product_variant_id}</Cell>
-                <Cell mono>{item.order_id || item.cart_id || "-"}</Cell>
-                <Cell>{formatDate(item.delivered_at)}</Cell>
+                <Cell mono>{item.productVariantId}</Cell>
+                <Cell mono>{item.orderId || item.cartId || "-"}</Cell>
+                <Cell>{formatDate(item.deliveredAt)}</Cell>
               </tr>
             ))}
           </AdminTable>
@@ -549,31 +495,34 @@ export function CredentialsView() {
   )
 }
 
-function variantLabel(variant: CatalogVariant) {
+function variantLabel(variant: ProductAdminCatalogVariant) {
   const product =
-    variant.product_title || variant.product_handle || variant.product_id || "-"
+    variant.productTitle || variant.productHandle || variant.productId || "-"
   const name = variant.title || variant.sku || variant.id
   const stock =
-    typeof variant.available_count === "number"
-      ? `可用 ${variant.available_count}`
+    typeof variant.availableCount === "number"
+      ? `可用 ${variant.availableCount}`
       : "库存未知"
-  const unsupported = variant.credential_inventory_supported
+  const unsupported = variant.credentialInventorySupported
     ? ""
     : " / 非凭证库存"
 
-  return `${product} / ${name} / ${variant.template_title} / ${stock}${unsupported}`
+  return `${product} / ${name} / ${variant.templateTitle} / ${stock}${unsupported}`
 }
 
-function variantSummary(variant: CatalogVariant) {
+function variantSummary(variant: ProductAdminCatalogVariant) {
   const stock =
-    typeof variant.available_count === "number"
-      ? `可用 ${variant.available_count} / 预留 ${variant.reserved_count ?? 0} / 已售 ${variant.sold_count ?? 0} / 总 ${variant.total_count ?? 0}`
+    typeof variant.availableCount === "number"
+      ? `可用 ${variant.availableCount} / 预留 ${variant.reservedCount ?? 0} / 已售 ${variant.soldCount ?? 0} / 总 ${variant.totalCount ?? 0}`
       : "库存未知"
 
-  return `库存处理器 ${variant.inventory_handler_code} · 交付处理器 ${variant.delivery_handler_code || "-"} · ${stock}`
+  return `库存处理器 ${variant.inventoryHandlerCode} · 交付处理器 ${variant.deliveryHandlerCode || "-"} · ${stock}`
 }
 
-function sumField(batches: Batch[] | undefined, key: keyof Batch) {
+function sumField(
+  batches: ProductAdminCredentialBatch[] | undefined,
+  key: keyof ProductAdminCredentialBatch,
+) {
   if (!batches) {
     return 0
   }
@@ -622,7 +571,7 @@ function parseCredentialLines(value: string): ImportItem[] {
 
       if (!delimiter) {
         return {
-          display_label: `卡密 ${index + 1}`,
+          displayLabel: `卡密 ${index + 1}`,
           credential: line,
         }
       }
@@ -636,7 +585,7 @@ function parseCredentialLines(value: string): ImportItem[] {
       }
 
       return {
-        display_label: `账号 ${index + 1}`,
+        displayLabel: `账号 ${index + 1}`,
         credential: { username, password },
       }
     })

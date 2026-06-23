@@ -171,6 +171,11 @@ function scanRepository() {
     "apps/admin/src/app/login",
     "apps/admin/src/app/page.tsx",
   ])
+  const adminProductDtoUiFiles = sourceFiles([
+    "apps/admin/src/components/products-view.tsx",
+    "apps/admin/src/components/product-publishing-view.tsx",
+    "apps/admin/src/components/credentials-view.tsx",
+  ])
   const storefrontFiles = sourceFiles(["apps/storefront/src"])
   const allowedStorefrontFetchFiles = new Set([
     "apps/storefront/src/lib/commerce-medusa.ts",
@@ -198,6 +203,10 @@ function scanRepository() {
     adminUiFiles,
     /from\s+["']@\/lib\/admin-api["']|from\s+["']\.\.\/lib\/admin-api["']/
   )
+  const adminProductDtoLeakFiles = filesMatching(
+    adminProductDtoUiFiles,
+    /\b(product_variant_id|template_code|template_title|inventory_handler_code|delivery_handler_code|credential_inventory_supported|available_count|reserved_count|sold_count|total_count|sales_channels|created_at|updated_at|currency_code|display_label|account_identifier|delivered_at)\b/
+  )
   const storefrontFetchViolations = filesMatching(storefrontFiles, /\bfetch\s*\(/)
     .filter((file) => !allowedStorefrontFetchFiles.has(file))
 
@@ -205,6 +214,7 @@ function scanRepository() {
     platformForbiddenMatches,
     adminDirectMedusaBrowserFiles,
     adminDirectAdminApiUiFiles,
+    adminProductDtoLeakFiles,
     storefrontFetchViolations,
     backendMedusaImportFiles: filesMatching(backendFiles, /@medusajs\//),
     backendMedusaRequestResponseFiles: filesMatching(backendApiFiles, /MedusaRequest|MedusaResponse/),
@@ -302,6 +312,18 @@ export function createBackendDecouplingReadinessReport() {
   addHardCheck({
     checks,
     issues,
+    id: "admin-product-domain-uses-product-dtos",
+    value: scan.adminProductDtoLeakFiles.length,
+    max: 0,
+    message:
+      "Product, publishing, and credential admin UI must consume product-admin DTOs instead of Medusa or backend snake_case response fields.",
+    details: {
+      files: sample(scan.adminProductDtoLeakFiles),
+    },
+  })
+  addHardCheck({
+    checks,
+    issues,
     id: "storefront-fetch-only-in-approved-adapters",
     value: scan.storefrontFetchViolations.length,
     max: 0,
@@ -391,6 +413,7 @@ export function createBackendDecouplingReadinessReport() {
       backendMedusaRequestResponseFiles: scan.backendMedusaRequestResponseFiles.length,
       backendMedusaOrmFiles: scan.backendMedusaOrmFiles.length,
       adminMedusaRouteLiteralOccurrences: scan.adminMedusaRouteLiteralOccurrences,
+      adminProductDtoLeakFiles: scan.adminProductDtoLeakFiles.length,
       storefrontMedusaEnvFiles: scan.storefrontMedusaEnvFiles.length,
     },
     checks,

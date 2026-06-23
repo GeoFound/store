@@ -2,13 +2,139 @@ import { adminApi } from "./admin-api"
 
 export type ProductAdminOrderAction = "complete" | "archive" | "cancel"
 
-type ProductStatus = "draft" | "proposed" | "published" | "rejected"
+export type ProductAdminStatus = "draft" | "proposed" | "published" | "rejected"
+
+export type ProductAdminPrice = {
+  currencyCode: string | null
+  amount: number | null
+}
+
+export type ProductAdminProductVariant = {
+  id: string
+  title: string | null
+  sku: string | null
+  managesInventory: boolean
+  allowsBackorder: boolean
+  prices: ProductAdminPrice[]
+}
+
+export type ProductAdminSalesChannel = {
+  id: string
+  name: string
+  isDisabled: boolean
+}
+
+export type ProductAdminProduct = {
+  id: string
+  title: string
+  handle: string | null
+  status: ProductAdminStatus | string
+  thumbnail: string | null
+  variants: ProductAdminProductVariant[]
+  salesChannels: ProductAdminSalesChannel[]
+  createdAt: string | null
+  updatedAt: string | null
+}
+
+export type ProductAdminCategory = {
+  id: string
+  name: string
+  handle: string | null
+  isActive: boolean
+}
+
+export type ProductAdminCollection = {
+  id: string
+  title: string
+  handle: string | null
+}
+
+export type ProductAdminProductType = {
+  id: string
+  value: string
+}
+
+export type ProductAdminTag = {
+  id: string
+  value: string
+}
+
+export type ProductCatalogWorkspace = {
+  products: ProductAdminProduct[]
+  count: number
+  categories: ProductAdminCategory[]
+  collections: ProductAdminCollection[]
+  productTypes: ProductAdminProductType[]
+  tags: ProductAdminTag[]
+  salesChannels: ProductAdminSalesChannel[]
+}
+
+export type ProductAdminTemplate = {
+  code: string
+  title: string
+  description: string
+  productType: string
+  fulfillmentPolicyCode: string | null
+  deliveryHandlerCode: string | null
+  inventoryHandlerCode: string | null
+}
+
+export type ProductAdminCatalogVariant = {
+  id: string
+  title: string | null
+  sku: string | null
+  productId: string | null
+  productTitle: string | null
+  productHandle: string | null
+  productType: string | null
+  templateCode: string
+  templateTitle: string
+  inventoryHandlerCode: string
+  deliveryHandlerCode: string | null
+  credentialInventorySupported: boolean
+  availabilitySupported: boolean
+  totalCount: number | null
+  availableCount: number | null
+  reservedCount: number | null
+  soldCount: number | null
+  lockedCount: number | null
+  isInStock: boolean | null
+}
+
+export type ProductAdminCredentialItem = {
+  id: string
+  productVariantId: string
+  status: string
+  displayLabel: string
+  accountIdentifier: string
+  orderId: string | null
+  cartId: string | null
+  deliveredAt: string | null
+}
+
+export type ProductAdminCredentialBatch = {
+  id: string
+  name: string
+  productVariantId: string
+  status: string
+  totalCount: number
+  availableCount: number
+  reservedCount: number
+  soldCount: number
+}
+
+export type CredentialInventoryWorkspace = {
+  items: ProductAdminCredentialItem[]
+  batches: ProductAdminCredentialBatch[]
+  templates: ProductAdminTemplate[]
+  variants: ProductAdminCatalogVariant[]
+}
 
 type CreateCatalogProductInput = {
   title: string
   handle: string
   description: string
-  status: ProductStatus
+  status: ProductAdminStatus
   typeId: string
   collectionId: string
   categoryId: string
@@ -44,8 +170,8 @@ type ImportCredentialBatchInput = {
   productVariantId: string
   templateCode: string
   items: Array<{
-    account_identifier?: string
-    display_label?: string
+    accountIdentifier?: string
+    displayLabel?: string
     credential: Record<string, unknown> | string
   }>
 }
@@ -195,7 +321,9 @@ const TASK_CAPABILITY_DEFAULTS: Record<string, string> = {
   stt: "speech.stt",
 }
 
-export async function loadProductCatalog(query: string) {
+export async function loadProductCatalog(
+  query: string,
+): Promise<ProductCatalogWorkspace> {
   const params = new URLSearchParams({
     limit: "50",
     fields: PRODUCT_FIELDS,
@@ -234,13 +362,25 @@ export async function loadProductCatalog(query: string) {
   ])
 
   return {
-    products: products.products || [],
+    products: arrayField(products.products)
+      .map(toProductAdminProduct)
+      .filter((product) => product.id),
     count: products.count || products.products?.length || 0,
-    categories: categories.product_categories || [],
-    collections: collections.collections || [],
-    productTypes: productTypes.product_types || [],
-    tags: tags.product_tags || [],
-    salesChannels: salesChannels.sales_channels || [],
+    categories: arrayField(categories.product_categories)
+      .map(toProductAdminCategory)
+      .filter((category) => category.id),
+    collections: arrayField(collections.collections)
+      .map(toProductAdminCollection)
+      .filter((collection) => collection.id),
+    productTypes: arrayField(productTypes.product_types)
+      .map(toProductAdminProductType)
+      .filter((type) => type.id),
+    tags: arrayField(tags.product_tags)
+      .map(toProductAdminTag)
+      .filter((tag) => tag.id),
+    salesChannels: arrayField(salesChannels.sales_channels)
+      .map(toProductAdminSalesChannel)
+      .filter((channel) => channel.id),
   }
 }
 
@@ -305,7 +445,7 @@ export function createCatalogProduct(input: CreateCatalogProductInput) {
 
 export function updateCatalogProductStatus(input: {
   id: string
-  status: ProductStatus
+  status: ProductAdminStatus
 }) {
   return adminApi(`/admin/products/${input.id}`, {
     method: "POST",
@@ -585,15 +725,22 @@ export function createMarketingReferral(input: MarketingReferralInput) {
   })
 }
 
-export async function loadProductPublishingWorkspace() {
+export async function loadProductPublishingWorkspace(): Promise<{
+  templates: ProductAdminTemplate[]
+  variants: ProductAdminCatalogVariant[]
+}> {
   const [templateData, variantData] = await Promise.all([
     adminApi<{ templates: unknown[] }>("/admin/product-templates"),
     adminApi<{ variants: unknown[] }>("/admin/catalog/variants"),
   ])
 
   return {
-    templates: templateData.templates || [],
-    variants: variantData.variants || [],
+    templates: arrayField(templateData.templates)
+      .map(toProductAdminTemplate)
+      .filter((template) => template.code),
+    variants: arrayField(variantData.variants)
+      .map(toProductAdminCatalogVariant)
+      .filter((variant) => variant.id),
   }
 }
 
@@ -616,7 +763,7 @@ export function createSalesChannel(input: {
   })
 }
 
-export async function loadCredentialInventory() {
+export async function loadCredentialInventory(): Promise<CredentialInventoryWorkspace> {
   const [itemsData, batchesData, templateData, catalogData] = await Promise.all([
     adminApi<{ items: unknown[] }>("/admin/credential-inventory/items"),
     adminApi<{ batches: unknown[] }>("/admin/credential-inventory/batches"),
@@ -625,10 +772,18 @@ export async function loadCredentialInventory() {
   ])
 
   return {
-    items: itemsData.items || [],
-    batches: batchesData.batches || [],
-    templates: templateData.templates || [],
-    variants: catalogData.variants || [],
+    items: arrayField(itemsData.items)
+      .map(toProductAdminCredentialItem)
+      .filter((item) => item.id),
+    batches: arrayField(batchesData.batches)
+      .map(toProductAdminCredentialBatch)
+      .filter((batch) => batch.id),
+    templates: arrayField(templateData.templates)
+      .map(toProductAdminTemplate)
+      .filter((template) => template.code),
+    variants: arrayField(catalogData.variants)
+      .map(toProductAdminCatalogVariant)
+      .filter((variant) => variant.id),
   }
 }
 
@@ -639,7 +794,11 @@ export function importCredentialBatch(input: ImportCredentialBatchInput) {
       name: input.name.trim() || "手动导入",
       product_variant_id: input.productVariantId.trim(),
       template_code: input.templateCode.trim(),
-      items: input.items,
+      items: input.items.map((item) => ({
+        account_identifier: item.accountIdentifier,
+        display_label: item.displayLabel,
+        credential: item.credential,
+      })),
     },
   })
 }
@@ -1071,6 +1230,216 @@ export function updateContentTaskReview(input: {
       output_summary: `Admin review marked ${input.reviewStatus}`,
     },
   })
+}
+
+function toProductAdminProduct(value: unknown): ProductAdminProduct {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    title: stringField(record.title, "Untitled product"),
+    handle: nullableStringField(record.handle),
+    status: stringField(record.status, "draft"),
+    thumbnail: nullableStringField(record.thumbnail),
+    variants: arrayField(record.variants)
+      .map(toProductAdminProductVariant)
+      .filter((variant) => variant.id),
+    salesChannels: arrayField(record.sales_channels)
+      .map(toProductAdminSalesChannel)
+      .filter((channel) => channel.id),
+    createdAt: nullableStringField(record.created_at),
+    updatedAt: nullableStringField(record.updated_at),
+  }
+}
+
+function toProductAdminProductVariant(
+  value: unknown,
+): ProductAdminProductVariant {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    title: nullableStringField(record.title),
+    sku: nullableStringField(record.sku),
+    managesInventory: booleanField(record.manage_inventory),
+    allowsBackorder: booleanField(record.allow_backorder),
+    prices: arrayField(record.prices).map(toProductAdminPrice),
+  }
+}
+
+function toProductAdminPrice(value: unknown): ProductAdminPrice {
+  const record = recordField(value)
+
+  return {
+    currencyCode: nullableStringField(record.currency_code),
+    amount: nullableNumberField(record.amount),
+  }
+}
+
+function toProductAdminCategory(value: unknown): ProductAdminCategory {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    name: stringField(record.name, stringField(record.handle, "Unnamed category")),
+    handle: nullableStringField(record.handle),
+    isActive: booleanField(record.is_active, true),
+  }
+}
+
+function toProductAdminCollection(value: unknown): ProductAdminCollection {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    title: stringField(record.title, stringField(record.handle, "Untitled collection")),
+    handle: nullableStringField(record.handle),
+  }
+}
+
+function toProductAdminProductType(value: unknown): ProductAdminProductType {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    value: stringField(record.value, stringField(record.id)),
+  }
+}
+
+function toProductAdminTag(value: unknown): ProductAdminTag {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    value: stringField(record.value, stringField(record.id)),
+  }
+}
+
+function toProductAdminSalesChannel(value: unknown): ProductAdminSalesChannel {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    name: stringField(record.name, stringField(record.id)),
+    isDisabled: booleanField(record.is_disabled),
+  }
+}
+
+function toProductAdminTemplate(value: unknown): ProductAdminTemplate {
+  const record = recordField(value)
+
+  return {
+    code: stringField(record.code),
+    title: stringField(record.title, stringField(record.code, "Untitled template")),
+    description: stringField(record.description),
+    productType: stringField(record.productType, stringField(record.product_type)),
+    fulfillmentPolicyCode: nullableStringField(
+      record.fulfillmentPolicyCode ?? record.fulfillment_policy_code,
+    ),
+    deliveryHandlerCode: nullableStringField(
+      record.deliveryHandlerCode ?? record.delivery_handler_code,
+    ),
+    inventoryHandlerCode: nullableStringField(
+      record.inventoryHandlerCode ?? record.inventory_handler_code,
+    ),
+  }
+}
+
+function toProductAdminCatalogVariant(
+  value: unknown,
+): ProductAdminCatalogVariant {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    title: nullableStringField(record.title),
+    sku: nullableStringField(record.sku),
+    productId: nullableStringField(record.product_id),
+    productTitle: nullableStringField(record.product_title),
+    productHandle: nullableStringField(record.product_handle),
+    productType: nullableStringField(record.product_type),
+    templateCode: stringField(record.template_code),
+    templateTitle: stringField(record.template_title, stringField(record.template_code)),
+    inventoryHandlerCode: stringField(record.inventory_handler_code, "unknown"),
+    deliveryHandlerCode: nullableStringField(record.delivery_handler_code),
+    credentialInventorySupported: booleanField(
+      record.credential_inventory_supported,
+    ),
+    availabilitySupported: booleanField(record.availability_supported),
+    totalCount: nullableNumberField(record.total_count),
+    availableCount: nullableNumberField(record.available_count),
+    reservedCount: nullableNumberField(record.reserved_count),
+    soldCount: nullableNumberField(record.sold_count),
+    lockedCount: nullableNumberField(record.locked_count),
+    isInStock:
+      typeof record.is_in_stock === "boolean" ? record.is_in_stock : null,
+  }
+}
+
+function toProductAdminCredentialItem(
+  value: unknown,
+): ProductAdminCredentialItem {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    productVariantId: stringField(record.product_variant_id),
+    status: stringField(record.status, "unknown"),
+    displayLabel: stringField(record.display_label, stringField(record.id)),
+    accountIdentifier: stringField(record.account_identifier),
+    orderId: nullableStringField(record.order_id),
+    cartId: nullableStringField(record.cart_id),
+    deliveredAt: nullableStringField(record.delivered_at),
+  }
+}
+
+function toProductAdminCredentialBatch(
+  value: unknown,
+): ProductAdminCredentialBatch {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    name: stringField(record.name, stringField(record.id)),
+    productVariantId: stringField(record.product_variant_id),
+    status: stringField(record.status, "unknown"),
+    totalCount: numberField(record.total_count),
+    availableCount: numberField(record.available_count),
+    reservedCount: numberField(record.reserved_count),
+    soldCount: numberField(record.sold_count),
+  }
+}
+
+function recordField(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {}
+  }
+
+  return value as Record<string, unknown>
+}
+
+function arrayField(value: unknown): unknown[] {
+  return Array.isArray(value) ? value : []
+}
+
+function stringField(value: unknown, fallback = "") {
+  return typeof value === "string" ? value : fallback
+}
+
+function nullableStringField(value: unknown) {
+  return typeof value === "string" ? value : null
+}
+
+function booleanField(value: unknown, fallback = false) {
+  return typeof value === "boolean" ? value : fallback
+}
+
+function numberField(value: unknown, fallback = 0) {
+  return typeof value === "number" && Number.isFinite(value) ? value : fallback
+}
+
+function nullableNumberField(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null
 }
 
 function emptyToNull(value: string) {
