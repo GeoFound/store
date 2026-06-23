@@ -18,13 +18,13 @@ const NAV_GROUPS = [
       { label: "凭证库存", href: "/dashboard/credentials" },
       { label: "数字交付", href: "/dashboard/deliveries" },
       { label: "SEO", href: "/dashboard/seo" },
+      { label: "内容", href: "/dashboard/content" },
     ],
   },
   {
     title: "待迁移",
     links: [
       { label: "商品", href: null },
-      { label: "内容", href: null },
       { label: "订单", href: null },
       { label: "售后", href: null },
       { label: "系统设置", href: null },
