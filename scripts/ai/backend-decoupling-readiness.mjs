@@ -180,6 +180,11 @@ function scanRepository() {
     "apps/admin/src/components/orders-view.tsx",
     "apps/admin/src/components/customers-view.tsx",
   ])
+  const adminTransactionOpsDtoUiFiles = sourceFiles([
+    "apps/admin/src/components/payments-view.tsx",
+    "apps/admin/src/components/deliveries-view.tsx",
+    "apps/admin/src/components/after-sales-view.tsx",
+  ])
   const storefrontFiles = sourceFiles(["apps/storefront/src"])
   const allowedStorefrontFetchFiles = new Set([
     "apps/storefront/src/lib/commerce-medusa.ts",
@@ -215,6 +220,10 @@ function scanRepository() {
     adminOrderCustomerDtoUiFiles,
     /\b(display_id|payment_status|fulfillment_status|currency_code|payment_collections|unit_price|customer_groups|first_name|last_name|has_account|created_at|updated_at|delivered_at)\b/
   )
+  const adminTransactionOpsDtoLeakFiles = filesMatching(
+    adminTransactionOpsDtoUiFiles,
+    /\b(delivery_id|account_item_id|display_label|account_identifier|product_variant_id|cart_id|order_id|payment_attempt_id|delivery_status|access_token_hint|delivered_by|delivered_at|buyer_confirmed_at|customer_email|admin_note|provider_code|provider_order_id|health_status|paid_at|created_at)\b/
+  )
   const storefrontFetchViolations = filesMatching(storefrontFiles, /\bfetch\s*\(/)
     .filter((file) => !allowedStorefrontFetchFiles.has(file))
 
@@ -224,6 +233,7 @@ function scanRepository() {
     adminDirectAdminApiUiFiles,
     adminProductDtoLeakFiles,
     adminOrderCustomerDtoLeakFiles,
+    adminTransactionOpsDtoLeakFiles,
     storefrontFetchViolations,
     backendMedusaImportFiles: filesMatching(backendFiles, /@medusajs\//),
     backendMedusaRequestResponseFiles: filesMatching(backendApiFiles, /MedusaRequest|MedusaResponse/),
@@ -345,6 +355,18 @@ export function createBackendDecouplingReadinessReport() {
   addHardCheck({
     checks,
     issues,
+    id: "admin-transaction-ops-domain-uses-product-dtos",
+    value: scan.adminTransactionOpsDtoLeakFiles.length,
+    max: 0,
+    message:
+      "Payment, digital delivery, and after-sales admin UI must consume product-admin DTOs instead of Medusa or backend snake_case response fields.",
+    details: {
+      files: sample(scan.adminTransactionOpsDtoLeakFiles),
+    },
+  })
+  addHardCheck({
+    checks,
+    issues,
     id: "storefront-fetch-only-in-approved-adapters",
     value: scan.storefrontFetchViolations.length,
     max: 0,
@@ -436,6 +458,7 @@ export function createBackendDecouplingReadinessReport() {
       adminMedusaRouteLiteralOccurrences: scan.adminMedusaRouteLiteralOccurrences,
       adminProductDtoLeakFiles: scan.adminProductDtoLeakFiles.length,
       adminOrderCustomerDtoLeakFiles: scan.adminOrderCustomerDtoLeakFiles.length,
+      adminTransactionOpsDtoLeakFiles: scan.adminTransactionOpsDtoLeakFiles.length,
       storefrontMedusaEnvFiles: scan.storefrontMedusaEnvFiles.length,
     },
     checks,

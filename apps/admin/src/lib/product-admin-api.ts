@@ -204,6 +204,75 @@ export type ProductAdminCustomerWorkspace = {
   groups: ProductAdminCustomerGroup[]
 }
 
+export type ProductAdminDeliveryPendingItem = {
+  kind: "credential" | "delivery"
+  id: string
+  deliveryId: string | null
+  displayLabel: string
+  accountIdentifier: string
+  productVariantId: string
+  cartId: string | null
+  orderId: string | null
+  paymentAttemptId: string | null
+}
+
+export type ProductAdminDelivery = {
+  id: string
+  status: string
+  accountItemId: string
+  cartId: string | null
+  paymentAttemptId: string | null
+  accessTokenHint: string | null
+  deliveredBy: string | null
+  deliveredAt: string | null
+  buyerConfirmedAt: string | null
+}
+
+export type ProductAdminDeliveryWorkspace = {
+  pending: ProductAdminDeliveryPendingItem[]
+  deliveries: ProductAdminDelivery[]
+}
+
+export type ProductAdminAfterSale = {
+  id: string
+  deliveryId: string
+  customerEmail: string | null
+  reason: string
+  message: string
+  status: string
+  result: string
+  adminNote: string | null
+  createdAt: string | null
+}
+
+export type ProductAdminPaymentChannel = {
+  id: string
+  code: string
+  displayName: string
+  type: string
+  enabled: boolean
+  priority: number
+  providerCode: string
+  healthStatus: string
+}
+
+export type ProductAdminPaymentAttempt = {
+  id: string
+  cartId: string | null
+  providerCode: string
+  providerOrderId: string | null
+  amount: number
+  currency: string
+  status: string
+  paidAt: string | null
+  createdAt: string | null
+}
+
+export type ProductAdminPaymentWorkspace = {
+  channels: ProductAdminPaymentChannel[]
+  attempts: ProductAdminPaymentAttempt[]
+}
+
 type CreateCatalogProductInput = {
   title: string
   handle: string
@@ -340,11 +409,6 @@ type ContentAssetRecord = {
 type StorageProviderRecord = {
   code: string
   kind?: string | null
-}
-
-type PaymentChannelRecord = {
-  id: string
-  enabled: boolean
 }
 
 type DeliveryInput = {
@@ -707,20 +771,27 @@ export function loadAuditLogs(query: string) {
   return adminApi(`/admin/audit-logs?${query}`)
 }
 
-export async function loadDeliveryWorkspace() {
+export async function loadDeliveryWorkspace(): Promise<ProductAdminDeliveryWorkspace> {
   const [pendingData, deliveryData] = await Promise.all([
     adminApi<{ items: unknown[] }>("/admin/digital-delivery/pending"),
     adminApi<{ deliveries: unknown[] }>("/admin/digital-delivery/deliveries"),
   ])
 
   return {
-    pending: pendingData.items || [],
-    deliveries: deliveryData.deliveries || [],
+    pending: arrayField(pendingData.items)
+      .map(toProductAdminDeliveryPendingItem)
+      .filter((item) => item.id),
+    deliveries: arrayField(deliveryData.deliveries)
+      .map(toProductAdminDelivery)
+      .filter((delivery) => delivery.id),
   }
 }
 
-export function createDigitalDelivery(input: DeliveryInput) {
-  return adminApi<{ delivery: { id: string }; accessToken: string | null }>(
+export async function createDigitalDelivery(input: DeliveryInput): Promise<{
+  delivery: ProductAdminDelivery
+  accessToken: string | null
+}> {
+  const data = await adminApi<{ delivery: unknown; accessToken: string | null }>(
     "/admin/digital-delivery/deliveries",
     {
       method: "POST",
@@ -736,6 +807,11 @@ export function createDigitalDelivery(input: DeliveryInput) {
       },
     },
   )
+
+  return {
+    delivery: toProductAdminDelivery(data.delivery),
+    accessToken: data.accessToken || null,
+  }
 }
 
 export function loadOpsDashboard() {
@@ -1047,9 +1123,11 @@ export function retrySupplierProcurement(id: string) {
   })
 }
 
-export async function loadAfterSales() {
+export async function loadAfterSales(): Promise<ProductAdminAfterSale[]> {
   const data = await adminApi<{ after_sales: unknown[] }>("/admin/after-sales")
-  return data.after_sales || []
+  return arrayField(data.after_sales)
+    .map(toProductAdminAfterSale)
+    .filter((item) => item.id)
 }
 
 export function updateAfterSale(input: {
@@ -1068,15 +1146,19 @@ export function updateAfterSale(input: {
   })
 }
 
-export async function loadPaymentWorkspace() {
+export async function loadPaymentWorkspace(): Promise<ProductAdminPaymentWorkspace> {
   const [channelData, attemptData] = await Promise.all([
     adminApi<{ channels: unknown[] }>("/admin/payment-channels"),
     adminApi<{ attempts: unknown[] }>("/admin/payment-attempts?limit=100"),
   ])
 
   return {
-    channels: channelData.channels || [],
-    attempts: attemptData.attempts || [],
+    channels: arrayField(channelData.channels)
+      .map(toProductAdminPaymentChannel)
+      .filter((channel) => channel.id),
+    attempts: arrayField(attemptData.attempts)
+      .map(toProductAdminPaymentAttempt)
+      .filter((attempt) => attempt.id),
   }
 }
 
@@ -1096,7 +1178,9 @@ export function createManualPaymentChannel(input: {
   })
 }
 
-export function togglePaymentChannel(channel: PaymentChannelRecord) {
+export function togglePaymentChannel(
+  channel: Pick<ProductAdminPaymentChannel, "enabled" | "id">,
+) {
   return adminApi<{ channel: unknown }>(`/admin/payment-channels/${channel.id}`, {
     method: "POST",
     body: {
@@ -1596,6 +1680,95 @@ function toProductAdminCustomerGroup(
   return {
     id: stringField(record.id),
     name: stringField(record.name, stringField(record.id)),
+    createdAt: nullableStringField(record.created_at),
+  }
+}
+
+function toProductAdminDeliveryPendingItem(
+  value: unknown,
+): ProductAdminDeliveryPendingItem {
+  const record = recordField(value)
+  const kind = record.kind === "delivery" ? "delivery" : "credential"
+
+  return {
+    kind,
+    id: stringField(record.id),
+    deliveryId: nullableStringField(record.delivery_id),
+    displayLabel: stringField(record.display_label, stringField(record.id)),
+    accountIdentifier: stringField(record.account_identifier),
+    productVariantId: stringField(record.product_variant_id),
+    cartId: nullableStringField(record.cart_id),
+    orderId: nullableStringField(record.order_id),
+    paymentAttemptId: nullableStringField(record.payment_attempt_id),
+  }
+}
+
+function toProductAdminDelivery(value: unknown): ProductAdminDelivery {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    status: stringField(record.delivery_status, stringField(record.status, "unknown")),
+    accountItemId: stringField(record.account_item_id),
+    cartId: nullableStringField(record.cart_id),
+    paymentAttemptId: nullableStringField(record.payment_attempt_id),
+    accessTokenHint: nullableStringField(record.access_token_hint),
+    deliveredBy: nullableStringField(record.delivered_by),
+    deliveredAt: nullableStringField(record.delivered_at),
+    buyerConfirmedAt: nullableStringField(record.buyer_confirmed_at),
+  }
+}
+
+function toProductAdminAfterSale(value: unknown): ProductAdminAfterSale {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    deliveryId: stringField(record.delivery_id),
+    customerEmail: nullableStringField(record.customer_email),
+    reason: stringField(record.reason),
+    message: stringField(record.message),
+    status: stringField(record.status, "unknown"),
+    result: stringField(record.result),
+    adminNote: nullableStringField(record.admin_note),
+    createdAt: nullableStringField(record.created_at),
+  }
+}
+
+function toProductAdminPaymentChannel(
+  value: unknown,
+): ProductAdminPaymentChannel {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    code: stringField(record.code),
+    displayName: stringField(
+      record.display_name,
+      stringField(record.name, stringField(record.code)),
+    ),
+    type: stringField(record.type),
+    enabled: booleanField(record.enabled),
+    priority: numberField(record.priority),
+    providerCode: stringField(record.provider_code),
+    healthStatus: stringField(record.health_status, "unknown"),
+  }
+}
+
+function toProductAdminPaymentAttempt(
+  value: unknown,
+): ProductAdminPaymentAttempt {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    cartId: nullableStringField(record.cart_id),
+    providerCode: stringField(record.provider_code),
+    providerOrderId: nullableStringField(record.provider_order_id),
+    amount: numberField(record.amount),
+    currency: stringField(record.currency),
+    status: stringField(record.status, "unknown"),
+    paidAt: nullableStringField(record.paid_at),
     createdAt: nullableStringField(record.created_at),
   }
 }

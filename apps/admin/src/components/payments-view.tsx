@@ -8,6 +8,7 @@ import {
   loadPaymentWorkspace,
   markPaymentAttemptPaid,
   togglePaymentChannel as toggleAdminPaymentChannel,
+  type ProductAdminPaymentChannel,
 } from "@/lib/product-admin-api"
 import {
   Field,
@@ -17,36 +18,6 @@ import {
 } from "./admin-controls"
 import { Message, MetricCard, PageHeader, Panel, TableShell } from "./admin-page"
 import { StatusBadge } from "./status-badge"
-
-type PaymentChannel = {
-  id: string
-  code: string
-  display_name: string
-  type: string
-  enabled: boolean
-  priority: number
-  provider_code: string
-  health_status: string
-}
-
-type PaymentAttempt = {
-  id: string
-  cart_id?: string | null
-  provider_code: string
-  provider_order_id?: string | null
-  amount: number
-  currency: string
-  status: string
-  paid_at?: string | null
-  created_at?: string
-}
-
-async function loadPayments() {
-  return loadPaymentWorkspace() as Promise<{
-    channels: PaymentChannel[]
-    attempts: PaymentAttempt[]
-  }>
-}
 
 export function PaymentsView() {
   const queryClient = useQueryClient()
@@ -63,7 +34,7 @@ export function PaymentsView() {
   })
   const paymentsQuery = useQuery({
     queryKey: ["payments"],
-    queryFn: loadPayments,
+    queryFn: loadPaymentWorkspace,
   })
   const data = paymentsQuery.data
 
@@ -85,7 +56,7 @@ export function PaymentsView() {
   })
 
   const toggleChannel = useMutation({
-    mutationFn: (channel: PaymentChannel) =>
+    mutationFn: (channel: ProductAdminPaymentChannel) =>
       toggleAdminPaymentChannel(channel),
     onSuccess: async () => {
       setMessage("支付渠道已更新。")
@@ -98,7 +69,7 @@ export function PaymentsView() {
   const markPaid = useMutation({
     mutationFn: async () => {
       if (!markPaidForm.attemptId.trim()) {
-        throw new Error("payment_attempt_id 必填。")
+        throw new Error("支付尝试 ID 必填。")
       }
 
       if (markPaidForm.confirmation !== "MARK_PAID") {
@@ -178,7 +149,7 @@ export function PaymentsView() {
             {data?.channels.map((channel) => (
               <tr key={channel.id} className="align-top">
                 <Cell>
-                  <p className="font-medium">{channel.display_name}</p>
+                  <p className="font-medium">{channel.displayName}</p>
                   <p className="font-mono text-xs text-[var(--muted)]">
                     {channel.code}
                   </p>
@@ -186,10 +157,10 @@ export function PaymentsView() {
                 <Cell>{channel.type}</Cell>
                 <Cell>
                   <StatusBadge
-                    value={channel.enabled ? channel.health_status : "disabled"}
+                    value={channel.enabled ? channel.healthStatus : "disabled"}
                   />
                 </Cell>
-                <Cell mono>{channel.provider_code}</Cell>
+                <Cell mono>{channel.providerCode}</Cell>
                 <Cell>{channel.priority}</Cell>
                 <Cell>
                   <SecondaryButton
@@ -218,7 +189,7 @@ export function PaymentsView() {
                 void createChannel.mutate()
               }}
             >
-              <Field label="provider_code / code">
+              <Field label="渠道代码">
                 <TextInput
                   value={channelForm.code}
                   onChange={(event) =>
@@ -260,7 +231,7 @@ export function PaymentsView() {
                 void markPaid.mutate()
               }}
             >
-              <Field label="payment_attempt_id">
+              <Field label="支付尝试 ID">
                 <TextInput
                   value={markPaidForm.attemptId}
                   onChange={(event) =>
@@ -324,9 +295,9 @@ export function PaymentsView() {
                 <Cell>
                   {formatAmount(attempt.amount)} {attempt.currency}
                 </Cell>
-                <Cell mono>{attempt.provider_code}</Cell>
-                <Cell mono>{attempt.provider_order_id || "-"}</Cell>
-                <Cell>{formatDate(attempt.created_at)}</Cell>
+                <Cell mono>{attempt.providerCode}</Cell>
+                <Cell mono>{attempt.providerOrderId || "-"}</Cell>
+                <Cell>{formatDate(attempt.createdAt)}</Cell>
                 <Cell>
                   <SecondaryButton
                     type="button"

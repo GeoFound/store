@@ -6,6 +6,7 @@ import { formatDate } from "@/lib/format"
 import {
   createDigitalDelivery,
   loadDeliveryWorkspace,
+  type ProductAdminDeliveryPendingItem,
 } from "@/lib/product-admin-api"
 import {
   Field,
@@ -16,30 +17,6 @@ import {
 } from "./admin-controls"
 import { Message, MetricCard, PageHeader, Panel, TableShell } from "./admin-page"
 import { StatusBadge } from "./status-badge"
-
-type PendingItem = {
-  kind?: "credential" | "delivery"
-  id: string
-  delivery_id?: string
-  display_label: string
-  account_identifier: string
-  product_variant_id: string
-  cart_id?: string | null
-  order_id?: string | null
-  payment_attempt_id?: string | null
-}
-
-type Delivery = {
-  id: string
-  delivery_status: string
-  account_item_id: string
-  cart_id?: string | null
-  payment_attempt_id?: string | null
-  access_token_hint?: string
-  delivered_by?: string | null
-  delivered_at?: string | null
-  buyer_confirmed_at?: string | null
-}
 
 type DeliveryForm = {
   deliveryId: string
@@ -63,13 +40,6 @@ const EMPTY_FORM: DeliveryForm = {
   deliveryPayload: "",
 }
 
-async function loadDeliveries() {
-  return loadDeliveryWorkspace() as Promise<{
-    pending: PendingItem[]
-    deliveries: Delivery[]
-  }>
-}
-
 export function DeliveriesView() {
   const queryClient = useQueryClient()
   const [form, setForm] = useState<DeliveryForm>(EMPTY_FORM)
@@ -79,7 +49,7 @@ export function DeliveriesView() {
 
   const deliveriesQuery = useQuery({
     queryKey: ["deliveries"],
-    queryFn: loadDeliveries,
+    queryFn: loadDeliveryWorkspace,
   })
   const data = deliveriesQuery.data
 
@@ -92,7 +62,7 @@ export function DeliveriesView() {
       return createDigitalDelivery({
         ...form,
         deliveryPayload: parseDeliveryPayload(form.deliveryPayload),
-      }) as Promise<{ delivery: Delivery; accessToken: string | null }>
+      })
     },
     onSuccess: async (result) => {
       setMessage(`交付已创建：${result.delivery.id}`)
@@ -103,15 +73,15 @@ export function DeliveriesView() {
     onError: (err) => setError(errorMessage(err)),
   })
 
-  function selectPending(item: PendingItem) {
+  function selectPending(item: ProductAdminDeliveryPendingItem) {
     const isDelivery = item.kind === "delivery"
     setForm({
       ...EMPTY_FORM,
-      deliveryId: isDelivery ? item.delivery_id || item.id : "",
+      deliveryId: isDelivery ? item.deliveryId || item.id : "",
       accountItemId: isDelivery ? "" : item.id,
-      orderId: item.order_id || "",
-      cartId: item.cart_id || "",
-      paymentAttemptId: item.payment_attempt_id || "",
+      orderId: item.orderId || "",
+      cartId: item.cartId || "",
+      paymentAttemptId: item.paymentAttemptId || "",
     })
     setMessage("")
     setAccessToken("")
@@ -122,7 +92,7 @@ export function DeliveriesView() {
     setForm((current) => ({ ...current, ...patch }))
 
   const fulfilled = data?.deliveries.filter((delivery) =>
-    ["delivered", "fulfilled", "confirmed"].includes(delivery.delivery_status),
+    ["delivered", "fulfilled", "confirmed"].includes(delivery.status),
   )
 
   return (
@@ -181,13 +151,13 @@ export function DeliveriesView() {
             {data?.pending.map((item) => (
               <tr key={item.id} className="align-top">
                 <Cell>
-                  <div className="font-medium">{item.display_label}</div>
+                  <div className="font-medium">{item.displayLabel}</div>
                   <div className="font-mono text-xs text-[var(--muted)]">
-                    {(item.kind || "credential") + " · " + item.account_identifier}
+                    {item.kind + " · " + item.accountIdentifier}
                   </div>
                 </Cell>
-                <Cell mono>{item.product_variant_id}</Cell>
-                <Cell mono>{item.order_id || item.cart_id || "-"}</Cell>
+                <Cell mono>{item.productVariantId}</Cell>
+                <Cell mono>{item.orderId || item.cartId || "-"}</Cell>
                 <Cell>
                   <SecondaryButton
                     type="button"
@@ -212,14 +182,14 @@ export function DeliveriesView() {
             }}
           >
             <div className="grid gap-3 md:grid-cols-2">
-              <Field label="delivery_id">
+              <Field label="交付 ID">
                 <TextInput
                   value={form.deliveryId}
                   onChange={(event) => update({ deliveryId: event.target.value })}
                   placeholder="delivery_...（重发已有交付）"
                 />
               </Field>
-              <Field label="account_item_id">
+              <Field label="凭证项 ID">
                 <TextInput
                   value={form.accountItemId}
                   onChange={(event) =>
@@ -228,21 +198,21 @@ export function DeliveriesView() {
                   placeholder="acct_item_...（凭证项）"
                 />
               </Field>
-              <Field label="order_id">
+              <Field label="订单 ID">
                 <TextInput
                   value={form.orderId}
                   onChange={(event) => update({ orderId: event.target.value })}
                   placeholder="optional"
                 />
               </Field>
-              <Field label="cart_id">
+              <Field label="购物车 ID">
                 <TextInput
                   value={form.cartId}
                   onChange={(event) => update({ cartId: event.target.value })}
                   placeholder="optional"
                 />
               </Field>
-              <Field label="payment_attempt_id">
+              <Field label="支付尝试 ID">
                 <TextInput
                   value={form.paymentAttemptId}
                   onChange={(event) =>
@@ -251,7 +221,7 @@ export function DeliveriesView() {
                   placeholder="optional"
                 />
               </Field>
-              <Field label="delivered_by">
+              <Field label="交付人">
                 <TextInput
                   value={form.deliveredBy}
                   onChange={(event) =>
@@ -304,12 +274,12 @@ export function DeliveriesView() {
               <tr key={delivery.id} className="align-top">
                 <Cell mono>{delivery.id}</Cell>
                 <Cell>
-                  <StatusBadge value={delivery.delivery_status} />
+                  <StatusBadge value={delivery.status} />
                 </Cell>
-                <Cell mono>{delivery.account_item_id}</Cell>
-                <Cell>{delivery.access_token_hint || "-"}</Cell>
-                <Cell>{formatDate(delivery.delivered_at)}</Cell>
-                <Cell>{formatDate(delivery.buyer_confirmed_at)}</Cell>
+                <Cell mono>{delivery.accountItemId}</Cell>
+                <Cell>{delivery.accessTokenHint || "-"}</Cell>
+                <Cell>{formatDate(delivery.deliveredAt)}</Cell>
+                <Cell>{formatDate(delivery.buyerConfirmedAt)}</Cell>
               </tr>
             ))}
           </AdminTable>

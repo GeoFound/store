@@ -79,6 +79,11 @@
       "max": 0
     },
     {
+      "id": "admin-transaction-ops-domain-uses-product-dtos",
+      "check": "adminTransactionOpsDtoLeakFiles",
+      "max": 0
+    },
+    {
       "id": "storefront-no-fetch-outside-approved-adapters",
       "check": "storefrontFetchViolations",
       "max": 0

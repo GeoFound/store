@@ -40,6 +40,9 @@ storefront UI, and backend adapters can evolve independently.
   counters directly.
 - Order and customer UI follows the same rule for order, payment, fulfillment,
   customer account, and group fields.
+- Payment, digital delivery, and after-sales UI follows the same rule for
+  payment attempts, payment channels, delivery records, pending delivery items,
+  and support request fields.
 
 ## Rule Of Thumb
 

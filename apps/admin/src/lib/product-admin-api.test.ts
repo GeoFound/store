@@ -1,13 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import {
+  createDigitalDelivery,
   createCustomer,
   importCredentialBatch,
+  loadAfterSales,
   loadCustomers,
   loadCredentialInventory,
+  loadDeliveryWorkspace,
   loadOrders,
+  loadPaymentWorkspace,
   loadProductCatalog,
   loadProductPublishingWorkspace,
   retrieveOrder,
+  togglePaymentChannel,
 } from "./product-admin-api"
 
 const adminApiMock = vi.hoisted(() => vi.fn())
@@ -404,5 +409,244 @@ describe("product admin facade", () => {
         phone: "+15550101",
       },
     })
+  })
+
+  it("maps payment workspace responses to product-admin DTOs", async () => {
+    adminApiMock.mockImplementation(async (path: string) => {
+      if (path === "/admin/payment-channels") {
+        return {
+          channels: [
+            {
+              id: "paychan_1",
+              code: "manual",
+              display_name: "Manual payment",
+              type: "manual",
+              enabled: true,
+              priority: 10,
+              provider_code: "manual",
+              health_status: "healthy",
+            },
+          ],
+        }
+      }
+
+      if (path === "/admin/payment-attempts?limit=100") {
+        return {
+          attempts: [
+            {
+              id: "payatt_1",
+              cart_id: "cart_1",
+              provider_code: "manual",
+              provider_order_id: "manual_1",
+              amount: 1999,
+              currency: "usd",
+              status: "pending",
+              paid_at: null,
+              created_at: "2026-06-05T00:00:00.000Z",
+            },
+          ],
+        }
+      }
+
+      throw new Error(`Unexpected path: ${path}`)
+    })
+
+    const workspace = await loadPaymentWorkspace()
+
+    expect(workspace.channels[0]).toEqual({
+      id: "paychan_1",
+      code: "manual",
+      displayName: "Manual payment",
+      type: "manual",
+      enabled: true,
+      priority: 10,
+      providerCode: "manual",
+      healthStatus: "healthy",
+    })
+    expect(workspace.attempts[0]).toEqual({
+      id: "payatt_1",
+      cartId: "cart_1",
+      providerCode: "manual",
+      providerOrderId: "manual_1",
+      amount: 1999,
+      currency: "usd",
+      status: "pending",
+      paidAt: null,
+      createdAt: "2026-06-05T00:00:00.000Z",
+    })
+    expect(workspace.channels[0]).not.toHaveProperty("provider_code")
+    expect(workspace.attempts[0]).not.toHaveProperty("provider_order_id")
+  })
+
+  it("maps payment channel toggles from product input to current backend body", async () => {
+    adminApiMock.mockResolvedValue({ channel: { id: "paychan_1" } })
+
+    await togglePaymentChannel({
+      id: "paychan_1",
+      enabled: true,
+    })
+
+    expect(adminApiMock).toHaveBeenCalledWith("/admin/payment-channels/paychan_1", {
+      method: "POST",
+      body: {
+        enabled: false,
+      },
+    })
+  })
+
+  it("maps delivery workspace responses to product-admin DTOs", async () => {
+    adminApiMock.mockImplementation(async (path: string) => {
+      if (path === "/admin/digital-delivery/pending") {
+        return {
+          items: [
+            {
+              kind: "credential",
+              id: "acct_item_1",
+              delivery_id: null,
+              display_label: "Card 1",
+              account_identifier: "CARD-1",
+              product_variant_id: "variant_1",
+              cart_id: "cart_1",
+              order_id: "order_1",
+              payment_attempt_id: "payatt_1",
+            },
+          ],
+        }
+      }
+
+      if (path === "/admin/digital-delivery/deliveries") {
+        return {
+          deliveries: [
+            {
+              id: "delivery_1",
+              delivery_status: "delivered",
+              account_item_id: "acct_item_1",
+              cart_id: "cart_1",
+              payment_attempt_id: "payatt_1",
+              access_token_hint: "tok_...",
+              delivered_by: "admin",
+              delivered_at: "2026-06-06T00:00:00.000Z",
+              buyer_confirmed_at: null,
+            },
+          ],
+        }
+      }
+
+      throw new Error(`Unexpected path: ${path}`)
+    })
+
+    const workspace = await loadDeliveryWorkspace()
+
+    expect(workspace.pending[0]).toEqual({
+      kind: "credential",
+      id: "acct_item_1",
+      deliveryId: null,
+      displayLabel: "Card 1",
+      accountIdentifier: "CARD-1",
+      productVariantId: "variant_1",
+      cartId: "cart_1",
+      orderId: "order_1",
+      paymentAttemptId: "payatt_1",
+    })
+    expect(workspace.deliveries[0]).toEqual({
+      id: "delivery_1",
+      status: "delivered",
+      accountItemId: "acct_item_1",
+      cartId: "cart_1",
+      paymentAttemptId: "payatt_1",
+      accessTokenHint: "tok_...",
+      deliveredBy: "admin",
+      deliveredAt: "2026-06-06T00:00:00.000Z",
+      buyerConfirmedAt: null,
+    })
+    expect(workspace.pending[0]).not.toHaveProperty("account_item_id")
+    expect(workspace.deliveries[0]).not.toHaveProperty("delivery_status")
+  })
+
+  it("maps delivery creation from product input to current backend body", async () => {
+    adminApiMock.mockResolvedValue({
+      delivery: {
+        id: "delivery_1",
+        delivery_status: "delivered",
+        account_item_id: "acct_item_1",
+      },
+      accessToken: "delivery_token",
+    })
+
+    const result = await createDigitalDelivery({
+      deliveryId: "delivery_1",
+      accountItemId: "acct_item_1",
+      orderId: "order_1",
+      cartId: "cart_1",
+      paymentAttemptId: "payatt_1",
+      deliveredBy: "operator",
+      deliveryNote: "Checked",
+      deliveryPayload: { code: "SECRET" },
+    })
+
+    expect(result).toEqual({
+      delivery: {
+        id: "delivery_1",
+        status: "delivered",
+        accountItemId: "acct_item_1",
+        cartId: null,
+        paymentAttemptId: null,
+        accessTokenHint: null,
+        deliveredBy: null,
+        deliveredAt: null,
+        buyerConfirmedAt: null,
+      },
+      accessToken: "delivery_token",
+    })
+    expect(adminApiMock).toHaveBeenCalledWith(
+      "/admin/digital-delivery/deliveries",
+      {
+        method: "POST",
+        body: {
+          delivery_id: "delivery_1",
+          account_item_id: "acct_item_1",
+          order_id: "order_1",
+          cart_id: "cart_1",
+          payment_attempt_id: "payatt_1",
+          delivery_payload: { code: "SECRET" },
+          delivered_by: "operator",
+          delivery_note: "Checked",
+        },
+      },
+    )
+  })
+
+  it("maps after-sales responses to product-admin DTOs", async () => {
+    adminApiMock.mockResolvedValue({
+      after_sales: [
+        {
+          id: "as_1",
+          delivery_id: "delivery_1",
+          customer_email: "buyer@example.com",
+          reason: "not_working",
+          message: "Code failed",
+          status: "open",
+          result: "pending",
+          admin_note: null,
+          created_at: "2026-06-07T00:00:00.000Z",
+        },
+      ],
+    })
+
+    const items = await loadAfterSales()
+
+    expect(items[0]).toEqual({
+      id: "as_1",
+      deliveryId: "delivery_1",
+      customerEmail: "buyer@example.com",
+      reason: "not_working",
+      message: "Code failed",
+      status: "open",
+      result: "pending",
+      adminNote: null,
+      createdAt: "2026-06-07T00:00:00.000Z",
+    })
+    expect(items[0]).not.toHaveProperty("delivery_id")
+    expect(items[0]).not.toHaveProperty("customer_email")
   })
 })

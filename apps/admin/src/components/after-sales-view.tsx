@@ -6,6 +6,7 @@ import { formatDate } from "@/lib/format"
 import {
   loadAfterSales as loadAfterSalesWorkspace,
   updateAfterSale,
+  type ProductAdminAfterSale,
 } from "@/lib/product-admin-api"
 import {
   Field,
@@ -16,18 +17,6 @@ import {
 } from "./admin-controls"
 import { Message, MetricCard, PageHeader, Panel, TableShell } from "./admin-page"
 import { StatusBadge } from "./status-badge"
-
-type AfterSale = {
-  id: string
-  delivery_id: string
-  customer_email?: string | null
-  reason: string
-  message: string
-  status: string
-  result: string
-  admin_note?: string | null
-  created_at?: string
-}
 
 const STATUS_OPTIONS = [
   "open",
@@ -44,13 +33,9 @@ const RESULT_OPTIONS = [
   "resolved",
 ] as const
 
-async function loadAfterSales() {
-  return loadAfterSalesWorkspace() as Promise<AfterSale[]>
-}
-
 export function AfterSalesView() {
   const queryClient = useQueryClient()
-  const [selected, setSelected] = useState<AfterSale | null>(null)
+  const [selected, setSelected] = useState<ProductAdminAfterSale | null>(null)
   const [status, setStatus] = useState("processing")
   const [result, setResult] = useState("pending")
   const [adminNote, setAdminNote] = useState("")
@@ -59,7 +44,7 @@ export function AfterSalesView() {
 
   const afterSalesQuery = useQuery({
     queryKey: ["after-sales"],
-    queryFn: loadAfterSales,
+    queryFn: loadAfterSalesWorkspace,
   })
   const items = afterSalesQuery.data || []
 
@@ -85,11 +70,11 @@ export function AfterSalesView() {
     onError: (err) => setError(errorMessage(err)),
   })
 
-  function select(item: AfterSale) {
+  function select(item: ProductAdminAfterSale) {
     setSelected(item)
     setStatus(item.status)
     setResult(item.result)
-    setAdminNote(item.admin_note || "")
+    setAdminNote(item.adminNote || "")
     setMessage("")
     setError("")
   }
@@ -143,7 +128,7 @@ export function AfterSalesView() {
                 <Cell>
                   <div className="font-mono text-xs">{item.id}</div>
                   <div className="text-xs text-[var(--muted)]">
-                    {item.customer_email || "-"}
+                    {item.customerEmail || "-"}
                   </div>
                 </Cell>
                 <Cell>
@@ -155,7 +140,7 @@ export function AfterSalesView() {
                     {item.message}
                   </span>
                 </Cell>
-                <Cell>{formatDate(item.created_at)}</Cell>
+                <Cell>{formatDate(item.createdAt)}</Cell>
                 <Cell>
                   <SecondaryButton type="button" onClick={() => select(item)}>
                     处理
