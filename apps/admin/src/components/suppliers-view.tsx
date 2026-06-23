@@ -19,47 +19,6 @@ import {
 import { Message, MetricCard, PageHeader, Panel, TableShell } from "./admin-page"
 import { StatusBadge } from "./status-badge"
 
-type SupplierProvider = {
-  code: string
-  configured: boolean
-  supports_quote: boolean
-  supports_retrieve: boolean
-  supports_catalog_sync: boolean
-}
-
-type SupplierMapping = {
-  id: string
-  product_variant_id: string
-  provider_code: string
-  provider_sku: string
-  provider_product_id?: string | null
-  region_code?: string | null
-  currency?: string | null
-  enabled: boolean
-  priority: number
-}
-
-type SupplierProcurement = {
-  id: string
-  provider_code: string
-  provider_order_id?: string | null
-  status: string
-  product_variant_id?: string | null
-  order_id?: string | null
-  payment_attempt_id?: string | null
-  error_message?: string | null
-  fulfilled_at?: string | null
-  created_at?: string | null
-}
-
-async function loadSuppliers() {
-  return loadSupplierWorkspace() as Promise<{
-    providers: SupplierProvider[]
-    mappings: SupplierMapping[]
-    procurements: SupplierProcurement[]
-  }>
-}
-
 export function SuppliersView() {
   const queryClient = useQueryClient()
   const [message, setMessage] = useState("")
@@ -76,7 +35,7 @@ export function SuppliersView() {
   })
   const suppliersQuery = useQuery({
     queryKey: ["suppliers"],
-    queryFn: loadSuppliers,
+    queryFn: loadSupplierWorkspace,
   })
   const data = suppliersQuery.data
 
@@ -90,7 +49,7 @@ export function SuppliersView() {
         throw new Error("商品变体、供应商代码和供应商 SKU 必填。")
       }
 
-      return saveSupplierMapping(form) as Promise<{ mapping: SupplierMapping }>
+      return saveSupplierMapping(form)
     },
     onSuccess: async (result) => {
       setMessage(`供应商映射已保存：${result.mapping.id}`)
@@ -171,9 +130,9 @@ export function SuppliersView() {
                 </Cell>
                 <Cell>
                   {[
-                    provider.supports_quote ? "quote" : null,
-                    provider.supports_retrieve ? "retrieve" : null,
-                    provider.supports_catalog_sync ? "catalog" : null,
+                    provider.supportsQuote ? "quote" : null,
+                    provider.supportsRetrieve ? "retrieve" : null,
+                    provider.supportsCatalogSync ? "catalog" : null,
                   ]
                     .filter(Boolean)
                     .join(" / ") || "-"}
@@ -193,7 +152,7 @@ export function SuppliersView() {
             }}
           >
             <div className="grid gap-3 md:grid-cols-2">
-              <Field label="product_variant_id">
+              <Field label="商品变体 ID">
                 <TextInput
                   value={form.productVariantId}
                   onChange={(event) =>
@@ -205,7 +164,7 @@ export function SuppliersView() {
                   placeholder="variant_..."
                 />
               </Field>
-              <Field label="provider_code">
+              <Field label="供应商代码">
                 <SelectInput
                   value={form.providerCode}
                   onChange={(event) =>
@@ -224,7 +183,7 @@ export function SuppliersView() {
                   )}
                 </SelectInput>
               </Field>
-              <Field label="provider_sku">
+              <Field label="供应商 SKU">
                 <TextInput
                   value={form.providerSku}
                   onChange={(event) =>
@@ -236,7 +195,7 @@ export function SuppliersView() {
                   placeholder="supplier sku"
                 />
               </Field>
-              <Field label="provider_product_id">
+              <Field label="供应商商品 ID">
                 <TextInput
                   value={form.providerProductId}
                   onChange={(event) =>
@@ -248,7 +207,7 @@ export function SuppliersView() {
                   placeholder="optional"
                 />
               </Field>
-              <Field label="region_code">
+              <Field label="区域代码">
                 <TextInput
                   value={form.regionCode}
                   onChange={(event) =>
@@ -294,7 +253,7 @@ export function SuppliersView() {
                     metadata: event.target.value,
                   }))
                 }
-                placeholder='{"delivery_hint":"instant"}'
+                placeholder='{"deliveryHint":"instant"}'
               />
             </Field>
             <div className="flex flex-wrap gap-2">
@@ -319,10 +278,10 @@ export function SuppliersView() {
             >
               {data?.mappings.map((mapping) => (
                 <tr key={mapping.id} className="align-top">
-                  <Cell mono>{mapping.product_variant_id}</Cell>
-                  <Cell mono>{mapping.provider_code}</Cell>
-                  <Cell mono>{mapping.provider_sku}</Cell>
-                  <Cell>{mapping.region_code || "-"}</Cell>
+                  <Cell mono>{mapping.productVariantId}</Cell>
+                  <Cell mono>{mapping.providerCode}</Cell>
+                  <Cell mono>{mapping.providerSku}</Cell>
+                  <Cell>{mapping.regionCode || "-"}</Cell>
                   <Cell>{mapping.priority}</Cell>
                   <Cell>
                     <StatusBadge value={mapping.enabled ? "active" : "disabled"} />
@@ -346,14 +305,14 @@ export function SuppliersView() {
                   <Cell>
                     <StatusBadge value={procurement.status} />
                   </Cell>
-                  <Cell mono>{procurement.provider_code}</Cell>
+                  <Cell mono>{procurement.providerCode}</Cell>
                   <Cell mono>
-                    {procurement.order_id ||
-                      procurement.payment_attempt_id ||
-                      procurement.provider_order_id ||
+                    {procurement.orderId ||
+                      procurement.paymentAttemptId ||
+                      procurement.providerOrderId ||
                       "-"}
                   </Cell>
-                  <Cell>{formatDate(procurement.created_at)}</Cell>
+                  <Cell>{formatDate(procurement.createdAt)}</Cell>
                   <Cell>
                     <SecondaryButton
                       type="button"

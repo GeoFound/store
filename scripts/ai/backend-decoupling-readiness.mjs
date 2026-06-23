@@ -185,6 +185,9 @@ function scanRepository() {
     "apps/admin/src/components/deliveries-view.tsx",
     "apps/admin/src/components/after-sales-view.tsx",
   ])
+  const adminSupplierOpsDtoUiFiles = sourceFiles([
+    "apps/admin/src/components/suppliers-view.tsx",
+  ])
   const storefrontFiles = sourceFiles(["apps/storefront/src"])
   const allowedStorefrontFetchFiles = new Set([
     "apps/storefront/src/lib/commerce-medusa.ts",
@@ -224,6 +227,10 @@ function scanRepository() {
     adminTransactionOpsDtoUiFiles,
     /\b(delivery_id|account_item_id|display_label|account_identifier|product_variant_id|cart_id|order_id|payment_attempt_id|delivery_status|access_token_hint|delivered_by|delivered_at|buyer_confirmed_at|customer_email|admin_note|provider_code|provider_order_id|health_status|paid_at|created_at)\b/
   )
+  const adminSupplierOpsDtoLeakFiles = filesMatching(
+    adminSupplierOpsDtoUiFiles,
+    /\b(supports_quote|supports_retrieve|supports_catalog_sync|product_variant_id|provider_code|provider_sku|provider_product_id|region_code|provider_order_id|order_id|payment_attempt_id|error_message|fulfilled_at|created_at)\b/
+  )
   const storefrontFetchViolations = filesMatching(storefrontFiles, /\bfetch\s*\(/)
     .filter((file) => !allowedStorefrontFetchFiles.has(file))
 
@@ -234,6 +241,7 @@ function scanRepository() {
     adminProductDtoLeakFiles,
     adminOrderCustomerDtoLeakFiles,
     adminTransactionOpsDtoLeakFiles,
+    adminSupplierOpsDtoLeakFiles,
     storefrontFetchViolations,
     backendMedusaImportFiles: filesMatching(backendFiles, /@medusajs\//),
     backendMedusaRequestResponseFiles: filesMatching(backendApiFiles, /MedusaRequest|MedusaResponse/),
@@ -367,6 +375,18 @@ export function createBackendDecouplingReadinessReport() {
   addHardCheck({
     checks,
     issues,
+    id: "admin-supplier-ops-domain-uses-product-dtos",
+    value: scan.adminSupplierOpsDtoLeakFiles.length,
+    max: 0,
+    message:
+      "Supplier admin UI must consume product-admin DTOs instead of supplier backend snake_case response fields.",
+    details: {
+      files: sample(scan.adminSupplierOpsDtoLeakFiles),
+    },
+  })
+  addHardCheck({
+    checks,
+    issues,
     id: "storefront-fetch-only-in-approved-adapters",
     value: scan.storefrontFetchViolations.length,
     max: 0,
@@ -459,6 +479,7 @@ export function createBackendDecouplingReadinessReport() {
       adminProductDtoLeakFiles: scan.adminProductDtoLeakFiles.length,
       adminOrderCustomerDtoLeakFiles: scan.adminOrderCustomerDtoLeakFiles.length,
       adminTransactionOpsDtoLeakFiles: scan.adminTransactionOpsDtoLeakFiles.length,
+      adminSupplierOpsDtoLeakFiles: scan.adminSupplierOpsDtoLeakFiles.length,
       storefrontMedusaEnvFiles: scan.storefrontMedusaEnvFiles.length,
     },
     checks,

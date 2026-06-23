@@ -273,6 +273,45 @@ export type ProductAdminPaymentWorkspace = {
   attempts: ProductAdminPaymentAttempt[]
 }
 
+export type ProductAdminSupplierProvider = {
+  code: string
+  configured: boolean
+  supportsQuote: boolean
+  supportsRetrieve: boolean
+  supportsCatalogSync: boolean
+}
+
+export type ProductAdminSupplierMapping = {
+  id: string
+  productVariantId: string
+  providerCode: string
+  providerSku: string
+  providerProductId: string | null
+  regionCode: string | null
+  currency: string | null
+  enabled: boolean
+  priority: number
+}
+
+export type ProductAdminSupplierProcurement = {
+  id: string
+  providerCode: string
+  providerOrderId: string | null
+  status: string
+  productVariantId: string | null
+  orderId: string | null
+  paymentAttemptId: string | null
+  errorMessage: string | null
+  fulfilledAt: string | null
+  createdAt: string | null
+}
+
+export type ProductAdminSupplierWorkspace = {
+  providers: ProductAdminSupplierProvider[]
+  mappings: ProductAdminSupplierMapping[]
+  procurements: ProductAdminSupplierProcurement[]
+}
+
 type CreateCatalogProductInput = {
   title: string
   handle: string
@@ -1084,7 +1123,7 @@ export function replayAnalyticsDispatch(dispatchId: string) {
   })
 }
 
-export async function loadSupplierWorkspace() {
+export async function loadSupplierWorkspace(): Promise<ProductAdminSupplierWorkspace> {
   const [providerData, mappingData, procurementData] = await Promise.all([
     adminApi<{ providers: unknown[] }>("/admin/suppliers/providers"),
     adminApi<{ mappings: unknown[] }>("/admin/suppliers/mappings?limit=100"),
@@ -1094,14 +1133,22 @@ export async function loadSupplierWorkspace() {
   ])
 
   return {
-    providers: providerData.providers || [],
-    mappings: mappingData.mappings || [],
-    procurements: procurementData.procurements || [],
+    providers: arrayField(providerData.providers)
+      .map(toProductAdminSupplierProvider)
+      .filter((provider) => provider.code),
+    mappings: arrayField(mappingData.mappings)
+      .map(toProductAdminSupplierMapping)
+      .filter((mapping) => mapping.id),
+    procurements: arrayField(procurementData.procurements)
+      .map(toProductAdminSupplierProcurement)
+      .filter((procurement) => procurement.id),
   }
 }
 
-export function saveSupplierMapping(input: SaveSupplierMappingInput) {
-  return adminApi<{ mapping: { id: string } }>("/admin/suppliers/mappings", {
+export async function saveSupplierMapping(
+  input: SaveSupplierMappingInput,
+): Promise<{ mapping: ProductAdminSupplierMapping }> {
+  const data = await adminApi<{ mapping: unknown }>("/admin/suppliers/mappings", {
     method: "POST",
     body: {
       product_variant_id: input.productVariantId.trim(),
@@ -1115,6 +1162,10 @@ export function saveSupplierMapping(input: SaveSupplierMappingInput) {
       metadata: parseOptionalJson(input.metadata),
     },
   })
+
+  return {
+    mapping: toProductAdminSupplierMapping(data.mapping),
+  }
 }
 
 export function retrySupplierProcurement(id: string) {
@@ -1769,6 +1820,57 @@ function toProductAdminPaymentAttempt(
     currency: stringField(record.currency),
     status: stringField(record.status, "unknown"),
     paidAt: nullableStringField(record.paid_at),
+    createdAt: nullableStringField(record.created_at),
+  }
+}
+
+function toProductAdminSupplierProvider(
+  value: unknown,
+): ProductAdminSupplierProvider {
+  const record = recordField(value)
+
+  return {
+    code: stringField(record.code),
+    configured: booleanField(record.configured),
+    supportsQuote: booleanField(record.supports_quote),
+    supportsRetrieve: booleanField(record.supports_retrieve),
+    supportsCatalogSync: booleanField(record.supports_catalog_sync),
+  }
+}
+
+function toProductAdminSupplierMapping(
+  value: unknown,
+): ProductAdminSupplierMapping {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    productVariantId: stringField(record.product_variant_id),
+    providerCode: stringField(record.provider_code),
+    providerSku: stringField(record.provider_sku),
+    providerProductId: nullableStringField(record.provider_product_id),
+    regionCode: nullableStringField(record.region_code),
+    currency: nullableStringField(record.currency),
+    enabled: booleanField(record.enabled),
+    priority: numberField(record.priority),
+  }
+}
+
+function toProductAdminSupplierProcurement(
+  value: unknown,
+): ProductAdminSupplierProcurement {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    providerCode: stringField(record.provider_code),
+    providerOrderId: nullableStringField(record.provider_order_id),
+    status: stringField(record.status, "unknown"),
+    productVariantId: nullableStringField(record.product_variant_id),
+    orderId: nullableStringField(record.order_id),
+    paymentAttemptId: nullableStringField(record.payment_attempt_id),
+    errorMessage: nullableStringField(record.error_message),
+    fulfilledAt: nullableStringField(record.fulfilled_at),
     createdAt: nullableStringField(record.created_at),
   }
 }

@@ -11,7 +11,9 @@ import {
   loadPaymentWorkspace,
   loadProductCatalog,
   loadProductPublishingWorkspace,
+  loadSupplierWorkspace,
   retrieveOrder,
+  saveSupplierMapping,
   togglePaymentChannel,
 } from "./product-admin-api"
 
@@ -648,5 +650,146 @@ describe("product admin facade", () => {
     })
     expect(items[0]).not.toHaveProperty("delivery_id")
     expect(items[0]).not.toHaveProperty("customer_email")
+  })
+
+  it("maps supplier workspace responses to product-admin DTOs", async () => {
+    adminApiMock.mockImplementation(async (path: string) => {
+      if (path === "/admin/suppliers/providers") {
+        return {
+          providers: [
+            {
+              code: "reloadly",
+              configured: true,
+              supports_quote: true,
+              supports_retrieve: false,
+              supports_catalog_sync: true,
+            },
+          ],
+        }
+      }
+
+      if (path === "/admin/suppliers/mappings?limit=100") {
+        return {
+          mappings: [
+            {
+              id: "mapping_1",
+              product_variant_id: "variant_1",
+              provider_code: "reloadly",
+              provider_sku: "sku_1",
+              provider_product_id: "prod_1",
+              region_code: "US",
+              currency: "usd",
+              enabled: true,
+              priority: 10,
+            },
+          ],
+        }
+      }
+
+      if (path === "/admin/suppliers/procurements?limit=100") {
+        return {
+          procurements: [
+            {
+              id: "proc_1",
+              provider_code: "reloadly",
+              provider_order_id: "po_1",
+              status: "failed",
+              product_variant_id: "variant_1",
+              order_id: "order_1",
+              payment_attempt_id: "payatt_1",
+              error_message: "Provider rejected",
+              fulfilled_at: null,
+              created_at: "2026-06-08T00:00:00.000Z",
+            },
+          ],
+        }
+      }
+
+      throw new Error(`Unexpected path: ${path}`)
+    })
+
+    const workspace = await loadSupplierWorkspace()
+
+    expect(workspace.providers[0]).toEqual({
+      code: "reloadly",
+      configured: true,
+      supportsQuote: true,
+      supportsRetrieve: false,
+      supportsCatalogSync: true,
+    })
+    expect(workspace.mappings[0]).toEqual({
+      id: "mapping_1",
+      productVariantId: "variant_1",
+      providerCode: "reloadly",
+      providerSku: "sku_1",
+      providerProductId: "prod_1",
+      regionCode: "US",
+      currency: "usd",
+      enabled: true,
+      priority: 10,
+    })
+    expect(workspace.procurements[0]).toEqual({
+      id: "proc_1",
+      providerCode: "reloadly",
+      providerOrderId: "po_1",
+      status: "failed",
+      productVariantId: "variant_1",
+      orderId: "order_1",
+      paymentAttemptId: "payatt_1",
+      errorMessage: "Provider rejected",
+      fulfilledAt: null,
+      createdAt: "2026-06-08T00:00:00.000Z",
+    })
+    expect(workspace.providers[0]).not.toHaveProperty("supports_quote")
+    expect(workspace.mappings[0]).not.toHaveProperty("product_variant_id")
+    expect(workspace.procurements[0]).not.toHaveProperty("provider_order_id")
+  })
+
+  it("maps supplier mapping saves from product input to current backend body", async () => {
+    adminApiMock.mockResolvedValue({
+      mapping: {
+        id: "mapping_1",
+        product_variant_id: "variant_1",
+        provider_code: "reloadly",
+        provider_sku: "sku_1",
+        priority: 100,
+        enabled: true,
+      },
+    })
+
+    const result = await saveSupplierMapping({
+      productVariantId: "variant_1",
+      providerCode: "reloadly",
+      providerSku: "sku_1",
+      providerProductId: "prod_1",
+      regionCode: "US",
+      currency: "usd",
+      priority: "10",
+      metadata: "{\"deliveryHint\":\"instant\"}",
+    })
+
+    expect(result.mapping).toMatchObject({
+      id: "mapping_1",
+      productVariantId: "variant_1",
+      providerCode: "reloadly",
+      providerSku: "sku_1",
+      enabled: true,
+    })
+    expect(adminApiMock).toHaveBeenCalledWith("/admin/suppliers/mappings", {
+      method: "POST",
+      body: {
+        product_variant_id: "variant_1",
+        provider_code: "reloadly",
+        provider_sku: "sku_1",
+        provider_product_id: "prod_1",
+        region_code: "US",
+        currency: "usd",
+        enabled: true,
+        priority: 10,
+        metadata: {
+          deliveryHint: "instant",
+        },
+      },
+    })
   })
 })

@@ -43,6 +43,8 @@ storefront UI, and backend adapters can evolve independently.
 - Payment, digital delivery, and after-sales UI follows the same rule for
   payment attempts, payment channels, delivery records, pending delivery items,
   and support request fields.
+- Supplier UI follows the same rule for provider capabilities, variant
+  mappings, external provider order identifiers, and procurement records.
 
 ## Rule Of Thumb
 
