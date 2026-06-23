@@ -89,6 +89,17 @@ function validateAndTransformSimpleQuery(schema: ZodTypeAny) {
   }
 }
 
+function adminMutationProtection(riskLevel: "medium" | "high" = "medium") {
+  return [
+    createRateLimitMiddleware(adminMutationRateLimit, {
+      action: "security.admin_mutation.rate_limited",
+      riskLevel,
+      keyParts: (req) => [getRequestPath(req)],
+    }),
+    createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+  ]
+}
+
 function getBodyValue(req: MedusaRequest, key: string) {
   const body = (
     ((req as MedusaRequest & { validatedBody?: Record<string, unknown> }).validatedBody ||
@@ -178,12 +189,7 @@ export default defineMiddlewares({
       matcher: "/admin/marketing/campaigns",
       methods: ["POST"],
       middlewares: [
-        createRateLimitMiddleware(adminMutationRateLimit, {
-          action: "security.admin_mutation.rate_limited",
-          riskLevel: "medium",
-          keyParts: (req) => [getRequestPath(req)],
-        }),
-        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        ...adminMutationProtection("medium"),
         validateAndTransformBody(createMarketingCampaignBodySchema),
       ],
     },
@@ -196,12 +202,7 @@ export default defineMiddlewares({
       matcher: "/admin/marketing/offers",
       methods: ["POST"],
       middlewares: [
-        createRateLimitMiddleware(adminMutationRateLimit, {
-          action: "security.admin_mutation.rate_limited",
-          riskLevel: "medium",
-          keyParts: (req) => [getRequestPath(req)],
-        }),
-        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        ...adminMutationProtection("medium"),
         validateAndTransformBody(createMarketingOfferBodySchema),
       ],
     },
@@ -214,12 +215,7 @@ export default defineMiddlewares({
       matcher: "/admin/marketing/coupons",
       methods: ["POST"],
       middlewares: [
-        createRateLimitMiddleware(adminMutationRateLimit, {
-          action: "security.admin_mutation.rate_limited",
-          riskLevel: "medium",
-          keyParts: (req) => [getRequestPath(req)],
-        }),
-        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        ...adminMutationProtection("medium"),
         validateAndTransformBody(createMarketingCouponBodySchema),
       ],
     },
@@ -232,12 +228,7 @@ export default defineMiddlewares({
       matcher: "/admin/marketing/referral-links",
       methods: ["POST"],
       middlewares: [
-        createRateLimitMiddleware(adminMutationRateLimit, {
-          action: "security.admin_mutation.rate_limited",
-          riskLevel: "medium",
-          keyParts: (req) => [getRequestPath(req)],
-        }),
-        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        ...adminMutationProtection("medium"),
         validateAndTransformBody(createMarketingReferralLinkBodySchema),
       ],
     },
@@ -255,12 +246,7 @@ export default defineMiddlewares({
       matcher: "/admin/content/entries",
       methods: ["POST"],
       middlewares: [
-        createRateLimitMiddleware(adminMutationRateLimit, {
-          action: "security.admin_mutation.rate_limited",
-          riskLevel: "medium",
-          keyParts: (req) => [getRequestPath(req)],
-        }),
-        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        ...adminMutationProtection("medium"),
         validateAndTransformBody(createContentEntryBodySchema),
       ],
     },
@@ -268,12 +254,7 @@ export default defineMiddlewares({
       matcher: "/admin/content/entries/:id",
       methods: ["POST"],
       middlewares: [
-        createRateLimitMiddleware(adminMutationRateLimit, {
-          action: "security.admin_mutation.rate_limited",
-          riskLevel: "medium",
-          keyParts: (req) => [getRequestPath(req)],
-        }),
-        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        ...adminMutationProtection("medium"),
         validateAndTransformBody(updateContentEntryBodySchema),
       ],
     },
@@ -286,12 +267,7 @@ export default defineMiddlewares({
       matcher: "/admin/content/entries/:id/revisions",
       methods: ["POST"],
       middlewares: [
-        createRateLimitMiddleware(adminMutationRateLimit, {
-          action: "security.admin_mutation.rate_limited",
-          riskLevel: "medium",
-          keyParts: (req) => [getRequestPath(req)],
-        }),
-        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        ...adminMutationProtection("medium"),
         validateAndTransformBody(createContentRevisionBodySchema),
       ],
     },
@@ -299,12 +275,7 @@ export default defineMiddlewares({
       matcher: "/admin/content/revisions/:id/publish",
       methods: ["POST"],
       middlewares: [
-        createRateLimitMiddleware(adminMutationRateLimit, {
-          action: "security.admin_mutation.rate_limited",
-          riskLevel: "medium",
-          keyParts: (req) => [getRequestPath(req)],
-        }),
-        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        ...adminMutationProtection("medium"),
         validateAndTransformBody(publishContentRevisionBodySchema),
       ],
     },
@@ -317,12 +288,7 @@ export default defineMiddlewares({
       matcher: "/admin/content/assets",
       methods: ["POST"],
       middlewares: [
-        createRateLimitMiddleware(adminMutationRateLimit, {
-          action: "security.admin_mutation.rate_limited",
-          riskLevel: "medium",
-          keyParts: (req) => [getRequestPath(req)],
-        }),
-        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        ...adminMutationProtection("medium"),
         validateAndTransformBody(createContentAssetBodySchema),
       ],
     },
@@ -330,12 +296,7 @@ export default defineMiddlewares({
       matcher: "/admin/content/assets/upload-policy",
       methods: ["POST"],
       middlewares: [
-        createRateLimitMiddleware(adminMutationRateLimit, {
-          action: "security.admin_mutation.rate_limited",
-          riskLevel: "medium",
-          keyParts: (req) => [getRequestPath(req)],
-        }),
-        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        ...adminMutationProtection("medium"),
         validateAndTransformBody(createContentUploadPolicyBodySchema),
       ],
     },
@@ -348,12 +309,7 @@ export default defineMiddlewares({
       matcher: "/admin/content/audio",
       methods: ["POST"],
       middlewares: [
-        createRateLimitMiddleware(adminMutationRateLimit, {
-          action: "security.admin_mutation.rate_limited",
-          riskLevel: "medium",
-          keyParts: (req) => [getRequestPath(req)],
-        }),
-        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        ...adminMutationProtection("medium"),
         validateAndTransformBody(createContentAudioBodySchema),
       ],
     },
@@ -366,12 +322,7 @@ export default defineMiddlewares({
       matcher: "/admin/content/ai/tasks",
       methods: ["POST"],
       middlewares: [
-        createRateLimitMiddleware(adminMutationRateLimit, {
-          action: "security.admin_mutation.rate_limited",
-          riskLevel: "medium",
-          keyParts: (req) => [getRequestPath(req)],
-        }),
-        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        ...adminMutationProtection("medium"),
         validateAndTransformBody(createContentAITaskRunBodySchema),
       ],
     },
@@ -379,12 +330,7 @@ export default defineMiddlewares({
       matcher: "/admin/content/ai/tasks/:id",
       methods: ["POST"],
       middlewares: [
-        createRateLimitMiddleware(adminMutationRateLimit, {
-          action: "security.admin_mutation.rate_limited",
-          riskLevel: "medium",
-          keyParts: (req) => [getRequestPath(req)],
-        }),
-        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        ...adminMutationProtection("medium"),
         validateAndTransformBody(updateContentAITaskRunBodySchema),
       ],
     },
@@ -392,12 +338,7 @@ export default defineMiddlewares({
       matcher: "/admin/content/ai/run",
       methods: ["POST"],
       middlewares: [
-        createRateLimitMiddleware(adminMutationRateLimit, {
-          action: "security.admin_mutation.rate_limited",
-          riskLevel: "high",
-          keyParts: (req) => [getRequestPath(req)],
-        }),
-        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        ...adminMutationProtection("high"),
         validateAndTransformBody(runContentAITaskBodySchema),
       ],
     },
@@ -420,12 +361,7 @@ export default defineMiddlewares({
       matcher: "/admin/content/seo",
       methods: ["POST"],
       middlewares: [
-        createRateLimitMiddleware(adminMutationRateLimit, {
-          action: "security.admin_mutation.rate_limited",
-          riskLevel: "medium",
-          keyParts: (req) => [getRequestPath(req)],
-        }),
-        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        ...adminMutationProtection("medium"),
         validateAndTransformBody(upsertContentSeoDocumentBodySchema),
       ],
     },
@@ -433,12 +369,7 @@ export default defineMiddlewares({
       matcher: "/admin/content/seo/suggest",
       methods: ["POST"],
       middlewares: [
-        createRateLimitMiddleware(adminMutationRateLimit, {
-          action: "security.admin_mutation.rate_limited",
-          riskLevel: "high",
-          keyParts: (req) => [getRequestPath(req)],
-        }),
-        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        ...adminMutationProtection("high"),
         validateAndTransformBody(suggestSeoFixesBodySchema),
       ],
     },
@@ -456,12 +387,7 @@ export default defineMiddlewares({
       matcher: "/admin/analytics/dispatches",
       methods: ["POST"],
       middlewares: [
-        createRateLimitMiddleware(adminMutationRateLimit, {
-          action: "security.admin_mutation.rate_limited",
-          riskLevel: "medium",
-          keyParts: (req) => [getRequestPath(req)],
-        }),
-        createOriginGuardMiddleware("security.admin_mutation.origin_blocked"),
+        ...adminMutationProtection("medium"),
         validateAndTransformBody(replayAnalyticsDispatchBodySchema),
       ],
     },
@@ -473,7 +399,10 @@ export default defineMiddlewares({
     {
       matcher: "/admin/after-sales/:id",
       methods: ["POST"],
-      middlewares: [validateAndTransformBody(updateAfterSaleBodySchema)],
+      middlewares: [
+        ...adminMutationProtection("medium"),
+        validateAndTransformBody(updateAfterSaleBodySchema),
+      ],
     },
     {
       matcher: "/admin/audit-logs",
@@ -493,12 +422,18 @@ export default defineMiddlewares({
     {
       matcher: "/admin/digital-delivery/deliveries",
       methods: ["POST"],
-      middlewares: [validateAndTransformBody(createManualDeliveryBodySchema)],
+      middlewares: [
+        ...adminMutationProtection("medium"),
+        validateAndTransformBody(createManualDeliveryBodySchema),
+      ],
     },
     {
       matcher: "/admin/credential-inventory/batches",
       methods: ["POST"],
-      middlewares: [validateAndTransformBody(createCredentialBatchBodySchema)],
+      middlewares: [
+        ...adminMutationProtection("high"),
+        validateAndTransformBody(createCredentialBatchBodySchema),
+      ],
     },
     {
       matcher: "/admin/credential-inventory/items",
@@ -508,32 +443,55 @@ export default defineMiddlewares({
     {
       matcher: "/admin/credential-inventory/reservations",
       methods: ["POST"],
-      middlewares: [validateAndTransformBody(reserveCredentialBodySchema)],
+      middlewares: [
+        ...adminMutationProtection("medium"),
+        validateAndTransformBody(reserveCredentialBodySchema),
+      ],
+    },
+    {
+      matcher: "/admin/credential-inventory/reservations/:reservation_key/release",
+      methods: ["POST"],
+      middlewares: adminMutationProtection("medium"),
     },
     {
       matcher: "/admin/credential-inventory/reservations/:reservation_key/sell",
       methods: ["POST"],
-      middlewares: [validateAndTransformBody(sellReservationBodySchema)],
+      middlewares: [
+        ...adminMutationProtection("medium"),
+        validateAndTransformBody(sellReservationBodySchema),
+      ],
     },
     {
       matcher: "/admin/payment-attempts/:id/mark-paid",
       methods: ["POST"],
-      middlewares: [validateAndTransformBody(markPaymentAttemptPaidBodySchema)],
+      middlewares: [
+        ...adminMutationProtection("high"),
+        validateAndTransformBody(markPaymentAttemptPaidBodySchema),
+      ],
     },
     {
       matcher: "/admin/payment-channels",
       methods: ["POST"],
-      middlewares: [validateAndTransformBody(createPaymentChannelBodySchema)],
+      middlewares: [
+        ...adminMutationProtection("high"),
+        validateAndTransformBody(createPaymentChannelBodySchema),
+      ],
     },
     {
       matcher: "/admin/payment-channels/:id",
       methods: ["POST"],
-      middlewares: [validateAndTransformBody(updatePaymentChannelBodySchema)],
+      middlewares: [
+        ...adminMutationProtection("high"),
+        validateAndTransformBody(updatePaymentChannelBodySchema),
+      ],
     },
     {
       matcher: "/admin/suppliers/mappings",
       methods: ["POST"],
-      middlewares: [validateAndTransformBody(upsertSupplierMappingBodySchema)],
+      middlewares: [
+        ...adminMutationProtection("medium"),
+        validateAndTransformBody(upsertSupplierMappingBodySchema),
+      ],
     },
     {
       matcher: "/store/product-availability",

@@ -549,6 +549,14 @@ function validateAdminControlPanelPolicy(input) {
   const routePlacements = Array.isArray(informationArchitecture.routePlacements)
     ? informationArchitecture.routePlacements
     : []
+  const routePrefix =
+    typeof informationArchitecture.routePrefix === "string" && informationArchitecture.routePrefix
+      ? informationArchitecture.routePrefix
+      : "/app"
+  const routeSourceRoot =
+    typeof informationArchitecture.routeSourceRoot === "string" && informationArchitecture.routeSourceRoot
+      ? informationArchitecture.routeSourceRoot
+      : "apps/backend/src/admin/routes"
   const allowedSections = new Set(sectionOrder.map((section) => section.id).filter(Boolean))
   const placedRoutes = new Set(routePlacements.map((placement) => placement.route).filter(Boolean))
   const profileControls = new Set(siteLifecyclePolicy.requiredControls || [])
@@ -579,7 +587,7 @@ function validateAdminControlPanelPolicy(input) {
     id: "admin-control-panel.production-surfaces-missing",
     message: "Admin control panel policy must declare required production surfaces.",
   })
-  assert(typeof informationArchitecture.defaultAdminRoute === "string" && informationArchitecture.defaultAdminRoute.startsWith("/app/"), {
+  assert(isRouteInPrefix(informationArchitecture.defaultAdminRoute, routePrefix), {
     id: "admin-control-panel.default-admin-route-invalid",
     route: informationArchitecture.defaultAdminRoute,
     message: "Admin control panel policy must declare a default backend admin route.",
@@ -621,7 +629,7 @@ function validateAdminControlPanelPolicy(input) {
   const routeIds = new Set()
 
   for (const placement of routePlacements) {
-    assert(typeof placement.route === "string" && placement.route.startsWith("/app/"), {
+    assert(isRouteInPrefix(placement.route, routePrefix), {
       id: "admin-control-panel.route-placement-route-invalid",
       route: placement.route,
       message: "Admin control panel route placement must point to a backend admin app route.",
@@ -650,10 +658,8 @@ function validateAdminControlPanelPolicy(input) {
     }
   }
 
-  for (const file of sourceFiles("apps/backend/src/admin/routes").filter((name) => name.endsWith("/page.tsx"))) {
-    const route = `/app/${file
-      .replace("apps/backend/src/admin/routes/", "")
-      .replace("/page.tsx", "")}`
+  for (const file of sourceFiles(routeSourceRoot).filter((name) => name.endsWith("/page.tsx"))) {
+    const route = adminRouteFromPage(file, routeSourceRoot, routePrefix)
 
     assert(placedRoutes.has(route), {
       id: "admin-control-panel.admin-route-unplaced",
@@ -697,7 +703,7 @@ function validateAdminControlPanelPolicy(input) {
       message: "Production-significant surfaces must require a production gate.",
     })
     assert(
-      typeof surface.adminRoute === "string" && surface.adminRoute.startsWith("/app/"),
+      isRouteInPrefix(surface.adminRoute, routePrefix),
       {
         id: "admin-control-panel.surface-admin-route-invalid",
         surface: surface.id,
@@ -784,6 +790,25 @@ function validateAdminControlPanelPolicy(input) {
       message: "Production-required config key is not mapped to any backend control panel production surface.",
     })
   }
+}
+
+function isRouteInPrefix(route, routePrefix) {
+  return (
+    typeof route === "string" &&
+    (route === routePrefix || route.startsWith(`${routePrefix}/`))
+  )
+}
+
+function adminRouteFromPage(file, routeSourceRoot, routePrefix) {
+  const relative = file
+    .replace(`${routeSourceRoot}/`, "")
+    .replaceAll("\\", "/")
+
+  if (relative === "page.tsx") {
+    return routePrefix
+  }
+
+  return `${routePrefix}/${relative.replace(/\/page\.tsx$/, "")}`
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

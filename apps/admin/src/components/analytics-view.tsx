@@ -1,9 +1,10 @@
 "use client"
 
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { adminApi } from "@/lib/admin-api"
 import { formatDate } from "@/lib/format"
 import { MetricCard, Message, PageHeader, Panel, TableShell } from "./admin-page"
+import { SecondaryButton } from "./admin-controls"
 import { StatusBadge } from "./status-badge"
 
 type AnalyticsEvent = {
@@ -29,6 +30,7 @@ type AnalyticsDispatch = {
 }
 
 export function AnalyticsView() {
+  const queryClient = useQueryClient()
   const eventsQuery = useQuery({
     queryKey: ["analytics-events"],
     queryFn: () =>
@@ -48,12 +50,21 @@ export function AnalyticsView() {
   const failedDispatches = dispatches.filter((item) =>
     ["failed", "dead"].includes(item.status),
   )
+  const replayDispatch = useMutation({
+    mutationFn: (dispatchId: string) =>
+      adminApi("/admin/analytics/dispatches", {
+        method: "POST",
+        body: { dispatch_id: dispatchId },
+      }),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["analytics-dispatches"] }),
+  })
 
   return (
     <main className="px-5 py-5">
       <PageHeader
         title="分析事件"
-        description="只读迁移版，展示事件和派发队列。重放派发属于 mutation，放到下一批迁移。"
+        description="展示事件、派发队列和可审计重放操作。所有读写经由同源 BFF 转发。"
         action={
           <button
             type="button"
@@ -120,6 +131,9 @@ export function AnalyticsView() {
           {dispatchesQuery.error ? (
             <Message tone="error">{dispatchesQuery.error.message}</Message>
           ) : null}
+          {replayDispatch.error ? (
+            <Message tone="error">{replayDispatch.error.message}</Message>
+          ) : null}
           {dispatchesQuery.isLoading ? <Message tone="info">加载中</Message> : null}
           <TableShell>
             <table className="min-w-full text-left text-sm">
@@ -128,7 +142,8 @@ export function AnalyticsView() {
                   <th className="border-b border-[var(--border)] py-2 pr-4">目标</th>
                   <th className="border-b border-[var(--border)] py-2 pr-4">状态</th>
                   <th className="border-b border-[var(--border)] py-2 pr-4">次数</th>
-                  <th className="border-b border-[var(--border)] py-2">错误</th>
+                  <th className="border-b border-[var(--border)] py-2 pr-4">错误</th>
+                  <th className="border-b border-[var(--border)] py-2">操作</th>
                 </tr>
               </thead>
               <tbody>
@@ -148,6 +163,15 @@ export function AnalyticsView() {
                       <p className="truncate text-[var(--muted)]">
                         {dispatch.error_message || "-"}
                       </p>
+                    </td>
+                    <td className="border-b border-[var(--border)] py-3">
+                      <SecondaryButton
+                        type="button"
+                        disabled={replayDispatch.isPending}
+                        onClick={() => replayDispatch.mutate(dispatch.id)}
+                      >
+                        重放
+                      </SecondaryButton>
                     </td>
                   </tr>
                 ))}

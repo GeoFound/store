@@ -1016,27 +1016,27 @@
         ],
         "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
       },
-    {
-      "path": "apps/backend/src/jobs/process-supplier-procurements.ts",
-      "owner": "backend-jobs",
-      "verification": [
-        "pnpm ai:inventory",
-        "pnpm --dir apps/backend test:unit"
-      ],
-      "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
-    },
-    {
-      "path": "apps/backend/src/jobs/prune-audit-logs.ts",
-      "owner": "support-audit",
-      "verification": [
-        "pnpm ai:inventory",
-        "pnpm --dir apps/backend test:unit -- --runTestsByPath src/modules/support-audit/__tests__/config.unit.spec.ts"
-      ],
-      "rationale": "Scheduled support-audit retention job for production audit-log pruning with bounded retention configuration."
-    },
-    {
-      "path": "apps/backend/src/jobs/release-expired-credential-reservations.ts",
-      "owner": "backend-jobs",
+      {
+        "path": "apps/backend/src/jobs/process-supplier-procurements.ts",
+        "owner": "backend-jobs",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/backend test:unit"
+        ],
+        "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      },
+      {
+        "path": "apps/backend/src/jobs/prune-audit-logs.ts",
+        "owner": "support-audit",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/backend test:unit -- --runTestsByPath src/modules/support-audit/__tests__/config.unit.spec.ts"
+        ],
+        "rationale": "Scheduled support-audit retention job for production audit-log pruning with bounded retention configuration."
+      },
+      {
+        "path": "apps/backend/src/jobs/release-expired-credential-reservations.ts",
+        "owner": "backend-jobs",
         "verification": [
           "pnpm ai:inventory",
           "pnpm --dir apps/backend test:unit"
@@ -1397,6 +1397,456 @@
           "pnpm ai:doctor"
         ],
         "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
+      }
+    ],
+    "adminEntrypoints": [
+      {
+        "path": "apps/admin/src/app/api/admin/[...path]/route.ts",
+        "owner": "admin-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/admin test",
+          "pnpm --dir apps/admin lint",
+          "pnpm typecheck:admin"
+        ],
+        "rationale": "Independent Next admin page or BFF route. Browser admin traffic must stay on same-origin BFF routes and product admin UX must remain outside the Medusa dashboard patch surface.",
+        "risk": "security",
+        "obligations": [
+          "keep the admin JWT in an httpOnly, SameSite, secure cookie and never expose it to browser scripts",
+          "attach the Bearer token server-side and never forward the browser Origin or Referer to Medusa",
+          "reject unauthenticated and cross-origin admin requests at the BFF (401/403)",
+          "verify via pnpm smoke:admin, pnpm typecheck:admin, and pnpm --dir apps/admin test"
+        ]
+      },
+      {
+        "path": "apps/admin/src/app/api/auth/login/route.ts",
+        "owner": "admin-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/admin test",
+          "pnpm --dir apps/admin lint",
+          "pnpm typecheck:admin"
+        ],
+        "rationale": "Independent Next admin page or BFF route. Browser admin traffic must stay on same-origin BFF routes and product admin UX must remain outside the Medusa dashboard patch surface.",
+        "risk": "security",
+        "obligations": [
+          "keep the admin JWT in an httpOnly, SameSite, secure cookie and never expose it to browser scripts",
+          "attach the Bearer token server-side and never forward the browser Origin or Referer to Medusa",
+          "reject unauthenticated and cross-origin admin requests at the BFF (401/403)",
+          "verify via pnpm smoke:admin, pnpm typecheck:admin, and pnpm --dir apps/admin test"
+        ]
+      },
+      {
+        "path": "apps/admin/src/app/api/auth/logout/route.ts",
+        "owner": "admin-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/admin test",
+          "pnpm --dir apps/admin lint",
+          "pnpm typecheck:admin"
+        ],
+        "rationale": "Independent Next admin page or BFF route. Browser admin traffic must stay on same-origin BFF routes and product admin UX must remain outside the Medusa dashboard patch surface.",
+        "risk": "security",
+        "obligations": [
+          "keep the admin JWT in an httpOnly, SameSite, secure cookie and never expose it to browser scripts",
+          "attach the Bearer token server-side and never forward the browser Origin or Referer to Medusa",
+          "reject unauthenticated and cross-origin admin requests at the BFF (401/403)",
+          "verify via pnpm smoke:admin, pnpm typecheck:admin, and pnpm --dir apps/admin test"
+        ]
+      },
+      {
+        "path": "apps/admin/src/app/api/auth/me/route.ts",
+        "owner": "admin-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/admin test",
+          "pnpm --dir apps/admin lint",
+          "pnpm typecheck:admin"
+        ],
+        "rationale": "Independent Next admin page or BFF route. Browser admin traffic must stay on same-origin BFF routes and product admin UX must remain outside the Medusa dashboard patch surface.",
+        "risk": "security",
+        "obligations": [
+          "keep the admin JWT in an httpOnly, SameSite, secure cookie and never expose it to browser scripts",
+          "attach the Bearer token server-side and never forward the browser Origin or Referer to Medusa",
+          "reject unauthenticated and cross-origin admin requests at the BFF (401/403)",
+          "verify via pnpm smoke:admin, pnpm typecheck:admin, and pnpm --dir apps/admin test"
+        ]
+      },
+      {
+        "path": "apps/admin/src/app/api/auth/refresh/route.ts",
+        "owner": "admin-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/admin test",
+          "pnpm --dir apps/admin lint",
+          "pnpm typecheck:admin"
+        ],
+        "rationale": "Independent Next admin page or BFF route. Browser admin traffic must stay on same-origin BFF routes and product admin UX must remain outside the Medusa dashboard patch surface.",
+        "risk": "security",
+        "obligations": [
+          "keep the admin JWT in an httpOnly, SameSite, secure cookie and never expose it to browser scripts",
+          "attach the Bearer token server-side and never forward the browser Origin or Referer to Medusa",
+          "reject unauthenticated and cross-origin admin requests at the BFF (401/403)",
+          "verify via pnpm smoke:admin, pnpm typecheck:admin, and pnpm --dir apps/admin test"
+        ]
+      },
+      {
+        "path": "apps/admin/src/app/api/health/route.ts",
+        "owner": "admin-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/admin test",
+          "pnpm --dir apps/admin lint",
+          "pnpm typecheck:admin"
+        ],
+        "rationale": "Independent Next admin page or BFF route. Browser admin traffic must stay on same-origin BFF routes and product admin UX must remain outside the Medusa dashboard patch surface.",
+        "risk": "routine",
+        "obligations": [
+          "keep the admin JWT in an httpOnly, SameSite, secure cookie and never expose it to browser scripts",
+          "attach the Bearer token server-side and never forward the browser Origin or Referer to Medusa",
+          "reject unauthenticated and cross-origin admin requests at the BFF (401/403)",
+          "verify via pnpm smoke:admin, pnpm typecheck:admin, and pnpm --dir apps/admin test"
+        ]
+      },
+      {
+        "path": "apps/admin/src/app/dashboard/after-sales/page.tsx",
+        "owner": "admin-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/admin test",
+          "pnpm --dir apps/admin lint",
+          "pnpm typecheck:admin"
+        ],
+        "rationale": "Independent Next admin page or BFF route. Browser admin traffic must stay on same-origin BFF routes and product admin UX must remain outside the Medusa dashboard patch surface.",
+        "risk": "customer-or-order-impact",
+        "obligations": [
+          "call Medusa /admin/* only through the same-origin BFF proxy, never the backend directly",
+          "keep mutations behind the BFF CSRF/origin guard and the backend admin mutation protection",
+          "verify via pnpm --dir apps/admin test, pnpm --dir apps/admin lint, and pnpm typecheck:admin"
+        ]
+      },
+      {
+        "path": "apps/admin/src/app/dashboard/ai/page.tsx",
+        "owner": "admin-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/admin test",
+          "pnpm --dir apps/admin lint",
+          "pnpm typecheck:admin"
+        ],
+        "rationale": "Independent Next admin page or BFF route. Browser admin traffic must stay on same-origin BFF routes and product admin UX must remain outside the Medusa dashboard patch surface.",
+        "risk": "external-provider",
+        "obligations": [
+          "call Medusa /admin/* only through the same-origin BFF proxy, never the backend directly",
+          "keep mutations behind the BFF CSRF/origin guard and the backend admin mutation protection",
+          "verify via pnpm --dir apps/admin test, pnpm --dir apps/admin lint, and pnpm typecheck:admin"
+        ]
+      },
+      {
+        "path": "apps/admin/src/app/dashboard/analytics/page.tsx",
+        "owner": "admin-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/admin test",
+          "pnpm --dir apps/admin lint",
+          "pnpm typecheck:admin"
+        ],
+        "rationale": "Independent Next admin page or BFF route. Browser admin traffic must stay on same-origin BFF routes and product admin UX must remain outside the Medusa dashboard patch surface.",
+        "risk": "routine",
+        "obligations": [
+          "call Medusa /admin/* only through the same-origin BFF proxy, never the backend directly",
+          "keep mutations behind the BFF CSRF/origin guard and the backend admin mutation protection",
+          "verify via pnpm --dir apps/admin test, pnpm --dir apps/admin lint, and pnpm typecheck:admin"
+        ]
+      },
+      {
+        "path": "apps/admin/src/app/dashboard/audit-logs/page.tsx",
+        "owner": "admin-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/admin test",
+          "pnpm --dir apps/admin lint",
+          "pnpm typecheck:admin"
+        ],
+        "rationale": "Independent Next admin page or BFF route. Browser admin traffic must stay on same-origin BFF routes and product admin UX must remain outside the Medusa dashboard patch surface.",
+        "risk": "routine",
+        "obligations": [
+          "call Medusa /admin/* only through the same-origin BFF proxy, never the backend directly",
+          "keep mutations behind the BFF CSRF/origin guard and the backend admin mutation protection",
+          "verify via pnpm --dir apps/admin test, pnpm --dir apps/admin lint, and pnpm typecheck:admin"
+        ]
+      },
+      {
+        "path": "apps/admin/src/app/dashboard/content/page.tsx",
+        "owner": "admin-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/admin test",
+          "pnpm --dir apps/admin lint",
+          "pnpm typecheck:admin"
+        ],
+        "rationale": "Independent Next admin page or BFF route. Browser admin traffic must stay on same-origin BFF routes and product admin UX must remain outside the Medusa dashboard patch surface.",
+        "risk": "customer-or-order-impact",
+        "obligations": [
+          "call Medusa /admin/* only through the same-origin BFF proxy, never the backend directly",
+          "keep mutations behind the BFF CSRF/origin guard and the backend admin mutation protection",
+          "verify via pnpm --dir apps/admin test, pnpm --dir apps/admin lint, and pnpm typecheck:admin"
+        ]
+      },
+      {
+        "path": "apps/admin/src/app/dashboard/credentials/page.tsx",
+        "owner": "admin-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/admin test",
+          "pnpm --dir apps/admin lint",
+          "pnpm typecheck:admin"
+        ],
+        "rationale": "Independent Next admin page or BFF route. Browser admin traffic must stay on same-origin BFF routes and product admin UX must remain outside the Medusa dashboard patch surface.",
+        "risk": "security",
+        "obligations": [
+          "call Medusa /admin/* only through the same-origin BFF proxy, never the backend directly",
+          "keep mutations behind the BFF CSRF/origin guard and the backend admin mutation protection",
+          "verify via pnpm --dir apps/admin test, pnpm --dir apps/admin lint, and pnpm typecheck:admin"
+        ]
+      },
+      {
+        "path": "apps/admin/src/app/dashboard/customers/page.tsx",
+        "owner": "admin-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/admin test",
+          "pnpm --dir apps/admin lint",
+          "pnpm typecheck:admin"
+        ],
+        "rationale": "Independent Next admin page or BFF route. Browser admin traffic must stay on same-origin BFF routes and product admin UX must remain outside the Medusa dashboard patch surface.",
+        "risk": "customer-or-order-impact",
+        "obligations": [
+          "call Medusa /admin/* only through the same-origin BFF proxy, never the backend directly",
+          "keep mutations behind the BFF CSRF/origin guard and the backend admin mutation protection",
+          "verify via pnpm --dir apps/admin test, pnpm --dir apps/admin lint, and pnpm typecheck:admin"
+        ]
+      },
+      {
+        "path": "apps/admin/src/app/dashboard/deliveries/page.tsx",
+        "owner": "admin-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/admin test",
+          "pnpm --dir apps/admin lint",
+          "pnpm typecheck:admin"
+        ],
+        "rationale": "Independent Next admin page or BFF route. Browser admin traffic must stay on same-origin BFF routes and product admin UX must remain outside the Medusa dashboard patch surface.",
+        "risk": "security",
+        "obligations": [
+          "call Medusa /admin/* only through the same-origin BFF proxy, never the backend directly",
+          "keep mutations behind the BFF CSRF/origin guard and the backend admin mutation protection",
+          "verify via pnpm --dir apps/admin test, pnpm --dir apps/admin lint, and pnpm typecheck:admin"
+        ]
+      },
+      {
+        "path": "apps/admin/src/app/dashboard/marketing/page.tsx",
+        "owner": "admin-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/admin test",
+          "pnpm --dir apps/admin lint",
+          "pnpm typecheck:admin"
+        ],
+        "rationale": "Independent Next admin page or BFF route. Browser admin traffic must stay on same-origin BFF routes and product admin UX must remain outside the Medusa dashboard patch surface.",
+        "risk": "customer-or-order-impact",
+        "obligations": [
+          "call Medusa /admin/* only through the same-origin BFF proxy, never the backend directly",
+          "keep mutations behind the BFF CSRF/origin guard and the backend admin mutation protection",
+          "verify via pnpm --dir apps/admin test, pnpm --dir apps/admin lint, and pnpm typecheck:admin"
+        ]
+      },
+      {
+        "path": "apps/admin/src/app/dashboard/ops/page.tsx",
+        "owner": "admin-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/admin test",
+          "pnpm --dir apps/admin lint",
+          "pnpm typecheck:admin"
+        ],
+        "rationale": "Independent Next admin page or BFF route. Browser admin traffic must stay on same-origin BFF routes and product admin UX must remain outside the Medusa dashboard patch surface.",
+        "risk": "routine",
+        "obligations": [
+          "call Medusa /admin/* only through the same-origin BFF proxy, never the backend directly",
+          "keep mutations behind the BFF CSRF/origin guard and the backend admin mutation protection",
+          "verify via pnpm --dir apps/admin test, pnpm --dir apps/admin lint, and pnpm typecheck:admin"
+        ]
+      },
+      {
+        "path": "apps/admin/src/app/dashboard/orders/page.tsx",
+        "owner": "admin-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/admin test",
+          "pnpm --dir apps/admin lint",
+          "pnpm typecheck:admin"
+        ],
+        "rationale": "Independent Next admin page or BFF route. Browser admin traffic must stay on same-origin BFF routes and product admin UX must remain outside the Medusa dashboard patch surface.",
+        "risk": "customer-or-order-impact",
+        "obligations": [
+          "call Medusa /admin/* only through the same-origin BFF proxy, never the backend directly",
+          "keep mutations behind the BFF CSRF/origin guard and the backend admin mutation protection",
+          "verify via pnpm --dir apps/admin test, pnpm --dir apps/admin lint, and pnpm typecheck:admin"
+        ]
+      },
+      {
+        "path": "apps/admin/src/app/dashboard/page.tsx",
+        "owner": "admin-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/admin test",
+          "pnpm --dir apps/admin lint",
+          "pnpm typecheck:admin"
+        ],
+        "rationale": "Independent Next admin page or BFF route. Browser admin traffic must stay on same-origin BFF routes and product admin UX must remain outside the Medusa dashboard patch surface.",
+        "risk": "routine",
+        "obligations": [
+          "call Medusa /admin/* only through the same-origin BFF proxy, never the backend directly",
+          "keep mutations behind the BFF CSRF/origin guard and the backend admin mutation protection",
+          "verify via pnpm --dir apps/admin test, pnpm --dir apps/admin lint, and pnpm typecheck:admin"
+        ]
+      },
+      {
+        "path": "apps/admin/src/app/dashboard/payments/page.tsx",
+        "owner": "admin-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/admin test",
+          "pnpm --dir apps/admin lint",
+          "pnpm typecheck:admin"
+        ],
+        "rationale": "Independent Next admin page or BFF route. Browser admin traffic must stay on same-origin BFF routes and product admin UX must remain outside the Medusa dashboard patch surface.",
+        "risk": "security",
+        "obligations": [
+          "call Medusa /admin/* only through the same-origin BFF proxy, never the backend directly",
+          "keep mutations behind the BFF CSRF/origin guard and the backend admin mutation protection",
+          "verify via pnpm --dir apps/admin test, pnpm --dir apps/admin lint, and pnpm typecheck:admin"
+        ]
+      },
+      {
+        "path": "apps/admin/src/app/dashboard/product-publishing/page.tsx",
+        "owner": "admin-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/admin test",
+          "pnpm --dir apps/admin lint",
+          "pnpm typecheck:admin"
+        ],
+        "rationale": "Independent Next admin page or BFF route. Browser admin traffic must stay on same-origin BFF routes and product admin UX must remain outside the Medusa dashboard patch surface.",
+        "risk": "customer-or-order-impact",
+        "obligations": [
+          "call Medusa /admin/* only through the same-origin BFF proxy, never the backend directly",
+          "keep mutations behind the BFF CSRF/origin guard and the backend admin mutation protection",
+          "verify via pnpm --dir apps/admin test, pnpm --dir apps/admin lint, and pnpm typecheck:admin"
+        ]
+      },
+      {
+        "path": "apps/admin/src/app/dashboard/products/page.tsx",
+        "owner": "admin-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/admin test",
+          "pnpm --dir apps/admin lint",
+          "pnpm typecheck:admin"
+        ],
+        "rationale": "Independent Next admin page or BFF route. Browser admin traffic must stay on same-origin BFF routes and product admin UX must remain outside the Medusa dashboard patch surface.",
+        "risk": "customer-or-order-impact",
+        "obligations": [
+          "call Medusa /admin/* only through the same-origin BFF proxy, never the backend directly",
+          "keep mutations behind the BFF CSRF/origin guard and the backend admin mutation protection",
+          "verify via pnpm --dir apps/admin test, pnpm --dir apps/admin lint, and pnpm typecheck:admin"
+        ]
+      },
+      {
+        "path": "apps/admin/src/app/dashboard/seo/page.tsx",
+        "owner": "admin-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/admin test",
+          "pnpm --dir apps/admin lint",
+          "pnpm typecheck:admin"
+        ],
+        "rationale": "Independent Next admin page or BFF route. Browser admin traffic must stay on same-origin BFF routes and product admin UX must remain outside the Medusa dashboard patch surface.",
+        "risk": "human-review",
+        "obligations": [
+          "call Medusa /admin/* only through the same-origin BFF proxy, never the backend directly",
+          "keep mutations behind the BFF CSRF/origin guard and the backend admin mutation protection",
+          "verify via pnpm --dir apps/admin test, pnpm --dir apps/admin lint, and pnpm typecheck:admin"
+        ]
+      },
+      {
+        "path": "apps/admin/src/app/dashboard/suppliers/page.tsx",
+        "owner": "admin-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/admin test",
+          "pnpm --dir apps/admin lint",
+          "pnpm typecheck:admin"
+        ],
+        "rationale": "Independent Next admin page or BFF route. Browser admin traffic must stay on same-origin BFF routes and product admin UX must remain outside the Medusa dashboard patch surface.",
+        "risk": "external-provider",
+        "obligations": [
+          "call Medusa /admin/* only through the same-origin BFF proxy, never the backend directly",
+          "keep mutations behind the BFF CSRF/origin guard and the backend admin mutation protection",
+          "verify via pnpm --dir apps/admin test, pnpm --dir apps/admin lint, and pnpm typecheck:admin"
+        ]
+      },
+      {
+        "path": "apps/admin/src/app/dashboard/system/page.tsx",
+        "owner": "admin-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/admin test",
+          "pnpm --dir apps/admin lint",
+          "pnpm typecheck:admin"
+        ],
+        "rationale": "Independent Next admin page or BFF route. Browser admin traffic must stay on same-origin BFF routes and product admin UX must remain outside the Medusa dashboard patch surface.",
+        "risk": "security",
+        "obligations": [
+          "call Medusa /admin/* only through the same-origin BFF proxy, never the backend directly",
+          "keep mutations behind the BFF CSRF/origin guard and the backend admin mutation protection",
+          "verify via pnpm --dir apps/admin test, pnpm --dir apps/admin lint, and pnpm typecheck:admin"
+        ]
+      },
+      {
+        "path": "apps/admin/src/app/login/page.tsx",
+        "owner": "admin-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/admin test",
+          "pnpm --dir apps/admin lint",
+          "pnpm typecheck:admin"
+        ],
+        "rationale": "Independent Next admin page or BFF route. Browser admin traffic must stay on same-origin BFF routes and product admin UX must remain outside the Medusa dashboard patch surface.",
+        "risk": "routine",
+        "obligations": [
+          "call Medusa /admin/* only through the same-origin BFF proxy, never the backend directly",
+          "keep mutations behind the BFF CSRF/origin guard and the backend admin mutation protection",
+          "verify via pnpm --dir apps/admin test, pnpm --dir apps/admin lint, and pnpm typecheck:admin"
+        ]
+      },
+      {
+        "path": "apps/admin/src/app/page.tsx",
+        "owner": "admin-ui",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm --dir apps/admin test",
+          "pnpm --dir apps/admin lint",
+          "pnpm typecheck:admin"
+        ],
+        "rationale": "Independent Next admin page or BFF route. Browser admin traffic must stay on same-origin BFF routes and product admin UX must remain outside the Medusa dashboard patch surface.",
+        "risk": "routine",
+        "obligations": [
+          "call Medusa /admin/* only through the same-origin BFF proxy, never the backend directly",
+          "keep mutations behind the BFF CSRF/origin guard and the backend admin mutation protection",
+          "verify via pnpm --dir apps/admin test, pnpm --dir apps/admin lint, and pnpm typecheck:admin"
+        ]
       }
     ]
   },

@@ -114,8 +114,8 @@
     }
   ],
   "informationArchitecture": {
-    "defaultAdminRoute": "/app/control-panel",
-    "routePrefix": "/app",
+    "defaultAdminRoute": "/dashboard",
+    "routePrefix": "/dashboard",
     "sectionOrder": [
       {
         "id": "overview",
@@ -165,140 +165,134 @@
     ],
     "routePlacements": [
       {
-        "route": "/app/control-panel",
+        "route": "/dashboard",
         "section": "overview",
-        "title": "Control panel",
-        "owner": "ops-control",
+        "title": "Dashboard",
+        "owner": "admin-ui",
         "purpose": "Operator home, cross-domain status, and next actions."
       },
       {
-        "route": "/app/products",
+        "route": "/dashboard/products",
         "section": "catalog",
         "title": "Products",
         "owner": "medusa-core",
         "purpose": "Product, variant, collection, category, and sales-channel management."
       },
       {
-        "route": "/app/products/create",
-        "section": "catalog",
-        "title": "Create product",
-        "owner": "medusa-core",
-        "purpose": "New product creation."
-      },
-      {
-        "route": "/app/product-publishing",
+        "route": "/dashboard/product-publishing",
         "section": "catalog",
         "title": "Product publishing",
         "owner": "product-templates",
         "purpose": "Template, fulfillment handler, inventory, and delivery readiness before a product is treated as sellable."
       },
       {
-        "route": "/app/orders",
+        "route": "/dashboard/orders",
         "section": "orders",
         "title": "Orders",
         "owner": "medusa-core",
         "purpose": "Order history, payment context, customer context, and post-purchase investigation."
       },
       {
-        "route": "/app/deliveries",
+        "route": "/dashboard/deliveries",
         "section": "orders",
         "title": "Deliveries",
         "owner": "digital-delivery",
         "purpose": "Pending fulfillment, manual delivery creation, and delivery records."
       },
       {
-        "route": "/app/credentials",
+        "route": "/dashboard/credentials",
         "section": "inventory",
         "title": "Credential inventory",
         "owner": "credential-inventory",
-        "purpose": "Credential import, available stock, reserved stock, sold stock, and depleted batches."
+        "purpose": "Credential import, reservation, release, sold state, and depleted batches."
       },
       {
-        "route": "/app/inventory",
-        "section": "inventory",
-        "title": "Inventory",
-        "owner": "medusa-core",
-        "purpose": "General inventory and reservation management."
-      },
-      {
-        "route": "/app/payments",
+        "route": "/dashboard/payments",
         "section": "payments_suppliers",
         "title": "Payments",
         "owner": "payment-router",
-        "purpose": "Payment channels, payment attempts, provider state, and auditable manual confirmation."
+        "purpose": "Payment attempts, provider channels, recovery actions, and webhook readiness."
       },
       {
-        "route": "/app/suppliers",
+        "route": "/dashboard/suppliers",
         "section": "payments_suppliers",
         "title": "Suppliers",
         "owner": "supplier-procurement",
-        "purpose": "Supplier provider readiness, variant mappings, procurement state, and retry queues."
+        "purpose": "Supplier mappings, provider configuration, procurement state, and retry visibility."
       },
       {
-        "route": "/app/content",
+        "route": "/dashboard/content",
         "section": "growth",
         "title": "Content",
         "owner": "content-core",
-        "purpose": "Site-scoped content drafts, revisions, publishing, storage-backed assets, audio, and provider-neutral AI task metadata."
+        "purpose": "Content entries, revisions, asset registration, upload policies, and AI editorial review."
       },
       {
-        "route": "/app/seo",
+        "route": "/dashboard/seo",
         "section": "growth",
-        "title": "SEO & discoverability",
+        "title": "SEO",
         "owner": "content-core",
-        "purpose": "Platform-wide, per-site SEO/AEO/GEO governance: enablement, indexability and AI-crawler policy, structured-data identity, language/hreflang scope, canonical domain, sitemap and llms.txt settings, and discoverability health. Per-entity metadata is edited in the content/product editors, not here."
+        "purpose": "SEO documents, audits, performance views, and generated suggestions."
       },
       {
-        "route": "/app/marketing",
+        "route": "/dashboard/marketing",
         "section": "growth",
         "title": "Marketing",
         "owner": "marketing-engine",
-        "purpose": "Campaigns, offers, coupons, referral links, and marketing touchpoints."
+        "purpose": "Campaigns, offers, coupons, referral links, and touchpoints."
       },
       {
-        "route": "/app/analytics",
+        "route": "/dashboard/analytics",
         "section": "growth",
         "title": "Analytics",
         "owner": "analytics-core",
-        "purpose": "Analytics events, dispatch failures, privacy-related consent flow visibility, and replay queues."
+        "purpose": "Analytics events, dispatch queue visibility, and replay controls."
       },
       {
-        "route": "/app/customers",
+        "route": "/dashboard/customers",
         "section": "customers_support",
         "title": "Customers",
         "owner": "medusa-core",
-        "purpose": "Customer identity and group management."
+        "purpose": "Customer records, customer groups, and account state."
       },
       {
-        "route": "/app/after-sales",
+        "route": "/dashboard/after-sales",
         "section": "customers_support",
         "title": "After-sales",
         "owner": "support-audit",
-        "purpose": "Customer requests, replacements, support notes, and after-sales outcomes."
+        "purpose": "Support requests, replacements, refunds, and audit-ready outcomes."
       },
       {
-        "route": "/app/ai",
+        "route": "/dashboard/ai",
         "section": "intelligence",
         "title": "AI",
         "owner": "ai-core",
-        "purpose": "AI provider readiness, task plugins, task runs, and AI review queues."
+        "purpose": "AI provider readiness, policy visibility, task plugins, run queue, and human review."
       },
       {
-        "route": "/app/ops",
+        "route": "/dashboard/ops",
         "section": "risk_system",
         "title": "Operations",
         "owner": "ops-control",
-        "purpose": "Production readiness, Cloudflare, security, backup, rollback, and machine evidence."
+        "purpose": "Runtime readiness, security, maintenance, backup, rollback, and Cloudflare posture."
       },
       {
-        "route": "/app/audit-logs",
+        "route": "/dashboard/audit-logs",
         "section": "risk_system",
         "title": "Audit logs",
         "owner": "support-audit",
-        "purpose": "Sensitive actions, high-risk events, actor context, and compliance audit trail."
+        "purpose": "Operator activity, support records, and compliance inspection."
+      },
+      {
+        "route": "/dashboard/system",
+        "section": "risk_system",
+        "title": "System settings",
+        "owner": "admin-ui",
+        "purpose": "Store, users, regions, sales channels, API keys, feature flags, and plugin state."
       }
     ],
-    "extensionPlacementRule": "New backend admin functionality must be assigned to the most specific section above. Use risk_system for production gates, secrets, security, backup, rollback, or audit; payments_suppliers for revenue/provider fulfillment; growth for public content, campaigns, analytics, and privacy; customers_support for account access and support; intelligence for AI provider or generated-work review; overview only for cross-domain summaries."
+    "extensionPlacementRule": "New backend admin functionality must be assigned to the most specific section above. Use risk_system for production gates, secrets, security, backup, rollback, or audit; payments_suppliers for revenue/provider fulfillment; growth for public content, campaigns, analytics, and privacy; customers_support for account access and support; intelligence for AI provider or generated-work review; overview only for cross-domain summaries.",
+    "routeSourceRoot": "apps/admin/src/app/dashboard"
   },
   "requiredProductionSurfaces": [
     {
@@ -308,7 +302,7 @@
       "backendPanelRequired": true,
       "productionGateRequired": true,
       "humanChoiceRequired": true,
-      "adminRoute": "/app/ops",
+      "adminRoute": "/dashboard/ops",
       "controlPanelSection": "risk_system",
       "profileControls": [
         "backend_control_panel_required",
@@ -341,7 +335,7 @@
       "backendPanelRequired": true,
       "productionGateRequired": true,
       "humanChoiceRequired": true,
-      "adminRoute": "/app/ops",
+      "adminRoute": "/dashboard/ops",
       "controlPanelSection": "risk_system",
       "profileControls": [
         "backend_control_panel_required"
@@ -368,7 +362,7 @@
       "backendPanelRequired": true,
       "productionGateRequired": true,
       "humanChoiceRequired": true,
-      "adminRoute": "/app/ops",
+      "adminRoute": "/dashboard/ops",
       "controlPanelSection": "risk_system",
       "profileControls": [
         "cloudflare_required",
@@ -401,7 +395,7 @@
       "backendPanelRequired": true,
       "productionGateRequired": true,
       "humanChoiceRequired": true,
-      "adminRoute": "/app/ops",
+      "adminRoute": "/dashboard/ops",
       "controlPanelSection": "risk_system",
       "profileControls": [
         "cloudflare_waf_required",
@@ -416,7 +410,8 @@
       "runtimeCommands": [
         "pnpm deploy:waf",
         "pnpm deploy:admin-edge",
-        "pnpm deploy:rate-limit"
+        "pnpm deploy:rate-limit",
+        "pnpm smoke:admin"
       ],
       "configKeys": [
         "ADMIN_CORS",
@@ -424,7 +419,9 @@
         "STORE_CORS",
         "SECURITY_RATE_LIMIT_STORE",
         "CLOUDFLARE_WAF_MANAGED_RULES_ENABLED",
-        "CLOUDFLARE_ACCESS_ADMIN_ENABLED"
+        "CLOUDFLARE_ACCESS_ADMIN_ENABLED",
+        "ADMIN_MEDUSA_BACKEND_URL",
+        "ADMIN_TRUSTED_ORIGINS"
       ]
     },
     {
@@ -434,7 +431,7 @@
       "backendPanelRequired": true,
       "productionGateRequired": true,
       "humanChoiceRequired": true,
-      "adminRoute": "/app/payments",
+      "adminRoute": "/dashboard/payments",
       "controlPanelSection": "payments_suppliers",
       "profileControls": [
         "payment_provider_required",
@@ -460,7 +457,7 @@
       "backendPanelRequired": true,
       "productionGateRequired": true,
       "humanChoiceRequired": true,
-      "adminRoute": "/app/suppliers",
+      "adminRoute": "/dashboard/suppliers",
       "controlPanelSection": "payments_suppliers",
       "profileControls": [
         "supplier_readiness_required"
@@ -486,7 +483,7 @@
       "backendPanelRequired": true,
       "productionGateRequired": true,
       "humanChoiceRequired": false,
-      "adminRoute": "/app/credentials",
+      "adminRoute": "/dashboard/credentials",
       "controlPanelSection": "inventory",
       "profileControls": [
         "delivery_inventory_required",
@@ -511,7 +508,7 @@
       "backendPanelRequired": true,
       "productionGateRequired": true,
       "humanChoiceRequired": true,
-      "adminRoute": "/app/ops",
+      "adminRoute": "/dashboard/ops",
       "controlPanelSection": "customers_support",
       "profileControls": [
         "customer_access_required",
@@ -538,7 +535,7 @@
       "backendPanelRequired": true,
       "productionGateRequired": true,
       "humanChoiceRequired": false,
-      "adminRoute": "/app/ops",
+      "adminRoute": "/dashboard/ops",
       "controlPanelSection": "risk_system",
       "profileControls": [
         "runtime_health_required"
@@ -562,7 +559,7 @@
       "backendPanelRequired": true,
       "productionGateRequired": true,
       "humanChoiceRequired": true,
-      "adminRoute": "/app/ops",
+      "adminRoute": "/dashboard/ops",
       "controlPanelSection": "risk_system",
       "profileControls": [
         "notification_readiness_required"
@@ -586,7 +583,7 @@
       "backendPanelRequired": true,
       "productionGateRequired": true,
       "humanChoiceRequired": true,
-      "adminRoute": "/app/analytics",
+      "adminRoute": "/dashboard/analytics",
       "controlPanelSection": "growth",
       "profileControls": [
         "analytics_privacy_required"
@@ -611,7 +608,7 @@
       "backendPanelRequired": true,
       "productionGateRequired": true,
       "humanChoiceRequired": true,
-      "adminRoute": "/app/seo",
+      "adminRoute": "/dashboard/seo",
       "controlPanelSection": "growth",
       "profileControls": [
         "backend_control_panel_required"
@@ -637,7 +634,7 @@
       "backendPanelRequired": true,
       "productionGateRequired": true,
       "humanChoiceRequired": true,
-      "adminRoute": "/app/ops",
+      "adminRoute": "/dashboard/ops",
       "controlPanelSection": "risk_system",
       "profileControls": [
         "backup_required",
@@ -666,7 +663,7 @@
       "backendPanelRequired": true,
       "productionGateRequired": true,
       "humanChoiceRequired": true,
-      "adminRoute": "/app/ai",
+      "adminRoute": "/dashboard/ai",
       "controlPanelSection": "intelligence",
       "profileControls": [
         "backend_control_panel_required"

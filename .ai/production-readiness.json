@@ -1625,6 +1625,17 @@
         ]
       },
       {
+        "path": "ops/env/admin.production.env.example",
+        "scopes": [
+          "admin"
+        ],
+        "owner": "config-surface",
+        "verification": [
+          "pnpm ai:production",
+          "pnpm ai:config"
+        ]
+      },
+      {
         "path": "ops/env/services.production.env.example",
         "scopes": [],
         "extraRequiredKeys": [
@@ -1667,6 +1678,16 @@
         "scopes": [
           "storefront",
           "shared"
+        ],
+        "owner": "config-surface",
+        "verification": [
+          "pnpm ai:production"
+        ]
+      },
+      {
+        "envVar": "AI_ADMIN_PRODUCTION_ENV_FILE",
+        "scopes": [
+          "admin"
         ],
         "owner": "config-surface",
         "verification": [

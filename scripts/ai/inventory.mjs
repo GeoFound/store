@@ -155,6 +155,9 @@ function collectInventory() {
     storefrontEntrypoints: listFiles("apps/storefront/src/app", (file) =>
       file.endsWith("/page.tsx") || file.endsWith("/route.ts")
     ).sort(),
+    adminEntrypoints: listFiles("apps/admin/src/app", (file) =>
+      file.endsWith("/page.tsx") || file.endsWith("/route.ts")
+    ).sort(),
     siteProfiles: profileDirs,
     aiScripts: listFiles("scripts/ai", (file) => file.endsWith(".mjs")).sort(),
   }
