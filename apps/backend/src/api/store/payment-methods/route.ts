@@ -1,35 +1,17 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import { resolvePaymentRouterService } from "../../../platform-adapters/services"
+import { resolveStorefrontPaymentApplication } from "../../../platform-adapters/payment-application"
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
-  const paymentRouter = resolvePaymentRouterService(req.scope)
+  const payment = resolveStorefrontPaymentApplication(req.scope)
   const query = (req.validatedQuery || req.query) as {
-    amount?: number
+    amount?: number | string
     currency?: string
   }
 
-  const amount =
-    typeof query.amount === "number" && Number.isFinite(query.amount)
-      ? query.amount
-      : undefined
-  const currency =
-    typeof query.currency === "string"
-      ? query.currency.trim().toLowerCase()
-      : undefined
-
-  const channels = await paymentRouter.listAvailablePaymentChannels({
-    amount,
-    currency,
+  const methods = await payment.listPaymentMethods({
+    amount: query.amount,
+    currency: query.currency,
   })
 
-  res.json({
-    methods: channels.map((channel) => ({
-      id: channel.id,
-      code: channel.code,
-      display_name: channel.display_name,
-      type: channel.type,
-      priority: channel.priority,
-      health_status: channel.health_status,
-    })),
-  })
+  res.json({ methods })
 }

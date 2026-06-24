@@ -96,3 +96,7 @@ store needs, not which framework currently implements it.
   `apps/backend/src/application/marketing.ts`; Medusa marketing-engine remains
   the current repository adapter through
   `apps/backend/src/platform-adapters/marketing-application.ts`.
+- Storefront payment method discovery is handled by
+  `apps/backend/src/application/payment.ts`; Medusa payment-router remains the
+  current repository adapter through
+  `apps/backend/src/platform-adapters/payment-application.ts`.

@@ -73,7 +73,8 @@
         "framework-neutral product use cases",
         "backend replacement contracts",
         "storefront content discovery use cases",
-        "storefront marketing campaign discovery use cases"
+        "storefront marketing campaign discovery use cases",
+        "storefront payment method discovery use cases"
       ],
       "mustNotOwn": [
         "Medusa framework imports",
