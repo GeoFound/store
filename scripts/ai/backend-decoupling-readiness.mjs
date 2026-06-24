@@ -202,6 +202,9 @@ function scanRepository() {
     "apps/admin/src/components/ai-view.tsx",
     "apps/admin/src/components/ops-view.tsx",
   ])
+  const adminMarketingDtoUiFiles = sourceFiles([
+    "apps/admin/src/components/marketing-view.tsx",
+  ])
   const storefrontFiles = sourceFiles(["apps/storefront/src"])
   const allowedStorefrontFetchFiles = new Set([
     "apps/storefront/src/lib/commerce-medusa.ts",
@@ -261,6 +264,10 @@ function scanRepository() {
     adminAiOpsDtoUiFiles,
     /\b(provider_kind|base_url|default_model|api_key_env|api_key_configured|requires_api_key|task_type|required_capabilities|requires_human_review|plugin_code|provider_code|site_id|input_summary|output_summary|error_message|created_at|default_provider_code|task_plugins|task_runs|provider_count|configured_provider_count|attention_provider_count|review_run_count|recommended_action|human_gate|generated_at|critical_findings|warning_findings|human_gate_actions|control_panel_surface_count|gated_surface_count|launch_readiness|ai_ops)\b|\/admin\/ops-control/
   )
+  const adminMarketingDtoLeakFiles = filesMatching(
+    adminMarketingDtoUiFiles,
+    /\b(starts_at|ends_at|created_at|discount_type|discount_value|max_redemptions|max_redemptions_per_email|redeemed_count|expires_at|max_uses|used_count|referrer_email|event_name|payment_attempt_id|order_id|coupon_code|referral_code)\b|Medusa\s+\/admin\/marketing/
+  )
   const storefrontFetchViolations = filesMatching(storefrontFiles, /\bfetch\s*\(/)
     .filter((file) => !allowedStorefrontFetchFiles.has(file))
 
@@ -276,6 +283,7 @@ function scanRepository() {
     adminObservabilityDtoLeakFiles,
     adminSystemSettingsDtoLeakFiles,
     adminAiOpsDtoLeakFiles,
+    adminMarketingDtoLeakFiles,
     storefrontFetchViolations,
     backendMedusaImportFiles: filesMatching(backendFiles, /@medusajs\//),
     backendMedusaRequestResponseFiles: filesMatching(backendApiFiles, /MedusaRequest|MedusaResponse/),
@@ -469,6 +477,18 @@ export function createBackendDecouplingReadinessReport() {
   addHardCheck({
     checks,
     issues,
+    id: "admin-marketing-domain-uses-product-dtos",
+    value: scan.adminMarketingDtoLeakFiles.length,
+    max: 0,
+    message:
+      "Marketing admin UI must consume product-admin DTOs instead of backend snake_case response fields or Medusa route literals.",
+    details: {
+      files: sample(scan.adminMarketingDtoLeakFiles),
+    },
+  })
+  addHardCheck({
+    checks,
+    issues,
     id: "storefront-fetch-only-in-approved-adapters",
     value: scan.storefrontFetchViolations.length,
     max: 0,
@@ -566,6 +586,7 @@ export function createBackendDecouplingReadinessReport() {
       adminObservabilityDtoLeakFiles: scan.adminObservabilityDtoLeakFiles.length,
       adminSystemSettingsDtoLeakFiles: scan.adminSystemSettingsDtoLeakFiles.length,
       adminAiOpsDtoLeakFiles: scan.adminAiOpsDtoLeakFiles.length,
+      adminMarketingDtoLeakFiles: scan.adminMarketingDtoLeakFiles.length,
       storefrontMedusaEnvFiles: scan.storefrontMedusaEnvFiles.length,
     },
     checks,

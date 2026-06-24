@@ -3,6 +3,9 @@ import {
   createSalesChannel,
   createDigitalDelivery,
   createCustomer,
+  createMarketingCampaign,
+  createMarketingCoupon,
+  createMarketingReferral,
   importCredentialBatch,
   loadAfterSales,
   loadAIPolicy,
@@ -14,6 +17,7 @@ import {
   loadCustomers,
   loadCredentialInventory,
   loadDeliveryWorkspace,
+  loadMarketingWorkspace,
   loadOpsDashboard,
   loadOpsMaintenance,
   loadOpsSecurity,
@@ -891,6 +895,209 @@ describe("product admin facade", () => {
     expect(dashboard.summary).not.toHaveProperty("critical_findings")
     expect(dashboard.launchReadiness.findings[0]).not.toHaveProperty(
       "human_gate",
+    )
+  })
+
+  it("maps marketing workspace responses to product-admin DTOs", async () => {
+    adminApiMock.mockImplementation(async (path: string) => {
+      if (path === "/admin/marketing/campaigns?limit=50") {
+        return {
+          campaigns: [
+            {
+              id: "campaign_1",
+              code: "SUMMER_2026",
+              name: "Summer 2026",
+              status: "active",
+              starts_at: "2026-06-01T00:00:00.000Z",
+              ends_at: "2026-06-30T00:00:00.000Z",
+              created_at: "2026-05-20T00:00:00.000Z",
+            },
+          ],
+        }
+      }
+
+      if (path === "/admin/marketing/offers?limit=50") {
+        return {
+          offers: [
+            {
+              id: "offer_1",
+              code: "BUNDLE_10",
+              name: "Bundle discount",
+              type: "bundle",
+              status: "active",
+              priority: 20,
+              created_at: "2026-05-21T00:00:00.000Z",
+            },
+          ],
+        }
+      }
+
+      if (path === "/admin/marketing/coupons?limit=50") {
+        return {
+          coupons: [
+            {
+              id: "coupon_1",
+              code: "SAVE10",
+              status: "active",
+              discount_type: "percentage",
+              discount_value: 10,
+              max_redemptions: 100,
+              max_redemptions_per_email: 1,
+              redeemed_count: 7,
+              expires_at: "2026-07-01T00:00:00.000Z",
+              created_at: "2026-05-22T00:00:00.000Z",
+            },
+          ],
+        }
+      }
+
+      if (path === "/admin/marketing/referral-links?limit=50") {
+        return {
+          referral_links: [
+            {
+              id: "ref_1",
+              code: "CREATOR_A",
+              status: "active",
+              referrer_email: "creator@example.com",
+              max_uses: 50,
+              used_count: 5,
+              created_at: "2026-05-23T00:00:00.000Z",
+            },
+          ],
+        }
+      }
+
+      if (path === "/admin/marketing/touchpoints?limit=100") {
+        return {
+          touchpoints: [
+            {
+              id: "touch_1",
+              event_name: "checkout.started",
+              payment_attempt_id: "payatt_1",
+              order_id: "order_1",
+              coupon_code: "SAVE10",
+              referral_code: "CREATOR_A",
+              source: "newsletter",
+              medium: "email",
+              campaign: "SUMMER_2026",
+              created_at: "2026-05-24T00:00:00.000Z",
+            },
+          ],
+        }
+      }
+
+      throw new Error(`Unexpected path: ${path}`)
+    })
+
+    const workspace = await loadMarketingWorkspace()
+
+    expect(workspace.campaigns[0]).toEqual({
+      id: "campaign_1",
+      code: "SUMMER_2026",
+      name: "Summer 2026",
+      status: "active",
+      startsAt: "2026-06-01T00:00:00.000Z",
+      endsAt: "2026-06-30T00:00:00.000Z",
+      createdAt: "2026-05-20T00:00:00.000Z",
+    })
+    expect(workspace.offers[0]).toEqual({
+      id: "offer_1",
+      code: "BUNDLE_10",
+      name: "Bundle discount",
+      type: "bundle",
+      status: "active",
+      priority: 20,
+      createdAt: "2026-05-21T00:00:00.000Z",
+    })
+    expect(workspace.coupons[0]).toEqual({
+      id: "coupon_1",
+      code: "SAVE10",
+      status: "active",
+      discountType: "percentage",
+      discountValue: 10,
+      maxRedemptions: 100,
+      maxRedemptionsPerEmail: 1,
+      redeemedCount: 7,
+      expiresAt: "2026-07-01T00:00:00.000Z",
+      createdAt: "2026-05-22T00:00:00.000Z",
+    })
+    expect(workspace.referralLinks[0]).toEqual({
+      id: "ref_1",
+      code: "CREATOR_A",
+      status: "active",
+      referrerEmail: "creator@example.com",
+      maxUses: 50,
+      usedCount: 5,
+      createdAt: "2026-05-23T00:00:00.000Z",
+    })
+    expect(workspace.touchpoints[0]).toEqual({
+      id: "touch_1",
+      eventName: "checkout.started",
+      paymentAttemptId: "payatt_1",
+      orderId: "order_1",
+      couponCode: "SAVE10",
+      referralCode: "CREATOR_A",
+      source: "newsletter",
+      medium: "email",
+      campaign: "SUMMER_2026",
+      createdAt: "2026-05-24T00:00:00.000Z",
+    })
+    expect(workspace.campaigns[0]).not.toHaveProperty("starts_at")
+    expect(workspace.coupons[0]).not.toHaveProperty("redeemed_count")
+    expect(workspace.referralLinks[0]).not.toHaveProperty("referrer_email")
+    expect(workspace.touchpoints[0]).not.toHaveProperty("event_name")
+  })
+
+  it("maps marketing writes from product input to current backend bodies", async () => {
+    adminApiMock.mockResolvedValue({ ok: true })
+
+    await createMarketingCampaign({
+      code: " SUMMER_2026 ",
+      name: " Summer 2026 ",
+      status: "draft",
+    })
+
+    expect(adminApiMock).toHaveBeenCalledWith("/admin/marketing/campaigns", {
+      method: "POST",
+      body: {
+        code: "SUMMER_2026",
+        name: "Summer 2026",
+        status: "draft",
+      },
+    })
+
+    await createMarketingCoupon({
+      code: " SAVE10 ",
+      status: "active",
+      maxRedemptions: "100",
+    })
+
+    expect(adminApiMock).toHaveBeenLastCalledWith("/admin/marketing/coupons", {
+      method: "POST",
+      body: {
+        code: "SAVE10",
+        status: "active",
+        max_redemptions: 100,
+      },
+    })
+
+    await createMarketingReferral({
+      code: " CREATOR_A ",
+      referrerEmail: "creator@example.com",
+      maxUses: "50",
+    })
+
+    expect(adminApiMock).toHaveBeenLastCalledWith(
+      "/admin/marketing/referral-links",
+      {
+        method: "POST",
+        body: {
+          code: "CREATOR_A",
+          referrer_email: "creator@example.com",
+          max_uses: 50,
+          status: "active",
+        },
+      },
     )
   })
 

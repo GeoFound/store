@@ -627,6 +627,70 @@ export type ProductAdminAuditLogFilters = {
   entityId: string
 }
 
+export type ProductAdminMarketingCampaign = {
+  id: string
+  code: string
+  name: string
+  status: string
+  startsAt: string | null
+  endsAt: string | null
+  createdAt: string | null
+}
+
+export type ProductAdminMarketingOffer = {
+  id: string
+  code: string
+  name: string
+  type: string
+  status: string
+  priority: number | null
+  createdAt: string | null
+}
+
+export type ProductAdminMarketingCoupon = {
+  id: string
+  code: string
+  status: string
+  discountType: string | null
+  discountValue: number | null
+  maxRedemptions: number | null
+  maxRedemptionsPerEmail: number | null
+  redeemedCount: number
+  expiresAt: string | null
+  createdAt: string | null
+}
+
+export type ProductAdminMarketingReferralLink = {
+  id: string
+  code: string
+  status: string
+  referrerEmail: string | null
+  maxUses: number | null
+  usedCount: number
+  createdAt: string | null
+}
+
+export type ProductAdminMarketingTouchpoint = {
+  id: string
+  eventName: string
+  paymentAttemptId: string | null
+  orderId: string | null
+  couponCode: string | null
+  referralCode: string | null
+  source: string | null
+  medium: string | null
+  campaign: string | null
+  createdAt: string | null
+}
+
+export type ProductAdminMarketingWorkspace = {
+  campaigns: ProductAdminMarketingCampaign[]
+  offers: ProductAdminMarketingOffer[]
+  coupons: ProductAdminMarketingCoupon[]
+  referralLinks: ProductAdminMarketingReferralLink[]
+  touchpoints: ProductAdminMarketingTouchpoint[]
+}
+
 type CreateCatalogProductInput = {
   title: string
   handle: string
@@ -1248,7 +1312,7 @@ export async function loadOpsMaintenance(): Promise<ProductAdminOpsMaintenance> 
   }
 }
 
-export async function loadMarketingWorkspace() {
+export async function loadMarketingWorkspace(): Promise<ProductAdminMarketingWorkspace> {
   const [campaignData, offerData, couponData, referralData, touchpointData] =
     await Promise.all([
       adminApi<{ campaigns: unknown[] }>("/admin/marketing/campaigns?limit=50"),
@@ -1263,11 +1327,21 @@ export async function loadMarketingWorkspace() {
     ])
 
   return {
-    campaigns: campaignData.campaigns || [],
-    offers: offerData.offers || [],
-    coupons: couponData.coupons || [],
-    referralLinks: referralData.referral_links || [],
-    touchpoints: touchpointData.touchpoints || [],
+    campaigns: arrayField(campaignData.campaigns)
+      .map(toProductAdminMarketingCampaign)
+      .filter((campaign) => campaign.id),
+    offers: arrayField(offerData.offers)
+      .map(toProductAdminMarketingOffer)
+      .filter((offer) => offer.id),
+    coupons: arrayField(couponData.coupons)
+      .map(toProductAdminMarketingCoupon)
+      .filter((coupon) => coupon.id),
+    referralLinks: arrayField(referralData.referral_links)
+      .map(toProductAdminMarketingReferralLink)
+      .filter((link) => link.id),
+    touchpoints: arrayField(touchpointData.touchpoints)
+      .map(toProductAdminMarketingTouchpoint)
+      .filter((touchpoint) => touchpoint.id),
   }
 }
 
@@ -2751,6 +2825,106 @@ function toProductAdminSeoPerformance(
   }
 
   return result
+}
+
+function toProductAdminMarketingCampaign(
+  value: unknown,
+): ProductAdminMarketingCampaign {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    code: stringField(record.code),
+    name: stringField(record.name),
+    status: stringField(record.status, "unknown"),
+    startsAt: nullableStringField(record.starts_at ?? record.startsAt),
+    endsAt: nullableStringField(record.ends_at ?? record.endsAt),
+    createdAt: nullableStringField(record.created_at ?? record.createdAt),
+  }
+}
+
+function toProductAdminMarketingOffer(
+  value: unknown,
+): ProductAdminMarketingOffer {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    code: stringField(record.code),
+    name: stringField(record.name),
+    type: stringField(record.type, "unknown"),
+    status: stringField(record.status, "unknown"),
+    priority: nullableNumberField(record.priority),
+    createdAt: nullableStringField(record.created_at ?? record.createdAt),
+  }
+}
+
+function toProductAdminMarketingCoupon(
+  value: unknown,
+): ProductAdminMarketingCoupon {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    code: stringField(record.code),
+    status: stringField(record.status, "unknown"),
+    discountType: nullableStringField(
+      record.discount_type ?? record.discountType,
+    ),
+    discountValue: nullableNumberField(
+      record.discount_value ?? record.discountValue,
+    ),
+    maxRedemptions: nullableNumberField(
+      record.max_redemptions ?? record.maxRedemptions,
+    ),
+    maxRedemptionsPerEmail: nullableNumberField(
+      record.max_redemptions_per_email ?? record.maxRedemptionsPerEmail,
+    ),
+    redeemedCount: numberField(record.redeemed_count ?? record.redeemedCount),
+    expiresAt: nullableStringField(record.expires_at ?? record.expiresAt),
+    createdAt: nullableStringField(record.created_at ?? record.createdAt),
+  }
+}
+
+function toProductAdminMarketingReferralLink(
+  value: unknown,
+): ProductAdminMarketingReferralLink {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    code: stringField(record.code),
+    status: stringField(record.status, "unknown"),
+    referrerEmail: nullableStringField(
+      record.referrer_email ?? record.referrerEmail,
+    ),
+    maxUses: nullableNumberField(record.max_uses ?? record.maxUses),
+    usedCount: numberField(record.used_count ?? record.usedCount),
+    createdAt: nullableStringField(record.created_at ?? record.createdAt),
+  }
+}
+
+function toProductAdminMarketingTouchpoint(
+  value: unknown,
+): ProductAdminMarketingTouchpoint {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    eventName: stringField(record.event_name, stringField(record.eventName)),
+    paymentAttemptId: nullableStringField(
+      record.payment_attempt_id ?? record.paymentAttemptId,
+    ),
+    orderId: nullableStringField(record.order_id ?? record.orderId),
+    couponCode: nullableStringField(record.coupon_code ?? record.couponCode),
+    referralCode: nullableStringField(
+      record.referral_code ?? record.referralCode,
+    ),
+    source: nullableStringField(record.source),
+    medium: nullableStringField(record.medium),
+    campaign: nullableStringField(record.campaign),
+    createdAt: nullableStringField(record.created_at ?? record.createdAt),
+  }
 }
 
 function toProductAdminAnalyticsEvent(

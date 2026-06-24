@@ -56,6 +56,9 @@ storefront UI, and backend adapters can evolve independently.
 - AI and ops UI follows the same rule for provider readiness, AI task plugins,
   task runs, control-panel summaries, operational sections, findings, and
   human-gate metadata.
+- Marketing UI follows the same rule for campaigns, offers, coupons, referral
+  links, marketing touchpoints, redemption counters, attribution fields, and
+  route ownership.
 
 ## Rule Of Thumb
 
