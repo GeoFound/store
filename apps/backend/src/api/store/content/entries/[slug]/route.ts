@@ -1,6 +1,6 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { isPlatformPluginEnabled } from "../../../../../platform/runtime"
-import { resolveContentCoreService } from "../../../../../platform-adapters/services"
+import { resolveStorefrontContentApplication } from "../../../../../platform-adapters/content-application"
 import { localizedError } from "../../../../../utils/localized-response"
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
@@ -9,11 +9,11 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     return
   }
 
-  const content = resolveContentCoreService(req.scope)
+  const content = resolveStorefrontContentApplication(req.scope)
   const query = (req.validatedQuery || req.query) as {
     site_id?: string
   }
-  const entry = await content.retrievePublishedEntryBySlugWithAssetsSafe({
+  const entry = await content.getPublishedEntryBySlug({
     slug: String(req.params.slug),
     siteId: query.site_id,
   })

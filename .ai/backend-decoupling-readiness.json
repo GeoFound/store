@@ -32,7 +32,7 @@
   "targetArchitecture": {
     "frameworkNeutralCore": [
       "apps/backend/src/platform",
-      "future apps/backend/src/application"
+      "apps/backend/src/application"
     ],
     "medusaRuntimeBoundary": [
       "apps/backend/medusa-config.ts",
@@ -56,6 +56,11 @@
     {
       "id": "platform-core-no-medusa-imports",
       "check": "platformCoreForbiddenMatches",
+      "max": 0
+    },
+    {
+      "id": "application-core-no-medusa-imports",
+      "check": "applicationCoreForbiddenMatches",
       "max": 0
     },
     {

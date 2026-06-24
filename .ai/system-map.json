@@ -66,6 +66,28 @@
       ]
     },
     {
+      "id": "backend-application-core",
+      "kind": "application-core",
+      "path": "apps/backend/src/application",
+      "owns": [
+        "framework-neutral product use cases",
+        "backend replacement contracts",
+        "storefront content discovery use cases",
+        "storefront marketing campaign discovery use cases",
+        "storefront payment method discovery use cases",
+        "storefront product template discovery use cases"
+      ],
+      "mustNotOwn": [
+        "Medusa framework imports",
+        "module implementation imports",
+        "platform adapter imports"
+      ],
+      "verification": [
+        "pnpm ai:backend-decoupling",
+        "pnpm --dir apps/backend test:unit"
+      ]
+    },
+    {
       "id": "backend-platform-adapters",
       "kind": "adapter-layer",
       "path": "apps/backend/src/platform-adapters",
@@ -611,6 +633,8 @@
       "id": "content-to-product-discovery",
       "from": "content-core",
       "through": [
+        "backend-platform-adapters",
+        "backend-application-core",
         "storefront-ui",
         "profile-system"
       ],
@@ -625,6 +649,7 @@
       "from": "ai-operating-system",
       "through": [
         "backend-platform-core",
+        "backend-application-core",
         "backend-platform-adapters",
         "profile-system",
         "site-lifecycle-governance",

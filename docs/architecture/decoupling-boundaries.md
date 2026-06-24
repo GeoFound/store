@@ -8,6 +8,9 @@ storefront UI, and backend adapters can evolve independently.
 - `apps/backend/src/platform` defines platform contracts, events, registries,
   and runtime APIs. It must not import backend framework packages such as
   `@medusajs/*`.
+- `apps/backend/src/application` defines framework-neutral product use cases.
+  It must not import Medusa, backend modules, or platform adapters. Current
+  Medusa runtime wiring belongs in `apps/backend/src/platform-adapters`.
 - Backend-specific containers enter the platform through
   `BackendRuntimeContext`, a minimal `resolve(token)` interface.
 - Medusa modules, API routes, workflows, models, migrations, and service
@@ -85,3 +88,19 @@ store needs, not which framework currently implements it.
 - Backend replacement should proceed by strangler slices: typed admin facade,
   framework-neutral use cases, data portability, shadow backend compatibility,
   then cutover gates. A big-bang rewrite is not the target path.
+- The first framework-neutral backend use-case slice is storefront content
+  discovery in `apps/backend/src/application/content.ts`; Medusa content-core
+  remains the current repository adapter through
+  `apps/backend/src/platform-adapters/content-application.ts`.
+- Storefront public marketing campaign discovery is handled by
+  `apps/backend/src/application/marketing.ts`; Medusa marketing-engine remains
+  the current repository adapter through
+  `apps/backend/src/platform-adapters/marketing-application.ts`.
+- Storefront payment method discovery is handled by
+  `apps/backend/src/application/payment.ts`; Medusa payment-router remains the
+  current repository adapter through
+  `apps/backend/src/platform-adapters/payment-application.ts`.
+- Storefront product template discovery and localization are handled by
+  `apps/backend/src/application/product-templates.ts`; the current product
+  template registry remains the repository adapter through
+  `apps/backend/src/platform-adapters/product-templates-application.ts`.

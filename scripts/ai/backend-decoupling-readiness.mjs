@@ -161,6 +161,7 @@ function scanRepository() {
   const backendApiFiles = sourceFiles(["apps/backend/src/api"])
   const backendModuleFiles = sourceFiles(["apps/backend/src/modules"])
   const platformCoreFiles = sourceFiles(["apps/backend/src/platform"])
+  const applicationCoreFiles = sourceFiles(["apps/backend/src/application"])
   const adminBrowserFiles = sourceFiles([
     "apps/admin/src/components",
     "apps/admin/src/hooks",
@@ -216,6 +217,18 @@ function scanRepository() {
   ])
 
   const platformForbiddenMatches = platformCoreFiles.flatMap((file) => {
+    const source = readText(file)
+    const forbidden = [
+      "@medusajs/",
+      "../modules/",
+      "../../modules/",
+      "../platform-adapters/",
+      "../../platform-adapters/",
+    ].filter((text) => source.includes(text))
+
+    return forbidden.map((text) => ({ path: file, forbiddenText: text }))
+  })
+  const applicationForbiddenMatches = applicationCoreFiles.flatMap((file) => {
     const source = readText(file)
     const forbidden = [
       "@medusajs/",
@@ -289,6 +302,7 @@ function scanRepository() {
 
   return {
     platformForbiddenMatches,
+    applicationForbiddenMatches,
     adminDirectMedusaBrowserFiles,
     adminSnakeCasePropertyFiles,
     adminDirectAdminApiUiFiles,
@@ -371,6 +385,18 @@ export function createBackendDecouplingReadinessReport() {
       "Platform core must stay framework-neutral and must not import Medusa, backend modules, or platform adapters.",
     details: {
       samples: sample(scan.platformForbiddenMatches),
+    },
+  })
+  addHardCheck({
+    checks,
+    issues,
+    id: "application-core-no-medusa-or-adapter-coupling",
+    value: scan.applicationForbiddenMatches.length,
+    max: 0,
+    message:
+      "Application use cases must stay framework-neutral and must not import Medusa, backend modules, or platform adapters.",
+    details: {
+      samples: sample(scan.applicationForbiddenMatches),
     },
   })
   addHardCheck({
@@ -616,6 +642,7 @@ export function createBackendDecouplingReadinessReport() {
       checks: checks.length,
       failedChecks: failedCheckCount,
       acceptedDebtChecks: acceptedDebtCount,
+      applicationForbiddenMatches: scan.applicationForbiddenMatches.length,
       backendMedusaImportFiles: scan.backendMedusaImportFiles.length,
       backendMedusaRequestResponseFiles: scan.backendMedusaRequestResponseFiles.length,
       backendMedusaOrmFiles: scan.backendMedusaOrmFiles.length,
