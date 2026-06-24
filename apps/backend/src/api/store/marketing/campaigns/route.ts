@@ -1,6 +1,6 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
 import { isPlatformPluginEnabled } from "../../../../platform/runtime"
-import { resolveMarketingEngineService } from "../../../../platform-adapters/services"
+import { resolveStorefrontMarketingApplication } from "../../../../platform-adapters/marketing-application"
 import { localizedError } from "../../../../utils/localized-response"
 
 export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
@@ -9,31 +9,13 @@ export const GET = async (req: MedusaRequest, res: MedusaResponse) => {
     return
   }
 
-  const marketing = resolveMarketingEngineService(req.scope)
+  const marketing = resolveStorefrontMarketingApplication(req.scope)
   const query = (req.validatedQuery || req.query) as {
-    limit?: number
+    limit?: number | string
   }
-  const now = Date.now()
-
-  const campaigns = await marketing.listCampaignsSafe({
-    status: "active",
-    limit:
-      typeof query.limit === "number" && Number.isFinite(query.limit)
-        ? query.limit
-        : 50,
+  const campaigns = await marketing.listPublicCampaigns({
+    limit: query.limit,
   })
 
-  res.json({
-    campaigns: campaigns.filter((campaign) => {
-      if (campaign.starts_at && new Date(campaign.starts_at).getTime() > now) {
-        return false
-      }
-
-      if (campaign.ends_at && new Date(campaign.ends_at).getTime() <= now) {
-        return false
-      }
-
-      return true
-    }),
-  })
+  res.json({ campaigns })
 }

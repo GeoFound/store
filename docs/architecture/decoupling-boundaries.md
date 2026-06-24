@@ -92,3 +92,7 @@ store needs, not which framework currently implements it.
   discovery in `apps/backend/src/application/content.ts`; Medusa content-core
   remains the current repository adapter through
   `apps/backend/src/platform-adapters/content-application.ts`.
+- Storefront public marketing campaign discovery is handled by
+  `apps/backend/src/application/marketing.ts`; Medusa marketing-engine remains
+  the current repository adapter through
+  `apps/backend/src/platform-adapters/marketing-application.ts`.
