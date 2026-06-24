@@ -100,3 +100,7 @@ store needs, not which framework currently implements it.
   `apps/backend/src/application/payment.ts`; Medusa payment-router remains the
   current repository adapter through
   `apps/backend/src/platform-adapters/payment-application.ts`.
+- Storefront product template discovery and localization are handled by
+  `apps/backend/src/application/product-templates.ts`; the current product
+  template registry remains the repository adapter through
+  `apps/backend/src/platform-adapters/product-templates-application.ts`.

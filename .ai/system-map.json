@@ -74,7 +74,8 @@
         "backend replacement contracts",
         "storefront content discovery use cases",
         "storefront marketing campaign discovery use cases",
-        "storefront payment method discovery use cases"
+        "storefront payment method discovery use cases",
+        "storefront product template discovery use cases"
       ],
       "mustNotOwn": [
         "Medusa framework imports",
