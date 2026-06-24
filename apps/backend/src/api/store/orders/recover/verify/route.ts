@@ -1,15 +1,11 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import type { ILockingModule } from "@medusajs/framework/types"
-import { Modules } from "@medusajs/framework/utils"
-import { emitOrderAccessTokenIssuedEvent } from "../../../../../platform/events"
-import { createOrderAccessProviderScope } from "../../../../../platform-adapters/backend-context"
 import {
-  resolveConfiguredOrderAccessProviderCode,
-  resolveOrderAccessProviderOrThrow,
-} from "../../../../../platform-adapters/order-access"
-import { resolveGuestOrderAccessService } from "../../../../../platform-adapters/services"
+  isOrderAccessApplicationError,
+  type OrderAccessApplicationErrorCode,
+} from "../../../../../application/order-access"
+import { resolveStorefrontOrderAccessApplication } from "../../../../../platform-adapters/order-access"
+import { localizedError } from "../../../../../utils/localized-response"
 import { getRequestAuditContext } from "../../../../../utils/request-audit"
-import { retrieveStoreOrderDetail } from "../../../../../utils/store-order"
 
 type VerifyRecoveryBody = {
   order_id?: string
@@ -22,60 +18,62 @@ export const POST = async (
 ) => {
   const body = (req.validatedBody || req.body) as VerifyRecoveryBody
 
-  const orderAccessProviderCode = resolveConfiguredOrderAccessProviderCode()
-  const orderAccess = resolveOrderAccessProviderOrThrow(orderAccessProviderCode)
-
-  const guestOrderAccess = resolveGuestOrderAccessService(req.scope)
-  const locking: ILockingModule = req.scope.resolve(Modules.LOCKING)
-  const orderAccessScope = createOrderAccessProviderScope(req.scope)
+  const orderAccess = resolveStorefrontOrderAccessApplication(req.scope)
   const { ipAddress, userAgent } = getRequestAuditContext(req)
-  const order = await retrieveStoreOrderDetail(req.scope, body.order_id || "", [
-    "id",
-    "email",
-  ])
 
-  const lockKey = `order-recovery:${String(order.id)}:${String(order.email).toLowerCase()}`
-  const token = await locking.execute(
-    lockKey,
-    async () => {
-      await guestOrderAccess.verifyRecoveryCode({
-        orderId: String(order.id),
-        customerEmail: String(order.email),
-        code: body.code || "",
-      })
+  try {
+    const result = await orderAccess.verifyRecoveryCode({
+      orderId: body.order_id,
+      code: body.code,
+      audit: {
+        ipAddress,
+        userAgent,
+      },
+    })
 
-      const issued = await orderAccess.issueToken({
-        scope: orderAccessScope,
-        orderId: String(order.id),
-        customerEmail: String(order.email),
-        purpose: "view_order",
-        metadata: {
-          source: "store_order_recovery_verify",
-        },
-      })
-
-      return issued.token
-    },
-    {
-      timeout: 30,
+    res.json(result)
+  } catch (error) {
+    if (handleOrderAccessApplicationError(req, res, error)) {
+      return
     }
-  )
 
-  await emitOrderAccessTokenIssuedEvent(req.scope, {
-    orderId: String(order.id),
-    customerEmail: String(order.email),
-    purpose: "view_order",
-    source: "store_order_recovery_verify",
-    actorType: "guest",
-    ipAddress,
-    userAgent,
-    metadata: {
-      recovery_code_verified: true,
-    },
-  })
+    throw error
+  }
+}
 
-  res.json({
-    order_id: order.id,
-    access_token: token,
-  })
+function handleOrderAccessApplicationError(
+  req: MedusaRequest,
+  res: MedusaResponse,
+  error: unknown
+) {
+  if (!isOrderAccessApplicationError(error)) {
+    return false
+  }
+
+  const localized = mapOrderAccessError(error.code)
+
+  if (!localized) {
+    return false
+  }
+
+  localizedError(req, res, localized.status, localized.key)
+  return true
+}
+
+function mapOrderAccessError(code: OrderAccessApplicationErrorCode) {
+  switch (code) {
+    case "guest_unavailable":
+    case "provider_unavailable":
+      return {
+        status: 503,
+        key: "orderAccess.providerUnavailable" as const,
+      }
+    case "order_not_found":
+      return {
+        status: 404,
+        key: "orderAccess.orderNotFound" as const,
+      }
+    default:
+      return null
+  }
 }

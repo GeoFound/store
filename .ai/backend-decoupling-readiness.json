@@ -145,7 +145,7 @@
         "exit": "Product use cases move behind framework-neutral application ports; Medusa imports remain only in runtime adapters."
       },
       "backendMedusaRequestResponseFiles": {
-        "max": 80,
+        "max": 79,
         "target": 0,
         "meaning": "Backend API files that use MedusaRequest or MedusaResponse outside tests.",
         "exit": "HTTP handlers become thin Medusa adapters over framework-neutral use cases."
