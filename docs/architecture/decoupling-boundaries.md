@@ -47,6 +47,9 @@ storefront UI, and backend adapters can evolve independently.
   mappings, external provider order identifiers, and procurement records.
 - SEO UI follows the same rule for SEO documents, audit summaries, audit
   results, and Search Console performance fields.
+- Analytics and audit-log UI follows the same rule for analytics events,
+  dispatch queue records, audit actors, audited entities, risk levels, and
+  audit metadata.
 
 ## Rule Of Thumb
 

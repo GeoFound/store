@@ -372,6 +372,46 @@ export type ProductAdminSeoPerformance = {
   error?: string
 }
 
+export type ProductAdminAnalyticsEvent = {
+  id: string
+  eventName: string
+  source: string
+  status: string
+  orderId: string | null
+  paymentAttemptId: string | null
+  createdAt: string | null
+}
+
+export type ProductAdminAnalyticsDispatch = {
+  id: string
+  eventId: string
+  destinationCode: string
+  status: string
+  attemptCount: number
+  nextRetryAt: string | null
+  deliveredAt: string | null
+  errorMessage: string | null
+  createdAt: string | null
+}
+
+export type ProductAdminAuditLog = {
+  id: string
+  actorType: string
+  actorId: string | null
+  action: string
+  entityType: string
+  entityId: string | null
+  riskLevel: string
+  metadata: Record<string, unknown> | null
+  createdAt: string | null
+}
+
+export type ProductAdminAuditLogFilters = {
+  action: string
+  entityType: string
+  entityId: string
+}
+
 type CreateCatalogProductInput = {
   title: string
   handle: string
@@ -866,8 +906,33 @@ export function loadAIRuns() {
   return adminApi("/admin/ai/runs?limit=50")
 }
 
-export function loadAuditLogs(query: string) {
-  return adminApi(`/admin/audit-logs?${query}`)
+export async function loadAuditLogs(
+  filters: ProductAdminAuditLogFilters,
+): Promise<{ logs: ProductAdminAuditLog[] }> {
+  const params = new URLSearchParams({ limit: "100" })
+  const action = filters.action.trim()
+  const entityType = filters.entityType.trim()
+  const entityId = filters.entityId.trim()
+
+  if (action) {
+    params.set("action", action)
+  }
+  if (entityType) {
+    params.set("entity_type", entityType)
+  }
+  if (entityId) {
+    params.set("entity_id", entityId)
+  }
+
+  const data = await adminApi<{ audit_logs: unknown[] }>(
+    `/admin/audit-logs?${params.toString()}`,
+  )
+
+  return {
+    logs: arrayField(data.audit_logs)
+      .map(toProductAdminAuditLog)
+      .filter((log) => log.id),
+  }
 }
 
 export async function loadDeliveryWorkspace(): Promise<ProductAdminDeliveryWorkspace> {
@@ -1170,14 +1235,32 @@ export function suggestSeoDocument(input: SeoSuggestionInput) {
   })
 }
 
-export function loadAnalyticsEvents() {
-  return adminApi<{ events: unknown[] }>("/admin/analytics/events?limit=100")
+export async function loadAnalyticsEvents(): Promise<{
+  events: ProductAdminAnalyticsEvent[]
+}> {
+  const data = await adminApi<{ events: unknown[] }>(
+    "/admin/analytics/events?limit=100",
+  )
+
+  return {
+    events: arrayField(data.events)
+      .map(toProductAdminAnalyticsEvent)
+      .filter((event) => event.id),
+  }
 }
 
-export function loadAnalyticsDispatches() {
-  return adminApi<{ dispatches: unknown[] }>(
+export async function loadAnalyticsDispatches(): Promise<{
+  dispatches: ProductAdminAnalyticsDispatch[]
+}> {
+  const data = await adminApi<{ dispatches: unknown[] }>(
     "/admin/analytics/dispatches?limit=100",
   )
+
+  return {
+    dispatches: arrayField(data.dispatches)
+      .map(toProductAdminAnalyticsDispatch)
+      .filter((dispatch) => dispatch.id),
+  }
 }
 
 export function replayAnalyticsDispatch(dispatchId: string) {
@@ -2040,6 +2123,71 @@ function toProductAdminSeoPerformance(
   }
 
   return result
+}
+
+function toProductAdminAnalyticsEvent(
+  value: unknown,
+): ProductAdminAnalyticsEvent {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    eventName: stringField(record.event_name, stringField(record.eventName)),
+    source: stringField(record.source),
+    status: stringField(record.status, "unknown"),
+    orderId: nullableStringField(record.order_id ?? record.orderId),
+    paymentAttemptId: nullableStringField(
+      record.payment_attempt_id ?? record.paymentAttemptId,
+    ),
+    createdAt: nullableStringField(record.created_at ?? record.createdAt),
+  }
+}
+
+function toProductAdminAnalyticsDispatch(
+  value: unknown,
+): ProductAdminAnalyticsDispatch {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    eventId: stringField(record.event_id, stringField(record.eventId)),
+    destinationCode: stringField(
+      record.destination_code,
+      stringField(record.destinationCode),
+    ),
+    status: stringField(record.status, "unknown"),
+    attemptCount: numberField(record.attempt_count ?? record.attemptCount),
+    nextRetryAt: nullableStringField(record.next_retry_at ?? record.nextRetryAt),
+    deliveredAt: nullableStringField(record.delivered_at ?? record.deliveredAt),
+    errorMessage: nullableStringField(
+      record.error_message ?? record.errorMessage,
+    ),
+    createdAt: nullableStringField(record.created_at ?? record.createdAt),
+  }
+}
+
+function toProductAdminAuditLog(value: unknown): ProductAdminAuditLog {
+  const record = recordField(value)
+  const metadata = record.metadata_json ?? record.metadata
+  const metadataRecord =
+    metadata && typeof metadata === "object" && !Array.isArray(metadata)
+      ? (metadata as Record<string, unknown>)
+      : null
+
+  return {
+    id: stringField(record.id),
+    actorType: stringField(record.actor_type, stringField(record.actorType)),
+    actorId: nullableStringField(record.actor_id ?? record.actorId),
+    action: stringField(record.action),
+    entityType: stringField(record.entity_type, stringField(record.entityType)),
+    entityId: nullableStringField(record.entity_id ?? record.entityId),
+    riskLevel: stringField(
+      record.risk_level,
+      stringField(record.riskLevel, "unknown"),
+    ),
+    metadata: metadataRecord,
+    createdAt: nullableStringField(record.created_at ?? record.createdAt),
+  }
 }
 
 function recordField(value: unknown): Record<string, unknown> {

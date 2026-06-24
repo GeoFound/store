@@ -4,6 +4,9 @@ import {
   createCustomer,
   importCredentialBatch,
   loadAfterSales,
+  loadAnalyticsDispatches,
+  loadAnalyticsEvents,
+  loadAuditLogs,
   loadCustomers,
   loadCredentialInventory,
   loadDeliveryWorkspace,
@@ -14,6 +17,7 @@ import {
   loadSeoPerformance,
   loadSeoWorkspace,
   loadSupplierWorkspace,
+  replayAnalyticsDispatch,
   retrieveOrder,
   saveSupplierMapping,
   suggestSeoDocument,
@@ -976,6 +980,129 @@ describe("product admin facade", () => {
         language: "en",
         provider_code: "openai",
         model: "gpt-5.1",
+      },
+    })
+  })
+
+  it("maps analytics events and dispatches to product-admin DTOs", async () => {
+    adminApiMock.mockImplementation(async (path: string) => {
+      if (path === "/admin/analytics/events?limit=100") {
+        return {
+          events: [
+            {
+              id: "event_1",
+              event_name: "checkout.completed",
+              source: "storefront",
+              status: "ready",
+              order_id: "order_1",
+              payment_attempt_id: "payatt_1",
+              created_at: "2026-06-10T00:00:00.000Z",
+            },
+          ],
+        }
+      }
+
+      if (path === "/admin/analytics/dispatches?limit=100") {
+        return {
+          dispatches: [
+            {
+              id: "dispatch_1",
+              event_id: "event_1",
+              destination_code: "ga4",
+              status: "failed",
+              attempt_count: 2,
+              next_retry_at: "2026-06-10T01:00:00.000Z",
+              delivered_at: null,
+              error_message: "Provider unavailable",
+              created_at: "2026-06-10T00:05:00.000Z",
+            },
+          ],
+        }
+      }
+
+      throw new Error(`Unexpected path: ${path}`)
+    })
+
+    const events = await loadAnalyticsEvents()
+    const dispatches = await loadAnalyticsDispatches()
+
+    expect(events.events[0]).toEqual({
+      id: "event_1",
+      eventName: "checkout.completed",
+      source: "storefront",
+      status: "ready",
+      orderId: "order_1",
+      paymentAttemptId: "payatt_1",
+      createdAt: "2026-06-10T00:00:00.000Z",
+    })
+    expect(dispatches.dispatches[0]).toEqual({
+      id: "dispatch_1",
+      eventId: "event_1",
+      destinationCode: "ga4",
+      status: "failed",
+      attemptCount: 2,
+      nextRetryAt: "2026-06-10T01:00:00.000Z",
+      deliveredAt: null,
+      errorMessage: "Provider unavailable",
+      createdAt: "2026-06-10T00:05:00.000Z",
+    })
+    expect(events.events[0]).not.toHaveProperty("event_name")
+    expect(events.events[0]).not.toHaveProperty("payment_attempt_id")
+    expect(dispatches.dispatches[0]).not.toHaveProperty("destination_code")
+    expect(dispatches.dispatches[0]).not.toHaveProperty("attempt_count")
+  })
+
+  it("maps audit logs and filters through the product-admin facade", async () => {
+    adminApiMock.mockResolvedValue({
+      audit_logs: [
+        {
+          id: "audit_1",
+          actor_type: "admin",
+          actor_id: "user_1",
+          action: "order.complete",
+          entity_type: "order",
+          entity_id: "order_1",
+          risk_level: "medium",
+          metadata_json: { source: "manual" },
+          created_at: "2026-06-11T00:00:00.000Z",
+        },
+      ],
+    })
+
+    const result = await loadAuditLogs({
+      action: "order.complete",
+      entityType: "order",
+      entityId: "order_1",
+    })
+
+    expect(adminApiMock).toHaveBeenCalledWith(
+      "/admin/audit-logs?limit=100&action=order.complete&entity_type=order&entity_id=order_1",
+    )
+    expect(result.logs[0]).toEqual({
+      id: "audit_1",
+      actorType: "admin",
+      actorId: "user_1",
+      action: "order.complete",
+      entityType: "order",
+      entityId: "order_1",
+      riskLevel: "medium",
+      metadata: { source: "manual" },
+      createdAt: "2026-06-11T00:00:00.000Z",
+    })
+    expect(result.logs[0]).not.toHaveProperty("actor_type")
+    expect(result.logs[0]).not.toHaveProperty("entity_id")
+    expect(result.logs[0]).not.toHaveProperty("metadata_json")
+  })
+
+  it("maps analytics replay from product input to the current backend body", async () => {
+    adminApiMock.mockResolvedValue({ dispatch: { id: "dispatch_1" } })
+
+    await replayAnalyticsDispatch("dispatch_1")
+
+    expect(adminApiMock).toHaveBeenCalledWith("/admin/analytics/dispatches", {
+      method: "POST",
+      body: {
+        dispatch_id: "dispatch_1",
       },
     })
   })

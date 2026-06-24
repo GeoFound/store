@@ -94,6 +94,11 @@
       "max": 0
     },
     {
+      "id": "admin-observability-domain-uses-product-dtos",
+      "check": "adminObservabilityDtoLeakFiles",
+      "max": 0
+    },
+    {
       "id": "storefront-no-fetch-outside-approved-adapters",
       "check": "storefrontFetchViolations",
       "max": 0

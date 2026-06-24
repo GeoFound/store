@@ -1,23 +1,11 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { useMemo, useState, type FormEvent } from "react"
+import { useState, type FormEvent } from "react"
 import { formatDate } from "@/lib/format"
 import { loadAuditLogs } from "@/lib/product-admin-api"
 import { Message, PageHeader, Panel, TableShell } from "./admin-page"
 import { StatusBadge } from "./status-badge"
-
-type AuditLog = {
-  id: string
-  actor_type: string
-  actor_id?: string | null
-  action: string
-  entity_type: string
-  entity_id?: string | null
-  risk_level: string
-  metadata_json?: Record<string, unknown> | null
-  created_at?: string
-}
 
 export function AuditLogsView() {
   const [filters, setFilters] = useState({
@@ -26,26 +14,11 @@ export function AuditLogsView() {
     entityId: "",
   })
   const [appliedFilters, setAppliedFilters] = useState(filters)
-  const query = useMemo(() => {
-    const params = new URLSearchParams({ limit: "100" })
-
-    if (appliedFilters.action) {
-      params.set("action", appliedFilters.action)
-    }
-    if (appliedFilters.entityType) {
-      params.set("entity_type", appliedFilters.entityType)
-    }
-    if (appliedFilters.entityId) {
-      params.set("entity_id", appliedFilters.entityId)
-    }
-
-    return params.toString()
-  }, [appliedFilters])
   const logsQuery = useQuery({
-    queryKey: ["audit-logs", query],
-    queryFn: () => loadAuditLogs(query) as Promise<{ audit_logs: AuditLog[] }>,
+    queryKey: ["audit-logs", appliedFilters],
+    queryFn: () => loadAuditLogs(appliedFilters),
   })
-  const logs = logsQuery.data?.audit_logs || []
+  const logs = logsQuery.data?.logs || []
 
   function apply(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -56,7 +29,7 @@ export function AuditLogsView() {
     <main className="px-5 py-5">
       <PageHeader
         title="审计日志"
-        description="迁移后的只读审计视图，通过 Next BFF 读取 Medusa /admin/audit-logs。"
+        description="迁移后的只读审计视图，通过同源 BFF 读取产品审计日志。"
         action={
           <button
             type="button"
@@ -90,7 +63,7 @@ export function AuditLogsView() {
                   entityType: event.target.value,
                 }))
               }
-              placeholder="entity_type"
+              placeholder="实体类型"
               className="h-10 border border-[var(--border)] bg-white px-3 text-sm outline-none focus:border-[var(--accent)]"
             />
             <input
@@ -101,7 +74,7 @@ export function AuditLogsView() {
                   entityId: event.target.value,
                 }))
               }
-              placeholder="entity_id"
+              placeholder="实体 ID"
               className="h-10 border border-[var(--border)] bg-white px-3 text-sm outline-none focus:border-[var(--accent)]"
             />
           </div>
@@ -149,28 +122,28 @@ export function AuditLogsView() {
                 {logs.map((log) => (
                   <tr key={log.id} className="align-top">
                     <td className="border-b border-[var(--border)] py-3 pr-4 whitespace-nowrap">
-                      {formatDate(log.created_at)}
+                      {formatDate(log.createdAt)}
                     </td>
                     <td className="border-b border-[var(--border)] py-3 pr-4 font-medium">
                       {log.action}
                     </td>
                     <td className="border-b border-[var(--border)] py-3 pr-4">
-                      <StatusBadge value={log.risk_level} />
+                      <StatusBadge value={log.riskLevel} />
                     </td>
                     <td className="border-b border-[var(--border)] py-3 pr-4">
-                      <span className="font-mono text-xs">{log.actor_type}</span>
-                      {log.actor_id ? (
+                      <span className="font-mono text-xs">{log.actorType}</span>
+                      {log.actorId ? (
                         <span className="ml-1 font-mono text-xs text-[var(--muted)]">
-                          {log.actor_id}
+                          {log.actorId}
                         </span>
                       ) : null}
                     </td>
                     <td className="border-b border-[var(--border)] py-3 pr-4 font-mono text-xs">
-                      {log.entity_type}:{log.entity_id || "-"}
+                      {log.entityType}:{log.entityId || "-"}
                     </td>
                     <td className="max-w-[28rem] border-b border-[var(--border)] py-3">
                       <p className="truncate font-mono text-xs text-[var(--muted)]">
-                        {log.metadata_json ? JSON.stringify(log.metadata_json) : "-"}
+                        {log.metadata ? JSON.stringify(log.metadata) : "-"}
                       </p>
                     </td>
                   </tr>
