@@ -11,7 +11,7 @@ import { Message, MetricCard, PageHeader, Panel, TableShell } from "./admin-page
 import { SecondaryButton } from "./admin-controls"
 import { StatusBadge } from "./status-badge"
 
-type ReadinessState = "ready" | "needs_stock" | "external" | "manual" | "unknown"
+type ReadinessState = "ready" | "needsStock" | "external" | "manual" | "unknown"
 
 export function ProductPublishingView() {
   const publishingQuery = useQuery({
@@ -33,7 +33,7 @@ export function ProductPublishingView() {
         {
           external: 0,
           manual: 0,
-          needs_stock: 0,
+          needsStock: 0,
           ready: 0,
           total: 0,
           unknown: 0,
@@ -68,7 +68,7 @@ export function ProductPublishingView() {
       <section className="mb-4 grid gap-3 md:grid-cols-4">
         <MetricCard label="变体总数" value={summary.total} detail="variants" />
         <MetricCard label="就绪" value={summary.ready} detail="ready" />
-        <MetricCard label="待补货" value={summary.needs_stock} detail="needs stock" />
+        <MetricCard label="待补货" value={summary.needsStock} detail="needs stock" />
         <MetricCard
           label="外部 / 其它"
           value={summary.external + summary.manual + summary.unknown}
@@ -179,7 +179,7 @@ function LinkButton({ href, children }: { href: string; children: ReactNode }) {
 
 function readinessState(variant: ProductAdminCatalogVariant): ReadinessState {
   if (variant.credentialInventorySupported) {
-    return (variant.availableCount || 0) > 0 ? "ready" : "needs_stock"
+    return (variant.availableCount || 0) > 0 ? "ready" : "needsStock"
   }
 
   if (variant.deliveryHandlerCode === "supplier-procurement") {

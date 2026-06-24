@@ -1,5 +1,5 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "createdAt": "2026-06-23",
   "objective": "Keep Medusa as the current production-grade backend runtime while making future backend replacement or rewrite objectively possible through stable product contracts, bounded adapters, and migration gates.",
   "currentBackend": {
@@ -122,6 +122,11 @@
       "id": "storefront-no-fetch-outside-approved-adapters",
       "check": "storefrontFetchViolations",
       "max": 0
+    },
+    {
+      "id": "admin-components-no-snake-case-property-reads",
+      "check": "adminSnakeCasePropertyFiles",
+      "max": 0
     }
   ],
   "baselines": {
@@ -153,10 +158,10 @@
         "exit": "Admin UI consumes typed product-admin operations instead of Medusa route strings."
       },
       "storefrontMedusaEnvFiles": {
-        "max": 3,
-        "target": 1,
-        "meaning": "Storefront files that reference Medusa env names or Medusa backend URL symbols.",
-        "exit": "Only the Medusa adapter references Medusa-specific storefront env names."
+        "max": 2,
+        "target": 2,
+        "meaning": "Storefront files that reference Medusa env names or Medusa backend URL symbols. Confined to the commerce adapter and the approved server health probe.",
+        "exit": "Medusa env names remain only in the commerce adapter and the server health probe."
       }
     }
   },

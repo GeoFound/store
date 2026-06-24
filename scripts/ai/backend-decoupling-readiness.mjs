@@ -277,10 +277,20 @@ function scanRepository() {
   )
   const storefrontFetchViolations = filesMatching(storefrontFiles, /\bfetch\s*\(/)
     .filter((file) => !allowedStorefrontFetchFiles.has(file))
+  // Structural backstop: any snake_case property read (.foo_bar) in a browser
+  // admin component or hook signals a backend response shape leaking past the
+  // typed facade. Unlike the per-domain field denylists, this catches unknown
+  // fields and newly added view files automatically. The facade in src/lib is
+  // intentionally out of scope: it owns snake_case mapping.
+  const adminSnakeCasePropertyFiles = filesMatching(
+    adminBrowserFiles,
+    /\.[a-z][a-z0-9]*(?:_[a-z0-9]+)+/
+  )
 
   return {
     platformForbiddenMatches,
     adminDirectMedusaBrowserFiles,
+    adminSnakeCasePropertyFiles,
     adminDirectAdminApiUiFiles,
     adminProductDtoLeakFiles,
     adminOrderCustomerDtoLeakFiles,
@@ -517,6 +527,18 @@ export function createBackendDecouplingReadinessReport() {
       files: sample(scan.storefrontFetchViolations),
     },
   })
+  addHardCheck({
+    checks,
+    issues,
+    id: "admin-components-no-snake-case-property-reads",
+    value: scan.adminSnakeCasePropertyFiles.length,
+    max: 0,
+    message:
+      "Browser admin components and hooks must not read snake_case properties off backend records; consume camelCase product-admin DTOs from the facade instead. This catches any field and any new view file, not only the per-domain baseline.",
+    details: {
+      files: sample(scan.adminSnakeCasePropertyFiles),
+    },
+  })
   addBudgetCheck({
     checks,
     issues,
@@ -608,6 +630,7 @@ export function createBackendDecouplingReadinessReport() {
       adminAiOpsDtoLeakFiles: scan.adminAiOpsDtoLeakFiles.length,
       adminMarketingDtoLeakFiles: scan.adminMarketingDtoLeakFiles.length,
       adminContentDtoLeakFiles: scan.adminContentDtoLeakFiles.length,
+      adminSnakeCasePropertyFiles: scan.adminSnakeCasePropertyFiles.length,
       storefrontMedusaEnvFiles: scan.storefrontMedusaEnvFiles.length,
     },
     checks,

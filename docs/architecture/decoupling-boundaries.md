@@ -77,6 +77,11 @@ store needs, not which framework currently implements it.
   browser admin direct coupling, and storefront raw fetch drift. It also fails
   if baselined Medusa runtime coupling grows before a neutral facade or
   application port replaces it.
+- Beyond the per-domain field denylists, a structural rule fails the gate if any
+  browser admin component or hook reads a `snake_case` property off a record.
+  This catches unknown backend fields and newly added view files automatically,
+  not just the enumerated baseline. The facade in `apps/admin/src/lib` is the
+  only place allowed to map `snake_case` backend shapes to camelCase DTOs.
 - Backend replacement should proceed by strangler slices: typed admin facade,
   framework-neutral use cases, data portability, shadow backend compatibility,
   then cutover gates. A big-bang rewrite is not the target path.
