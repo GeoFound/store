@@ -1,96 +1,31 @@
 "use client"
 
 import { useQuery } from "@tanstack/react-query"
-import { adminApi } from "@/lib/admin-api"
 import { formatDate } from "@/lib/format"
+import {
+  loadAIPolicy,
+  loadAIProviders,
+  loadAIRuns,
+} from "@/lib/product-admin-api"
 import { MetricCard, Message, PageHeader, Panel, TableShell } from "./admin-page"
 import { StatusBadge } from "./status-badge"
-
-type AIProviderConfig = {
-  code: string
-  label: string
-  provider_kind: string
-  protocol: string
-  base_url: string | null
-  default_model: string | null
-  capabilities: string[]
-  api_key_env: string | null
-  api_key_configured: boolean
-  requires_api_key: boolean
-  enabled: boolean
-  status: string
-  issues: string[]
-}
-
-type AITaskPlugin = {
-  code: string
-  task_type: string
-  title: string
-  required_capabilities: string[]
-  requires_human_review: boolean
-  runnable: boolean
-}
-
-type AITaskRun = {
-  id: string
-  task_type: string
-  plugin_code: string
-  provider_code: string | null
-  site_id: string | null
-  status: string
-  input_summary: string | null
-  output_summary: string | null
-  error_message: string | null
-  created_at: string | null
-}
-
-type AIProvidersResponse = {
-  enabled: boolean
-  default_provider_code: string | null
-  providers: AIProviderConfig[]
-  task_plugins: AITaskPlugin[]
-  task_runs: AITaskRun[]
-  issues: string[]
-  summary: {
-    provider_count: number
-    configured_provider_count: number
-    attention_provider_count: number
-    review_run_count: number
-  }
-}
-
-type AIPolicy = {
-  version: string
-  purpose: string
-  admissionCriteria: Array<{
-    id: string
-    title: string
-    description: string
-  }>
-  requiredSurface: Array<{
-    id: string
-    title: string
-    description: string
-  }>
-}
 
 export function AIView() {
   const providersQuery = useQuery({
     queryKey: ["ai-providers"],
-    queryFn: () => adminApi<AIProvidersResponse>("/admin/ai/providers"),
+    queryFn: loadAIProviders,
   })
   const policyQuery = useQuery({
     queryKey: ["ai-policy"],
-    queryFn: () =>
-      adminApi<{ policy: AIPolicy }>("/admin/ai/control-panel-policy"),
+    queryFn: loadAIPolicy,
   })
   const runsQuery = useQuery({
     queryKey: ["ai-runs"],
-    queryFn: () => adminApi<{ runs: AITaskRun[] }>("/admin/ai/runs?limit=50"),
+    queryFn: loadAIRuns,
   })
   const state = providersQuery.data
   const policy = policyQuery.data?.policy
-  const taskRuns = runsQuery.data?.runs || state?.task_runs || []
+  const taskRuns = runsQuery.data?.runs || state?.taskRuns || []
 
   return (
     <main className="px-5 py-5">
@@ -127,16 +62,16 @@ export function AIView() {
         <MetricCard
           label="运行时"
           value={state?.enabled ? "启用" : "禁用"}
-          detail={state?.default_provider_code || "无默认 provider"}
+          detail={state?.defaultProviderCode || "无默认 provider"}
         />
         <MetricCard
           label="Provider"
-          value={state?.summary.provider_count || 0}
-          detail={`${state?.summary.configured_provider_count || 0} 已配置`}
+          value={state?.summary.providerCount || 0}
+          detail={`${state?.summary.configuredProviderCount || 0} 已配置`}
         />
         <MetricCard
           label="需关注"
-          value={state?.summary.attention_provider_count || 0}
+          value={state?.summary.attentionProviderCount || 0}
           detail="provider issue"
         />
         <MetricCard
@@ -144,7 +79,7 @@ export function AIView() {
           value={
             taskRuns.filter((run) =>
               ["requires_review", "pending_review"].includes(run.status),
-            ).length || state?.summary.review_run_count || 0
+            ).length || state?.summary.reviewRunCount || 0
           }
           detail={`${taskRuns.length} recent runs`}
         />
@@ -169,18 +104,18 @@ export function AIView() {
                   <td className="border-b border-[var(--border)] py-3 pr-4">
                     <p className="font-medium">{provider.label}</p>
                     <p className="font-mono text-xs text-[var(--muted)]">{provider.code}</p>
-                    <p className="text-xs text-[var(--muted)]">{provider.provider_kind}</p>
+                    <p className="text-xs text-[var(--muted)]">{provider.providerKind}</p>
                   </td>
                   <td className="border-b border-[var(--border)] py-3 pr-4 font-mono text-xs">
                     {provider.protocol}
                   </td>
                   <td className="border-b border-[var(--border)] py-3 pr-4 font-mono text-xs">
-                    {provider.default_model || "-"}
+                    {provider.defaultModel || "-"}
                   </td>
                   <td className="border-b border-[var(--border)] py-3 pr-4">
-                    {provider.requires_api_key ? (
+                    {provider.requiresApiKey ? (
                       <StatusBadge
-                        value={provider.api_key_configured ? "configured" : "missing"}
+                        value={provider.apiKeyConfigured ? "configured" : "missing"}
                       />
                     ) : (
                       <span className="text-sm text-[var(--muted)]">不需要</span>
@@ -204,7 +139,7 @@ export function AIView() {
       <div className="mt-4 grid gap-4 xl:grid-cols-2">
         <Panel title="任务插件">
           <div className="grid gap-2">
-            {(state?.task_plugins || []).map((plugin) => (
+            {(state?.taskPlugins || []).map((plugin) => (
               <div
                 key={plugin.code}
                 className="rounded-[8px] border border-[var(--border)] p-3"
@@ -213,17 +148,17 @@ export function AIView() {
                   <div>
                     <p className="font-medium">{plugin.title}</p>
                     <p className="font-mono text-xs text-[var(--muted)]">
-                      {plugin.code} / {plugin.task_type}
+                      {plugin.code} / {plugin.taskType}
                     </p>
                   </div>
                   <StatusBadge value={plugin.runnable ? "active" : "disabled"} />
                 </div>
                 <p className="mt-2 text-xs text-[var(--muted)]">
-                  {plugin.required_capabilities.join(", ") || "无能力要求"}
+                  {plugin.requiredCapabilities.join(", ") || "无能力要求"}
                 </p>
               </div>
             ))}
-            {!providersQuery.isLoading && !state?.task_plugins.length ? (
+            {!providersQuery.isLoading && !state?.taskPlugins.length ? (
               <Message tone="info">暂无任务插件</Message>
             ) : null}
           </div>
@@ -236,17 +171,17 @@ export function AIView() {
               <div key={run.id} className="rounded-[8px] border border-[var(--border)] p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="truncate font-medium">{run.task_type}</p>
+                    <p className="truncate font-medium">{run.taskType}</p>
                     <p className="font-mono text-xs text-[var(--muted)]">{run.id}</p>
                   </div>
                   <StatusBadge value={run.status} />
                 </div>
                 <p className="mt-2 text-xs text-[var(--muted)]">
-                  {run.provider_code || "-"} / {formatDate(run.created_at)}
+                  {run.providerCode || "-"} / {formatDate(run.createdAt)}
                 </p>
-                {run.error_message ? (
+                {run.errorMessage ? (
                   <p className="mt-1 truncate text-xs text-[var(--danger)]">
-                    {run.error_message}
+                    {run.errorMessage}
                   </p>
                 ) : null}
               </div>

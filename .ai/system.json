@@ -109,6 +109,7 @@
       ".ai/taskbook.json",
       ".ai/evidence-policy.json",
       ".ai/obligations-policy.json",
+      ".ai/backend-decoupling-readiness.json",
       ".ai/architecture-rules.json",
       ".ai/architecture-baseline.json",
       ".ai/config-surface.json",
@@ -123,13 +124,14 @@
       "docs/ops/production-runbook.md",
       "docs/ops/site-lifecycle.md"
     ],
-    "runFirst": ["pnpm ai:context", "pnpm ai:doctor", "pnpm ai:architecture", "pnpm ai:inventory", "pnpm ai:obligations", "pnpm ai:config", "pnpm ai:production"],
+    "runFirst": ["pnpm ai:context", "pnpm ai:doctor", "pnpm ai:backend-decoupling", "pnpm ai:architecture", "pnpm ai:inventory", "pnpm ai:obligations", "pnpm ai:config", "pnpm ai:production"],
     "runBeforeCommit": ["pnpm check:ci"],
     "runBeforeProduction": ["pnpm ai:evidence:full"]
   },
   "automation": {
     "requiredPackageScripts": [
       "ai:context",
+      "ai:backend-decoupling",
       "ai:architecture",
       "ai:config",
       "ai:inventory",

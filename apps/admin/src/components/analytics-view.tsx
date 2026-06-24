@@ -1,49 +1,25 @@
 "use client"
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { adminApi } from "@/lib/admin-api"
 import { formatDate } from "@/lib/format"
+import {
+  loadAnalyticsDispatches,
+  loadAnalyticsEvents,
+  replayAnalyticsDispatch,
+} from "@/lib/product-admin-api"
 import { MetricCard, Message, PageHeader, Panel, TableShell } from "./admin-page"
 import { SecondaryButton } from "./admin-controls"
 import { StatusBadge } from "./status-badge"
-
-type AnalyticsEvent = {
-  id: string
-  event_name: string
-  source: string
-  status: string
-  order_id?: string | null
-  payment_attempt_id?: string | null
-  created_at?: string
-}
-
-type AnalyticsDispatch = {
-  id: string
-  event_id: string
-  destination_code: string
-  status: string
-  attempt_count: number
-  next_retry_at?: string | null
-  delivered_at?: string | null
-  error_message?: string | null
-  created_at?: string
-}
 
 export function AnalyticsView() {
   const queryClient = useQueryClient()
   const eventsQuery = useQuery({
     queryKey: ["analytics-events"],
-    queryFn: () =>
-      adminApi<{ events: AnalyticsEvent[] }>(
-        "/admin/analytics/events?limit=100",
-      ),
+    queryFn: loadAnalyticsEvents,
   })
   const dispatchesQuery = useQuery({
     queryKey: ["analytics-dispatches"],
-    queryFn: () =>
-      adminApi<{ dispatches: AnalyticsDispatch[] }>(
-        "/admin/analytics/dispatches?limit=100",
-      ),
+    queryFn: loadAnalyticsDispatches,
   })
   const events = eventsQuery.data?.events || []
   const dispatches = dispatchesQuery.data?.dispatches || []
@@ -51,11 +27,7 @@ export function AnalyticsView() {
     ["failed", "dead"].includes(item.status),
   )
   const replayDispatch = useMutation({
-    mutationFn: (dispatchId: string) =>
-      adminApi("/admin/analytics/dispatches", {
-        method: "POST",
-        body: { dispatch_id: dispatchId },
-      }),
+    mutationFn: (dispatchId: string) => replayAnalyticsDispatch(dispatchId),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: ["analytics-dispatches"] }),
   })
@@ -105,7 +77,7 @@ export function AnalyticsView() {
                 {events.map((event) => (
                   <tr key={event.id} className="align-top">
                     <td className="border-b border-[var(--border)] py-3 pr-4">
-                      <p className="font-medium">{event.event_name}</p>
+                      <p className="font-medium">{event.eventName}</p>
                       <p className="font-mono text-xs text-[var(--muted)]">{event.id}</p>
                     </td>
                     <td className="border-b border-[var(--border)] py-3 pr-4">
@@ -115,7 +87,7 @@ export function AnalyticsView() {
                       {event.source}
                     </td>
                     <td className="border-b border-[var(--border)] py-3">
-                      {formatDate(event.created_at)}
+                      {formatDate(event.createdAt)}
                     </td>
                   </tr>
                 ))}
@@ -150,18 +122,18 @@ export function AnalyticsView() {
                 {dispatches.map((dispatch) => (
                   <tr key={dispatch.id} className="align-top">
                     <td className="border-b border-[var(--border)] py-3 pr-4">
-                      <p className="font-medium">{dispatch.destination_code}</p>
+                      <p className="font-medium">{dispatch.destinationCode}</p>
                       <p className="font-mono text-xs text-[var(--muted)]">{dispatch.id}</p>
                     </td>
                     <td className="border-b border-[var(--border)] py-3 pr-4">
                       <StatusBadge value={dispatch.status} />
                     </td>
                     <td className="border-b border-[var(--border)] py-3 pr-4">
-                      {dispatch.attempt_count}
+                      {dispatch.attemptCount}
                     </td>
                     <td className="max-w-[22rem] border-b border-[var(--border)] py-3">
                       <p className="truncate text-[var(--muted)]">
-                        {dispatch.error_message || "-"}
+                        {dispatch.errorMessage || "-"}
                       </p>
                     </td>
                     <td className="border-b border-[var(--border)] py-3">

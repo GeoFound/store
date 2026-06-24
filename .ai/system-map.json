@@ -498,6 +498,23 @@
       ]
     },
     {
+      "id": "backend-decoupling-governance",
+      "kind": "automation-system",
+      "path": ".ai/backend-decoupling-readiness.json",
+      "owns": [
+        "backend replacement readiness policy",
+        "Medusa runtime coupling budgets",
+        "platform core hard-zero coupling checks",
+        "admin and storefront backend boundary checks",
+        "backend cutover maturity gates"
+      ],
+      "verification": [
+        "pnpm ai:backend-decoupling",
+        "pnpm ai:doctor",
+        "pnpm check:ci"
+      ]
+    },
+    {
       "id": "repository-inventory-governance",
       "kind": "automation-system",
       "path": ".ai/inventory-baseline.json",
@@ -615,6 +632,7 @@
         "ops-control",
         "production-readiness-governance",
         "architecture-governance",
+        "backend-decoupling-governance",
         "repository-inventory-governance",
         "obligation-governance"
       ],
@@ -698,6 +716,14 @@
         "pnpm ai:architecture",
         ".ai/architecture-rules.json",
         ".ai/skills/store-ai-maintainer/SKILL.md"
+      ]
+    },
+    {
+      "id": "backend-replacement-readiness-must-be-machine-readable",
+      "enforcedBy": [
+        "pnpm ai:backend-decoupling",
+        ".ai/backend-decoupling-readiness.json",
+        "scripts/ai/backend-decoupling-readiness.mjs"
       ]
     },
     {

@@ -2,8 +2,12 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState, type ReactNode } from "react"
-import { adminApi } from "@/lib/admin-api"
 import { formatDate } from "@/lib/format"
+import {
+  loadSupplierWorkspace,
+  retrySupplierProcurement,
+  saveSupplierMapping,
+} from "@/lib/product-admin-api"
 import {
   Field,
   PrimaryButton,
@@ -14,57 +18,6 @@ import {
 } from "./admin-controls"
 import { Message, MetricCard, PageHeader, Panel, TableShell } from "./admin-page"
 import { StatusBadge } from "./status-badge"
-
-type SupplierProvider = {
-  code: string
-  configured: boolean
-  supports_quote: boolean
-  supports_retrieve: boolean
-  supports_catalog_sync: boolean
-}
-
-type SupplierMapping = {
-  id: string
-  product_variant_id: string
-  provider_code: string
-  provider_sku: string
-  provider_product_id?: string | null
-  region_code?: string | null
-  currency?: string | null
-  enabled: boolean
-  priority: number
-}
-
-type SupplierProcurement = {
-  id: string
-  provider_code: string
-  provider_order_id?: string | null
-  status: string
-  product_variant_id?: string | null
-  order_id?: string | null
-  payment_attempt_id?: string | null
-  error_message?: string | null
-  fulfilled_at?: string | null
-  created_at?: string | null
-}
-
-async function loadSuppliers() {
-  const [providerData, mappingData, procurementData] = await Promise.all([
-    adminApi<{ providers: SupplierProvider[] }>("/admin/suppliers/providers"),
-    adminApi<{ mappings: SupplierMapping[] }>(
-      "/admin/suppliers/mappings?limit=100",
-    ),
-    adminApi<{ procurements: SupplierProcurement[] }>(
-      "/admin/suppliers/procurements?limit=100",
-    ),
-  ])
-
-  return {
-    providers: providerData.providers || [],
-    mappings: mappingData.mappings || [],
-    procurements: procurementData.procurements || [],
-  }
-}
 
 export function SuppliersView() {
   const queryClient = useQueryClient()
@@ -82,7 +35,7 @@ export function SuppliersView() {
   })
   const suppliersQuery = useQuery({
     queryKey: ["suppliers"],
-    queryFn: loadSuppliers,
+    queryFn: loadSupplierWorkspace,
   })
   const data = suppliersQuery.data
 
@@ -96,20 +49,7 @@ export function SuppliersView() {
         throw new Error("商品变体、供应商代码和供应商 SKU 必填。")
       }
 
-      return adminApi<{ mapping: SupplierMapping }>("/admin/suppliers/mappings", {
-        method: "POST",
-        body: {
-          product_variant_id: form.productVariantId.trim(),
-          provider_code: form.providerCode.trim(),
-          provider_sku: form.providerSku.trim(),
-          provider_product_id: form.providerProductId.trim() || undefined,
-          region_code: form.regionCode.trim() || undefined,
-          currency: form.currency.trim() || undefined,
-          enabled: true,
-          priority: optionalFiniteNumber(form.priority, 100),
-          metadata: parseOptionalJson(form.metadata),
-        },
-      })
+      return saveSupplierMapping(form)
     },
     onSuccess: async (result) => {
       setMessage(`供应商映射已保存：${result.mapping.id}`)
@@ -120,10 +60,7 @@ export function SuppliersView() {
   })
 
   const retryProcurement = useMutation({
-    mutationFn: (id: string) =>
-      adminApi(`/admin/suppliers/procurements/${id}/retry`, {
-        method: "POST",
-      }),
+    mutationFn: (id: string) => retrySupplierProcurement(id),
     onSuccess: async () => {
       setMessage("采购重试已提交。")
       setError("")
@@ -193,9 +130,9 @@ export function SuppliersView() {
                 </Cell>
                 <Cell>
                   {[
-                    provider.supports_quote ? "quote" : null,
-                    provider.supports_retrieve ? "retrieve" : null,
-                    provider.supports_catalog_sync ? "catalog" : null,
+                    provider.supportsQuote ? "quote" : null,
+                    provider.supportsRetrieve ? "retrieve" : null,
+                    provider.supportsCatalogSync ? "catalog" : null,
                   ]
                     .filter(Boolean)
                     .join(" / ") || "-"}
@@ -215,7 +152,7 @@ export function SuppliersView() {
             }}
           >
             <div className="grid gap-3 md:grid-cols-2">
-              <Field label="product_variant_id">
+              <Field label="商品变体 ID">
                 <TextInput
                   value={form.productVariantId}
                   onChange={(event) =>
@@ -227,7 +164,7 @@ export function SuppliersView() {
                   placeholder="variant_..."
                 />
               </Field>
-              <Field label="provider_code">
+              <Field label="供应商代码">
                 <SelectInput
                   value={form.providerCode}
                   onChange={(event) =>
@@ -246,7 +183,7 @@ export function SuppliersView() {
                   )}
                 </SelectInput>
               </Field>
-              <Field label="provider_sku">
+              <Field label="供应商 SKU">
                 <TextInput
                   value={form.providerSku}
                   onChange={(event) =>
@@ -258,7 +195,7 @@ export function SuppliersView() {
                   placeholder="supplier sku"
                 />
               </Field>
-              <Field label="provider_product_id">
+              <Field label="供应商商品 ID">
                 <TextInput
                   value={form.providerProductId}
                   onChange={(event) =>
@@ -270,7 +207,7 @@ export function SuppliersView() {
                   placeholder="optional"
                 />
               </Field>
-              <Field label="region_code">
+              <Field label="区域代码">
                 <TextInput
                   value={form.regionCode}
                   onChange={(event) =>
@@ -316,7 +253,7 @@ export function SuppliersView() {
                     metadata: event.target.value,
                   }))
                 }
-                placeholder='{"delivery_hint":"instant"}'
+                placeholder='{"deliveryHint":"instant"}'
               />
             </Field>
             <div className="flex flex-wrap gap-2">
@@ -341,10 +278,10 @@ export function SuppliersView() {
             >
               {data?.mappings.map((mapping) => (
                 <tr key={mapping.id} className="align-top">
-                  <Cell mono>{mapping.product_variant_id}</Cell>
-                  <Cell mono>{mapping.provider_code}</Cell>
-                  <Cell mono>{mapping.provider_sku}</Cell>
-                  <Cell>{mapping.region_code || "-"}</Cell>
+                  <Cell mono>{mapping.productVariantId}</Cell>
+                  <Cell mono>{mapping.providerCode}</Cell>
+                  <Cell mono>{mapping.providerSku}</Cell>
+                  <Cell>{mapping.regionCode || "-"}</Cell>
                   <Cell>{mapping.priority}</Cell>
                   <Cell>
                     <StatusBadge value={mapping.enabled ? "active" : "disabled"} />
@@ -368,14 +305,14 @@ export function SuppliersView() {
                   <Cell>
                     <StatusBadge value={procurement.status} />
                   </Cell>
-                  <Cell mono>{procurement.provider_code}</Cell>
+                  <Cell mono>{procurement.providerCode}</Cell>
                   <Cell mono>
-                    {procurement.order_id ||
-                      procurement.payment_attempt_id ||
-                      procurement.provider_order_id ||
+                    {procurement.orderId ||
+                      procurement.paymentAttemptId ||
+                      procurement.providerOrderId ||
                       "-"}
                   </Cell>
-                  <Cell>{formatDate(procurement.created_at)}</Cell>
+                  <Cell>{formatDate(procurement.createdAt)}</Cell>
                   <Cell>
                     <SecondaryButton
                       type="button"
@@ -452,36 +389,6 @@ function Cell({
       {children}
     </td>
   )
-}
-
-function parseOptionalJson(value: string) {
-  const trimmed = value.trim()
-
-  if (!trimmed) {
-    return undefined
-  }
-
-  const parsed = JSON.parse(trimmed) as unknown
-
-  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-    throw new Error("metadata 必须是 JSON object。")
-  }
-
-  return parsed as Record<string, unknown>
-}
-
-function optionalFiniteNumber(value: string, fallback: number) {
-  if (!value.trim()) {
-    return fallback
-  }
-
-  const parsed = Number(value)
-
-  if (!Number.isFinite(parsed)) {
-    throw new Error("priority 必须是有效数字。")
-  }
-
-  return parsed
 }
 
 function errorMessage(error: unknown) {

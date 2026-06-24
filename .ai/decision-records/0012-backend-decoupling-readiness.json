@@ -1,0 +1,21 @@
+{
+  "id": "ADR-0012",
+  "status": "accepted",
+  "date": "2026-06-23",
+  "title": "Govern backend replacement readiness while continuing to use Medusa",
+  "context": "The project is still in local development and has not been deployed or operated in production. Medusa is the right current backend runtime, but later backend replacement or rewrite would become harder if product contracts, admin UI, storefront UI, workflows, and data ownership keep binding deeper to Medusa shapes without an executable boundary.",
+  "decision": "Keep Medusa as the current runtime adapter, add a backend decoupling readiness policy, and make coupling growth a machine-checked CI concern. Platform core and browser direct coupling remain hard-zero rules. Existing Medusa runtime coupling is baselined as accepted debt with no-growth budgets and explicit replacement targets. Future replacement must proceed through typed product contracts, application use cases, data portability, shadow compatibility, and cutover gates rather than a big-bang rewrite.",
+  "evidence": [
+    ".ai/backend-decoupling-readiness.json",
+    "scripts/ai/backend-decoupling-readiness.mjs",
+    "package.json:ai:backend-decoupling",
+    "pnpm ai:backend-decoupling",
+    "pnpm ai:doctor",
+    "pnpm check:ci"
+  ],
+  "consequences": [
+    "New Medusa coupling cannot silently grow beyond the local-development baseline.",
+    "Medusa remains usable as a strong commerce runtime, while product-facing replacement contracts become the long-term architecture target.",
+    "The next decoupling slice is a typed product-admin facade over the existing BFF so admin UI stops passing Medusa /admin/* route literals."
+  ]
+}

@@ -1319,6 +1319,22 @@
         "rationale": "Current repository surface registered during governance hardening; additions must declare owner and verification before CI can pass."
       },
       {
+        "path": "scripts/ai/backend-decoupling-readiness.mjs",
+        "owner": "backend-decoupling-governance",
+        "verification": [
+          "pnpm ai:inventory",
+          "pnpm ai:backend-decoupling",
+          "pnpm ai:doctor"
+        ],
+        "risk": "architecture",
+        "obligations": [
+          "keep platform core Medusa coupling at zero",
+          "keep browser direct Medusa coupling at zero",
+          "fail when Medusa runtime binding exceeds the approved local-development baseline"
+        ],
+        "rationale": "Executable backend replacement-readiness scan keeps Medusa as the current runtime adapter while preventing unbounded coupling growth."
+      },
+      {
         "path": "scripts/ai/config-surface.mjs",
         "owner": "ai-operating-system",
         "verification": [

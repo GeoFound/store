@@ -2,109 +2,19 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useState, type ReactNode } from "react"
-import { adminApi } from "@/lib/admin-api"
 import { formatDate } from "@/lib/format"
+import {
+  createMarketingCampaign,
+  createMarketingCoupon,
+  createMarketingReferral,
+  loadMarketingWorkspace,
+} from "@/lib/product-admin-api"
 import { Field, PrimaryButton, SecondaryButton, SelectInput, TextInput } from "./admin-controls"
 import { Message, MetricCard, PageHeader, Panel, TableShell } from "./admin-page"
 import { StatusBadge } from "./status-badge"
 
-type MarketingCampaign = {
-  id: string
-  code: string
-  name: string
-  status: string
-  starts_at?: string | null
-  ends_at?: string | null
-  created_at?: string
-}
-
-type MarketingOffer = {
-  id: string
-  code: string
-  name: string
-  type: string
-  status: string
-  priority?: number
-  created_at?: string
-}
-
-type MarketingCoupon = {
-  id: string
-  code: string
-  status: string
-  max_redemptions?: number | null
-  max_redemptions_per_email?: number | null
-  redeemed_count: number
-  expires_at?: string | null
-  created_at?: string
-}
-
-type MarketingReferralLink = {
-  id: string
-  code: string
-  status: string
-  max_uses?: number | null
-  used_count: number
-  referrer_email?: string | null
-  created_at?: string
-}
-
-type MarketingTouchpoint = {
-  id: string
-  event_name: string
-  payment_attempt_id?: string | null
-  order_id?: string | null
-  coupon_code?: string | null
-  referral_code?: string | null
-  source?: string | null
-  medium?: string | null
-  campaign?: string | null
-  created_at?: string
-}
-
 const CAMPAIGN_STATUSES = ["draft", "active", "paused", "archived"]
 const COUPON_STATUSES = ["active", "disabled", "expired"]
-
-async function loadMarketing() {
-  const [campaignData, offerData, couponData, referralData, touchpointData] =
-    await Promise.all([
-      adminApi<{ campaigns: MarketingCampaign[] }>(
-        "/admin/marketing/campaigns?limit=50",
-      ),
-      adminApi<{ offers: MarketingOffer[] }>("/admin/marketing/offers?limit=50"),
-      adminApi<{ coupons: MarketingCoupon[] }>(
-        "/admin/marketing/coupons?limit=50",
-      ),
-      adminApi<{ referral_links: MarketingReferralLink[] }>(
-        "/admin/marketing/referral-links?limit=50",
-      ),
-      adminApi<{ touchpoints: MarketingTouchpoint[] }>(
-        "/admin/marketing/touchpoints?limit=100",
-      ),
-    ])
-
-  return {
-    campaigns: campaignData.campaigns || [],
-    offers: offerData.offers || [],
-    coupons: couponData.coupons || [],
-    referralLinks: referralData.referral_links || [],
-    touchpoints: touchpointData.touchpoints || [],
-  }
-}
-
-function optionalNumber(value: string) {
-  if (!value.trim()) {
-    return null
-  }
-
-  const parsed = Number(value)
-
-  if (!Number.isFinite(parsed) || parsed < 0) {
-    throw new Error("请输入有效的非负数字。")
-  }
-
-  return parsed
-}
 
 export function MarketingView() {
   const queryClient = useQueryClient()
@@ -127,7 +37,7 @@ export function MarketingView() {
   })
   const marketingQuery = useQuery({
     queryKey: ["marketing"],
-    queryFn: loadMarketing,
+    queryFn: loadMarketingWorkspace,
   })
   const data = marketingQuery.data
 
@@ -137,17 +47,7 @@ export function MarketingView() {
         throw new Error("活动代码和名称必填。")
       }
 
-      return adminApi<{ campaign: MarketingCampaign }>(
-        "/admin/marketing/campaigns",
-        {
-          method: "POST",
-          body: {
-            code: campaignForm.code.trim(),
-            name: campaignForm.name.trim(),
-            status: campaignForm.status,
-          },
-        },
-      )
+      return createMarketingCampaign(campaignForm)
     },
     onSuccess: async () => {
       setCampaignForm({ code: "", name: "", status: "draft" })
@@ -164,14 +64,7 @@ export function MarketingView() {
         throw new Error("优惠码必填。")
       }
 
-      return adminApi<{ coupon: MarketingCoupon }>("/admin/marketing/coupons", {
-        method: "POST",
-        body: {
-          code: couponForm.code.trim(),
-          status: couponForm.status,
-          max_redemptions: optionalNumber(couponForm.maxRedemptions),
-        },
-      })
+      return createMarketingCoupon(couponForm)
     },
     onSuccess: async () => {
       setCouponForm({ code: "", status: "active", maxRedemptions: "" })
@@ -188,18 +81,7 @@ export function MarketingView() {
         throw new Error("推荐码必填。")
       }
 
-      return adminApi<{ referral_link: MarketingReferralLink }>(
-        "/admin/marketing/referral-links",
-        {
-          method: "POST",
-          body: {
-            code: referralForm.code.trim(),
-            referrer_email: referralForm.referrerEmail.trim() || null,
-            max_uses: optionalNumber(referralForm.maxUses),
-            status: "active",
-          },
-        },
-      )
+      return createMarketingReferral(referralForm)
     },
     onSuccess: async () => {
       setReferralForm({ code: "", referrerEmail: "", maxUses: "" })
@@ -217,7 +99,7 @@ export function MarketingView() {
     <main className="px-5 py-5">
       <PageHeader
         title="营销"
-        description="迁移后的营销控制台。创建活动、优惠码和推荐链接会通过同源 BFF 提交到 Medusa /admin/marketing/*。"
+        description="迁移后的营销控制台。创建活动、优惠码和推荐链接会通过同源 BFF 提交到产品营销接口。"
         action={
           <SecondaryButton
             type="button"
@@ -425,8 +307,8 @@ export function MarketingView() {
                 <Cell>
                   <StatusBadge value={campaign.status} />
                 </Cell>
-                <Cell>{formatDate(campaign.starts_at)}</Cell>
-                <Cell>{formatDate(campaign.ends_at)}</Cell>
+                <Cell>{formatDate(campaign.startsAt)}</Cell>
+                <Cell>{formatDate(campaign.endsAt)}</Cell>
               </tr>
             ))}
           </MarketingTable>
@@ -444,9 +326,9 @@ export function MarketingView() {
                   <Cell>
                     <StatusBadge value={coupon.status} />
                   </Cell>
-                  <Cell>{coupon.redeemed_count}</Cell>
-                  <Cell>{coupon.max_redemptions ?? "-"}</Cell>
-                  <Cell>{formatDate(coupon.expires_at)}</Cell>
+                  <Cell>{coupon.redeemedCount}</Cell>
+                  <Cell>{coupon.maxRedemptions ?? "-"}</Cell>
+                  <Cell>{formatDate(coupon.expiresAt)}</Cell>
                 </tr>
               ))}
             </MarketingTable>
@@ -465,9 +347,9 @@ export function MarketingView() {
                   <Cell>
                     <StatusBadge value={link.status} />
                   </Cell>
-                  <Cell>{link.referrer_email || "-"}</Cell>
-                  <Cell>{link.used_count}</Cell>
-                  <Cell>{link.max_uses ?? "-"}</Cell>
+                  <Cell>{link.referrerEmail || "-"}</Cell>
+                  <Cell>{link.usedCount}</Cell>
+                  <Cell>{link.maxUses ?? "-"}</Cell>
                 </tr>
               ))}
             </MarketingTable>
@@ -502,20 +384,18 @@ export function MarketingView() {
             >
               {data?.touchpoints.map((touchpoint) => (
                 <tr key={touchpoint.id} className="align-top">
-                  <Cell>{touchpoint.event_name}</Cell>
+                  <Cell>{touchpoint.eventName}</Cell>
                   <Cell mono>
-                    {touchpoint.payment_attempt_id ||
-                      touchpoint.order_id ||
-                      "-"}
+                    {touchpoint.paymentAttemptId || touchpoint.orderId || "-"}
                   </Cell>
                   <Cell>
-                    {touchpoint.coupon_code || touchpoint.referral_code || "-"}
+                    {touchpoint.couponCode || touchpoint.referralCode || "-"}
                   </Cell>
                   <Cell>
                     {touchpoint.source || "-"} / {touchpoint.medium || "-"} /{" "}
                     {touchpoint.campaign || "-"}
                   </Cell>
-                  <Cell>{formatDate(touchpoint.created_at)}</Cell>
+                  <Cell>{formatDate(touchpoint.createdAt)}</Cell>
                 </tr>
               ))}
             </MarketingTable>

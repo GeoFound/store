@@ -1,12 +1,15 @@
 import {
-  medusaBackendUrl,
-  medusaPublishableKey,
-  storefrontRegionId,
-} from "./config"
-import {
   resolveProductTemplate,
   type ProductTemplateDefinition,
 } from "./product-templates"
+
+// Medusa-specific storefront env names stay confined to this adapter so the
+// commerce port and the rest of the storefront never bind to Medusa env shapes.
+const medusaBackendUrl =
+  process.env.NEXT_PUBLIC_MEDUSA_BACKEND_URL || "http://localhost:9002"
+const medusaPublishableKey =
+  process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || ""
+const storefrontRegionId = process.env.NEXT_PUBLIC_MEDUSA_REGION_ID || ""
 import type {
   Cart,
   AfterSale,

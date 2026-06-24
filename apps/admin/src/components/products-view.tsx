@@ -3,8 +3,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import Link from "next/link"
 import { useMemo, useState } from "react"
-import { adminApi } from "@/lib/admin-api"
 import { formatDate } from "@/lib/format"
+import {
+  createCatalogProduct,
+  loadProductCatalog,
+  type ProductAdminProductVariant,
+  type ProductAdminStatus,
+  updateCatalogProductStatus,
+} from "@/lib/product-admin-api"
 import {
   Field,
   PrimaryButton,
@@ -17,66 +23,11 @@ import { Message, MetricCard, PageHeader, Panel } from "./admin-page"
 import { AdminTable, Cell, normalizeError } from "./admin-table"
 import { StatusBadge } from "./status-badge"
 
-type ProductStatus = "draft" | "proposed" | "published" | "rejected"
-
-type ProductVariant = {
-  id: string
-  title?: string | null
-  sku?: string | null
-  manage_inventory?: boolean | null
-  allow_backorder?: boolean | null
-  prices?: Array<{
-    currency_code?: string | null
-    amount?: number | null
-  }>
-}
-
-type Product = {
-  id: string
-  title: string
-  handle?: string | null
-  status?: ProductStatus | string | null
-  thumbnail?: string | null
-  variants?: ProductVariant[]
-  sales_channels?: Array<{ id: string; name: string }>
-  created_at?: string | null
-  updated_at?: string | null
-}
-
-type ProductCategory = {
-  id: string
-  name: string
-  handle?: string | null
-  is_active?: boolean | null
-}
-
-type ProductCollection = {
-  id: string
-  title: string
-  handle?: string | null
-}
-
-type ProductType = {
-  id: string
-  value: string
-}
-
-type ProductTag = {
-  id: string
-  value: string
-}
-
-type SalesChannel = {
-  id: string
-  name: string
-  is_disabled?: boolean | null
-}
-
 type ProductForm = {
   title: string
   handle: string
   description: string
-  status: ProductStatus
+  status: ProductAdminStatus
   typeId: string
   collectionId: string
   categoryId: string
@@ -106,62 +57,12 @@ const EMPTY_PRODUCT_FORM: ProductForm = {
   manageInventory: false,
 }
 
-const PRODUCT_STATUSES: ProductStatus[] = [
+const PRODUCT_STATUSES: ProductAdminStatus[] = [
   "draft",
   "proposed",
   "published",
   "rejected",
 ]
-
-async function loadProducts(query: string) {
-  const params = new URLSearchParams({
-    limit: "50",
-    fields:
-      "id,title,handle,status,thumbnail,variants.id,variants.title,variants.sku,variants.manage_inventory,variants.allow_backorder,variants.prices.*,sales_channels.id,sales_channels.name,created_at,updated_at",
-  })
-
-  if (query.trim()) {
-    params.set("q", query.trim())
-  }
-
-  const [
-    products,
-    categories,
-    collections,
-    productTypes,
-    tags,
-    salesChannels,
-  ] = await Promise.all([
-    adminApi<{ products: Product[]; count?: number }>(
-      `/admin/products?${params.toString()}`,
-    ),
-    adminApi<{ product_categories: ProductCategory[] }>(
-      "/admin/product-categories?limit=100",
-    ).catch(() => ({ product_categories: [] })),
-    adminApi<{ collections: ProductCollection[] }>(
-      "/admin/collections?limit=100",
-    ).catch(() => ({ collections: [] })),
-    adminApi<{ product_types: ProductType[] }>(
-      "/admin/product-types?limit=100",
-    ).catch(() => ({ product_types: [] })),
-    adminApi<{ product_tags: ProductTag[] }>(
-      "/admin/product-tags?limit=100",
-    ).catch(() => ({ product_tags: [] })),
-    adminApi<{ sales_channels: SalesChannel[] }>(
-      "/admin/sales-channels?limit=100",
-    ).catch(() => ({ sales_channels: [] })),
-  ])
-
-  return {
-    products: products.products || [],
-    count: products.count || products.products?.length || 0,
-    categories: categories.product_categories || [],
-    collections: collections.collections || [],
-    productTypes: productTypes.product_types || [],
-    tags: tags.product_tags || [],
-    salesChannels: salesChannels.sales_channels || [],
-  }
-}
 
 export function ProductsView() {
   const queryClient = useQueryClient()
@@ -173,7 +74,7 @@ export function ProductsView() {
 
   const productsQuery = useQuery({
     queryKey: ["products", query],
-    queryFn: () => loadProducts(query),
+    queryFn: () => loadProductCatalog(query),
   })
   const data = productsQuery.data
   const products = useMemo(() => data?.products || [], [data?.products])
@@ -194,62 +95,7 @@ export function ProductsView() {
 
   const createProduct = useMutation({
     mutationFn: () => {
-      if (!form.title.trim()) {
-        throw new Error("商品标题必填。")
-      }
-
-      const payload: Record<string, unknown> = {
-        title: form.title.trim(),
-        description: form.description.trim() || null,
-        status: form.status,
-      }
-      const handle = form.handle.trim() || slugFromTitle(form.title)
-      const amount = Number(form.amount)
-
-      if (handle) {
-        payload.handle = handle
-      }
-      if (form.typeId) {
-        payload.type_id = form.typeId
-      }
-      if (form.collectionId) {
-        payload.collection_id = form.collectionId
-      }
-      if (form.categoryId) {
-        payload.categories = [{ id: form.categoryId }]
-      }
-      if (form.tagId) {
-        payload.tags = [{ id: form.tagId }]
-      }
-      if (form.salesChannelId) {
-        payload.sales_channels = [{ id: form.salesChannelId }]
-      }
-      if (form.variantTitle.trim() || form.sku.trim() || form.amount.trim()) {
-        if (!Number.isFinite(amount) || amount <= 0) {
-          throw new Error("创建变体时价格金额必须是大于 0 的数字。")
-        }
-
-        payload.options = [{ title: "Default", values: ["Default"] }]
-        payload.variants = [
-          {
-            title: form.variantTitle.trim() || "Default",
-            sku: form.sku.trim() || null,
-            manage_inventory: form.manageInventory,
-            options: { Default: "Default" },
-            prices: [
-              {
-                currency_code: form.currencyCode.trim().toLowerCase() || "usd",
-                amount,
-              },
-            ],
-          },
-        ]
-      }
-
-      return adminApi("/admin/products", {
-        method: "POST",
-        body: payload,
-      })
+      return createCatalogProduct(form)
     },
     onSuccess: async () => {
       setMessage("商品已创建。")
@@ -261,11 +107,8 @@ export function ProductsView() {
   })
 
   const updateStatus = useMutation({
-    mutationFn: (input: { id: string; status: ProductStatus }) =>
-      adminApi(`/admin/products/${input.id}`, {
-        method: "POST",
-        body: { status: input.status },
-      }),
+    mutationFn: (input: { id: string; status: ProductAdminStatus }) =>
+      updateCatalogProductStatus(input),
     onSuccess: async () => {
       setMessage("商品状态已更新。")
       setError("")
@@ -372,7 +215,7 @@ export function ProductsView() {
                 <SelectInput
                   value={form.status}
                   onChange={(event) =>
-                    update({ status: event.target.value as ProductStatus })
+                    update({ status: event.target.value as ProductAdminStatus })
                   }
                 >
                   {PRODUCT_STATUSES.map((status) => (
@@ -535,7 +378,7 @@ export function ProductsView() {
                 </Cell>
                 <Cell>
                   <div className="grid gap-1">
-                    {(product.variants || []).slice(0, 3).map((variant) => (
+                    {product.variants.slice(0, 3).map((variant) => (
                       <div key={variant.id}>
                         <span className="font-medium">
                           {variant.title || variant.sku || variant.id}
@@ -545,18 +388,18 @@ export function ProductsView() {
                         </span>
                       </div>
                     ))}
-                    {(product.variants || []).length > 3 ? (
+                    {product.variants.length > 3 ? (
                       <span className="text-xs text-[var(--muted)]">
-                        +{(product.variants || []).length - 3} more
+                        +{product.variants.length - 3} more
                       </span>
                     ) : null}
                   </div>
                 </Cell>
                 <Cell>
-                  {(product.sales_channels || []).map((channel) => channel.name).join(", ") ||
+                  {product.salesChannels.map((channel) => channel.name).join(", ") ||
                     "-"}
                 </Cell>
-                <Cell>{formatDate(product.updated_at || product.created_at)}</Cell>
+                <Cell>{formatDate(product.updatedAt || product.createdAt)}</Cell>
                 <Cell align="right">
                   <div className="flex flex-wrap justify-end gap-2">
                     <Link
@@ -600,21 +443,12 @@ export function ProductsView() {
   )
 }
 
-function priceLabel(variant: ProductVariant) {
+function priceLabel(variant: ProductAdminProductVariant) {
   const price = variant.prices?.[0]
 
   if (!price || typeof price.amount !== "number") {
     return "无价格"
   }
 
-  return `${price.currency_code || "-"} ${price.amount}`
-}
-
-function slugFromTitle(title: string) {
-  return title
-    .trim()
-    .toLowerCase()
-    .replace(/['"]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
+  return `${price.currencyCode || "-"} ${price.amount}`
 }
