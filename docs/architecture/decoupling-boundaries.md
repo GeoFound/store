@@ -59,6 +59,9 @@ storefront UI, and backend adapters can evolve independently.
 - Marketing UI follows the same rule for campaigns, offers, coupons, referral
   links, marketing touchpoints, redemption counters, attribution fields, and
   route ownership.
+- Content UI follows the same rule for content entries, storage providers,
+  assets, audio records, AI task runs, publishing actions, upload policy
+  previews, and content review workflow fields.
 
 ## Rule Of Thumb
 

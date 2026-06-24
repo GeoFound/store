@@ -691,6 +691,78 @@ export type ProductAdminMarketingWorkspace = {
   touchpoints: ProductAdminMarketingTouchpoint[]
 }
 
+export type ProductAdminContentEntry = {
+  id: string
+  siteId: string
+  slug: string
+  title: string
+  excerpt: string | null
+  body: string | null
+  contentFormat: string
+  contentType: string
+  status: string
+  language: string | null
+  coverImageUrl: string | null
+  audioUrl: string | null
+  readingTimeMinutes: number | null
+  wordCount: number | null
+}
+
+export type ProductAdminContentStorageProvider = {
+  code: string
+  label: string
+  kind: "local" | "s3" | "r2" | "external" | string
+  bucket: string | null
+  uploadStrategy: string
+  status: string
+  issues: string[]
+}
+
+export type ProductAdminContentStorageRuntime = {
+  defaultProviderCode: string
+  providers: ProductAdminContentStorageProvider[]
+  issues: string[]
+}
+
+export type ProductAdminContentAsset = {
+  id: string
+  siteId: string
+  entryId: string | null
+  assetType: string
+  storageProvider: string
+  storageProviderCode: string | null
+  publicUrl: string | null
+  objectKey: string | null
+}
+
+export type ProductAdminContentAudio = {
+  id: string
+  entryId: string
+  status: string
+  providerCode: string | null
+  model: string | null
+  voice: string | null
+  createdAt: string | null
+}
+
+export type ProductAdminContentAiTaskRun = {
+  id: string
+  taskType: string
+  providerCode: string | null
+  providerCapability: string | null
+  status: string
+  reviewStatus: string | null
+  createdAt: string | null
+}
+
+export type ProductAdminContentWorkspace = {
+  entries: ProductAdminContentEntry[]
+  storage: ProductAdminContentStorageRuntime
+  assets: ProductAdminContentAsset[]
+  audio: ProductAdminContentAudio[]
+  tasks: ProductAdminContentAiTaskRun[]
+}
+
 type CreateCatalogProductInput = {
   title: string
   handle: string
@@ -810,23 +882,6 @@ type ContentAiTaskInput = {
   providerCode: string
   model: string
   inputSummary: string
-}
-
-type ContentEntryRecord = {
-  id: string
-  site_id: string
-  title: string
-}
-
-type ContentAssetRecord = {
-  id: string
-  site_id: string
-  entry_id?: string | null
-}
-
-type StorageProviderRecord = {
-  code: string
-  kind?: string | null
 }
 
 type DeliveryInput = {
@@ -1731,7 +1786,9 @@ export function markPaymentAttemptPaid(input: {
   })
 }
 
-export async function loadContentWorkspace(filters: ContentFilters) {
+export async function loadContentWorkspace(
+  filters: ContentFilters,
+): Promise<ProductAdminContentWorkspace> {
   const query = new URLSearchParams({ limit: "100" })
   if (filters.siteId) {
     query.set("site_id", filters.siteId)
@@ -1746,7 +1803,7 @@ export async function loadContentWorkspace(filters: ContentFilters) {
     ),
     adminApi<{
       default_provider_code: string
-      providers: StorageProviderRecord[]
+      providers: unknown[]
       issues: string[]
     }>("/admin/content/storage/providers"),
     adminApi<{ assets: unknown[] }>("/admin/content/assets?limit=25"),
@@ -1755,11 +1812,21 @@ export async function loadContentWorkspace(filters: ContentFilters) {
   ])
 
   return {
-    entries: entries.entries || [],
-    storage: storage || { default_provider_code: "local", providers: [], issues: [] },
-    assets: assets.assets || [],
-    audio: audio.audio || [],
-    tasks: tasks.tasks || [],
+    entries: arrayField(entries.entries)
+      .map(toProductAdminContentEntry)
+      .filter((entry) => entry.id),
+    storage: toProductAdminContentStorageRuntime(
+      storage || { default_provider_code: "local", providers: [], issues: [] },
+    ),
+    assets: arrayField(assets.assets)
+      .map(toProductAdminContentAsset)
+      .filter((asset) => asset.id),
+    audio: arrayField(audio.audio)
+      .map(toProductAdminContentAudio)
+      .filter((item) => item.id),
+    tasks: arrayField(tasks.tasks)
+      .map(toProductAdminContentAiTaskRun)
+      .filter((task) => task.id),
   }
 }
 
@@ -1788,7 +1855,7 @@ export function createContentEntry(input: ContentEntryInput) {
 
 export function createContentAsset(input: {
   form: ContentAssetInput
-  provider?: StorageProviderRecord | null
+  provider?: ProductAdminContentStorageProvider | null
 }) {
   return adminApi("/admin/content/assets", {
     method: "POST",
@@ -1879,13 +1946,13 @@ export async function publishContentEntrySnapshot(entry: { id: string }) {
 }
 
 export function queueContentEntryTask(input: {
-  entry: ContentEntryRecord
+  entry: ProductAdminContentEntry
   taskType: string
 }) {
   return adminApi("/admin/content/ai/tasks", {
     method: "POST",
     body: {
-      site_id: input.entry.site_id,
+      site_id: input.entry.siteId,
       entry_id: input.entry.id,
       task_type: input.taskType,
       provider_capability:
@@ -1897,19 +1964,21 @@ export function queueContentEntryTask(input: {
   })
 }
 
-export async function registerContentAudioFromAsset(asset: ContentAssetRecord) {
+export async function registerContentAudioFromAsset(
+  asset: ProductAdminContentAsset,
+) {
   await adminApi("/admin/content/audio", {
     method: "POST",
     body: {
-      site_id: asset.site_id,
-      entry_id: asset.entry_id,
+      site_id: asset.siteId,
+      entry_id: asset.entryId,
       asset_id: asset.id,
       status: "ready",
       metadata: { source: "admin_asset_registration" },
     },
   })
 
-  return adminApi(`/admin/content/entries/${asset.entry_id}`, {
+  return adminApi(`/admin/content/entries/${asset.entryId}`, {
     method: "POST",
     body: { audio_asset_id: asset.id },
   })
@@ -2825,6 +2894,130 @@ function toProductAdminSeoPerformance(
   }
 
   return result
+}
+
+function toProductAdminContentEntry(value: unknown): ProductAdminContentEntry {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    siteId: stringField(record.site_id, stringField(record.siteId)),
+    slug: stringField(record.slug),
+    title: stringField(record.title),
+    excerpt: nullableStringField(record.excerpt),
+    body: nullableStringField(record.body),
+    contentFormat: stringField(
+      record.content_format,
+      stringField(record.contentFormat, "plain_text"),
+    ),
+    contentType: stringField(
+      record.content_type,
+      stringField(record.contentType, "article"),
+    ),
+    status: stringField(record.status, "draft"),
+    language: nullableStringField(record.language),
+    coverImageUrl: nullableStringField(
+      record.cover_image_url ?? record.coverImageUrl,
+    ),
+    audioUrl: nullableStringField(record.audio_url ?? record.audioUrl),
+    readingTimeMinutes: nullableNumberField(
+      record.reading_time_minutes ?? record.readingTimeMinutes,
+    ),
+    wordCount: nullableNumberField(record.word_count ?? record.wordCount),
+  }
+}
+
+function toProductAdminContentStorageRuntime(
+  value: unknown,
+): ProductAdminContentStorageRuntime {
+  const record = recordField(value)
+
+  return {
+    defaultProviderCode: stringField(
+      record.default_provider_code,
+      stringField(record.defaultProviderCode, "local"),
+    ),
+    providers: arrayField(record.providers)
+      .map(toProductAdminContentStorageProvider)
+      .filter((provider) => provider.code),
+    issues: stringArrayField(record.issues),
+  }
+}
+
+function toProductAdminContentStorageProvider(
+  value: unknown,
+): ProductAdminContentStorageProvider {
+  const record = recordField(value)
+
+  return {
+    code: stringField(record.code),
+    label: stringField(record.label, stringField(record.code)),
+    kind: stringField(record.kind, "external"),
+    bucket: nullableStringField(record.bucket),
+    uploadStrategy: stringField(
+      record.upload_strategy,
+      stringField(record.uploadStrategy, "record_only"),
+    ),
+    status: stringField(record.status, "unknown"),
+    issues: stringArrayField(record.issues),
+  }
+}
+
+function toProductAdminContentAsset(value: unknown): ProductAdminContentAsset {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    siteId: stringField(record.site_id, stringField(record.siteId)),
+    entryId: nullableStringField(record.entry_id ?? record.entryId),
+    assetType: stringField(
+      record.asset_type,
+      stringField(record.assetType, "attachment"),
+    ),
+    storageProvider: stringField(
+      record.storage_provider,
+      stringField(record.storageProvider, "external"),
+    ),
+    storageProviderCode: nullableStringField(
+      record.storage_provider_code ?? record.storageProviderCode,
+    ),
+    publicUrl: nullableStringField(record.public_url ?? record.publicUrl),
+    objectKey: nullableStringField(record.object_key ?? record.objectKey),
+  }
+}
+
+function toProductAdminContentAudio(value: unknown): ProductAdminContentAudio {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    entryId: stringField(record.entry_id, stringField(record.entryId)),
+    status: stringField(record.status, "unknown"),
+    providerCode: nullableStringField(record.provider_code ?? record.providerCode),
+    model: nullableStringField(record.model),
+    voice: nullableStringField(record.voice),
+    createdAt: nullableStringField(record.created_at ?? record.createdAt),
+  }
+}
+
+function toProductAdminContentAiTaskRun(
+  value: unknown,
+): ProductAdminContentAiTaskRun {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    taskType: stringField(record.task_type, stringField(record.taskType)),
+    providerCode: nullableStringField(record.provider_code ?? record.providerCode),
+    providerCapability: nullableStringField(
+      record.provider_capability ?? record.providerCapability,
+    ),
+    status: stringField(record.status, "unknown"),
+    reviewStatus: nullableStringField(
+      record.review_status ?? record.reviewStatus,
+    ),
+    createdAt: nullableStringField(record.created_at ?? record.createdAt),
+  }
 }
 
 function toProductAdminMarketingCampaign(

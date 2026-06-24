@@ -205,6 +205,9 @@ function scanRepository() {
   const adminMarketingDtoUiFiles = sourceFiles([
     "apps/admin/src/components/marketing-view.tsx",
   ])
+  const adminContentDtoUiFiles = sourceFiles([
+    "apps/admin/src/components/content-view.tsx",
+  ])
   const storefrontFiles = sourceFiles(["apps/storefront/src"])
   const allowedStorefrontFetchFiles = new Set([
     "apps/storefront/src/lib/commerce-medusa.ts",
@@ -268,6 +271,10 @@ function scanRepository() {
     adminMarketingDtoUiFiles,
     /\b(starts_at|ends_at|created_at|discount_type|discount_value|max_redemptions|max_redemptions_per_email|redeemed_count|expires_at|max_uses|used_count|referrer_email|event_name|payment_attempt_id|order_id|coupon_code|referral_code)\b|Medusa\s+\/admin\/marketing/
   )
+  const adminContentDtoLeakFiles = filesMatching(
+    adminContentDtoUiFiles,
+    /\b(site_id|content_format|content_type|cover_image_url|audio_url|reading_time_minutes|word_count|upload_strategy|default_provider_code|entry_id|asset_type|storage_provider|storage_provider_code|public_url|object_key|mime_type|alt_text|provider_code|created_at|task_type|provider_capability|review_status)\b|Medusa\s+\/admin\/content|\/admin\/content/
+  )
   const storefrontFetchViolations = filesMatching(storefrontFiles, /\bfetch\s*\(/)
     .filter((file) => !allowedStorefrontFetchFiles.has(file))
 
@@ -284,6 +291,7 @@ function scanRepository() {
     adminSystemSettingsDtoLeakFiles,
     adminAiOpsDtoLeakFiles,
     adminMarketingDtoLeakFiles,
+    adminContentDtoLeakFiles,
     storefrontFetchViolations,
     backendMedusaImportFiles: filesMatching(backendFiles, /@medusajs\//),
     backendMedusaRequestResponseFiles: filesMatching(backendApiFiles, /MedusaRequest|MedusaResponse/),
@@ -489,6 +497,18 @@ export function createBackendDecouplingReadinessReport() {
   addHardCheck({
     checks,
     issues,
+    id: "admin-content-domain-uses-product-dtos",
+    value: scan.adminContentDtoLeakFiles.length,
+    max: 0,
+    message:
+      "Content admin UI must consume product-admin DTOs instead of content backend snake_case response fields or backend route literals.",
+    details: {
+      files: sample(scan.adminContentDtoLeakFiles),
+    },
+  })
+  addHardCheck({
+    checks,
+    issues,
     id: "storefront-fetch-only-in-approved-adapters",
     value: scan.storefrontFetchViolations.length,
     max: 0,
@@ -587,6 +607,7 @@ export function createBackendDecouplingReadinessReport() {
       adminSystemSettingsDtoLeakFiles: scan.adminSystemSettingsDtoLeakFiles.length,
       adminAiOpsDtoLeakFiles: scan.adminAiOpsDtoLeakFiles.length,
       adminMarketingDtoLeakFiles: scan.adminMarketingDtoLeakFiles.length,
+      adminContentDtoLeakFiles: scan.adminContentDtoLeakFiles.length,
       storefrontMedusaEnvFiles: scan.storefrontMedusaEnvFiles.length,
     },
     checks,

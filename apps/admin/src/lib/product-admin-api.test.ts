@@ -3,6 +3,10 @@ import {
   createSalesChannel,
   createDigitalDelivery,
   createCustomer,
+  createContentAiTask,
+  createContentAsset,
+  createContentEntry,
+  createContentUploadPolicy,
   createMarketingCampaign,
   createMarketingCoupon,
   createMarketingReferral,
@@ -16,6 +20,7 @@ import {
   loadAuditLogs,
   loadCustomers,
   loadCredentialInventory,
+  loadContentWorkspace,
   loadDeliveryWorkspace,
   loadMarketingWorkspace,
   loadOpsDashboard,
@@ -29,11 +34,17 @@ import {
   loadSeoWorkspace,
   loadSupplierWorkspace,
   loadSystemSettings,
+  publishContentEntrySnapshot,
+  queueContentEntryTask,
+  registerContentAudioFromAsset,
   replayAnalyticsDispatch,
   retrieveOrder,
+  runContentAiTask,
   saveSupplierMapping,
   suggestSeoDocument,
   togglePaymentChannel,
+  updateContentEntryStatus,
+  updateContentTaskReview,
   updateStoreName,
   upsertSeoDocument,
 } from "./product-admin-api"
@@ -1479,6 +1490,452 @@ describe("product admin facade", () => {
         },
       },
     })
+  })
+
+  it("maps content workspace responses to product-admin DTOs", async () => {
+    adminApiMock.mockImplementation(async (path: string) => {
+      if (path === "/admin/content/entries?limit=100&site_id=site-1&status=published") {
+        return {
+          entries: [
+            {
+              id: "entry_1",
+              site_id: "site-1",
+              slug: "buying-guide",
+              title: "Buying guide",
+              excerpt: "Short summary",
+              body: "Long body",
+              content_format: "markdown",
+              content_type: "guide",
+              status: "published",
+              language: "en",
+              cover_image_url: "https://example.com/cover.png",
+              audio_url: "https://example.com/audio.mp3",
+              reading_time_minutes: 4,
+              word_count: 900,
+            },
+          ],
+        }
+      }
+
+      if (path === "/admin/content/storage/providers") {
+        return {
+          default_provider_code: "r2-main",
+          providers: [
+            {
+              code: "r2-main",
+              label: "R2 main",
+              kind: "r2",
+              bucket: "content-assets",
+              upload_strategy: "direct",
+              status: "ready",
+              issues: ["rotate key soon"],
+            },
+          ],
+          issues: ["storage warning"],
+        }
+      }
+
+      if (path === "/admin/content/assets?limit=25") {
+        return {
+          assets: [
+            {
+              id: "asset_1",
+              site_id: "site-1",
+              entry_id: "entry_1",
+              asset_type: "audio",
+              storage_provider: "r2",
+              storage_provider_code: "r2-main",
+              public_url: "https://example.com/audio.mp3",
+              object_key: "site-1/content/audio.mp3",
+            },
+          ],
+        }
+      }
+
+      if (path === "/admin/content/audio?limit=25") {
+        return {
+          audio: [
+            {
+              id: "audio_1",
+              entry_id: "entry_1",
+              status: "ready",
+              provider_code: "openai",
+              model: "tts-1",
+              voice: "alloy",
+              created_at: "2026-06-16T00:00:00.000Z",
+            },
+          ],
+        }
+      }
+
+      if (path === "/admin/content/ai/tasks?limit=25") {
+        return {
+          tasks: [
+            {
+              id: "task_1",
+              task_type: "tts",
+              provider_code: "openai",
+              provider_capability: "speech.tts",
+              status: "queued",
+              review_status: "pending",
+              created_at: "2026-06-17T00:00:00.000Z",
+            },
+          ],
+        }
+      }
+
+      throw new Error(`Unexpected path: ${path}`)
+    })
+
+    const workspace = await loadContentWorkspace({
+      siteId: "site-1",
+      status: "published",
+    })
+
+    expect(workspace.entries[0]).toEqual({
+      id: "entry_1",
+      siteId: "site-1",
+      slug: "buying-guide",
+      title: "Buying guide",
+      excerpt: "Short summary",
+      body: "Long body",
+      contentFormat: "markdown",
+      contentType: "guide",
+      status: "published",
+      language: "en",
+      coverImageUrl: "https://example.com/cover.png",
+      audioUrl: "https://example.com/audio.mp3",
+      readingTimeMinutes: 4,
+      wordCount: 900,
+    })
+    expect(workspace.storage).toEqual({
+      defaultProviderCode: "r2-main",
+      providers: [
+        {
+          code: "r2-main",
+          label: "R2 main",
+          kind: "r2",
+          bucket: "content-assets",
+          uploadStrategy: "direct",
+          status: "ready",
+          issues: ["rotate key soon"],
+        },
+      ],
+      issues: ["storage warning"],
+    })
+    expect(workspace.assets[0]).toEqual({
+      id: "asset_1",
+      siteId: "site-1",
+      entryId: "entry_1",
+      assetType: "audio",
+      storageProvider: "r2",
+      storageProviderCode: "r2-main",
+      publicUrl: "https://example.com/audio.mp3",
+      objectKey: "site-1/content/audio.mp3",
+    })
+    expect(workspace.audio[0]).toEqual({
+      id: "audio_1",
+      entryId: "entry_1",
+      status: "ready",
+      providerCode: "openai",
+      model: "tts-1",
+      voice: "alloy",
+      createdAt: "2026-06-16T00:00:00.000Z",
+    })
+    expect(workspace.tasks[0]).toEqual({
+      id: "task_1",
+      taskType: "tts",
+      providerCode: "openai",
+      providerCapability: "speech.tts",
+      status: "queued",
+      reviewStatus: "pending",
+      createdAt: "2026-06-17T00:00:00.000Z",
+    })
+    expect(workspace.entries[0]).not.toHaveProperty("site_id")
+    expect(workspace.storage).not.toHaveProperty("default_provider_code")
+    expect(workspace.storage.providers[0]).not.toHaveProperty("upload_strategy")
+    expect(workspace.assets[0]).not.toHaveProperty("entry_id")
+    expect(workspace.audio[0]).not.toHaveProperty("provider_code")
+    expect(workspace.tasks[0]).not.toHaveProperty("task_type")
+  })
+
+  it("maps content writes from product input to current backend bodies", async () => {
+    adminApiMock.mockResolvedValue({ ok: true })
+
+    await createContentEntry({
+      siteId: "site-1",
+      title: "Buying guide",
+      slug: "",
+      excerpt: "Summary",
+      body: "Body",
+      contentFormat: "markdown",
+      contentType: "guide",
+      status: "draft",
+      authorName: "Editor",
+      coverImageUrl: "https://example.com/cover.png",
+      language: "en",
+      topic: "games",
+      tags: "gift,cards",
+      relatedProductHandles: "gift-card",
+      aiAssisted: true,
+    })
+
+    expect(adminApiMock).toHaveBeenCalledWith("/admin/content/entries", {
+      method: "POST",
+      body: {
+        site_id: "site-1",
+        title: "Buying guide",
+        slug: "buying-guide",
+        excerpt: "Summary",
+        body: "Body",
+        content_format: "markdown",
+        content_type: "guide",
+        status: "draft",
+        author_name: "Editor",
+        cover_image_url: "https://example.com/cover.png",
+        language: "en",
+        topic: "games",
+        tags: "gift,cards",
+        related_product_handles: "gift-card",
+        ai_assisted: true,
+      },
+    })
+
+    await createContentAsset({
+      form: {
+        siteId: "site-1",
+        entryId: "entry_1",
+        assetType: "audio",
+        storageProviderCode: "r2-main",
+        filename: "audio.mp3",
+        publicUrl: "https://example.com/audio.mp3",
+        objectKey: "site-1/content/audio.mp3",
+        mimeType: "audio/mpeg",
+        altText: "Audio version",
+      },
+      provider: {
+        code: "r2-main",
+        label: "R2 main",
+        kind: "r2",
+        bucket: "content-assets",
+        uploadStrategy: "direct",
+        status: "ready",
+        issues: [],
+      },
+    })
+
+    expect(adminApiMock).toHaveBeenLastCalledWith("/admin/content/assets", {
+      method: "POST",
+      body: {
+        site_id: "site-1",
+        entry_id: "entry_1",
+        asset_type: "audio",
+        storage_provider: "r2",
+        storage_provider_code: "r2-main",
+        public_url: "https://example.com/audio.mp3",
+        object_key: "site-1/content/audio.mp3",
+        mime_type: "audio/mpeg",
+        alt_text: "Audio version",
+      },
+    })
+
+    await createContentUploadPolicy({
+      siteId: "site-1",
+      entryId: "entry_1",
+      assetType: "cover_image",
+      storageProviderCode: "r2-main",
+      filename: "cover.png",
+      publicUrl: "",
+      objectKey: "",
+      mimeType: "image/png",
+      altText: "",
+    })
+
+    expect(adminApiMock).toHaveBeenLastCalledWith(
+      "/admin/content/assets/upload-policy",
+      {
+        method: "POST",
+        body: {
+          site_id: "site-1",
+          entry_id: "entry_1",
+          asset_type: "cover_image",
+          storage_provider_code: "r2-main",
+          filename: "cover.png",
+          mime_type: "image/png",
+          expires_in_seconds: 900,
+        },
+      },
+    )
+
+    await createContentAiTask({
+      siteId: "site-1",
+      entryId: "entry_1",
+      taskType: "summary",
+      providerCapability: "",
+      providerCode: "openai",
+      model: "gpt-5.1",
+      inputSummary: "Summarize article",
+    })
+
+    expect(adminApiMock).toHaveBeenLastCalledWith("/admin/content/ai/tasks", {
+      method: "POST",
+      body: {
+        site_id: "site-1",
+        entry_id: "entry_1",
+        task_type: "summary",
+        provider_code: "openai",
+        provider_capability: "text.generate",
+        model: "gpt-5.1",
+        status: "queued",
+        review_status: "pending",
+        input_summary: "Summarize article",
+      },
+    })
+
+    await runContentAiTask({
+      siteId: "site-1",
+      entryId: "entry_1",
+      taskType: "tts",
+      providerCapability: "speech.tts",
+      providerCode: "openai",
+      model: "tts-1",
+      inputSummary: "Narrate article",
+    })
+
+    expect(adminApiMock).toHaveBeenLastCalledWith("/admin/content/ai/run", {
+      method: "POST",
+      body: {
+        site_id: "site-1",
+        entry_id: "entry_1",
+        task_type: "tts",
+        provider_code: "openai",
+        model: "tts-1",
+        input_summary: "Narrate article",
+        input: { source: "admin_content_view" },
+      },
+    })
+
+    await updateContentEntryStatus({ id: "entry_1", status: "review" })
+
+    expect(adminApiMock).toHaveBeenLastCalledWith(
+      "/admin/content/entries/entry_1",
+      {
+        method: "POST",
+        body: { status: "review" },
+      },
+    )
+  })
+
+  it("maps content row actions from product DTOs to current backend bodies", async () => {
+    adminApiMock.mockImplementation(async (path: string) => {
+      if (path === "/admin/content/entries/entry_1/revisions") {
+        return { revision: { id: "revision_1" } }
+      }
+
+      return { ok: true }
+    })
+
+    await publishContentEntrySnapshot({ id: "entry_1" })
+
+    expect(adminApiMock).toHaveBeenNthCalledWith(
+      1,
+      "/admin/content/entries/entry_1/revisions",
+      {
+        method: "POST",
+        body: { status: "review", change_note: "Admin publish snapshot" },
+      },
+    )
+    expect(adminApiMock).toHaveBeenNthCalledWith(
+      2,
+      "/admin/content/revisions/revision_1/publish",
+      {
+        method: "POST",
+        body: { channel: "storefront" },
+      },
+    )
+
+    await queueContentEntryTask({
+      entry: {
+        id: "entry_1",
+        siteId: "site-1",
+        slug: "buying-guide",
+        title: "Buying guide",
+        excerpt: null,
+        body: null,
+        contentFormat: "markdown",
+        contentType: "guide",
+        status: "published",
+        language: "en",
+        coverImageUrl: null,
+        audioUrl: null,
+        readingTimeMinutes: null,
+        wordCount: null,
+      },
+      taskType: "tts",
+    })
+
+    expect(adminApiMock).toHaveBeenLastCalledWith("/admin/content/ai/tasks", {
+      method: "POST",
+      body: {
+        site_id: "site-1",
+        entry_id: "entry_1",
+        task_type: "tts",
+        provider_capability: "speech.tts",
+        status: "queued",
+        review_status: "pending",
+        input_summary: "tts: Buying guide",
+      },
+    })
+
+    await registerContentAudioFromAsset({
+      id: "asset_1",
+      siteId: "site-1",
+      entryId: "entry_1",
+      assetType: "audio",
+      storageProvider: "r2",
+      storageProviderCode: "r2-main",
+      publicUrl: "https://example.com/audio.mp3",
+      objectKey: "site-1/content/audio.mp3",
+    })
+
+    expect(adminApiMock).toHaveBeenNthCalledWith(
+      4,
+      "/admin/content/audio",
+      {
+        method: "POST",
+        body: {
+          site_id: "site-1",
+          entry_id: "entry_1",
+          asset_id: "asset_1",
+          status: "ready",
+          metadata: { source: "admin_asset_registration" },
+        },
+      },
+    )
+    expect(adminApiMock).toHaveBeenNthCalledWith(
+      5,
+      "/admin/content/entries/entry_1",
+      {
+        method: "POST",
+        body: { audio_asset_id: "asset_1" },
+      },
+    )
+
+    await updateContentTaskReview({
+      taskId: "task_1",
+      reviewStatus: "approved",
+    })
+
+    expect(adminApiMock).toHaveBeenLastCalledWith(
+      "/admin/content/ai/tasks/task_1",
+      {
+        method: "POST",
+        body: {
+          review_status: "approved",
+          output_summary: "Admin review marked approved",
+        },
+      },
+    )
   })
 
   it("maps SEO workspace responses to product-admin DTOs", async () => {

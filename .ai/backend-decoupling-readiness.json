@@ -114,6 +114,11 @@
       "max": 0
     },
     {
+      "id": "admin-content-domain-uses-product-dtos",
+      "check": "adminContentDtoLeakFiles",
+      "max": 0
+    },
+    {
       "id": "storefront-no-fetch-outside-approved-adapters",
       "check": "storefrontFetchViolations",
       "max": 0
