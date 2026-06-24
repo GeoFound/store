@@ -69,6 +69,90 @@ export type ProductCatalogWorkspace = {
   salesChannels: ProductAdminSalesChannel[]
 }
 
+export type ProductAdminSystemCurrency = {
+  currencyCode: string
+  isDefault: boolean | null
+  isTaxInclusive: boolean | null
+}
+
+export type ProductAdminSystemLocale = {
+  localeCode: string
+}
+
+export type ProductAdminSystemStore = {
+  id: string
+  name: string
+  defaultRegionId: string | null
+  defaultSalesChannelId: string | null
+  supportedCurrencies: ProductAdminSystemCurrency[]
+  supportedLocales: ProductAdminSystemLocale[]
+  updatedAt: string | null
+}
+
+export type ProductAdminSystemUser = {
+  id: string
+  email: string
+  firstName: string | null
+  lastName: string | null
+  createdAt: string | null
+}
+
+export type ProductAdminSystemCountry = {
+  iso2: string | null
+  displayName: string | null
+}
+
+export type ProductAdminSystemRegion = {
+  id: string
+  name: string
+  currencyCode: string | null
+  countries: ProductAdminSystemCountry[]
+  paymentProviderIds: string[]
+  automaticTaxes: boolean | null
+  isTaxInclusive: boolean | null
+}
+
+export type ProductAdminSystemSalesChannel = {
+  id: string
+  name: string
+  description: string | null
+  isDisabled: boolean | null
+  createdAt: string | null
+}
+
+export type ProductAdminSystemApiKey = {
+  id: string
+  title: string
+  type: string
+  redacted: string | null
+  revokedAt: string | null
+  createdAt: string | null
+}
+
+export type ProductAdminSystemFeatureFlag = {
+  key: string | null
+  name: string | null
+  enabled: boolean | null
+  value: unknown
+}
+
+export type ProductAdminSystemPlugin = {
+  name: string | null
+  version: string | null
+  resolve: string | null
+  options: unknown
+}
+
+export type ProductAdminSystemSettings = {
+  stores: ProductAdminSystemStore[]
+  users: ProductAdminSystemUser[]
+  regions: ProductAdminSystemRegion[]
+  salesChannels: ProductAdminSystemSalesChannel[]
+  apiKeys: ProductAdminSystemApiKey[]
+  featureFlags: ProductAdminSystemFeatureFlag[]
+  plugins: ProductAdminSystemPlugin[]
+}
+
 export type ProductAdminTemplate = {
   code: string
   title: string
@@ -834,7 +918,7 @@ export function createCustomer(input: CreateCustomerInput) {
   })
 }
 
-export async function loadSystemSettings() {
+export async function loadSystemSettings(): Promise<ProductAdminSystemSettings> {
   const [
     stores,
     users,
@@ -870,13 +954,24 @@ export async function loadSystemSettings() {
   ])
 
   return {
-    stores: stores.stores || [],
-    users: users.users || [],
-    regions: regions.regions || [],
-    salesChannels: salesChannels.sales_channels || [],
-    apiKeys: apiKeys.api_keys || [],
-    featureFlags: featureFlags.feature_flags || featureFlags.flags || [],
-    plugins: plugins.plugins || [],
+    stores: arrayField(stores.stores)
+      .map(toProductAdminSystemStore)
+      .filter((store) => store.id),
+    users: arrayField(users.users)
+      .map(toProductAdminSystemUser)
+      .filter((user) => user.id),
+    regions: arrayField(regions.regions)
+      .map(toProductAdminSystemRegion)
+      .filter((region) => region.id),
+    salesChannels: arrayField(salesChannels.sales_channels)
+      .map(toProductAdminSystemSalesChannel)
+      .filter((channel) => channel.id),
+    apiKeys: arrayField(apiKeys.api_keys)
+      .map(toProductAdminSystemApiKey)
+      .filter((apiKey) => apiKey.id),
+    featureFlags: arrayField(featureFlags.feature_flags || featureFlags.flags)
+      .map(toProductAdminSystemFeatureFlag),
+    plugins: arrayField(plugins.plugins).map(toProductAdminSystemPlugin),
   }
 }
 
@@ -1689,6 +1784,157 @@ function toProductAdminSalesChannel(value: unknown): ProductAdminSalesChannel {
   }
 }
 
+function toProductAdminSystemStore(value: unknown): ProductAdminSystemStore {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    name: stringField(record.name, stringField(record.id)),
+    defaultRegionId: nullableStringField(
+      record.default_region_id ?? record.defaultRegionId,
+    ),
+    defaultSalesChannelId: nullableStringField(
+      record.default_sales_channel_id ?? record.defaultSalesChannelId,
+    ),
+    supportedCurrencies: arrayField(
+      record.supported_currencies ?? record.supportedCurrencies,
+    ).map(toProductAdminSystemCurrency),
+    supportedLocales: arrayField(
+      record.supported_locales ?? record.supportedLocales,
+    ).map(toProductAdminSystemLocale),
+    updatedAt: nullableStringField(record.updated_at ?? record.updatedAt),
+  }
+}
+
+function toProductAdminSystemCurrency(
+  value: unknown,
+): ProductAdminSystemCurrency {
+  const record = recordField(value)
+
+  return {
+    currencyCode: stringField(
+      record.currency_code,
+      stringField(record.currencyCode),
+    ),
+    isDefault: nullableBooleanField(record.is_default ?? record.isDefault),
+    isTaxInclusive: nullableBooleanField(
+      record.is_tax_inclusive ?? record.isTaxInclusive,
+    ),
+  }
+}
+
+function toProductAdminSystemLocale(
+  value: unknown,
+): ProductAdminSystemLocale {
+  const record = recordField(value)
+
+  return {
+    localeCode: stringField(record.locale_code, stringField(record.localeCode)),
+  }
+}
+
+function toProductAdminSystemUser(value: unknown): ProductAdminSystemUser {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    email: stringField(record.email),
+    firstName: nullableStringField(record.first_name ?? record.firstName),
+    lastName: nullableStringField(record.last_name ?? record.lastName),
+    createdAt: nullableStringField(record.created_at ?? record.createdAt),
+  }
+}
+
+function toProductAdminSystemRegion(value: unknown): ProductAdminSystemRegion {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    name: stringField(record.name, stringField(record.id)),
+    currencyCode: nullableStringField(record.currency_code ?? record.currencyCode),
+    countries: arrayField(record.countries).map(toProductAdminSystemCountry),
+    paymentProviderIds: arrayField(
+      record.payment_providers ?? record.paymentProviders,
+    )
+      .map((provider) => {
+        const providerRecord = recordField(provider)
+
+        return stringField(providerRecord.id)
+      })
+      .filter(Boolean),
+    automaticTaxes: nullableBooleanField(
+      record.automatic_taxes ?? record.automaticTaxes,
+    ),
+    isTaxInclusive: nullableBooleanField(
+      record.is_tax_inclusive ?? record.isTaxInclusive,
+    ),
+  }
+}
+
+function toProductAdminSystemCountry(
+  value: unknown,
+): ProductAdminSystemCountry {
+  const record = recordField(value)
+
+  return {
+    iso2: nullableStringField(record.iso_2 ?? record.iso2),
+    displayName: nullableStringField(record.display_name ?? record.displayName),
+  }
+}
+
+function toProductAdminSystemSalesChannel(
+  value: unknown,
+): ProductAdminSystemSalesChannel {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    name: stringField(record.name, stringField(record.id)),
+    description: nullableStringField(record.description),
+    isDisabled: nullableBooleanField(record.is_disabled ?? record.isDisabled),
+    createdAt: nullableStringField(record.created_at ?? record.createdAt),
+  }
+}
+
+function toProductAdminSystemApiKey(value: unknown): ProductAdminSystemApiKey {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    title: stringField(record.title, stringField(record.id)),
+    type: stringField(record.type),
+    redacted: nullableStringField(record.redacted),
+    revokedAt: nullableStringField(record.revoked_at ?? record.revokedAt),
+    createdAt: nullableStringField(record.created_at ?? record.createdAt),
+  }
+}
+
+function toProductAdminSystemFeatureFlag(
+  value: unknown,
+): ProductAdminSystemFeatureFlag {
+  const record = recordField(value)
+
+  return {
+    key: nullableStringField(record.key),
+    name: nullableStringField(record.name),
+    enabled: nullableBooleanField(record.enabled),
+    value: record.value,
+  }
+}
+
+function toProductAdminSystemPlugin(
+  value: unknown,
+): ProductAdminSystemPlugin {
+  const record = recordField(value)
+
+  return {
+    name: nullableStringField(record.name),
+    version: nullableStringField(record.version),
+    resolve: nullableStringField(record.resolve),
+    options: record.options,
+  }
+}
+
 function toProductAdminTemplate(value: unknown): ProductAdminTemplate {
   const record = recordField(value)
 
@@ -2212,6 +2458,10 @@ function nullableStringField(value: unknown) {
 
 function booleanField(value: unknown, fallback = false) {
   return typeof value === "boolean" ? value : fallback
+}
+
+function nullableBooleanField(value: unknown) {
+  return typeof value === "boolean" ? value : null
 }
 
 function numberField(value: unknown, fallback = 0) {

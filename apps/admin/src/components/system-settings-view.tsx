@@ -5,7 +5,7 @@ import { useMemo, useState } from "react"
 import { formatDate, formatValue } from "@/lib/format"
 import {
   createSalesChannel as createAdminSalesChannel,
-  loadSystemSettings as loadProductAdminSystemSettings,
+  loadSystemSettings,
   updateStoreName,
 } from "@/lib/product-admin-api"
 import {
@@ -19,69 +19,6 @@ import {
 import { Message, MetricCard, PageHeader, Panel } from "./admin-page"
 import { AdminTable, Cell, normalizeError } from "./admin-table"
 import { StatusBadge } from "./status-badge"
-
-type StoreRecord = {
-  id: string
-  name: string
-  default_region_id?: string | null
-  default_sales_channel_id?: string | null
-  supported_currencies?: Array<{
-    currency_code: string
-    is_default?: boolean | null
-    is_tax_inclusive?: boolean | null
-  }>
-  supported_locales?: Array<{ locale_code: string }>
-  updated_at?: string | null
-}
-
-type AdminUser = {
-  id: string
-  email: string
-  first_name?: string | null
-  last_name?: string | null
-  created_at?: string | null
-}
-
-type Region = {
-  id: string
-  name: string
-  currency_code?: string | null
-  countries?: Array<{ iso_2?: string | null; display_name?: string | null }>
-  payment_providers?: Array<{ id?: string | null }>
-  automatic_taxes?: boolean | null
-  is_tax_inclusive?: boolean | null
-}
-
-type SalesChannel = {
-  id: string
-  name: string
-  description?: string | null
-  is_disabled?: boolean | null
-  created_at?: string | null
-}
-
-type ApiKey = {
-  id: string
-  title: string
-  type: string
-  redacted?: string | null
-  revoked_at?: string | null
-  created_at?: string | null
-}
-
-type FeatureFlag = {
-  key?: string
-  name?: string
-  enabled?: boolean
-  value?: unknown
-}
-
-type PluginRecord = {
-  name?: string
-  version?: string
-  resolve?: string
-  options?: unknown
-}
 
 type StoreForm = {
   storeId: string
@@ -99,18 +36,6 @@ const EMPTY_SALES_CHANNEL_FORM: SalesChannelForm = {
   name: "",
   description: "",
   isDisabled: false,
-}
-
-async function loadSystemSettings() {
-  return loadProductAdminSystemSettings() as Promise<{
-    stores: StoreRecord[]
-    users: AdminUser[]
-    regions: Region[]
-    salesChannels: SalesChannel[]
-    apiKeys: ApiKey[]
-    featureFlags: FeatureFlag[]
-    plugins: PluginRecord[]
-  }>
 }
 
 export function SystemSettingsView() {
@@ -242,10 +167,10 @@ export function SystemSettingsView() {
               </div>
               {selectedStore ? (
                 <Message tone="info">
-                  默认区域 {selectedStore.default_region_id || "-"} · 默认渠道{" "}
-                  {selectedStore.default_sales_channel_id || "-"} · 币种{" "}
-                  {(selectedStore.supported_currencies || [])
-                    .map((currency) => currency.currency_code)
+                  默认区域 {selectedStore.defaultRegionId || "-"} · 默认渠道{" "}
+                  {selectedStore.defaultSalesChannelId || "-"} · 币种{" "}
+                  {selectedStore.supportedCurrencies
+                    .map((currency) => currency.currencyCode)
                     .join(", ") || "-"}
                 </Message>
               ) : null}
@@ -324,12 +249,12 @@ export function SystemSettingsView() {
                   <Cell>
                     <div className="font-medium">{user.email}</div>
                     <div className="text-xs text-[var(--muted)]">
-                      {[user.first_name, user.last_name].filter(Boolean).join(" ") ||
+                      {[user.firstName, user.lastName].filter(Boolean).join(" ") ||
                         "-"}
                     </div>
                   </Cell>
                   <Cell mono>{user.id}</Cell>
-                  <Cell>{formatDate(user.created_at)}</Cell>
+                  <Cell>{formatDate(user.createdAt)}</Cell>
                 </tr>
               ))}
             </AdminTable>
@@ -348,16 +273,16 @@ export function SystemSettingsView() {
                       {region.id}
                     </div>
                   </Cell>
-                  <Cell mono>{region.currency_code || "-"}</Cell>
+                  <Cell mono>{region.currencyCode || "-"}</Cell>
                   <Cell>
-                    {(region.countries || [])
-                      .map((country) => country.iso_2 || country.display_name)
+                    {region.countries
+                      .map((country) => country.iso2 || country.displayName)
                       .filter(Boolean)
                       .join(", ") || "-"}
                   </Cell>
                   <Cell>
-                    {region.automatic_taxes ? "自动" : "手动"} ·{" "}
-                    {region.is_tax_inclusive ? "含税" : "不含税"}
+                    {region.automaticTaxes ? "自动" : "手动"} ·{" "}
+                    {region.isTaxInclusive ? "含税" : "不含税"}
                   </Cell>
                 </tr>
               ))}
@@ -387,10 +312,10 @@ export function SystemSettingsView() {
                   </Cell>
                   <Cell>
                     <StatusBadge
-                      value={channel.is_disabled ? "disabled" : "active"}
+                      value={channel.isDisabled ? "disabled" : "active"}
                     />
                   </Cell>
-                  <Cell>{formatDate(channel.created_at)}</Cell>
+                  <Cell>{formatDate(channel.createdAt)}</Cell>
                 </tr>
               ))}
             </AdminTable>
@@ -411,9 +336,9 @@ export function SystemSettingsView() {
                   </Cell>
                   <Cell mono>{apiKey.type}</Cell>
                   <Cell>
-                    <StatusBadge value={apiKey.revoked_at ? "revoked" : "active"} />
+                    <StatusBadge value={apiKey.revokedAt ? "revoked" : "active"} />
                   </Cell>
-                  <Cell>{formatDate(apiKey.created_at)}</Cell>
+                  <Cell>{formatDate(apiKey.createdAt)}</Cell>
                 </tr>
               ))}
             </AdminTable>

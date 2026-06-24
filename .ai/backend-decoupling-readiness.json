@@ -99,6 +99,11 @@
       "max": 0
     },
     {
+      "id": "admin-system-settings-domain-uses-product-dtos",
+      "check": "adminSystemSettingsDtoLeakFiles",
+      "max": 0
+    },
+    {
       "id": "storefront-no-fetch-outside-approved-adapters",
       "check": "storefrontFetchViolations",
       "max": 0

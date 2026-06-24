@@ -50,6 +50,9 @@ storefront UI, and backend adapters can evolve independently.
 - Analytics and audit-log UI follows the same rule for analytics events,
   dispatch queue records, audit actors, audited entities, risk levels, and
   audit metadata.
+- System settings UI follows the same rule for store defaults, currencies,
+  locales, admin users, regions, sales channels, API keys, feature flags, and
+  plugin visibility.
 
 ## Rule Of Thumb
 

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import {
+  createSalesChannel,
   createDigitalDelivery,
   createCustomer,
   importCredentialBatch,
@@ -17,11 +18,13 @@ import {
   loadSeoPerformance,
   loadSeoWorkspace,
   loadSupplierWorkspace,
+  loadSystemSettings,
   replayAnalyticsDispatch,
   retrieveOrder,
   saveSupplierMapping,
   suggestSeoDocument,
   togglePaymentChannel,
+  updateStoreName,
   upsertSeoDocument,
 } from "./product-admin-api"
 
@@ -417,6 +420,209 @@ describe("product admin facade", () => {
         first_name: "Grace",
         last_name: "Hopper",
         phone: "+15550101",
+      },
+    })
+  })
+
+  it("maps system settings responses to product-admin DTOs", async () => {
+    adminApiMock.mockImplementation(async (path: string) => {
+      if (path === "/admin/stores?limit=20") {
+        return {
+          stores: [
+            {
+              id: "store_1",
+              name: "Main store",
+              default_region_id: "reg_1",
+              default_sales_channel_id: "sc_1",
+              supported_currencies: [
+                {
+                  currency_code: "usd",
+                  is_default: true,
+                  is_tax_inclusive: false,
+                },
+              ],
+              supported_locales: [{ locale_code: "en-US" }],
+              updated_at: "2026-06-12T00:00:00.000Z",
+            },
+          ],
+        }
+      }
+
+      if (path === "/admin/users?limit=100") {
+        return {
+          users: [
+            {
+              id: "user_1",
+              email: "admin@example.com",
+              first_name: "Ada",
+              last_name: "Admin",
+              created_at: "2026-06-01T00:00:00.000Z",
+            },
+          ],
+        }
+      }
+
+      if (path === "/admin/regions?limit=100") {
+        return {
+          regions: [
+            {
+              id: "reg_1",
+              name: "United States",
+              currency_code: "usd",
+              countries: [{ iso_2: "us", display_name: "United States" }],
+              payment_providers: [{ id: "manual" }],
+              automatic_taxes: true,
+              is_tax_inclusive: false,
+            },
+          ],
+        }
+      }
+
+      if (path === "/admin/sales-channels?limit=100") {
+        return {
+          sales_channels: [
+            {
+              id: "sc_1",
+              name: "Web",
+              description: "Primary storefront",
+              is_disabled: false,
+              created_at: "2026-06-02T00:00:00.000Z",
+            },
+          ],
+        }
+      }
+
+      if (path === "/admin/api-keys?limit=100") {
+        return {
+          api_keys: [
+            {
+              id: "apk_1",
+              title: "Publishable",
+              type: "publishable",
+              redacted: "pk_...",
+              revoked_at: null,
+              created_at: "2026-06-03T00:00:00.000Z",
+            },
+          ],
+        }
+      }
+
+      if (path === "/admin/feature-flags") {
+        return {
+          feature_flags: [
+            { key: "inventory", name: "Inventory", enabled: true, value: "on" },
+          ],
+        }
+      }
+
+      if (path === "/admin/plugins") {
+        return {
+          plugins: [
+            {
+              name: "payment-manual",
+              version: "1.0.0",
+              resolve: "@local/payment-manual",
+              options: { enabled: true },
+            },
+          ],
+        }
+      }
+
+      throw new Error(`Unexpected path: ${path}`)
+    })
+
+    const settings = await loadSystemSettings()
+
+    expect(settings.stores[0]).toEqual({
+      id: "store_1",
+      name: "Main store",
+      defaultRegionId: "reg_1",
+      defaultSalesChannelId: "sc_1",
+      supportedCurrencies: [
+        {
+          currencyCode: "usd",
+          isDefault: true,
+          isTaxInclusive: false,
+        },
+      ],
+      supportedLocales: [{ localeCode: "en-US" }],
+      updatedAt: "2026-06-12T00:00:00.000Z",
+    })
+    expect(settings.users[0]).toEqual({
+      id: "user_1",
+      email: "admin@example.com",
+      firstName: "Ada",
+      lastName: "Admin",
+      createdAt: "2026-06-01T00:00:00.000Z",
+    })
+    expect(settings.regions[0]).toEqual({
+      id: "reg_1",
+      name: "United States",
+      currencyCode: "usd",
+      countries: [{ iso2: "us", displayName: "United States" }],
+      paymentProviderIds: ["manual"],
+      automaticTaxes: true,
+      isTaxInclusive: false,
+    })
+    expect(settings.salesChannels[0]).toEqual({
+      id: "sc_1",
+      name: "Web",
+      description: "Primary storefront",
+      isDisabled: false,
+      createdAt: "2026-06-02T00:00:00.000Z",
+    })
+    expect(settings.apiKeys[0]).toEqual({
+      id: "apk_1",
+      title: "Publishable",
+      type: "publishable",
+      redacted: "pk_...",
+      revokedAt: null,
+      createdAt: "2026-06-03T00:00:00.000Z",
+    })
+    expect(settings.featureFlags[0]).toEqual({
+      key: "inventory",
+      name: "Inventory",
+      enabled: true,
+      value: "on",
+    })
+    expect(settings.plugins[0]).toEqual({
+      name: "payment-manual",
+      version: "1.0.0",
+      resolve: "@local/payment-manual",
+      options: { enabled: true },
+    })
+    expect(settings.stores[0]).not.toHaveProperty("default_region_id")
+    expect(settings.stores[0].supportedCurrencies[0]).not.toHaveProperty(
+      "currency_code",
+    )
+    expect(settings.users[0]).not.toHaveProperty("first_name")
+    expect(settings.regions[0].countries[0]).not.toHaveProperty("iso_2")
+    expect(settings.salesChannels[0]).not.toHaveProperty("is_disabled")
+    expect(settings.apiKeys[0]).not.toHaveProperty("revoked_at")
+  })
+
+  it("maps system setting writes from product input to current backend bodies", async () => {
+    adminApiMock.mockResolvedValue({ ok: true })
+
+    await updateStoreName({ storeId: "store_1", name: "Main store" })
+
+    expect(adminApiMock).toHaveBeenCalledWith("/admin/stores/store_1", {
+      method: "POST",
+      body: { name: "Main store" },
+    })
+
+    await createSalesChannel({
+      name: "Wholesale",
+      description: "",
+      isDisabled: true,
+    })
+
+    expect(adminApiMock).toHaveBeenLastCalledWith("/admin/sales-channels", {
+      method: "POST",
+      body: {
+        name: "Wholesale",
+        description: null,
+        is_disabled: true,
       },
     })
   })
