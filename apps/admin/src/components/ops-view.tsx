@@ -6,94 +6,39 @@ import {
   loadOpsDashboard,
   loadOpsMaintenance,
   loadOpsSecurity,
+  type ProductAdminOpsDashboard,
+  type ProductAdminOpsSection,
 } from "@/lib/product-admin-api"
 import { MetricCard, Message, PageHeader, Panel, TableShell } from "./admin-page"
 import { StatusBadge } from "./status-badge"
 
-type OpsStatus = "ok" | "warning" | "critical" | "disabled"
-
-type OpsSetting = {
-  key: string
-  label: string
-  owner: string
-  scope: string
-  configured: boolean
-  secret: boolean
-  value: string | boolean | number | null
-  recommended?: string | boolean | number | null
-  status: OpsStatus
-  notes?: string
-}
-
-type OpsFinding = {
-  id: string
-  severity: "info" | "warning" | "critical"
-  owner: string
-  title: string
-  detail: string
-  recommended_action: string
-  human_gate: boolean
-}
-
-type OpsSection = {
-  status: OpsStatus
-  summary: Record<string, unknown>
-  settings: OpsSetting[]
-  findings: OpsFinding[]
-}
-
-type OpsDashboard = {
-  generated_at: string
-  summary: {
-    status: OpsStatus
-    critical_findings: number
-    warning_findings: number
-    human_gate_actions: number
-    control_panel_surface_count: number
-    gated_surface_count: number
-  }
-  launch_readiness: OpsSection
-  security: OpsSection
-  maintenance: OpsSection
-  customer: OpsSection
-  commerce: OpsSection
-  ai_ops: OpsSection
-  findings: OpsFinding[]
-}
-
 const SECTION_KEYS: Array<{
   key: keyof Pick<
-    OpsDashboard,
-    "launch_readiness" | "security" | "maintenance" | "customer" | "commerce" | "ai_ops"
+    ProductAdminOpsDashboard,
+    "launchReadiness" | "security" | "maintenance" | "customer" | "commerce" | "aiOps"
   >
   label: string
 }> = [
-  { key: "launch_readiness", label: "上线准备" },
+  { key: "launchReadiness", label: "上线准备" },
   { key: "security", label: "安全" },
   { key: "maintenance", label: "维护" },
   { key: "customer", label: "客户访问" },
   { key: "commerce", label: "交易" },
-  { key: "ai_ops", label: "AI 运维" },
+  { key: "aiOps", label: "AI 运维" },
 ]
 
 export function OpsView() {
   const dashboardQuery = useQuery({
     queryKey: ["ops-dashboard"],
-    queryFn: () => loadOpsDashboard() as Promise<OpsDashboard>,
+    queryFn: loadOpsDashboard,
   })
   const securityQuery = useQuery({
     queryKey: ["ops-security"],
-    queryFn: () => loadOpsSecurity() as Promise<{ security: OpsSection }>,
+    queryFn: loadOpsSecurity,
   })
   const maintenanceQuery = useQuery({
     queryKey: ["ops-maintenance"],
-    queryFn: () =>
-      loadOpsMaintenance() as Promise<{
-        maintenance: OpsSection
-        customer: OpsSection
-        commerce: OpsSection
-        ai_ops: OpsSection
-      }>,
+    queryFn: loadOpsMaintenance,
   })
   const state = dashboardQuery.data
 
@@ -142,27 +87,27 @@ export function OpsView() {
         <MetricCard
           label="状态"
           value={state?.summary.status || "unknown"}
-          detail={state?.generated_at ? formatDate(state.generated_at) : "-"}
+          detail={state?.generatedAt ? formatDate(state.generatedAt) : "-"}
         />
         <MetricCard
           label="Critical"
-          value={state?.summary.critical_findings || 0}
+          value={state?.summary.criticalFindings || 0}
           detail="需优先处理"
         />
         <MetricCard
           label="Warning"
-          value={state?.summary.warning_findings || 0}
+          value={state?.summary.warningFindings || 0}
           detail="上线前清理"
         />
         <MetricCard
           label="Human gates"
-          value={state?.summary.human_gate_actions || 0}
+          value={state?.summary.humanGateActions || 0}
           detail="需要人工决策"
         />
         <MetricCard
           label="Surfaces"
-          value={state?.summary.control_panel_surface_count || 0}
-          detail={`${state?.summary.gated_surface_count || 0} production gated`}
+          value={state?.summary.controlPanelSurfaceCount || 0}
+          detail={`${state?.summary.gatedSurfaceCount || 0} production gated`}
         />
       </section>
 
@@ -186,7 +131,7 @@ export function OpsView() {
                   <td className="border-b border-[var(--border)] py-3 pr-4">
                     <p className="font-medium">{finding.title}</p>
                     <p className="mt-1 text-sm text-[var(--muted)]">{finding.detail}</p>
-                    {finding.human_gate ? (
+                    {finding.humanGate ? (
                       <p className="mt-1 text-xs font-semibold text-[var(--danger)]">
                         human gate
                       </p>
@@ -196,7 +141,7 @@ export function OpsView() {
                     {finding.owner}
                   </td>
                   <td className="max-w-[28rem] border-b border-[var(--border)] py-3">
-                    {finding.recommended_action}
+                    {finding.recommendedAction}
                   </td>
                 </tr>
               ))}
@@ -227,7 +172,7 @@ export function OpsView() {
       <section className="mt-4 grid gap-4 xl:grid-cols-2">
         <Panel
           title="Security endpoint"
-          description="来自 /admin/ops-control/security 的独立安全快照。"
+          description="独立安全快照。"
         >
           {securityQuery.isLoading ? <Message tone="info">加载中</Message> : null}
           {securityQuery.data?.security ? (
@@ -238,7 +183,7 @@ export function OpsView() {
         </Panel>
         <Panel
           title="Maintenance endpoint"
-          description="来自 /admin/ops-control/maintenance 的维护、客户、交易和 AI 运维快照。"
+          description="维护、客户、交易和 AI 运维快照。"
         >
           {maintenanceQuery.isLoading ? (
             <Message tone="info">加载中</Message>
@@ -272,7 +217,7 @@ export function OpsView() {
   )
 }
 
-function SettingsTable({ section }: { section: OpsSection }) {
+function SettingsTable({ section }: { section: ProductAdminOpsSection }) {
   return (
     <TableShell>
       <table className="min-w-full text-left text-sm">

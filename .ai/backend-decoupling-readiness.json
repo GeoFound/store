@@ -104,6 +104,11 @@
       "max": 0
     },
     {
+      "id": "admin-ai-ops-domain-uses-product-dtos",
+      "check": "adminAiOpsDtoLeakFiles",
+      "max": 0
+    },
+    {
       "id": "storefront-no-fetch-outside-approved-adapters",
       "check": "storefrontFetchViolations",
       "max": 0

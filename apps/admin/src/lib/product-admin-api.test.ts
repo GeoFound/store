@@ -5,12 +5,18 @@ import {
   createCustomer,
   importCredentialBatch,
   loadAfterSales,
+  loadAIPolicy,
+  loadAIProviders,
+  loadAIRuns,
   loadAnalyticsDispatches,
   loadAnalyticsEvents,
   loadAuditLogs,
   loadCustomers,
   loadCredentialInventory,
   loadDeliveryWorkspace,
+  loadOpsDashboard,
+  loadOpsMaintenance,
+  loadOpsSecurity,
   loadOrders,
   loadPaymentWorkspace,
   loadProductCatalog,
@@ -625,6 +631,267 @@ describe("product admin facade", () => {
         is_disabled: true,
       },
     })
+  })
+
+  it("maps AI provider, policy, and run responses to product-admin DTOs", async () => {
+    adminApiMock.mockImplementation(async (path: string) => {
+      if (path === "/admin/ai/providers") {
+        return {
+          enabled: true,
+          default_provider_code: "openai",
+          providers: [
+            {
+              code: "openai",
+              label: "OpenAI",
+              provider_kind: "llm",
+              protocol: "responses",
+              base_url: "https://api.openai.com",
+              default_model: "gpt-5.1",
+              capabilities: ["text.generate"],
+              api_key_env: "OPENAI_API_KEY",
+              api_key_configured: true,
+              requires_api_key: true,
+              enabled: true,
+              status: "ready",
+              issues: [],
+            },
+          ],
+          task_plugins: [
+            {
+              code: "seo-suggest",
+              task_type: "seo_suggest",
+              title: "SEO suggest",
+              required_capabilities: ["text.generate"],
+              requires_human_review: true,
+              runnable: true,
+            },
+          ],
+          task_runs: [
+            {
+              id: "run_1",
+              task_type: "seo_suggest",
+              plugin_code: "seo-suggest",
+              provider_code: "openai",
+              site_id: "global",
+              status: "completed",
+              input_summary: "Suggest title",
+              output_summary: "Done",
+              error_message: null,
+              created_at: "2026-06-13T00:00:00.000Z",
+            },
+          ],
+          issues: [],
+          summary: {
+            provider_count: 1,
+            configured_provider_count: 1,
+            attention_provider_count: 0,
+            review_run_count: 0,
+          },
+        }
+      }
+
+      if (path === "/admin/ai/control-panel-policy") {
+        return {
+          policy: {
+            version: "1.0.0",
+            purpose: "AI control panel",
+            admissionCriteria: [
+              {
+                id: "configured",
+                title: "Configured",
+                description: "Provider configured",
+              },
+            ],
+            requiredSurface: [
+              {
+                id: "runs",
+                title: "Runs",
+                description: "Shows task runs",
+              },
+            ],
+          },
+        }
+      }
+
+      if (path === "/admin/ai/runs?limit=50") {
+        return {
+          runs: [
+            {
+              id: "run_2",
+              task_type: "content_review",
+              plugin_code: "content-review",
+              provider_code: null,
+              site_id: "global",
+              status: "pending_review",
+              input_summary: "Review content",
+              output_summary: null,
+              error_message: "Needs reviewer",
+              created_at: "2026-06-14T00:00:00.000Z",
+            },
+          ],
+        }
+      }
+
+      throw new Error(`Unexpected path: ${path}`)
+    })
+
+    const providers = await loadAIProviders()
+    const policy = await loadAIPolicy()
+    const runs = await loadAIRuns()
+
+    expect(providers).toMatchObject({
+      enabled: true,
+      defaultProviderCode: "openai",
+      summary: {
+        providerCount: 1,
+        configuredProviderCount: 1,
+        attentionProviderCount: 0,
+        reviewRunCount: 0,
+      },
+    })
+    expect(providers.providers[0]).toMatchObject({
+      code: "openai",
+      providerKind: "llm",
+      baseUrl: "https://api.openai.com",
+      defaultModel: "gpt-5.1",
+      apiKeyEnv: "OPENAI_API_KEY",
+      apiKeyConfigured: true,
+      requiresApiKey: true,
+    })
+    expect(providers.taskPlugins[0]).toMatchObject({
+      taskType: "seo_suggest",
+      requiredCapabilities: ["text.generate"],
+      requiresHumanReview: true,
+    })
+    expect(providers.taskRuns[0]).toMatchObject({
+      taskType: "seo_suggest",
+      pluginCode: "seo-suggest",
+      providerCode: "openai",
+      siteId: "global",
+      inputSummary: "Suggest title",
+      outputSummary: "Done",
+      createdAt: "2026-06-13T00:00:00.000Z",
+    })
+    expect(policy.policy.admissionCriteria[0]).toMatchObject({
+      id: "configured",
+      title: "Configured",
+    })
+    expect(runs.runs[0]).toMatchObject({
+      taskType: "content_review",
+      pluginCode: "content-review",
+      providerCode: null,
+      errorMessage: "Needs reviewer",
+      createdAt: "2026-06-14T00:00:00.000Z",
+    })
+    expect(providers).not.toHaveProperty("default_provider_code")
+    expect(providers.providers[0]).not.toHaveProperty("provider_kind")
+    expect(providers.taskPlugins[0]).not.toHaveProperty("task_type")
+    expect(runs.runs[0]).not.toHaveProperty("error_message")
+  })
+
+  it("maps ops dashboard responses to product-admin DTOs", async () => {
+    const rawSection = {
+      status: "warning",
+      summary: { configured: 1 },
+      settings: [
+        {
+          key: "backup.enabled",
+          label: "Backup enabled",
+          owner: "ops",
+          scope: "production",
+          configured: true,
+          secret: false,
+          value: true,
+          recommended: true,
+          status: "ok",
+          notes: "ready",
+        },
+      ],
+      findings: [
+        {
+          id: "finding_1",
+          severity: "warning",
+          owner: "ops",
+          title: "Backup drill due",
+          detail: "Run restore drill",
+          recommended_action: "Run restore drill",
+          human_gate: true,
+        },
+      ],
+    }
+
+    adminApiMock.mockImplementation(async (path: string) => {
+      if (path === "/admin/ops-control/dashboard") {
+        return {
+          generated_at: "2026-06-15T00:00:00.000Z",
+          summary: {
+            status: "warning",
+            critical_findings: 1,
+            warning_findings: 2,
+            human_gate_actions: 1,
+            control_panel_surface_count: 5,
+            gated_surface_count: 4,
+          },
+          launch_readiness: rawSection,
+          security: rawSection,
+          maintenance: rawSection,
+          customer: rawSection,
+          commerce: rawSection,
+          ai_ops: rawSection,
+          findings: rawSection.findings,
+        }
+      }
+
+      if (path === "/admin/ops-control/security") {
+        return { security: rawSection }
+      }
+
+      if (path === "/admin/ops-control/maintenance") {
+        return {
+          maintenance: rawSection,
+          customer: rawSection,
+          commerce: rawSection,
+          ai_ops: rawSection,
+        }
+      }
+
+      throw new Error(`Unexpected path: ${path}`)
+    })
+
+    const dashboard = await loadOpsDashboard()
+    const security = await loadOpsSecurity()
+    const maintenance = await loadOpsMaintenance()
+
+    expect(dashboard).toMatchObject({
+      generatedAt: "2026-06-15T00:00:00.000Z",
+      summary: {
+        status: "warning",
+        criticalFindings: 1,
+        warningFindings: 2,
+        humanGateActions: 1,
+        controlPanelSurfaceCount: 5,
+        gatedSurfaceCount: 4,
+      },
+    })
+    expect(dashboard.launchReadiness.findings[0]).toMatchObject({
+      recommendedAction: "Run restore drill",
+      humanGate: true,
+    })
+    expect(dashboard.aiOps.settings[0]).toMatchObject({
+      key: "backup.enabled",
+      recommended: true,
+      notes: "ready",
+    })
+    expect(security.security.findings[0]).toMatchObject({
+      recommendedAction: "Run restore drill",
+      humanGate: true,
+    })
+    expect(maintenance.aiOps.status).toBe("warning")
+    expect(dashboard).not.toHaveProperty("generated_at")
+    expect(dashboard.summary).not.toHaveProperty("critical_findings")
+    expect(dashboard.launchReadiness.findings[0]).not.toHaveProperty(
+      "human_gate",
+    )
   })
 
   it("maps payment workspace responses to product-admin DTOs", async () => {

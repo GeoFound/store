@@ -53,6 +53,9 @@ storefront UI, and backend adapters can evolve independently.
 - System settings UI follows the same rule for store defaults, currencies,
   locales, admin users, regions, sales channels, API keys, feature flags, and
   plugin visibility.
+- AI and ops UI follows the same rule for provider readiness, AI task plugins,
+  task runs, control-panel summaries, operational sections, findings, and
+  human-gate metadata.
 
 ## Rule Of Thumb
 

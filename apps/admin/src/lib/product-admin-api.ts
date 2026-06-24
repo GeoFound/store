@@ -153,6 +153,137 @@ export type ProductAdminSystemSettings = {
   plugins: ProductAdminSystemPlugin[]
 }
 
+export type ProductAdminAiProviderConfig = {
+  code: string
+  label: string
+  providerKind: string
+  protocol: string
+  baseUrl: string | null
+  defaultModel: string | null
+  capabilities: string[]
+  apiKeyEnv: string | null
+  apiKeyConfigured: boolean
+  requiresApiKey: boolean
+  enabled: boolean
+  status: string
+  issues: string[]
+}
+
+export type ProductAdminAiTaskPlugin = {
+  code: string
+  taskType: string
+  title: string
+  requiredCapabilities: string[]
+  requiresHumanReview: boolean
+  runnable: boolean
+}
+
+export type ProductAdminAiTaskRun = {
+  id: string
+  taskType: string
+  pluginCode: string
+  providerCode: string | null
+  siteId: string | null
+  status: string
+  inputSummary: string | null
+  outputSummary: string | null
+  errorMessage: string | null
+  createdAt: string | null
+}
+
+export type ProductAdminAiProvidersState = {
+  enabled: boolean
+  defaultProviderCode: string | null
+  providers: ProductAdminAiProviderConfig[]
+  taskPlugins: ProductAdminAiTaskPlugin[]
+  taskRuns: ProductAdminAiTaskRun[]
+  issues: string[]
+  summary: {
+    providerCount: number
+    configuredProviderCount: number
+    attentionProviderCount: number
+    reviewRunCount: number
+  }
+}
+
+export type ProductAdminAiPolicy = {
+  version: string
+  purpose: string
+  admissionCriteria: Array<{
+    id: string
+    title: string
+    description: string
+  }>
+  requiredSurface: Array<{
+    id: string
+    title: string
+    description: string
+  }>
+}
+
+export type ProductAdminOpsStatus =
+  | "ok"
+  | "warning"
+  | "critical"
+  | "disabled"
+  | string
+
+export type ProductAdminOpsSetting = {
+  key: string
+  label: string
+  owner: string
+  scope: string
+  configured: boolean
+  secret: boolean
+  value: string | boolean | number | null
+  recommended?: string | boolean | number | null
+  status: ProductAdminOpsStatus
+  notes?: string
+}
+
+export type ProductAdminOpsFinding = {
+  id: string
+  severity: "info" | "warning" | "critical" | string
+  owner: string
+  title: string
+  detail: string
+  recommendedAction: string
+  humanGate: boolean
+}
+
+export type ProductAdminOpsSection = {
+  status: ProductAdminOpsStatus
+  summary: Record<string, unknown>
+  settings: ProductAdminOpsSetting[]
+  findings: ProductAdminOpsFinding[]
+}
+
+export type ProductAdminOpsDashboard = {
+  generatedAt: string | null
+  summary: {
+    status: ProductAdminOpsStatus
+    criticalFindings: number
+    warningFindings: number
+    humanGateActions: number
+    controlPanelSurfaceCount: number
+    gatedSurfaceCount: number
+  }
+  launchReadiness: ProductAdminOpsSection
+  security: ProductAdminOpsSection
+  maintenance: ProductAdminOpsSection
+  customer: ProductAdminOpsSection
+  commerce: ProductAdminOpsSection
+  aiOps: ProductAdminOpsSection
+  findings: ProductAdminOpsFinding[]
+}
+
+export type ProductAdminOpsMaintenance = {
+  maintenance: ProductAdminOpsSection
+  customer: ProductAdminOpsSection
+  commerce: ProductAdminOpsSection
+  aiOps: ProductAdminOpsSection
+}
+
 export type ProductAdminTemplate = {
   code: string
   title: string
@@ -989,16 +1120,31 @@ export function updateStoreName(input: { storeId: string; name: string }) {
   })
 }
 
-export function loadAIProviders() {
-  return adminApi("/admin/ai/providers")
+export async function loadAIProviders(): Promise<ProductAdminAiProvidersState> {
+  const data = await adminApi<unknown>("/admin/ai/providers")
+
+  return toProductAdminAiProvidersState(data)
 }
 
-export function loadAIPolicy() {
-  return adminApi("/admin/ai/control-panel-policy")
+export async function loadAIPolicy(): Promise<{
+  policy: ProductAdminAiPolicy
+}> {
+  const data = await adminApi<unknown>("/admin/ai/control-panel-policy")
+  const record = recordField(data)
+
+  return {
+    policy: toProductAdminAiPolicy(record.policy),
+  }
 }
 
-export function loadAIRuns() {
-  return adminApi("/admin/ai/runs?limit=50")
+export async function loadAIRuns(): Promise<{ runs: ProductAdminAiTaskRun[] }> {
+  const data = await adminApi<{ runs: unknown[] }>("/admin/ai/runs?limit=50")
+
+  return {
+    runs: arrayField(data.runs)
+      .map(toProductAdminAiTaskRun)
+      .filter((run) => run.id),
+  }
 }
 
 export async function loadAuditLogs(
@@ -1073,16 +1219,33 @@ export async function createDigitalDelivery(input: DeliveryInput): Promise<{
   }
 }
 
-export function loadOpsDashboard() {
-  return adminApi("/admin/ops-control/dashboard")
+export async function loadOpsDashboard(): Promise<ProductAdminOpsDashboard> {
+  const data = await adminApi<unknown>("/admin/ops-control/dashboard")
+
+  return toProductAdminOpsDashboard(data)
 }
 
-export function loadOpsSecurity() {
-  return adminApi("/admin/ops-control/security")
+export async function loadOpsSecurity(): Promise<{
+  security: ProductAdminOpsSection
+}> {
+  const data = await adminApi<unknown>("/admin/ops-control/security")
+  const record = recordField(data)
+
+  return {
+    security: toProductAdminOpsSection(record.security),
+  }
 }
 
-export function loadOpsMaintenance() {
-  return adminApi("/admin/ops-control/maintenance")
+export async function loadOpsMaintenance(): Promise<ProductAdminOpsMaintenance> {
+  const data = await adminApi<unknown>("/admin/ops-control/maintenance")
+  const record = recordField(data)
+
+  return {
+    maintenance: toProductAdminOpsSection(record.maintenance),
+    customer: toProductAdminOpsSection(record.customer),
+    commerce: toProductAdminOpsSection(record.commerce),
+    aiOps: toProductAdminOpsSection(record.ai_ops ?? record.aiOps),
+  }
 }
 
 export async function loadMarketingWorkspace() {
@@ -1935,6 +2098,225 @@ function toProductAdminSystemPlugin(
   }
 }
 
+function toProductAdminAiProvidersState(
+  value: unknown,
+): ProductAdminAiProvidersState {
+  const record = recordField(value)
+  const summary = recordField(record.summary)
+
+  return {
+    enabled: booleanField(record.enabled),
+    defaultProviderCode: nullableStringField(
+      record.default_provider_code ?? record.defaultProviderCode,
+    ),
+    providers: arrayField(record.providers)
+      .map(toProductAdminAiProviderConfig)
+      .filter((provider) => provider.code),
+    taskPlugins: arrayField(record.task_plugins ?? record.taskPlugins)
+      .map(toProductAdminAiTaskPlugin)
+      .filter((plugin) => plugin.code),
+    taskRuns: arrayField(record.task_runs ?? record.taskRuns)
+      .map(toProductAdminAiTaskRun)
+      .filter((run) => run.id),
+    issues: stringArrayField(record.issues),
+    summary: {
+      providerCount: numberField(
+        summary.provider_count ?? summary.providerCount,
+      ),
+      configuredProviderCount: numberField(
+        summary.configured_provider_count ?? summary.configuredProviderCount,
+      ),
+      attentionProviderCount: numberField(
+        summary.attention_provider_count ?? summary.attentionProviderCount,
+      ),
+      reviewRunCount: numberField(
+        summary.review_run_count ?? summary.reviewRunCount,
+      ),
+    },
+  }
+}
+
+function toProductAdminAiProviderConfig(
+  value: unknown,
+): ProductAdminAiProviderConfig {
+  const record = recordField(value)
+
+  return {
+    code: stringField(record.code),
+    label: stringField(record.label, stringField(record.code)),
+    providerKind: stringField(
+      record.provider_kind,
+      stringField(record.providerKind),
+    ),
+    protocol: stringField(record.protocol),
+    baseUrl: nullableStringField(record.base_url ?? record.baseUrl),
+    defaultModel: nullableStringField(
+      record.default_model ?? record.defaultModel,
+    ),
+    capabilities: stringArrayField(record.capabilities),
+    apiKeyEnv: nullableStringField(record.api_key_env ?? record.apiKeyEnv),
+    apiKeyConfigured: booleanField(
+      record.api_key_configured ?? record.apiKeyConfigured,
+    ),
+    requiresApiKey: booleanField(
+      record.requires_api_key ?? record.requiresApiKey,
+    ),
+    enabled: booleanField(record.enabled),
+    status: stringField(record.status, "unknown"),
+    issues: stringArrayField(record.issues),
+  }
+}
+
+function toProductAdminAiTaskPlugin(
+  value: unknown,
+): ProductAdminAiTaskPlugin {
+  const record = recordField(value)
+
+  return {
+    code: stringField(record.code),
+    taskType: stringField(record.task_type, stringField(record.taskType)),
+    title: stringField(record.title, stringField(record.code)),
+    requiredCapabilities: stringArrayField(
+      record.required_capabilities ?? record.requiredCapabilities,
+    ),
+    requiresHumanReview: booleanField(
+      record.requires_human_review ?? record.requiresHumanReview,
+    ),
+    runnable: booleanField(record.runnable),
+  }
+}
+
+function toProductAdminAiTaskRun(value: unknown): ProductAdminAiTaskRun {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    taskType: stringField(record.task_type, stringField(record.taskType)),
+    pluginCode: stringField(record.plugin_code, stringField(record.pluginCode)),
+    providerCode: nullableStringField(record.provider_code ?? record.providerCode),
+    siteId: nullableStringField(record.site_id ?? record.siteId),
+    status: stringField(record.status, "unknown"),
+    inputSummary: nullableStringField(record.input_summary ?? record.inputSummary),
+    outputSummary: nullableStringField(
+      record.output_summary ?? record.outputSummary,
+    ),
+    errorMessage: nullableStringField(record.error_message ?? record.errorMessage),
+    createdAt: nullableStringField(record.created_at ?? record.createdAt),
+  }
+}
+
+function toProductAdminAiPolicy(value: unknown): ProductAdminAiPolicy {
+  const record = recordField(value)
+
+  return {
+    version: stringField(record.version),
+    purpose: stringField(record.purpose),
+    admissionCriteria: arrayField(record.admissionCriteria).map(
+      toProductAdminAiPolicyItem,
+    ),
+    requiredSurface: arrayField(record.requiredSurface).map(
+      toProductAdminAiPolicyItem,
+    ),
+  }
+}
+
+function toProductAdminAiPolicyItem(value: unknown) {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    title: stringField(record.title),
+    description: stringField(record.description),
+  }
+}
+
+function toProductAdminOpsDashboard(value: unknown): ProductAdminOpsDashboard {
+  const record = recordField(value)
+  const summary = recordField(record.summary)
+
+  return {
+    generatedAt: nullableStringField(record.generated_at ?? record.generatedAt),
+    summary: {
+      status: stringField(summary.status, "unknown"),
+      criticalFindings: numberField(
+        summary.critical_findings ?? summary.criticalFindings,
+      ),
+      warningFindings: numberField(
+        summary.warning_findings ?? summary.warningFindings,
+      ),
+      humanGateActions: numberField(
+        summary.human_gate_actions ?? summary.humanGateActions,
+      ),
+      controlPanelSurfaceCount: numberField(
+        summary.control_panel_surface_count ?? summary.controlPanelSurfaceCount,
+      ),
+      gatedSurfaceCount: numberField(
+        summary.gated_surface_count ?? summary.gatedSurfaceCount,
+      ),
+    },
+    launchReadiness: toProductAdminOpsSection(
+      record.launch_readiness ?? record.launchReadiness,
+    ),
+    security: toProductAdminOpsSection(record.security),
+    maintenance: toProductAdminOpsSection(record.maintenance),
+    customer: toProductAdminOpsSection(record.customer),
+    commerce: toProductAdminOpsSection(record.commerce),
+    aiOps: toProductAdminOpsSection(record.ai_ops ?? record.aiOps),
+    findings: arrayField(record.findings).map(toProductAdminOpsFinding),
+  }
+}
+
+function toProductAdminOpsSection(value: unknown): ProductAdminOpsSection {
+  const record = recordField(value)
+
+  return {
+    status: stringField(record.status, "unknown"),
+    summary: recordField(record.summary),
+    settings: arrayField(record.settings).map(toProductAdminOpsSetting),
+    findings: arrayField(record.findings).map(toProductAdminOpsFinding),
+  }
+}
+
+function toProductAdminOpsSetting(value: unknown): ProductAdminOpsSetting {
+  const record = recordField(value)
+  const setting: ProductAdminOpsSetting = {
+    key: stringField(record.key),
+    label: stringField(record.label, stringField(record.key)),
+    owner: stringField(record.owner),
+    scope: stringField(record.scope),
+    configured: booleanField(record.configured),
+    secret: booleanField(record.secret),
+    value: primitiveValueField(record.value),
+    status: stringField(record.status, "unknown"),
+  }
+
+  if (Object.prototype.hasOwnProperty.call(record, "recommended")) {
+    setting.recommended = primitiveValueField(record.recommended)
+  }
+  if (typeof record.notes === "string") {
+    setting.notes = record.notes
+  }
+
+  return setting
+}
+
+function toProductAdminOpsFinding(value: unknown): ProductAdminOpsFinding {
+  const record = recordField(value)
+
+  return {
+    id: stringField(record.id),
+    severity: stringField(record.severity, "info"),
+    owner: stringField(record.owner),
+    title: stringField(record.title),
+    detail: stringField(record.detail),
+    recommendedAction: stringField(
+      record.recommended_action,
+      stringField(record.recommendedAction),
+    ),
+    humanGate: booleanField(record.human_gate ?? record.humanGate),
+  }
+}
+
 function toProductAdminTemplate(value: unknown): ProductAdminTemplate {
   const record = recordField(value)
 
@@ -2448,6 +2830,10 @@ function arrayField(value: unknown): unknown[] {
   return Array.isArray(value) ? value : []
 }
 
+function stringArrayField(value: unknown): string[] {
+  return arrayField(value).filter((item): item is string => typeof item === "string")
+}
+
 function stringField(value: unknown, fallback = "") {
   return typeof value === "string" ? value : fallback
 }
@@ -2470,6 +2856,18 @@ function numberField(value: unknown, fallback = 0) {
 
 function nullableNumberField(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : null
+}
+
+function primitiveValueField(value: unknown) {
+  if (
+    typeof value === "string" ||
+    typeof value === "boolean" ||
+    (typeof value === "number" && Number.isFinite(value))
+  ) {
+    return value
+  }
+
+  return null
 }
 
 function displayIdField(value: unknown) {
