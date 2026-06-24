@@ -3,22 +3,43 @@ import path from "path"
 
 describe("platform decoupling boundaries", () => {
   it("keeps platform contracts and runtime free of backend framework imports", () => {
-    const platformDir = path.resolve(__dirname, "..")
-    const platformFiles = collectSourceFiles(platformDir).filter(
-      (file) => !file.includes(`${path.sep}__tests__${path.sep}`)
+    expectSourceTreeToStayFrameworkNeutral(
+      path.resolve(__dirname, ".."),
+      "platform"
     )
+  })
 
-    for (const file of platformFiles) {
-      const source = fs.readFileSync(file, "utf8")
-
-      expect(source).not.toContain("@medusajs/")
-      expect(source).not.toContain("../modules/")
-      expect(source).not.toContain("../../modules/")
-      expect(source).not.toContain("../platform-adapters/")
-      expect(source).not.toContain("../../platform-adapters/")
-    }
+  it("keeps application use cases free of backend framework imports", () => {
+    expectSourceTreeToStayFrameworkNeutral(
+      path.resolve(__dirname, "..", "..", "application"),
+      "application"
+    )
   })
 })
+
+function expectSourceTreeToStayFrameworkNeutral(dir: string, label: string) {
+  const files = collectSourceFiles(dir).filter(
+    (file) => !file.includes(`${path.sep}__tests__${path.sep}`)
+  )
+
+  for (const file of files) {
+    const source = fs.readFileSync(file, "utf8")
+    const relativePath = `${label}/${path.relative(dir, file)}`
+    const forbiddenTexts = [
+      "@medusajs/",
+      "../modules/",
+      "../../modules/",
+      "../platform-adapters/",
+      "../../platform-adapters/",
+    ]
+
+    for (const forbiddenText of forbiddenTexts) {
+      if (source.includes(forbiddenText)) {
+        throw new Error(`${relativePath} must not contain ${forbiddenText}`)
+      }
+    }
+  }
+}
 
 function collectSourceFiles(dir: string): string[] {
   const entries = fs.readdirSync(dir, { withFileTypes: true })
