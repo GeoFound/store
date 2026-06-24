@@ -1,13 +1,20 @@
-import type { MedusaRequest } from "@medusajs/framework/http"
 import { ContainerRegistrationKeys, MedusaError } from "@medusajs/framework/utils"
-import type { FulfillmentCartItem } from "../../../../../platform/inventory"
-import { CART_ORDER_QUERY_FIELDS } from "../../../../../utils/cart-order"
+import type { StorefrontCartPaymentContext } from "../application/payment"
+import type { BackendRuntimeContext } from "../platform/backend-context"
+import type { FulfillmentCartItem } from "../platform/inventory"
+import { CART_ORDER_QUERY_FIELDS } from "../utils/cart-order"
 
 export async function loadPaymentCartContext(
-  scope: MedusaRequest["scope"],
+  scope: BackendRuntimeContext,
   cartId: string
-) {
-  const query = scope.resolve(ContainerRegistrationKeys.QUERY)
+): Promise<StorefrontCartPaymentContext> {
+  const query = scope.resolve<{
+    graph(input: {
+      entity: string
+      fields: string[]
+      filters: Record<string, unknown>
+    }): Promise<{ data?: unknown[] }>
+  }>(ContainerRegistrationKeys.QUERY)
   const cartResult = await query.graph({
     entity: "cart",
     fields: CART_ORDER_QUERY_FIELDS,
@@ -15,7 +22,13 @@ export async function loadPaymentCartContext(
       id: cartId,
     },
   })
-  const cart = cartResult.data?.[0]
+  const cart = cartResult.data?.[0] as
+    | (Record<string, unknown> & {
+        items?: Array<Record<string, unknown> | null | undefined>
+        email?: string
+        currency_code?: string
+      })
+    | undefined
 
   if (!cart) {
     throw new MedusaError(MedusaError.Types.NOT_FOUND, "Cart was not found")
@@ -42,8 +55,8 @@ export async function loadPaymentCartContext(
   const amount =
     normalizeAmount(cart.total) ||
     normalizeAmount(cart.subtotal) ||
-    normalizeAmount((cart as Record<string, unknown>).raw_total) ||
-    normalizeAmount((cart as Record<string, unknown>).raw_subtotal) ||
+    normalizeAmount(cart.raw_total) ||
+    normalizeAmount(cart.raw_subtotal) ||
     calculateItemsTotal(cartItems)
 
   if (!amount || amount <= 0) {
@@ -55,7 +68,7 @@ export async function loadPaymentCartContext(
 
   return {
     amount,
-    currency: cart.currency_code,
+    currency: String(cart.currency_code || ""),
     customerEmail: cart.email,
     itemCount: cartItems.length,
     items: cartItems as FulfillmentCartItem[],

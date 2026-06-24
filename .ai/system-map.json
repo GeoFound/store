@@ -72,8 +72,10 @@
       "owns": [
         "framework-neutral product use cases",
         "backend replacement contracts",
+        "storefront cart payment creation use cases",
         "storefront content discovery use cases",
         "storefront marketing campaign discovery use cases",
+        "storefront order recovery use cases",
         "storefront payment method discovery use cases",
         "storefront product template discovery use cases"
       ],

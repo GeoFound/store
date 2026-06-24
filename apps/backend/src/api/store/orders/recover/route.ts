@@ -1,17 +1,15 @@
 import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
-import type { ILockingModule } from "@medusajs/framework/types"
-import { MedusaError, Modules } from "@medusajs/framework/utils"
-import { emitOrderAccessRecoveryCodeCreatedEvent } from "../../../../platform/events"
-import { isPlatformPluginEnabled } from "../../../../platform/runtime"
-import { resolveConfiguredOrderAccessProviderCode } from "../../../../platform-adapters/order-access"
-import { resolveGuestOrderAccessService } from "../../../../platform-adapters/services"
-import { emitAuditLog } from "../../../../utils/audit-log"
+import { MedusaError } from "@medusajs/framework/utils"
+import {
+  isOrderAccessApplicationError,
+  type OrderAccessApplicationErrorCode,
+} from "../../../../application/order-access"
+import { resolveStorefrontOrderAccessApplication } from "../../../../platform-adapters/order-access"
 import {
   localizedError,
   resolveRequestLocale,
 } from "../../../../utils/localized-response"
 import { getRequestAuditContext } from "../../../../utils/request-audit"
-import { normalizeEmail, retrieveStoreOrderDetail } from "../../../../utils/store-order"
 
 type RecoverOrderBody = {
   email?: string
@@ -23,110 +21,68 @@ export const POST = async (
   res: MedusaResponse
 ) => {
   const body = (req.validatedBody || req.body) as RecoverOrderBody
-  const orderAccessProviderCode = resolveConfiguredOrderAccessProviderCode()
-
-  if (!isPlatformPluginEnabled(orderAccessProviderCode)) {
-    localizedError(req, res, 503, "orderAccess.guestUnavailable")
-    return
-  }
-
-  const guestOrderAccess = resolveGuestOrderAccessService(req.scope)
-  const locking: ILockingModule = req.scope.resolve(Modules.LOCKING)
+  const orderAccess = resolveStorefrontOrderAccessApplication(req.scope)
   const { ipAddress, userAgent } = getRequestAuditContext(req)
-  const order = await retrieveStoreOrderDetail(req.scope, body.order_id || "", [
-    "id",
-    "email",
-  ])
 
-  if (normalizeEmail(order.email) !== normalizeEmail(body.email || "")) {
-    localizedError(req, res, 404, "orderAccess.orderNotFound")
-    return
-  }
-
-  const lockKey = `order-recovery-request:${String(order.id)}:${normalizeEmail(order.email)}`
-  let recovery
+  let result
 
   try {
-    recovery = await locking.execute(
-      lockKey,
-      async () =>
-        guestOrderAccess.createRecoveryCode({
-          orderId: String(order.id),
-          customerEmail: String(order.email),
-          metadata: {
-            source: "store_order_recovery",
-          },
-        }),
-      {
-        timeout: 30,
-      }
-    )
+    result = await orderAccess.requestRecoveryCode({
+      orderId: body.order_id,
+      email: body.email,
+      locale: resolveRequestLocale(req),
+      audit: {
+        ipAddress,
+        userAgent,
+      },
+    })
   } catch (error) {
-    if (
-      error instanceof MedusaError &&
-      error.type === MedusaError.Types.NOT_ALLOWED
-    ) {
-      localizedError(req, res, 429, "orderAccess.recoveryCooldown")
+    if (handleOrderAccessApplicationError(req, res, error)) {
       return
+    }
+
+    if (isOrderAccessApplicationError(error, "recovery_notification_failed")) {
+      throw new MedusaError(
+        MedusaError.Types.UNEXPECTED_STATE,
+        error.message
+      )
     }
 
     throw error
   }
 
-  try {
-    await emitOrderAccessRecoveryCodeCreatedEvent(req.scope, {
-      orderId: String(order.id),
-      customerEmail: String(order.email),
-      code: recovery.token,
-      expiresAt:
-        recovery.record.expires_at instanceof Date
-          ? recovery.record.expires_at.toISOString()
-          : String(recovery.record.expires_at || ""),
-      locale: resolveRequestLocale(req),
-    })
-  } catch (error) {
-    await guestOrderAccess.revokeOrderAccessToken(String(recovery.record.id))
+  res.status(202).json(result)
+}
 
-    try {
-      await emitAuditLog(req.scope, {
-        actorType: "system",
-        action: "order.recovery_notification_failed",
-        entityType: "order",
-        entityId: String(order.id),
-        riskLevel: "high",
-        ipAddress,
-        userAgent,
-        metadata: {
-          customer_email: normalizeEmail(order.email),
-          recovery_token_id: String(recovery.record.id),
-          error: error instanceof Error ? error.message : String(error),
-        },
-      })
-    } catch {
-      // Preserve the recovery notification failure for the caller.
-    }
-
-    throw new MedusaError(
-      MedusaError.Types.UNEXPECTED_STATE,
-      "Recovery code could not be sent. Please try again."
-    )
+function handleOrderAccessApplicationError(
+  req: MedusaRequest,
+  res: MedusaResponse,
+  error: unknown
+) {
+  if (!isOrderAccessApplicationError(error)) {
+    return false
   }
 
-  await emitAuditLog(req.scope, {
-    actorType: "guest",
-    action: "order.recovery_requested",
-    entityType: "order",
-    entityId: String(order.id),
-    riskLevel: "medium",
-    ipAddress,
-    userAgent,
-    metadata: {
-      customer_email: normalizeEmail(order.email),
-    },
-  })
+  const localized = mapOrderAccessError(error.code)
 
-  res.status(202).json({
-    order_id: order.id,
-    expires_at: recovery.record.expires_at || null,
-  })
+  if (!localized) {
+    return false
+  }
+
+  localizedError(req, res, localized.status, localized.key)
+  return true
+}
+
+function mapOrderAccessError(code: OrderAccessApplicationErrorCode) {
+  switch (code) {
+    case "guest_unavailable":
+    case "provider_unavailable":
+      return { status: 503, key: "orderAccess.guestUnavailable" as const }
+    case "order_not_found":
+      return { status: 404, key: "orderAccess.orderNotFound" as const }
+    case "recovery_cooldown":
+      return { status: 429, key: "orderAccess.recoveryCooldown" as const }
+    default:
+      return null
+  }
 }
